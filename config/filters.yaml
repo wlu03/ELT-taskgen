@@ -1,0 +1,42 @@
+# Deterministic pre-model gates; results go under `tasks/<id>/reports/filters/`.
+# Missing config uses the defaults in `verification/filters.py`.
+
+# Counterfactual and stress populations must change a recorded output.
+execution_effect:
+  enabled: true
+  baseline: primary
+  populations: [counterfactual, stress]
+  action: route          # repairable: regenerate the populations
+  route: population
+
+# Compare normalized schema and mart-plan Jaccard similarity with admitted tasks.
+# `min` allows schema reuse when the computation is meaningfully different.
+near_duplicate:
+  enabled: true
+  threshold: 0.85
+  combine: min           # min | max | mean
+  action: reject         # a near-clone is not repairable; it is redundant
+
+# Reject task shapes whose answers are enumerable rather than computable.
+format_blacklist:
+  enabled: true
+  action: reject
+  rules:
+    - name: single-table-no-join
+      kind: single_table_no_join
+      params: {max_tables: 1}
+    - name: too-few-source-tables
+      kind: min_source_tables
+      params: {min_tables: 2}
+    - name: trivial-mart-plan
+      kind: min_plan_ops
+      params: {min_ops: 2}
+    - name: single-column-mart
+      kind: min_mart_columns
+      params: {min_columns: 2}
+    # Two marts whose grain key, output columns and plan ops differ only by
+    # name are one computation graded twice (reddit_ads url_report was a
+    # byte-clone of ad_report). Agents propose, code certifies.
+    - name: duplicate-mart-contract
+      kind: distinct_mart_plans
+      params: {}

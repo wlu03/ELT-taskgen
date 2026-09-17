@@ -1,0 +1,5 @@
+column_name,column_description
+order_id,Order this line item belongs to.
+quantity,Units purchased.
+unit_price,Price per unit.
+discount,Absolute discount; may be NULL.

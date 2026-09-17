@@ -1,0 +1,77 @@
+"""The differential probe matrix: one scalar expression per subset rule.
+
+`expr` is the SQL a solver would write for its destination; `only` restricts a
+probe to destinations where the spelling exists. Every probe is read-only and
+touches no table: the warehouses evaluate literals, so no load, no warehouse
+object and no cleanup is involved.
+"""
+PROBES = [
+    # --- portable-dbt-sql-v2 admissions -------------------------------------
+    dict(id="md5_text_cast", rule="MD5 over a text cast", expr="MD5(CAST(7 AS TEXT))"),
+    dict(id="md5_null", rule="MD5 of NULL", expr="MD5(CAST(NULL AS TEXT))"),
+    dict(id="md5_surrogate_key", rule="dbt_utils surrogate key shape",
+         expr="MD5(CAST(COALESCE(CAST(NULL AS TEXT), '_n_') || '-' || CAST(2 AS TEXT) AS TEXT))"),
+    dict(id="dpipe_null", rule="|| propagates NULL", expr="CAST(NULL AS TEXT) || 'b'"),
+    dict(id="dpipe_number", rule="|| over a number", expr="'n=' || CAST(2 AS INT)"),
+    dict(id="concat_fn_null", rule="CONCAT with NULL", expr="CONCAT(CAST(NULL AS TEXT), 'b')"),
+    dict(id="date_trunc_day_ts", rule="DATE_TRUNC day of a timestamp",
+         expr="DATE_TRUNC('day', CAST('2024-03-05 10:11:12' AS TIMESTAMP))"),
+    dict(id="date_trunc_month_date", rule="DATE_TRUNC month of a date",
+         expr="DATE_TRUNC('month', CAST('2024-03-05' AS DATE))"),
+    dict(id="extract_year", rule="EXTRACT year",
+         expr="EXTRACT(year FROM CAST('2024-03-05 10:11:12' AS TIMESTAMP))"),
+    dict(id="datediff_day_dates", rule="DATEDIFF day over dates",
+         expr="DATEDIFF(day, CAST('2024-01-01' AS DATE), CAST('2024-03-01' AS DATE))"),
+    dict(id="datediff_hour_ts", rule="DATEDIFF hour over timestamps",
+         expr="DATEDIFF(hour, CAST('2024-01-01 10:59:00' AS TIMESTAMP), CAST('2024-01-01 11:01:00' AS TIMESTAMP))"),
+    # --- text rendering, which every hash and concat depends on -------------
+    dict(id="cast_double_text", rule="DOUBLE rendered as text", expr="CAST(CAST(1.0 AS DOUBLE) AS TEXT)"),
+    dict(id="cast_third_text", rule="1/3 rendered as text", expr="CAST(CAST(1 AS DOUBLE)/CAST(3 AS DOUBLE) AS TEXT)"),
+    dict(id="cast_decimal_text", rule="DECIMAL rendered as text", expr="CAST(CAST(1.50 AS DECIMAL(10,2)) AS TEXT)"),
+    dict(id="cast_timestamp_text", rule="TIMESTAMP rendered as text",
+         expr="CAST(CAST('2024-03-05 10:11:12' AS TIMESTAMP) AS TEXT)"),
+    dict(id="cast_date_text", rule="DATE rendered as text", expr="CAST(CAST('2024-03-05' AS DATE) AS TEXT)"),
+    dict(id="cast_bool_text", rule="BOOLEAN rendered as text", expr="CAST(CAST('true' AS BOOLEAN) AS TEXT)"),
+    # --- arithmetic already admitted by v1 ----------------------------------
+    dict(id="int_division", rule="integer / integer", expr="CAST(1 AS INT) / CAST(2 AS INT)"),
+    dict(id="round_half_even", rule="ROUND of 0.5 and 2.5",
+         expr="CAST(ROUND(CAST(0.5 AS DOUBLE)) AS TEXT) || ',' || CAST(ROUND(CAST(2.5 AS DOUBLE)) AS TEXT)"),
+    dict(id="round_decimal_places", rule="ROUND to 3 places",
+         expr="ROUND(CAST(1.0005 AS DECIMAL(10,4)), 3)"),
+    dict(id="div_by_nullif_zero", rule="guarded division",
+         expr="CAST(1 AS DOUBLE) / NULLIF(CAST(0 AS INT), 0)"),
+    dict(id="avg_of_ints", rule="AVG over integers", expr="AVG(v)",
+         from_clause="(SELECT 1 AS v UNION ALL SELECT 2) AS t"),
+    dict(id="sum_decimal_scale", rule="SUM of decimals", expr="SUM(v)",
+         from_clause="(SELECT CAST(0.1 AS DECIMAL(10,2)) AS v UNION ALL SELECT CAST(0.2 AS DECIMAL(10,2))) AS t"),
+    # --- comparison and text functions --------------------------------------
+    dict(id="string_case_equality", rule="case-sensitive equality", expr="CAST(('A' = 'a') AS TEXT)"),
+    dict(id="ilike", rule="ILIKE", expr="CAST(('ABC' ILIKE 'abc') AS TEXT)"),
+    dict(id="regexp_replace_digits", rule="REGEXP_REPLACE", expr="REGEXP_REPLACE('a1b2', '[0-9]', '')"),
+    dict(id="substring", rule="SUBSTRING", expr="SUBSTRING('abcdef', 2, 3)"),
+    dict(id="length_unicode", rule="LENGTH of a multibyte string", expr="LENGTH('héllo')"),
+    dict(id="trim_default", rule="TRIM", expr="TRIM('  ab  ')"),
+    dict(id="upper_unicode", rule="UPPER of a multibyte string", expr="UPPER('straße')"),
+    dict(id="null_ordering_min", rule="MIN ignores NULL", expr="MIN(v)",
+         from_clause="(SELECT CAST(NULL AS INT) AS v UNION ALL SELECT 2) AS t"),
+    dict(id="count_star_vs_column", rule="COUNT(*) versus COUNT(column)",
+         expr="CAST(COUNT(*) AS TEXT) || ',' || CAST(COUNT(v) AS TEXT)",
+         from_clause="(SELECT CAST(NULL AS INT) AS v UNION ALL SELECT 2) AS t"),
+    # --- follow-ups from the first real-warehouse run -----------------------
+    dict(id="lower_unicode", rule="LOWER of a multibyte string", expr="LOWER('STRASSE')"),
+    dict(id="lower_sharp_s", rule="LOWER of the capital sharp S", expr="LOWER('STRA\u1e9eE')"),
+    dict(id="md5_of_double_cast", rule="MD5 over a DOUBLE cast to text",
+         expr="MD5(CAST(CAST(1.0 AS DOUBLE) AS TEXT))"),
+    dict(id="md5_of_int_cast", rule="MD5 over an INT cast to text",
+         expr="MD5(CAST(CAST(12345 AS INT) AS TEXT))"),
+    dict(id="md5_of_decimal_cast", rule="MD5 over a DECIMAL cast to text",
+         expr="MD5(CAST(CAST(1.50 AS DECIMAL(10,2)) AS TEXT))"),
+    dict(id="md5_of_timestamp_cast", rule="MD5 over a TIMESTAMP cast to text",
+         expr="MD5(CAST(CAST('2024-03-05 10:11:12' AS TIMESTAMP) AS TEXT))"),
+    dict(id="pipe_double_text", rule="|| over a DOUBLE cast to text",
+         expr="'x=' || CAST(CAST(1.0 AS DOUBLE) AS TEXT)"),
+    dict(id="ratio_rounded_3", rule="ROUND of a ratio to 3 places",
+         expr="ROUND(CAST(CAST(2 AS DOUBLE) / CAST(3 AS DOUBLE) AS DOUBLE), 3)"),
+    dict(id="float_equality_text", rule="float sum rendered as text",
+         expr="CAST(CAST(0.1 AS DOUBLE) + CAST(0.2 AS DOUBLE) AS TEXT)"),
+]

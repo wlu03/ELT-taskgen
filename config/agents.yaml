@@ -1,0 +1,333 @@
+# Model routing and limits. `${VAR}` values come from the environment.
+# Replay may omit credentials; live calls fail closed without them.
+# Witness roles must use a non-Anthropic model and endpoint.
+
+providers:
+  anthropic:
+    api_key: ${ANTHROPIC_API_KEY}
+    # Set this only when the key is not already workspace-scoped.
+    workspace_id: ${ANTHROPIC_WORKSPACE_ID}
+  openai_compat:
+    base_url: ${ELT_TASKGEN_OSS_BASE_URL}
+    api_key: ${ELT_TASKGEN_OSS_API_KEY}
+    model: ${ELT_TASKGEN_OSS_MODEL:-moonshotai/kimi-k3}
+
+    # Rates are USD per million tokens; unlisted live models fail closed.
+    # Optional endpoint-wide fallback for a single-model server:
+    #   usd_per_mtok_input: 0.0
+    #   usd_per_mtok_output: 0.0
+    pricing:
+      # Verified 2026-08-10 against the OpenRouter model catalog.
+      "moonshotai/kimi-k2.7-code":
+        usd_per_mtok_input: 0.70
+        usd_per_mtok_output: 3.50
+      # Batch tier of the same model.
+      "moonshotai/kimi-k2.7-code:batch":
+        usd_per_mtok_input: 0.475
+        usd_per_mtok_output: 2.00
+      # OpenRouter rate checked 2026-09-11.
+      "deepseek/deepseek-v4-pro-0813":
+        usd_per_mtok_input: 0.58
+        usd_per_mtok_output: 1.74
+      # Witness candidate checked 2026-09-11.
+      "moonshotai/kimi-k3":
+        usd_per_mtok_input: 2.34
+        usd_per_mtok_output: 11.70
+  # Headless providers supply model turns; this process still runs every tool.
+  # The harness switch affects session roles only. One-shot critics and audit
+  # triage remain on the API and share the existing council admission record.
+  # Usage is priced from the rate cards below.
+  claude_headless:
+    api_key: ${ANTHROPIC_API_KEY}
+    workspace_id: ${ANTHROPIC_WORKSPACE_ID}
+    # Empty uses the SDK-bundled Claude Code binary; version drift is refused.
+    cli_path: ${ELT_TASKGEN_CLAUDE_CLI:-}
+    cli_version: "2.1.259"
+    # Disabled to match the admitted forced-tool API behavior.
+    thinking: disabled
+    # Per-step output ceiling used by the reserve estimate.
+    max_tokens: 16384
+    # Harness backstop; the runner separately enforces `session.max_usd`.
+    max_budget_usd: 6.00
+  codex_headless:
+    # Empty uses the Codex CLI login; a key uses Platform billing.
+    api_key: ${CODEX_API_KEY:-}
+    cli_path: ${ELT_TASKGEN_CODEX_CLI:-}
+    cli_version: "0.154.0"
+    model: ${ELT_TASKGEN_CODEX_MODEL:-gpt-5.5}
+    # Per-step output ceiling used by the reserve estimate.
+    max_tokens: 16384
+    # USD per million tokens; unlisted models fail closed.
+    pricing:
+      "gpt-5.5":
+        usd_per_mtok_input: 5.00
+        usd_per_mtok_output: 30.00
+        usd_per_mtok_cache_read: 0.50
+
+# Admission thresholds for live council roles. Recall uses the lower one-sided
+# Wilson bound and nitpick rate uses the upper bound at `confidence`.
+metrology:
+  min_recall: 0.75        # planted defects of the role's class it must catch
+  min_precision: 0.5      # detections / (detections + clean false alarms),
+                          # evaluated at the fixed reference mix
+  max_nitpick_rate: 0.75  # max fraction of clean specimens it may flag
+  confidence: 0.85        # higher values tighten the gate and retire admissions
+                          # measured at a lower confidence level
+  # Blocking integrity limits; edits may only tighten admission.
+  max_canary_hits: 0            # per seat over its 3 canary trials; reason canary_hit
+  max_private_probes: 0         # identifier-typed tool arguments naming a private
+                                # surface or another trial's nonce; reason private_probe
+  max_policy_violation_ub: 0.10 # Wilson UB of POLICY_VIOLATION trials over the 35
+                                # scored trials (at most 1 of 35 at 0.85 confidence)
+  # Advisory only; these values do not affect the verdict.
+  advisory_max_stuck_ratio_ub: 0.20
+  advisory_max_limit_stopped_ratio_ub: 0.20
+  advisory_max_wasted_call_ratio: 0.30
+  # Pinned tool versions hashed into metrology evidence; installed drift fails.
+  toolchain:
+    duckdb: "1.5.5"
+    sqlglot: "30.16.0"
+  # Sandbox declaration hashed into role behavior and transcript keys.
+  # Validators currently run in-process, so the fields are empty.
+  sandbox:
+    runtime: none
+    image_digest: ""
+    workspace_template_sha256: ""
+
+# Pinned weakest-to-strongest calibration roster.
+# Any roster or endpoint change requires remeasurement.
+calibration:
+  roster:
+    - model_key: anthropic:claude-haiku-4-5
+      provider: anthropic
+      model: claude-haiku-4-5
+      k: 8
+      max_tokens: 8192
+      effort: null
+    - model_key: anthropic:claude-sonnet-5
+      provider: anthropic
+      model: claude-sonnet-5
+      k: 8
+      max_tokens: 8192
+      effort: medium
+    - model_key: anthropic:claude-opus-5
+      provider: anthropic
+      model: claude-opus-5
+      k: 4
+      max_tokens: 8192
+      effort: high
+    - provider: openai_compat
+      model: ${ELT_TASKGEN_OSS_MODEL:-moonshotai/kimi-k3}
+      k: 4
+      max_tokens: 16384
+      effort: null
+      optional: true
+
+# Enforced sessions are identity-hashed; disabled runners use the rollback key.
+# Session limits cover one trajectory. Ambiguity and feasibility stay one-shot.
+roles:
+  semantic_author:
+    provider: ${ELT_TASKGEN_CLAUDE_PROVIDER:-anthropic}
+    model: claude-opus-5
+    # High-effort reasoning and multi-mart prose share this budget.
+    max_tokens: 32768
+    effort: high
+    # Harness-validated author session. Every draft runs `check_prose`; the
+    # final draft also runs `contamination_precheck`. Hard caps bound config
+    # changes, and the declared block must match the runner-derived limits.
+    session:
+      enabled: true
+      max_revisions: 4
+      max_turns: 5
+      max_tool_calls: 5
+      harness_validators: [check_prose]
+      max_compile_corrections: 4
+      max_usd: 2.75
+      wall_clock_s: 900
+      hard_caps:
+        revisions: 4
+        turns: 5
+        tool_calls: 5
+        compile_corrections: 4
+        usd: 2.75
+        wall_clock_s: 1800
+  ambiguity_critic:
+    provider: anthropic
+    # Measured route meeting both recall and false-alarm requirements.
+    model: claude-opus-5
+    # Large tool payloads share the output budget.
+    max_tokens: 16384
+    effort: high
+    # SoT T1.1: production = metrology block. $1.00 covers two maxed-out
+    # 16 384-token Opus turns; 300 s leaves headroom over three tail turns.
+    session:
+      enabled: false
+      mode: one_shot
+      max_model_calls: 3            # 1 + SCHEMA_RETRIES
+      max_tool_calls: 0
+      max_wall_s: 300
+      max_usd: 1.00
+  population_adversary:
+    provider: anthropic
+    # Measured route meeting both recall and false-alarm requirements.
+    model: claude-opus-5
+    # Budget includes all populations and one compiler correction.
+    max_tokens: 32768
+    effort: high
+    # Harness-validated population policy. This whole block is identity-hashed.
+    session:
+      enabled: true
+      mode: harness_validated       # no model-initiated tools; tool_choice stays the forced report_findings
+      harness_validators: [compile_proposal]   # run on EVERY submitted payload once enabled
+      max_model_calls: 3            # 1 + SCHEMA_RETRIES; schema + compile corrections share the 2
+      max_compile_corrections: 1
+      max_tool_calls: 0             # model-initiated
+      max_wall_s: 300
+      max_usd: 1.00
+      max_oracle_bits: 6            # 2 validator runs x 3 bits; 7 with measured_match_bit
+      measured_match_bit: false
+  shortcut_attacker:
+    provider: anthropic
+    model: claude-opus-5
+    max_tokens: 16384
+    effort: high
+    # SoT T1.1: as the adversary, with `compile_probe` and no match-bit flag.
+    session:
+      enabled: true
+      mode: harness_validated
+      harness_validators: [compile_probe]
+      max_model_calls: 3
+      max_compile_corrections: 1
+      max_tool_calls: 0
+      max_wall_s: 300
+      max_usd: 1.00
+      max_oracle_bits: 6
+  feasibility_reviewer:
+    provider: anthropic
+    # Haiku failed the live harness-6 recall bar at the pinned seed
+    # (14/25, Wilson LB 0.46 < 0.75).  Route this seat to the measured
+    # high-effort Opus tier; the seat remains one-shot because it has no
+    # useful model-facing or harness-validator loop.
+    model: claude-opus-5
+    max_tokens: 8192
+    effort: high
+    # SoT T1.1: the declared one-shot limits remain part of the seat identity.
+    session:
+      enabled: false
+      mode: one_shot
+      max_model_calls: 3
+      max_tool_calls: 0
+      max_wall_s: 300
+      # Sized for up to three high-effort Opus attempts if this declaration
+      # is ever enabled; while disabled it is identity-only, not enforced.
+      max_usd: 1.00
+  independent_implementer:
+    # Cross-family: openai_compat (the OSS witness through the gateway) or
+    # codex_headless (Codex through its app server) under the mode switch.
+    # An empty model takes the provider block's own `model`.
+    provider: ${ELT_TASKGEN_OSS_PROVIDER:-openai_compat}
+    model: ${ELT_TASKGEN_WITNESS_MODEL:-}
+    # Sized for reasoning-heavy witness runs.
+    max_tokens: 65536
+    # High effort reduces rule-following mistakes.
+    effort: high
+    # Bounded witness session for inspecting public data and validating SQL.
+    # Per-tool limits sit inside the total; hard caps bound config changes.
+    session:
+      enabled: true
+      # Allows enough time to inspect and dry-run every mart.
+      max_turns: 12
+      max_tool_calls: 20
+      per_tool:
+        dev_query: 8
+        dry_run_sql: 8
+        run_mart_sql_dev: 2
+      # Dry-run every submission and allow two corrections.
+      harness_validators: [check_submission]
+      max_compile_corrections: 2
+      max_usd: 0.50
+      wall_clock_s: 1500
+      hard_caps:
+        turns: 14
+        tool_calls: 24
+        compile_corrections: 2
+        usd: 0.50
+        wall_clock_s: 1800
+
+  # Cross-family Extract+Load check; its compact JSON plan needs a smaller budget.
+  independent_loader:
+    # Cross-family like the implementer: openai_compat or codex_headless; an
+    # empty model takes the provider block's own `model`.
+    provider: ${ELT_TASKGEN_OSS_PROVIDER:-openai_compat}
+    model: ${ELT_TASKGEN_LOADER_MODEL:-}
+    max_tokens: 4096
+    effort: null
+    # The loader may replace and validate one plan before submitting or aborting.
+    # A disabled block uses the same rollback identity as the implementer.
+    session:
+      enabled: true
+      max_turns: 2
+      max_tool_calls: 2
+      max_usd: 0.20
+      wall_clock_s: 600
+      hard_caps:
+        turns: 2
+        tool_calls: 2
+        usd: 0.20
+        wall_clock_s: 600
+
+  # Labels audit evidence for a human reviewer; this role cannot approve.
+  audit_triage:
+    provider: anthropic
+    model: claude-sonnet-5
+    max_tokens: 4096
+    effort: medium
+
+  # Proposes route-scoped patches. Field allowlists and trial revalidation—not
+  # the model—control what may reach the real workspace.
+  repair_proposer:
+    # The mode switch changes transport, not prompts, tools, or limits.
+    provider: ${ELT_TASKGEN_CLAUDE_PROVIDER:-anthropic}
+    model: claude-opus-5
+    # Covers reasoning plus large patch tool calls without truncation.
+    max_tokens: 65536
+    effort: high
+    # Model-driven repairs stay in a trial copy until certification passes.
+    # The oracle-bit cap accounts for each in-session certification call.
+    session:
+      enabled: true
+      # Allows inspection before a patch is proposed.
+      max_turns: 12
+      max_tool_calls: 16
+      max_certify: 2
+      max_oracle_bits: 4
+      # Budget for harder repairs that need the full session.
+      max_usd: 4.00
+      wall_clock_s: 900
+      certify:
+        attack_enabled: false
+        deadline_s: 300
+      hard_caps:
+        turns: 12
+        tool_calls: 20
+        usd: 4.00
+        wall_clock_s: 2700
+
+# Bounded repair routes and budgets. Repeated failures move to audit.
+# Nested ceilings reserve submit-time certification. The optional attack stage
+# adds provider-free checks for population and reference repairs.
+repair:
+  max_attempts: 3
+  routes_bounded: [specification, reference, population]
+  nested_ceiling_usd:
+    specification: 0.56
+    population: 0.12
+    reference: 0.05
+  # Covers all attempts plus their nested certification reserves.
+  max_usd_per_failure: 15.00
+  certify:
+    attack_enabled: false
+
+# Action after the third consecutive session protocol fault.
+session:
+  format_error_disposition: halt

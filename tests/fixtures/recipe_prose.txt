@@ -1,0 +1,34 @@
+# Customer Order Summary — Project Overview
+
+This project builds a single analytical mart, `customer_summary`, from three source tables that must each be extracted from their own backend before any transformation happens.
+
+- `customers` — one row per customer — must be extracted from the **postgres** backend. Columns: `customer_id` (integer, unique customer identifier, primary key) and `customer_name` (text, display name of the customer).
+- `orders` — one row per order header, and duplicate header rows are possible — must be extracted from the **mongodb** backend. Columns: `order_id` (integer, unique order identifier, business key), `customer_id` (integer, nullable — the customer who placed the order, and it may be NULL), and `status` (text, one of `cancelled` or `completed`).
+- `order_items` — one row per line item of an order — must be extracted from the **files** backend. Columns: `order_id` (integer, the order this line item belongs to), `quantity` (integer, units purchased), and `unit_price` (decimal, price per unit).
+
+Two relationships hold across these tables. The reference from `orders`(`customer_id`) to `customers`(`customer_id`) is optional: the value may be NULL, and it may also dangle, pointing at a customer that does not exist. The reference from `order_items`(`order_id`) to `orders`(`order_id`) is required.
+
+Because the sources live in three different systems, land all three tables first and perform every filter, join, aggregation and ordering rule described below on the landed data. All monetary amounts are decimal; all counts are integers.
+
+## Mart: customer_summary
+
+`customer_summary` is a per-customer completed-order activity summary. Its grain is: one row per customer, including customers with no orders. The key column of the mart is `customer_id`, and every customer present in `customers` contributes exactly one row, whether or not that customer has any orders at all.
+
+### Output columns
+
+- `customer_id` (integer) — the unique customer identifier, carried straight through from `customers`.
+- `completed_order_count` (integer) — the count of DISTINCT completed orders attributed to that customer; it is 0 if none.
+- `total_spend` (decimal) — the sum of `quantity` * `unit_price` over the items of that customer's completed orders, expressed in the same currency units as `unit_price`; it is 0 if none.
+
+Neither measure is ever left NULL in the output.
+
+### Rules
+
+1. Keep only orders with status = 'completed'. Orders whose `status` is `cancelled` are discarded before anything else is computed, and they contribute to neither measure.
+2. Deduplicate exact-duplicate completed order header rows by taking DISTINCT (`order_id`, `customer_id`). This collapses repeated header rows that carry identical values on that pair, so a single order is counted once.
+3. Compute the per-order item total as SUM(`quantity` * `unit_price`) grouped by `order_id`, using the rows of `order_items`. Each order therefore has at most one item total, which is the sum of the extended amounts of its line items.
+4. LEFT JOIN completed orders onto `customers` so customers with no (completed) orders are retained, matching on `orders`.`customer_id` = `customers`.`customer_id`. The `customers` side is the preserved side of this join, so a customer with no matching completed order still yields a row, and a completed order whose `customer_id` is NULL or dangling contributes to no customer.
+5. LEFT JOIN per-order item totals onto the completed orders, matching on `order_items`.`order_id` = `orders`.`order_id`. The completed orders are the preserved side here, so a completed order that has no item total still survives and simply carries no amount.
+6. Per customer: `completed_order_count` = COUNT(DISTINCT completed `order_id`); `total_spend` = SUM of item totals of completed orders — aggregate both measures grouping by `customer_id`. The count is over distinct order identifiers, so an order that appears more than once behind the scenes is still counted once, and the spend sums each completed order's item total once.
+7. COALESCE both measures to 0 for customers without completed orders, so that `completed_order_count` and `total_spend` are never NULL. The same zero default applies when a customer's only completed orders have no item totals.
+8. Deterministic output order: sort by `customer_id` in ascending order, which fully determines the row order of the mart.

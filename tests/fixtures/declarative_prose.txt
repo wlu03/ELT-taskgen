@@ -1,0 +1,39 @@
+Project: Customer order summary.
+Extract every source table from its own backend, load it into the warehouse, and build the mart described below.
+
+Public source schema:
+- customers (postgres): One row per customer.
+  - customer_id (integer): Unique customer identifier.
+  - customer_name (text): Display name of the customer.
+- orders (mongodb): One row per order header (the same header can arrive more than once).
+  - order_id (integer): Unique order identifier.
+  - customer_id (integer; nullable): Customer who placed the order; may be absent.
+  - status (text; one of cancelled, completed): Order status.
+- order_items (files): One row per line item of an order.
+  - order_id (integer): Order this line item belongs to.
+  - quantity (integer): Units purchased.
+  - unit_price (decimal): Price per unit.
+
+Source relationships:
+- The relationship has child orders customer_id and parent customers customer_id and is optional; an orders row may have no matching customers row.
+- The relationship has child order_items order_id and parent orders order_id and is required; every order_items row names an existing orders row.
+
+Mart customer_summary: Per-customer order activity summary.
+Grain: One row per customer, including customers with no orders.
+Key column: customer_id.
+Output columns:
+  - customer_id (integer): the unique customer identifier.
+  - completed_order_count (integer): how many completed orders that customer has, and 0 when there are none.
+  - total_spend (decimal): what that customer's completed orders came to, from the quantity and unit_price of their items, and 0 when there are none.
+
+Rules:
+  1. Only orders whose status is completed are in scope; an order with any other status, such as a cancelled one, is out of scope everywhere below, and nothing about it reaches the mart.
+  2. The same order header in scope can arrive as more than one row; rows that are exact duplicates on order_id and customer_id describe one order, and that order counts once. Those header rows come from orders.
+  3. Each order has one item total, and it is the total of quantity times unit_price over every one of the line-item rows carrying its order_id; two line-item rows carrying identical values are two line items, and both are counted. Those rows are supplied by order_items.
+  4. Every customer is retained in the output, including customers with no orders in scope, and an order in scope whose customer_id is null, or whose customer_id names a customer who does not exist, belongs to no customer, so it reaches no customer at all. Such an order is excluded from every measure, and the mart never emits a row whose customer_id is null.
+  5. Per-order item totals belong to the orders in scope; an order in scope that has no line items is preserved, appearing with no item total of its own rather than being removed. Those item totals use order_items records carrying the order_id.
+  6. For each customers customer_id, completed_order_count is how many of that customer's orders in scope there are, each order_id counted once, and total_spend is the total of their order_total values over those same orders in scope.
+  7. Customers without orders in scope still appear, and both measures read 0 for them, never null. Here those measures are completed_order_count and total_spend, and orders in scope are completed orders.
+  8. The output row order is deterministic: rows are sorted by ascending customer_id.
+
+Deliverables: extract every source backend, load the tables into the warehouse, and build the mart exactly as specified.

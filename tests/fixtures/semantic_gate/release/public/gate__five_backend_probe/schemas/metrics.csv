@@ -1,0 +1,5 @@
+column_name,column_description
+metric_id,Unique metric identifier.
+event_id,Event the measurement belongs to.
+value,Measured value; may be NULL.
+big_note,Free-form note; can be very large.

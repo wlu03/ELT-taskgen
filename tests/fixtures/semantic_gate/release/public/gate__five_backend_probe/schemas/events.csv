@@ -1,0 +1,6 @@
+column_name,column_description
+event_id,Unique event identifier.
+big_count,64-bit counter; exceeds 2**53.
+label,Event label; may be empty text.
+occurred_at,Naive event timestamp; may be NULL.
+tz_stamp,ISO-8601 text with a UTC offset. may be NULL.

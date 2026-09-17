@@ -1,0 +1,48 @@
+# Copy this file and replace paths/budgets with values approved for the run.
+# Relative paths are resolved from the copied run-config file.
+schema_version: generation-run-v1
+candidate_count: 7
+source_families: [dbt, dlt, synsql, schemapile, wikidbs]
+# Optional. When omitted, deterministic balanced water-filling handles small
+# and uneven N. If present, values are attempted candidates and sum exactly to N.
+source_allocation:
+  dbt: 1
+  dlt: 1
+  synsql: 2
+  schemapile: 2
+  wikidbs: 1
+seed: 20260908
+
+# draft | local-ready | packaged | calibrated | release-ready | release
+profile: packaged
+resume: true
+workers: 4
+max_repair_rounds: 2
+repair_attempts: 2
+
+# Bounded transport retry policy. Semantic failures are not retried here.
+http_retries: 4
+schema_retries: 2
+http_timeout_seconds: 600
+http_backoff_seconds: 2
+
+# Operator-approved limits. The total is shared across concurrent workers.
+budget_per_task: 7.00
+budget_total: 20.00
+
+agents_config: agents.yaml
+# Set an exact, still-revocable admission record for live council work. Empty
+# does not manufacture admission; missing live prerequisites surface as BLOCKED.
+admission_reference: ""
+export_dir: ../runs/configured-packages
+# Package all destinations, one destination, or a list. The first is the bundle root.
+destinations: all
+
+# Initial local-ready/package runs do not need solver calibration. The
+# calibrated/release-ready/release profiles require this to be true.
+empirical: false
+
+# Optional read-only links to completed runtime evidence.
+# runtime_certification_store: /secure/runtime-certifications
+# runtime_difficulty_reports:
+#   synsql__example_task: /secure/difficulty/synsql__example_task.json

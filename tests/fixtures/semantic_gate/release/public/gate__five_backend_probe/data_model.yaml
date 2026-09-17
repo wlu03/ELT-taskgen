@@ -1,0 +1,101 @@
+models:
+- columns:
+  - description: Unique customer identifier.
+    name: customer_id
+    type: integer
+  - description: Count of DISTINCT completed orders; 0 if none.
+    name: completed_orders
+    type: integer
+  - description: Sum of quantity * unit_price over items of completed orders; 0 if none.
+    name: total_spend
+    type: decimal
+  description: Per-customer completed-order rollup.
+  grain: One row per customer, including customers with no orders.
+  key_columns:
+  - customer_id
+  name: customer_rollup
+  source_relationships:
+  - child_columns:
+    - customer_id
+    child_table: orders
+    parent_columns:
+    - customer_id
+    parent_table: customers
+    required: false
+  - child_columns:
+    - order_id
+    child_table: order_items
+    parent_columns:
+    - order_id
+    parent_table: orders
+    required: true
+  - child_columns:
+    - event_id
+    child_table: metrics
+    parent_columns:
+    - event_id
+    parent_table: events
+    required: true
+  transformation:
+    steps:
+    - description: Bring customers into scope.
+      operation: source
+      order: 1
+      source_inputs:
+      - customers
+- columns:
+  - description: Unique event identifier.
+    name: event_id
+    type: integer
+  - description: 64-bit counter, passed through.
+    name: big_count
+    type: bigint
+  - description: Event label, passed through.
+    name: label
+    type: text
+  - description: Event timestamp, passed through.
+    name: occurred_at
+    type: timestamp
+  - description: Offset-bearing ISO text, passed through.
+    name: tz_stamp
+    type: text
+  - description: Measured value; NULL when unmeasured.
+    name: metric_value
+    type: decimal
+  - description: Measurement note; NULL when unmeasured.
+    name: big_note
+    type: text
+  description: One wide row per event with its measurement.
+  grain: One row per event.
+  key_columns:
+  - event_id
+  name: event_wide
+  source_relationships:
+  - child_columns:
+    - customer_id
+    child_table: orders
+    parent_columns:
+    - customer_id
+    parent_table: customers
+    required: false
+  - child_columns:
+    - order_id
+    child_table: order_items
+    parent_columns:
+    - order_id
+    parent_table: orders
+    required: true
+  - child_columns:
+    - event_id
+    child_table: metrics
+    parent_columns:
+    - event_id
+    parent_table: events
+    required: true
+  transformation:
+    steps:
+    - description: Bring events into scope.
+      operation: source
+      order: 1
+      source_inputs:
+      - events

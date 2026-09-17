@@ -1,0 +1,25 @@
+{
+  "schema_version": "runner-images-manifest-v2",
+  "images": {
+    "dbt:databricks": "ghcr.io/wlu03/elt-taskgen-dbt-databricks@sha256:5011ba2176e03547cf4543c67b9842ef3ea4c0471629ad42cb8c2b6eec8604b0",
+    "dbt:redshift": "ghcr.io/wlu03/elt-taskgen-dbt-redshift@sha256:d937c4e31521e9cb6ceac5832117713178170e821cd331c4ca39d7af88111eaa",
+    "dbt:snowflake": "ghcr.io/wlu03/elt-taskgen-dbt-snowflake@sha256:972a18cb3f98e53c62229749df71131569223a2a018c0f6c2ecd6c26135cb2a0",
+    "terraform": "ghcr.io/wlu03/elt-taskgen-terraform@sha256:b9d3df99103965177f4b545822ebda9845a7ed2363ca89ab4a36eae2ee7e4a6b"
+  },
+  "files": [
+    "README.md",
+    "dbt-databricks/Dockerfile",
+    "dbt-duckdb/README.md",
+    "dbt-duckdb/installed-distributions.json",
+    "dbt-duckdb/pyproject.toml",
+    "dbt-duckdb/runtime.json",
+    "dbt-duckdb/uv.lock",
+    "dbt-redshift/Dockerfile",
+    "dbt-snowflake/Dockerfile",
+    "dbt/pyproject.toml",
+    "dbt/uv.lock",
+    "terraform/Dockerfile",
+    "terraform/provider.tf",
+    "terraform/terraform.rc"
+  ]
+}

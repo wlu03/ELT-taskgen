@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+runs/
+/docs/
+/council/tool_raw/
+/council/transcripts/
+secrets/
+constraints.txt
+*_credential.json
+.env
+.env.*

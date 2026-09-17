@@ -1,0 +1,38 @@
+{
+  "census_version": "2",
+  "created_utc": "2026-09-02T22:27:21+00:00",
+  "destination": "snowflake",
+  "environment": {
+    "duckdb": "1.5.5",
+    "pydantic": "2.13.4",
+    "python": "3.14.5",
+    "sqlglot": "30.16.0"
+  },
+  "expected_gold_sha256": {
+    "counterfactual": {
+      "customer_rollup": "c0156c303ade4dd08a012f3d98883122b5543c42ebc31da3cde9a9482222b387",
+      "event_wide": "f49082bc75975ad0fdd9a189160037fe6b2facd3ca31a6b1132f55ffe22dad5b"
+    },
+    "development": {
+      "customer_rollup": "4a2cb48a8bc34269d28661e6f95a66117d972a070baf8b2988da4f6cfa8b74d6",
+      "event_wide": "b0e38cc9cc4395e7d997fcd31b62c8eae34d8af9cbdb2492f143f63f117061a0"
+    },
+    "primary": {
+      "customer_rollup": "5b9a43cbfc8d824196129a817728e13ef1d5fe46d8cb2fa940955bbf141f69b0",
+      "event_wide": "68dff5e04854fab218df4cd6231bf0b5298ae7374f528e3c1271c6b742dad3de"
+    },
+    "resampled": {
+      "customer_rollup": "8a59fa6cd992408d37a5bf06201691d0d3fa8c29f7d64e58eac7ce1eb1763e54",
+      "event_wide": "bb28f85e2e31122353104e41de508b2d8c8fd9d8f171b5c0737f33ff112bf542"
+    },
+    "stress": {
+      "customer_rollup": "3d97798dcdb88f5d70c45f9ae3bd7d007cc0f3e70bdd6ae1c2dcac4032e99460",
+      "event_wide": "1bd5244c1d0b58a9f19d1bbfeb354b2791f61b02b1b6c9f54b40b48d27d3c5e9"
+    }
+  },
+  "reference_result_digest": "71739329e37a5e2df0e893f3c7565b4b356abf26945934d9cd400be86022918a",
+  "release_id": "release-29649f6a99c6d739",
+  "schema_version": "3.3",
+  "semantic_scorer_version": "1.0.0",
+  "task_id": "gate__five_backend_probe"
+}

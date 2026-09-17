@@ -1,0 +1,16 @@
+**
+!.dockerignore
+!runtime-images/
+!runtime-images/terraform/
+!runtime-images/terraform/Dockerfile
+!runtime-images/terraform/provider.tf
+!runtime-images/terraform/terraform.rc
+!runtime-images/dbt/
+!runtime-images/dbt/pyproject.toml
+!runtime-images/dbt/uv.lock
+!runtime-images/dbt-databricks/
+!runtime-images/dbt-databricks/Dockerfile
+!runtime-images/dbt-snowflake/
+!runtime-images/dbt-snowflake/Dockerfile
+!runtime-images/dbt-redshift/
+!runtime-images/dbt-redshift/Dockerfile

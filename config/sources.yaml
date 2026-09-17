@@ -1,0 +1,104 @@
+# Vendored pool locations, licensing, attribution, and exclusions.
+# Missing roots fail when read; `excluded` entries are always denied.
+
+pools:
+  dbt:
+    origin: dbt
+    root: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/fivetran
+    license: Apache-2.0
+    attribution: Fivetran dbt package
+    provenance_manifest: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/MANIFEST.json
+    excluded: []
+    notes: >-
+      16 clean packages, one directory per family (dbt_<family>). A dbt
+      manifest.json must be compiled from the package before ingest.
+
+  dlt:
+    origin: dlt
+    root: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/dlt
+    license: Apache-2.0
+    attribution: dlt verified source
+    provenance_manifest: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/MANIFEST.json
+    # Only personio, pipedrive, and workable are admitted.
+    # Regenerate the source inventory when the pinned checkout changes.
+    excluded:
+      - dlt_airtable
+      - dlt_asana
+      - dlt_chess
+      - dlt_facebook_ads
+      - dlt_freshdesk
+      - dlt_github
+      - dlt_google_ads
+      - dlt_google_analytics
+      - dlt_google_sheets
+      - dlt_hubspot
+      - dlt_inbox
+      - dlt_jira
+      - dlt_kafka
+      - dlt_kinesis
+      - dlt_matomo
+      - dlt_mongodb
+      - dlt_mux
+      - dlt_notion
+      - dlt_pg_replication
+      - dlt_salesforce
+      - dlt_scrapy
+      - dlt_shopify
+      - dlt_slack
+      - dlt_strapi
+      - dlt_stripe
+      - dlt_zendesk
+    notes: >-
+      All 29 officially listed verified sources are vendored at one pinned
+      commit (3957506893a7da821dbcc6acd51c7ca4475d1f53); each
+      dlt_<name>/source/ holds the connector graph the AST audit reads without
+      importing it. Only personio, pipedrive and workable are presently
+      ingestible; the other 26 are retained as quarantined source material,
+      not tasks. Census: config/dlt_source_inventory.yaml (regenerate with
+      tools/audit_dlt_inventory.py). The six repository-only directories
+      outside the official 29 (bing_webmaster, filesystem, pokemon, rest_api,
+      sql_database, unstructured_data) are deliberately not vendored.
+
+  synsql:
+    origin: synsql
+    root: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/SynSQL-2.5M
+    license: Apache-2.0
+    attribution: SynSQL-2.5M schema
+    notes: >-
+      tables.json is the ONLY ingestible half; data.json is answer-bearing and
+      is used exclusively by the adapter's leak guard.
+
+  schemapile:
+    origin: schemapile
+    root: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/schemapile
+    license_per_record: true
+    attribution: SchemaPile (permissive subset)
+    notes: >-
+      schemapile-perm.json keys are "<file>.sql"; each record's INFO block
+      carries URL/LICENSE/PERMISSIVE and that LICENSE is the task's license.
+
+  wikidbs:
+    origin: wikidbs
+    root: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/WikiDBs
+    license: CC-BY-4.0
+    attribution: WikiDBs (Wikidata-derived relational databases)
+    notes: >-
+      part-N/"<NNNNN> <db_name>"/ with schema.json + tables/*.csv of REAL rows.
+      Record selectors keep the on-disk directory name verbatim.
+
+  # Keep this key as `eltbench`: it defines the family-id namespace. The Origin
+  # remains `eltbench_anchor`; renaming the key would change stored fingerprints.
+  eltbench:
+    origin: eltbench_anchor
+    root: ${ELT_TASKGEN_BENCH_ROOT}
+    license: CC-BY-SA-4.0
+    attribution: ELT-Bench pinned anchor task
+    notes: >-
+      Measurement-only. Anchors are imported for contamination fingerprints and
+      difficulty calibration; export/release.py refuses to ship them.
+
+# Selection instruments are not ingestible pools and need no origin/license row.
+instruments:
+  # WikiDBGraph inputs used to cluster similar WikiDBs schemas at threshold 0.94.
+  wikidbgraph_edges: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/schema_pools/wikidbgraph/graph_artifacts/filtered_edges_threshold_0.94.csv
+  wikidbgraph_communities: ${ELT_TASKGEN_DATA_ROOT}/curation/packages_raw/schema_pools/wikidbgraph/graph_artifacts/community_assignment_0.94.csv

@@ -1,0 +1,4 @@
+column_name,column_description
+customer_id,Unique customer identifier.
+customer_name,Display name.
+segment,Free-text segment; may be NULL.

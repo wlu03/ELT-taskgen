@@ -1,0 +1,364 @@
+{
+  "certification_ids": {
+    "gate__five_backend_probe": "certification-09c592b9870e8d95"
+  },
+  "certification_matrix": {
+    "snowflake": {
+      "airbyte_abctl": "v0.30.4",
+      "airbyte_chart": "2.2.0",
+      "canonical_fingerprint_version": "1",
+      "destination": "snowflake",
+      "destination_connector": "4.1.2",
+      "destination_definition_id": "424892c4-daac-4491-b35d-c6688ba547ba",
+      "matrix_version": "7",
+      "parity_contract_version": "1",
+      "parity_observation_schema_version": "1.1",
+      "parity_registry_digest": "77280be93a73a5b22fb1798f1744dcda533478bb7be7e91a39ce7243e188d0eb",
+      "parity_scope_policy_version": "1",
+      "runner_images_digest": "cb746d961e6f0a9d84b0c5644e9d7de571af6a39b75e92ae9e20c82f0f26ad94",
+      "source_connector:aws_s3": "4.15.20",
+      "source_connector:custom_api": "6.33.4",
+      "source_connector:flat_files": "0.6.0",
+      "source_connector:mongodb": "2.0.7",
+      "source_connector:postgres": "3.8.5",
+      "source_service_image:elt-api": "python:3.11-slim@sha256:d1e9ca7c4e78d1e8ecadb5d44bfc8e956e7a65b659a9950f569f243d72b326d0",
+      "source_service_image:elt-files": "python:3.11-slim@sha256:d1e9ca7c4e78d1e8ecadb5d44bfc8e956e7a65b659a9950f569f243d72b326d0",
+      "source_service_image:elt-localstack": "localstack/localstack:4.8.1@sha256:8c9756bddc44625cd6e890f5e4bcc29b045eebe108b268482b848f4f832ec153",
+      "source_service_image:elt-mongodb": "mongo:8.2@sha256:e0ce8c35124d4a9f9785532d1f268f39e9728ffa1cb38f46fa482436424c4bd3",
+      "source_service_image:elt-postgres": "postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+      "warehouse:fixed_schema": "AIRBYTE_SCHEMA",
+      "warehouse:logical_namespace_field": "database",
+      "warehouse:physical_container_field": ""
+    }
+  },
+  "checksum_kinds": {
+    "private/gate__five_backend_probe/oracle/counterfactual.duckdb": "duckdb-census/2",
+    "private/gate__five_backend_probe/oracle/development.duckdb": "duckdb-census/2",
+    "private/gate__five_backend_probe/oracle/primary.duckdb": "duckdb-census/2",
+    "private/gate__five_backend_probe/oracle/resampled.duckdb": "duckdb-census/2",
+    "private/gate__five_backend_probe/oracle/stress.duckdb": "duckdb-census/2"
+  },
+  "checksums": {
+    "private/gate__five_backend_probe/answer_key/airbyte_custom_api_manifest.yaml": "48db621c43427cd1b696e5bf0d1440706b515acdc90f626b57587b68720e07b6",
+    "private/gate__five_backend_probe/answer_key/evaluation/sql/customer_rollup.sql": "5cfc3db31462832a84bc21621bf809387fca9058a96898eb157ca61c3681a329",
+    "private/gate__five_backend_probe/answer_key/evaluation/sql/event_wide.sql": "30f3f38e0123567e01cf6199bc3cc93f55a61d17fe1ca04321a406c311b39aa0",
+    "private/gate__five_backend_probe/answer_key/flat_files_serving.json": "57d9b26828e5329a6ae2fde51a005555b2ed110ed6605f8198d1668f1e961528",
+    "private/gate__five_backend_probe/answer_key/gold/counterfactual/customer_rollup.csv": "c0156c303ade4dd08a012f3d98883122b5543c42ebc31da3cde9a9482222b387",
+    "private/gate__five_backend_probe/answer_key/gold/counterfactual/event_wide.csv": "f49082bc75975ad0fdd9a189160037fe6b2facd3ca31a6b1132f55ffe22dad5b",
+    "private/gate__five_backend_probe/answer_key/gold/counterfactual/stage1_counts.json": "ccfc5e83fb9baf8ce5d14d7b23da8c12baa1408b0fca448325159ce173aa3a89",
+    "private/gate__five_backend_probe/answer_key/gold/development/customer_rollup.csv": "4a2cb48a8bc34269d28661e6f95a66117d972a070baf8b2988da4f6cfa8b74d6",
+    "private/gate__five_backend_probe/answer_key/gold/development/event_wide.csv": "b0e38cc9cc4395e7d997fcd31b62c8eae34d8af9cbdb2492f143f63f117061a0",
+    "private/gate__five_backend_probe/answer_key/gold/development/stage1_counts.json": "ccfc5e83fb9baf8ce5d14d7b23da8c12baa1408b0fca448325159ce173aa3a89",
+    "private/gate__five_backend_probe/answer_key/gold/primary/customer_rollup.csv": "5b9a43cbfc8d824196129a817728e13ef1d5fe46d8cb2fa940955bbf141f69b0",
+    "private/gate__five_backend_probe/answer_key/gold/primary/event_wide.csv": "68dff5e04854fab218df4cd6231bf0b5298ae7374f528e3c1271c6b742dad3de",
+    "private/gate__five_backend_probe/answer_key/gold/primary/stage1_counts.json": "ccfc5e83fb9baf8ce5d14d7b23da8c12baa1408b0fca448325159ce173aa3a89",
+    "private/gate__five_backend_probe/answer_key/gold/resampled/customer_rollup.csv": "8a59fa6cd992408d37a5bf06201691d0d3fa8c29f7d64e58eac7ce1eb1763e54",
+    "private/gate__five_backend_probe/answer_key/gold/resampled/event_wide.csv": "bb28f85e2e31122353104e41de508b2d8c8fd9d8f171b5c0737f33ff112bf542",
+    "private/gate__five_backend_probe/answer_key/gold/resampled/stage1_counts.json": "ccfc5e83fb9baf8ce5d14d7b23da8c12baa1408b0fca448325159ce173aa3a89",
+    "private/gate__five_backend_probe/answer_key/gold/stress/customer_rollup.csv": "3d97798dcdb88f5d70c45f9ae3bd7d007cc0f3e70bdd6ae1c2dcac4032e99460",
+    "private/gate__five_backend_probe/answer_key/gold/stress/event_wide.csv": "1bd5244c1d0b58a9f19d1bbfeb354b2791f61b02b1b6c9f54b40b48d27d3c5e9",
+    "private/gate__five_backend_probe/answer_key/gold/stress/stage1_counts.json": "ccfc5e83fb9baf8ce5d14d7b23da8c12baa1408b0fca448325159ce173aa3a89",
+    "private/gate__five_backend_probe/answer_key/gt/customer_rollup.csv": "5b9a43cbfc8d824196129a817728e13ef1d5fe46d8cb2fa940955bbf141f69b0",
+    "private/gate__five_backend_probe/answer_key/gt/event_wide.csv": "68dff5e04854fab218df4cd6231bf0b5298ae7374f528e3c1271c6b742dad3de",
+    "private/gate__five_backend_probe/answer_key/manifest.json": "e82fd215bb5c642be62bc44e20a55258a70bb702d562c2da1815a1eb8260f4bb",
+    "private/gate__five_backend_probe/answer_key/reference/customer_rollup.sql": "4252dcdfd28f27809f131b28e070aee9dd19738d4b1c76ee59cf9ebd77fd2b95",
+    "private/gate__five_backend_probe/answer_key/reference/event_wide.sql": "3069ef7daa04285943848f7f55c26688de1405283874f30715c3e7292c5f42a8",
+    "private/gate__five_backend_probe/answer_key/reference/solution.json": "2344d2e39e0cb91146becfed0b7b77dc414c13d4f35890d14a0d11e3f0d6e94e",
+    "private/gate__five_backend_probe/answer_key/runtime/airbyte_connector_contract.json": "acfbc485dbd439f29ac27280e577fb4b9c332c4927d3840958f428f5737c573e",
+    "private/gate__five_backend_probe/answer_key/sort_key.json": "46f00e09fc4abb59372513f3c5fe21535acd6c1aa9c2d69fbe5691e28065785f",
+    "private/gate__five_backend_probe/answer_key/sources_serving.json": "e5e6ca1dc547ab8ab7d613888b8f357e80717068bb476c8c45be905932522f55",
+    "private/gate__five_backend_probe/answer_key/table.json": "7423c7dd95c13a6ddf00313ae0abf5324614391df9ef8f537f89f720ae417a22",
+    "private/gate__five_backend_probe/oracle/counterfactual.duckdb": "01ad0b0cfd517a1b29a5d2726f2a2e61418d074ebb52ab17bb2425150565ad06",
+    "private/gate__five_backend_probe/oracle/development.duckdb": "db18ea19b03be4253420ae115efdabc4ffdd184257bedd9bf0e7aca23a21e275",
+    "private/gate__five_backend_probe/oracle/primary.duckdb": "58046db91251c4cd1f8bb96efa8db3b0796c3ba8e6e3e60f728d454e26377251",
+    "private/gate__five_backend_probe/oracle/resampled.duckdb": "caa70076a12591e931d34caafdec95e52f9dd1bc1133175289f939456c730c49",
+    "private/gate__five_backend_probe/oracle/stress.duckdb": "664273616e0a5d42791c951bf15ce0dfb919565b2a4dc44f9eb01611f1739649",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/files/order_items.csv": "2bc9fb1996d0911ffd931b8b1510df607c1c1de4356e668db0c4d20abfc6bf57",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/mongodb/orders.jsonl": "fa29fc6af8d99cb4f1ad94286a53468a310053b720d5a636951c9ebd1252a9b5",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/postgres/customers.sql": "aa3e00d66289e741a7af1e979b3cb92f3e0e98b397821ea2dcea512cdf87604b",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/rest/events/index.json": "a8fe8e7d21587c69dfb14c953b6d05589b726aeb0fe75040769df3a1937a23f6",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/rest/events/page_0001.json": "68b4f08fc566f0717902676e700cf59f7ccb371c91ba69c86a786add9fdfdaa1",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/rest/events/page_0002.json": "acbb3df27ccf6980adddbc00b75fa8b5dce1157a6eb172374a4caa94f385ed3b",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/rest/events/page_0003.json": "331000903bc3bec7b1e714fdc69af859560f1761819b4f530bec71ebf22c26d5",
+    "private/gate__five_backend_probe/populations/counterfactual/rendered/s3/metrics/part-00000.jsonl": "6245de9e0e4dfb695f793cb7bae5cb3564d4a84405923ef20dc90a4245c6ba9e",
+    "private/gate__five_backend_probe/populations/development/rendered/files/order_items.csv": "2aeeaf8b3015d86681925cac1326dde3a1415c4ccb7e5269fe9d131bbbfae47c",
+    "private/gate__five_backend_probe/populations/development/rendered/mongodb/orders.jsonl": "91c56def30f5c94ed9ca7c09fd6bd73ce9e8a527c7615279bff78eb5a8e1f002",
+    "private/gate__five_backend_probe/populations/development/rendered/postgres/customers.sql": "8d1549d94e21a5de603416bfe50779fbb3af397b3db64b7d1d55cdf827a18f52",
+    "private/gate__five_backend_probe/populations/development/rendered/rest/events/index.json": "a8fe8e7d21587c69dfb14c953b6d05589b726aeb0fe75040769df3a1937a23f6",
+    "private/gate__five_backend_probe/populations/development/rendered/rest/events/page_0001.json": "d96e0425e84028f122c7c160ecc0d8dd17ce3e6e2b5ad228945836585c6137be",
+    "private/gate__five_backend_probe/populations/development/rendered/rest/events/page_0002.json": "e467548ac56e42b6cd563ea47b4aa106806a65388c6e3c70a09a9afc942e18a7",
+    "private/gate__five_backend_probe/populations/development/rendered/rest/events/page_0003.json": "f92a385d4809038b68c5d5014446e3546b49171930999eefcd0d30f99d8bb702",
+    "private/gate__five_backend_probe/populations/development/rendered/s3/metrics/part-00000.jsonl": "66fe298f80d753cf11a294275661e168f7d2f46b26167324d3dc9767cd1e934b",
+    "private/gate__five_backend_probe/populations/primary/rendered/files/order_items.csv": "2e0481f51279e4faa84656779d396ca65294bff120f98e87440139972531d0f5",
+    "private/gate__five_backend_probe/populations/primary/rendered/mongodb/orders.jsonl": "ff9df47c22fb8586f8276eb5f69aff6712e361a17adb3f4684b39646b2f828c7",
+    "private/gate__five_backend_probe/populations/primary/rendered/postgres/customers.sql": "3ad9d98dc67aa149f8d2690852fcf7f306db1a65ef1d723d22b9138e8c5878cb",
+    "private/gate__five_backend_probe/populations/primary/rendered/rest/events/index.json": "a8fe8e7d21587c69dfb14c953b6d05589b726aeb0fe75040769df3a1937a23f6",
+    "private/gate__five_backend_probe/populations/primary/rendered/rest/events/page_0001.json": "776a91535c39fbb1aa674dcd712d4c7464dcb6fcd3a9561e21005bf388b5dd12",
+    "private/gate__five_backend_probe/populations/primary/rendered/rest/events/page_0002.json": "e201dece940de4a4231e8715476d95cec2443d3e1d772fc09e0180fdb9ec6a2d",
+    "private/gate__five_backend_probe/populations/primary/rendered/rest/events/page_0003.json": "ea252f2b11173a40205693067d3ff4bbdd951b9663b174b2db124e983c64a135",
+    "private/gate__five_backend_probe/populations/primary/rendered/s3/metrics/part-00000.jsonl": "669837fd7169c89335f6aadd11ef9c80fef10bd102364190f17952a94aec460c",
+    "private/gate__five_backend_probe/populations/resampled/rendered/files/order_items.csv": "3333f8107e4c10fa104b67361a6693928bcc69264efd0c00dd753b29f3836d3c",
+    "private/gate__five_backend_probe/populations/resampled/rendered/mongodb/orders.jsonl": "3bb4e65119116e82900a29bea279fca0f615cc108310a4d9b9d9b7fbe9cc579f",
+    "private/gate__five_backend_probe/populations/resampled/rendered/postgres/customers.sql": "1e3d569e8fce3f5ea09b0f61dd6ac6fef9364903fbd3b15570f48681a442724f",
+    "private/gate__five_backend_probe/populations/resampled/rendered/rest/events/index.json": "a8fe8e7d21587c69dfb14c953b6d05589b726aeb0fe75040769df3a1937a23f6",
+    "private/gate__five_backend_probe/populations/resampled/rendered/rest/events/page_0001.json": "46c24f06ea70bc358529adbba60082854d1a51b0921bdc27e080915ec74d9b5e",
+    "private/gate__five_backend_probe/populations/resampled/rendered/rest/events/page_0002.json": "45c27b9c67f530f011c8ae0733e97f45f942ccfc402e2d244e6fb8d63e3c6676",
+    "private/gate__five_backend_probe/populations/resampled/rendered/rest/events/page_0003.json": "db41b535cee34bdcd01a76e41c9bcfe495ab2410a9faf9b02a7eb4f42ac60f0e",
+    "private/gate__five_backend_probe/populations/resampled/rendered/s3/metrics/part-00000.jsonl": "4c2c6414ca697be845c54242d0c1ed46e2b87e05218cb8b815a6aace23121ccb",
+    "private/gate__five_backend_probe/populations/stress/rendered/files/order_items.csv": "6ec9ca1b2bce60b779c8451aefba6e2f2c8ce758212236294eb3dd977be7d66e",
+    "private/gate__five_backend_probe/populations/stress/rendered/mongodb/orders.jsonl": "5d5ef8bd418bb647ed753204f21f753c7bb51e81f9305418818dd1be4a3172dc",
+    "private/gate__five_backend_probe/populations/stress/rendered/postgres/customers.sql": "c87b13176dff09ade9d527e30dae87abb27b6822c883114cee7a76718440a226",
+    "private/gate__five_backend_probe/populations/stress/rendered/rest/events/index.json": "a8fe8e7d21587c69dfb14c953b6d05589b726aeb0fe75040769df3a1937a23f6",
+    "private/gate__five_backend_probe/populations/stress/rendered/rest/events/page_0001.json": "8a611f83b439e41f830d388eee3ecb66cd4cd3d01146a7bebfa9f50b314e3e6b",
+    "private/gate__five_backend_probe/populations/stress/rendered/rest/events/page_0002.json": "f49f7ac785370e1806d3c7f6c7045d3e49499b469c948c008d5e32c4ee1c8129",
+    "private/gate__five_backend_probe/populations/stress/rendered/rest/events/page_0003.json": "572597b6956197a487c95633b628dc2d28dd6d57758d125727dbdc64b34c9d29",
+    "private/gate__five_backend_probe/populations/stress/rendered/s3/metrics/part-00000.jsonl": "6a58d1a22c5f7f13f1bcd794e4d9cd0fccfe2455aa0d64198208fc6fdf35a89f",
+    "private/gate__five_backend_probe/semantic/task_ir.json": "dd298ef1449c21b699c5194292fbe6e002b73566c3f6661ecda45669af635f26",
+    "private/gate__five_backend_probe__el/reward.json": "98ca67908dfccc42a58caeb477ebcccb00f6442005284fc288444aeb0fdeacf1",
+    "private/gate__five_backend_probe__t/reward.json": "685cf1c68889aecab70b3ea4f063510fc8e4f249c2fc53eaae6c44a9a0d2bb8d",
+    "public/gate__five_backend_probe/check_job_status.py": "82678bb8dbc4c1c61683f0ba7690cabe0cda77bfbd99eba9920cbe33722926b9",
+    "public/gate__five_backend_probe/config.yaml": "ce497ba7b1b1e0f6cc29ccf19a2412e740138e4c7a9377f16a14d5e98cc0b10a",
+    "public/gate__five_backend_probe/data_model.yaml": "1da4a695002fa3f96a65989d635bbc20d12a606ddb504cb1ae2c9aad16d78fbf",
+    "public/gate__five_backend_probe/documentation/README.md": "08c521b92856ee1d91ad28de4d861f2393ee346b043736bf65e7d3745b852379",
+    "public/gate__five_backend_probe/documentation/airbyte_Provider.md": "043bb2ff0dea9d91605e2bd1c173b6bca8f79887a914899e4cf079f1ebbec75d",
+    "public/gate__five_backend_probe/documentation/connection.md": "f02ca685f4493ca99e5e101ffdafa4df18f39d613b681786367ce3d31018ec01",
+    "public/gate__five_backend_probe/documentation/databricks_authentication.md": "1a0d9edb37e615677f2e157847c42760e6ff1acbe27b116af1cc2ad01d801390",
+    "public/gate__five_backend_probe/documentation/destination_databricks.md": "5d54a908424de881af6233711206f72d77b4f8346aaff00134e538e29238c6e5",
+    "public/gate__five_backend_probe/documentation/destination_redshift.md": "0ef0a5c877d82675d323cf3ce193d484fdb16011634b0e2d636fe6481953a495",
+    "public/gate__five_backend_probe/documentation/destination_snowflake.md": "394ccf3368ae723d5d1651796ac435b671e7f55613ad861051bc968c00e986be",
+    "public/gate__five_backend_probe/documentation/source_custom_api.md": "2cb88e50d01c42b3d4222eb4e8178331fa3d44c8c24acf4f7a2322c48b640908",
+    "public/gate__five_backend_probe/documentation/source_file.md": "80b2092ab10f027b1f662f2d5962d36f125a7d8474a269edb713716b7b52be69",
+    "public/gate__five_backend_probe/documentation/source_mongodb_v2.md": "3e379d73ca4c9a753babe056fe26d4aa77b0f6fec36bdb32cbf920bddfc1ff41",
+    "public/gate__five_backend_probe/documentation/source_postgres.md": "6f0cbb7d12049f06fe8eb940de86b2b8587caa576a0e1caefeadda559311720f",
+    "public/gate__five_backend_probe/documentation/source_s3.md": "4fb52bc9beb35dc4dccbb06af3ba5faefa460d2f431863a3f038890376d4a59d",
+    "public/gate__five_backend_probe/documentation/trigger_job.md": "6f1eb27127bad2d97819ec3ae65ab8e0ec027ac4a5606d735df10407bbb959c1",
+    "public/gate__five_backend_probe/elt/main.tf": "353a1356aca774c8d037dd143dfe3b6efae3d17c3f119cf031ad2398a071b47e",
+    "public/gate__five_backend_probe/schemas/customers.csv": "48491c25c30d7a09d782fccd5b3e2cf69e9bbdeb625e32536056c883be230ca3",
+    "public/gate__five_backend_probe/schemas/events.csv": "96fc5f652162eec1a390f263fcdfcedb356c875afbdd59ac7db93f15e0112d6e",
+    "public/gate__five_backend_probe/schemas/metrics.csv": "f9aaf2643e2f158b223e146ad616bad58d5a1ffbdac95b852ce844e8d157436f",
+    "public/gate__five_backend_probe/schemas/order_items.csv": "6b5abbfd4325c4c2ef8de709c8a031aab70a012ada337c9a6ba3f607d83d7691",
+    "public/gate__five_backend_probe/schemas/orders.csv": "ed776c175e314b665901d50f4b052947bad31075f1d2450d01a53e59a6ae2172",
+    "public/gate__five_backend_probe/snowflake_credential.json": "c2894d8074553eb6f05b6024ce2c04d6bd194fc310b14d9b34244ca51620cd42"
+  },
+  "corpus_profile": "eltbench_end_to_end",
+  "destination_connector_versions": {
+    "gate__five_backend_probe": "4.1.2"
+  },
+  "destinations": {
+    "gate__five_backend_probe": "snowflake"
+  },
+  "el_sources": {
+    "gate__five_backend_probe": {
+      "counterfactual": "private/gate__five_backend_probe/populations/counterfactual/rendered",
+      "development": "private/gate__five_backend_probe/populations/development/rendered",
+      "primary": "private/gate__five_backend_probe/populations/primary/rendered",
+      "resampled": "private/gate__five_backend_probe/populations/resampled/rendered",
+      "stress": "private/gate__five_backend_probe/populations/stress/rendered"
+    }
+  },
+  "environment": {
+    "duckdb": "1.5.5",
+    "platform": "macOS-26.4.1",
+    "pydantic": "2.13.4",
+    "python": "3.14.5",
+    "pyyaml": "6.0.3",
+    "sqlglot": "30.16.0"
+  },
+  "environment_drift": {},
+  "families": {
+    "gate__five_backend_probe": "gate__five_backend_probe"
+  },
+  "gate_rosters": {
+    "extract_load": [
+      "trusted-solution",
+      "determinism",
+      "degenerate-zero",
+      "required-mutants",
+      "shortcut-probes",
+      "data-sensitivity",
+      "info-content",
+      "populations-load",
+      "contamination-clean",
+      "referential-integrity",
+      "declared-scale-reconciliation",
+      "mart-key-unique",
+      "el-artifact-census",
+      "el-independent-load",
+      "variant-roster"
+    ],
+    "transform": [
+      "trusted-solution",
+      "determinism",
+      "degenerate-zero",
+      "required-mutants",
+      "shortcut-probes",
+      "data-sensitivity",
+      "info-content",
+      "contamination-clean",
+      "dual-build-agreement",
+      "referential-integrity",
+      "declared-scale-reconciliation",
+      "mart-key-unique",
+      "warehouses-load",
+      "transform-surface",
+      "variant-roster"
+    ]
+  },
+  "generator_version": "0.1.0",
+  "licenses": {
+    "gate__five_backend_probe": "CC0-1.0"
+  },
+  "population_relations": {},
+  "public_layout": "combined",
+  "rejected_variants": {},
+  "release_id": "release-29649f6a99c6d739",
+  "roster_digest": "e23a86fdfb9a3ba0",
+  "runtime_bundle_ids": {
+    "gate__five_backend_probe": "runtime-46d1fc25fc908f54"
+  },
+  "schema_version": "3.3",
+  "scorer_version": "1.2.0",
+  "semantic_release_id": "semantic-73083e2c0496417a",
+  "semantic_scorer_version": "1.0.0",
+  "splits": {
+    "gate__five_backend_probe": "train"
+  },
+  "tasks": {
+    "gate__five_backend_probe": "75abe70066e7f6abe59a036af82756992349a45326f2cd93f25480c5301b028b"
+  },
+  "variant_acceptance": {
+    "gate__five_backend_probe": [
+      {
+        "accepted": true,
+        "battery_stage": "gates_extract_load",
+        "classification": "",
+        "failing_gates": [],
+        "gates_applicable": 15,
+        "gates_passed": 15,
+        "gates_recorded": 15,
+        "missing_gates": [],
+        "refusal_reason": "",
+        "shipped": true,
+        "variant": "extract_load",
+        "variant_task_id": "gate__five_backend_probe__el"
+      },
+      {
+        "accepted": true,
+        "battery_stage": "gates_transform",
+        "classification": "",
+        "failing_gates": [],
+        "gates_applicable": 15,
+        "gates_passed": 15,
+        "gates_recorded": 15,
+        "missing_gates": [],
+        "refusal_reason": "",
+        "shipped": true,
+        "variant": "transform",
+        "variant_task_id": "gate__five_backend_probe__t"
+      }
+    ]
+  },
+  "variants": {
+    "gate__five_backend_probe": [
+      "extract_load",
+      "transform"
+    ]
+  },
+  "warehouse_census": {
+    "private/gate__five_backend_probe/oracle/counterfactual.duckdb": {
+      "catalog_digest": "ae48f758a77a8d58af535e260ba2379d48d3ba7effc6c19676259ffbbdfbc0e9",
+      "census_digest": "01ad0b0cfd517a1b29a5d2726f2a2e61418d074ebb52ab17bb2425150565ad06",
+      "census_version": "2",
+      "row_counts": {
+        "customers": 5,
+        "events": 5,
+        "metrics": 3,
+        "order_items": 8,
+        "orders": 6
+      },
+      "row_digests": {
+        "customers": "bfb9dd45c8758afdd5ebde2f344d415765dd6981bbe4bb8947f1ac26fa5523ec",
+        "events": "10e21f6f05bd4ead8db72af034660cfdc73b78711757ab3fefa55e599eeae6fa",
+        "metrics": "22a7b14e2ed6cbb416a0cf4d2ad623c00b053189eb693d34422914fe8b3068a4",
+        "order_items": "309ff007cc231a7c303ec922b6d8240a1c957bdcf68bd95f8d35d669a3a979c1",
+        "orders": "f59eb7d35f777f6990982f00fe2be892851759bdfb77588afa9aeb6b6dd4a4a8"
+      }
+    },
+    "private/gate__five_backend_probe/oracle/development.duckdb": {
+      "catalog_digest": "ae48f758a77a8d58af535e260ba2379d48d3ba7effc6c19676259ffbbdfbc0e9",
+      "census_digest": "db18ea19b03be4253420ae115efdabc4ffdd184257bedd9bf0e7aca23a21e275",
+      "census_version": "2",
+      "row_counts": {
+        "customers": 5,
+        "events": 5,
+        "metrics": 3,
+        "order_items": 8,
+        "orders": 6
+      },
+      "row_digests": {
+        "customers": "e94e21291eba241fdff25de369ff4033bddaa8f7a05137bfe0f5ee1a04ddc83d",
+        "events": "accfeebe5fa8e84e33b0045d10757598b1b930ea090f52441b742ec5de44588a",
+        "metrics": "11fa01b1fc34c94a752350a2817d4fbea3dd1e952fe876e80e96517e8eb2218a",
+        "order_items": "67e2b9a6eab84ef747663b2bcae11f6d72633cdd7a7557a4d8704d9fdc423c82",
+        "orders": "661bd1ca2d97031e27539312fa55ec579ee739f6687504446911eaf905461c0a"
+      }
+    },
+    "private/gate__five_backend_probe/oracle/primary.duckdb": {
+      "catalog_digest": "ae48f758a77a8d58af535e260ba2379d48d3ba7effc6c19676259ffbbdfbc0e9",
+      "census_digest": "58046db91251c4cd1f8bb96efa8db3b0796c3ba8e6e3e60f728d454e26377251",
+      "census_version": "2",
+      "row_counts": {
+        "customers": 5,
+        "events": 5,
+        "metrics": 3,
+        "order_items": 8,
+        "orders": 6
+      },
+      "row_digests": {
+        "customers": "0db51e2cd8ae6729ee3591bd762530ebb684e952bbe21921ea139516dafc8c46",
+        "events": "1b5141872b7f2a902f5f24a641ec60458cf0da48f5f07fd12d7a0dcb8d4e6d15",
+        "metrics": "85721bd02c0bc64b14634a4f1f1004a41b8ab7480be82a42f28be435b2ddfe4f",
+        "order_items": "4a72613b586b915adff4d4c7f26fbb282ee10f615bd11d7d3936d81da01c2a17",
+        "orders": "60a20d51b0701f06a90435a507c5d508db55e9b6bc766ea9c8e0c6d37c68dc34"
+      }
+    },
+    "private/gate__five_backend_probe/oracle/resampled.duckdb": {
+      "catalog_digest": "ae48f758a77a8d58af535e260ba2379d48d3ba7effc6c19676259ffbbdfbc0e9",
+      "census_digest": "caa70076a12591e931d34caafdec95e52f9dd1bc1133175289f939456c730c49",
+      "census_version": "2",
+      "row_counts": {
+        "customers": 5,
+        "events": 5,
+        "metrics": 3,
+        "order_items": 8,
+        "orders": 6
+      },
+      "row_digests": {
+        "customers": "c03c01250bb07bd226b6c369d021427e0beda73408b9b222692651b5b474c3fe",
+        "events": "b62ab042bd4f3fbda565d317253df732fa95c146dad1126d9eb28e64b0aa34a5",
+        "metrics": "47735e89f1428b07484a2ce9ab8a090bb87379ffb5d23ef48f3ec81cb93f93d3",
+        "order_items": "5fe04855111fa65e5c65d0852b31d273cd06d525336cb2d2d7b52992e5b7dbf1",
+        "orders": "8561c2c6e8df06f16d1d251fa5f102d0a397d6a62d0d1712a3eef46f37259e25"
+      }
+    },
+    "private/gate__five_backend_probe/oracle/stress.duckdb": {
+      "catalog_digest": "ae48f758a77a8d58af535e260ba2379d48d3ba7effc6c19676259ffbbdfbc0e9",
+      "census_digest": "664273616e0a5d42791c951bf15ce0dfb919565b2a4dc44f9eb01611f1739649",
+      "census_version": "2",
+      "row_counts": {
+        "customers": 5,
+        "events": 5,
+        "metrics": 3,
+        "order_items": 8,
+        "orders": 6
+      },
+      "row_digests": {
+        "customers": "ef07e0e5bddd821748d3a78a3264a3ff204f204412b788334e59036b8272f020",
+        "events": "9eb095261545fc955ff9e7e24f7860468129325d1b6117c1b3bbe8a3af564654",
+        "metrics": "b25798c9af60f3e0530396ba96c9e2b2ba838303fb5ebb212f182b8b829ad3ac",
+        "order_items": "54a9b2c8934bbf2a989b020cffef57c67e3745eceaf508f63195635d606f5f1e",
+        "orders": "a9db7a90d2d2f52236d1f6a947da4c21062d6f49d1a4fbe5b2f5bc7fd4d029c2"
+      }
+    }
+  }
+}

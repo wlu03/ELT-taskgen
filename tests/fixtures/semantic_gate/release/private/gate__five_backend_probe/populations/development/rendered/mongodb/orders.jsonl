@@ -1,0 +1,6 @@
+{"customer_id":101,"note":"first","order_id":201,"status":"completed"}
+{"customer_id":101,"note":null,"order_id":202,"status":"cancelled"}
+{"customer_id":102,"order_id":203,"status":"completed"}
+{"customer_id":null,"note":"orphan","order_id":204,"status":"completed"}
+{"customer_id":103,"note":"None","order_id":205,"status":"completed"}
+{"customer_id":105,"note":"NULL","order_id":206,"status":"completed"}

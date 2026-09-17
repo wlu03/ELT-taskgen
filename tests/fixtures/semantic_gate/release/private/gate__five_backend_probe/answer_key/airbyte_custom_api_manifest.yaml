@@ -1,0 +1,75 @@
+check:
+  stream_names:
+  - events
+  type: CheckStream
+definitions:
+  base_requester:
+    type: HttpRequester
+    url_base: http://elt-api:5005
+  streams:
+    events:
+      name: events
+      retriever:
+        paginator:
+          page_size_option:
+            field_name: limit
+            inject_into: request_parameter
+            type: RequestOption
+          page_token_option:
+            field_name: offset
+            inject_into: request_parameter
+            type: RequestOption
+          pagination_strategy:
+            page_size: 9973
+            type: OffsetIncrement
+          type: DefaultPaginator
+        record_selector:
+          extractor:
+            field_path: []
+            type: DpathExtractor
+          type: RecordSelector
+        requester:
+          $ref: '#/definitions/base_requester'
+          http_method: GET
+          path: /gate__five_backend_probe/events
+        type: SimpleRetriever
+      schema_loader:
+        schema:
+          $schema: http://json-schema.org/schema#
+          additionalProperties: true
+          properties:
+            big_count:
+              type:
+              - 'null'
+              - integer
+            event_id:
+              type:
+              - 'null'
+              - integer
+            label:
+              type:
+              - 'null'
+              - string
+            occurred_at:
+              type:
+              - 'null'
+              - string
+            tz_stamp:
+              type:
+              - 'null'
+              - string
+          type: object
+        type: InlineSchemaLoader
+      type: DeclarativeStream
+spec:
+  connection_specification:
+    $schema: http://json-schema.org/draft-07/schema#
+    additionalProperties: true
+    properties: {}
+    required: []
+    type: object
+  type: Spec
+streams:
+- $ref: '#/definitions/streams/events'
+type: DeclarativeSource
+version: 6.33.4

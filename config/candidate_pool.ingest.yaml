@@ -1,0 +1,808 @@
+schema_version: five-source-ingest-v2
+expected_task_count: 50
+require_unique_independence_units: true
+generator:
+  name: elt-taskgen-five-source
+  version: 0.2.0
+  digest_kind: sha256-generator-tree-v1
+  sha256: c36fdac8837c56eedbf4738f4786c7ad48dc4415b8d6caf2b5b60430df926113
+  lock_sha256: 98019b431c8ae77134c44a5f16c5cf08a0e08b2da6c2d2ca3e169848ff6ea864
+catalog:
+  path: package://config/sources.yaml
+  digest_kind: sha256-file
+  sha256: 935b5a1286627b088794122d75cc5103d244d83bdfb5a47a7e4b7ee00f31e004
+sources:
+  dbt:
+  - selector: dbt_twitter
+    expected_task_id: dbt__twitter_ads__twitter_ads__account_report_10fe7453
+    upstream_url: https://github.com/fivetran/dbt_twitter
+    upstream_revision: b610ac7661d788a5395520487925d9331603d254
+    adapter_version: 0.2.0
+    adapter_digest: 09c4697dc24d59564fce031cb7899fdcba9438bd3628d087f9c0827fe9055361
+    license: Apache-2.0
+    license_evidence: repository:LICENSE@b610ac7661d788a5395520487925d9331603d254
+    pool: dbt
+    manifest:
+      path: package://config/dbt_builds/dbt_twitter_v1_3_1.manifest.json
+      digest_kind: sha256-file
+      sha256: f467ddab9e8518bfe51e86827df5e4cbcdb01fd95cf91c5c8bab3f03ebf0dfd4
+    family: twitter_ads
+  dlt:
+  - selector: dlt_personio
+    expected_task_id: dlt__personio
+    upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/personio
+    upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    adapter_version: 0.2.0
+    adapter_digest: ca1191a12ad74e4c71f17b813b8d9aa8a14d983a813029a2c088b294012087ed
+    license: Apache-2.0
+    license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
+    pool: dlt
+    manifest:
+      path: package://config/dlt_connectors/personio.yaml
+      digest_kind: sha256-file
+      sha256: c6b8763e023ea31988898c910ad9f9fc5197c5d97893b58ae5c85c58061df010
+    connector: personio
+    require_embedded_provenance: true
+  - selector: dlt_pipedrive
+    expected_task_id: dlt__pipedrive
+    upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/pipedrive
+    upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    adapter_version: 0.2.0
+    adapter_digest: ca1191a12ad74e4c71f17b813b8d9aa8a14d983a813029a2c088b294012087ed
+    license: Apache-2.0
+    license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
+    pool: dlt
+    manifest:
+      path: package://config/dlt_connectors/pipedrive.yaml
+      digest_kind: sha256-file
+      sha256: 2516bec97153b3354c9c9e1a5b299bda410ad0c42f030a70ed1bf80b6dbecc63
+    connector: pipedrive
+    require_embedded_provenance: true
+  - selector: dlt_workable
+    expected_task_id: dlt__workable
+    upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/workable
+    upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    adapter_version: 0.2.0
+    adapter_digest: ca1191a12ad74e4c71f17b813b8d9aa8a14d983a813029a2c088b294012087ed
+    license: Apache-2.0
+    license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
+    pool: dlt
+    manifest:
+      path: package://config/dlt_connectors/workable.yaml
+      digest_kind: sha256-file
+      sha256: 0d6674ece51e3f9c563e47ed0c147bd2372848ccb01c6326f2a8037a0dd3ba9e
+    connector: workable
+    require_embedded_provenance: true
+  synsql:
+  - selector: 3d_coordinate_system_for_spatial_data_management
+    expected_task_id: synsql__3d_coordinate_system_for_spatial_data_management__users_components_rollup
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_graphics_and_geometry_node_management
+    expected_task_id: synsql__3d_graphics_and_geometry_node_management__users_access_logs_bands
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_graphics_material_properties_and_rendering
+    expected_task_id: synsql__3d_graphics_material_properties_and_rendering__rendering_settings_rendering_logs_rollup
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_model_and_texture_assets_management
+    expected_task_id: synsql__3d_model_and_texture_assets_management__types_assets_rollup
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_motion_tracking_and_analysis
+    expected_task_id: synsql__3d_motion_tracking_and_analysis__sensors_motion_data_cohorts
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_object_modeling_and_rotation_analysis
+    expected_task_id: synsql__3d_object_modeling_and_rotation_analysis__users_team_members_bands
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_object_pose_estimation_and_tracking
+    expected_task_id: synsql__3d_object_pose_estimation_and_tracking__users_access_logs_rollup
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_object_positioning_and_animation_data
+    expected_task_id: synsql__3d_object_positioning_and_animation_data__users_user_actions_rollup
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_path_or_motion_tracking
+    expected_task_id: synsql__3d_path_or_motion_tracking__motion_paths_performance_metrics_rollup
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_printing_and_materials_research
+    expected_task_id: synsql__3d_printing_and_materials_research__materials_material_characteristics_bands
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_spatial_data_analysis_and_monitoring
+    expected_task_id: synsql__3d_spatial_data_analysis_and_monitoring__users_reports_bands
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 3d_spatial_data_monitoring_and_analysis
+    expected_task_id: synsql__3d_spatial_data_monitoring_and_analysis__drones_flight_logs_cohorts
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: 529_college_savings_program_rankings_and_information
+    expected_task_id: synsql__529_college_savings_program_rankings_and_information__plans_plan_expenses_cohorts
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: __biological_data_analysis_specifically_related_to_peptide_binding_and_al
+    expected_task_id: synsql__biological_data_analysis_specifically_related_to_peptide_binding_and_al__peptides_allele_peptide_measurements_distribution
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: __cache_management_systems__
+    expected_task_id: synsql__cache_management_systems__caches_cache_usage_distribution
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: __covid_19_pandemic_data_tracking_and_analysis__
+    expected_task_id: synsql__covid_19_pandemic_data_tracking_and_analysis__countries_vaccination_data_cohorts
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: __educational_expenditure_data_and_analysis__
+    expected_task_id: synsql__educational_expenditure_data_and_analysis__users_expenditures_distribution
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  - selector: __film_production_and_financial_performance_analysis__
+    expected_task_id: synsql__film_production_and_financial_performance_analysis__films_images_cohorts
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    pool: synsql
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+  schemapile:
+  - selector: 605358_dbase_structure.sql
+    expected_task_id: schemapile__github_com_aeganaden_e_rev_learning_and_information_1f603416a799__605358_dbase_structure_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 082965_03_uiuc_mga.sql
+    expected_task_id: schemapile__github_com_arfc_pride_a189059a602a__082965_03_uiuc_mga_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: BSD-3-CLAUSE
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 167589_xa_core_db_postgres.sql
+    expected_task_id: schemapile__github_com_common_coolteam_ranger_93308f5c1f72__167589_xa_core_db_postgres_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 402976_1510262030_initial_schema.up.sql
+    expected_task_id: schemapile__github_com_concourse_concourse_b1b8b6813755__402976_1510262030_initial_schema_up_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 659689_DDL_esse4.sql
+    expected_task_id: schemapile__github_com_dennewbie_esse4_adfe7c029cbb__659689_ddl_esse4_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 162575_init-hostview.sql
+    expected_task_id: schemapile__github_com_inria_muse_hostview_processing_4f4676010329__162575_init_hostview_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 030317_start.sql
+    expected_task_id: schemapile__github_com_interactis_whes_platform_31405cf922d7__030317_start_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: BSD-3-CLAUSE
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 313159_script.sql
+    expected_task_id: schemapile__github_com_k31v7n_vecom_ebf00231bf46__313159_script_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 045413_schema-047.sql
+    expected_task_id: schemapile__github_com_kykrueger_openbis_c106a4e57b99__045413_schema_047_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 515049_reload-db.sql
+    expected_task_id: schemapile__github_com_lavestima_hanna_agency_9e72fafbfead__515049_reload_db_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 079208_leavideo.ddl
+    expected_task_id: schemapile__github_com_lea_video_db_01b2f81d8ded__079208_leavideo_ddl
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 232578_1.sql
+    expected_task_id: schemapile__github_com_lefty02w_seng302project_f4e64e3a0df5__232578_1_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: CC0-1.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 011152_SQL%20Tables.sql
+    expected_task_id: schemapile__github_com_medbounaga_defterp_3c38f1a6559c__011152_sql_20tables_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 570269_junodb.sql
+    expected_task_id: schemapile__github_com_michalbecko_junopublic_fae3f6623cae__570269_junodb_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 526792_01_initial_schema.mysql.sql
+    expected_task_id: schemapile__github_com_motech_implementations_mots_78a8efc4833b__526792_01_initial_schema_mysql_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 639734_pint_DB_structure_v1.2.sql
+    expected_task_id: schemapile__github_com_proteomicsyates_pint_101f825c76b8__639734_pint_db_structure_v1_2_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 230521_V1__Initial_Setup.sql
+    expected_task_id: schemapile__github_com_sachin_awati_mojito_d536723c35a9__230521_v1_initial_setup_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  - selector: 230872_OKKY.sql
+    expected_task_id: schemapile__github_com_vuerd_vuerd_8d4b48ad409e__230872_okky_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    license: MIT
+    license_evidence: selected-record:INFO.LICENSE
+    pool: schemapile
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      path: package://config/schemapile_index.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+  wikidbs:
+  - selector: 00232 Gloria_Swanson_Filmography
+    expected_task_id: wikidbs__c00232__00232_gloria_swanson_filmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-0/00232 Gloria_Swanson_Filmography
+      digest_kind: sha256-tree-v1
+      sha256: 355f71784a311438eb349d25ae51006a2a00c68ec7d3cacd653f2e3042ad8f78
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 00419 BodoWolfVoiceActingCareer
+    expected_task_id: wikidbs__c00419__00419_bodowolfvoiceactingcareer
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-0/00419 BodoWolfVoiceActingCareer
+      digest_kind: sha256-tree-v1
+      sha256: f956e9d9e6f26fa42556f62b2e7ab7dcaa3c34e4f44302d6d50bd21f4d948d52
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 20011 JACQUES_HAITKIN_FILMOGRAPHY
+    expected_task_id: wikidbs__c20011__20011_jacques_haitkin_filmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-1/20011 JACQUES_HAITKIN_FILMOGRAPHY
+      digest_kind: sha256-tree-v1
+      sha256: 1f21a0fa13953c4d8cc0b15b536ca1b74362799c81c3f726dc6bef9c3fdd2fe2
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 20112 AnatoliPapanovVoiceActingLegacy
+    expected_task_id: wikidbs__c20112__20112_anatolipapanovvoiceactinglegacy
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-1/20112 AnatoliPapanovVoiceActingLegacy
+      digest_kind: sha256-tree-v1
+      sha256: 1e5befd2243127ff06d8bf99727d3d7c9bfd0ddbbe9c0d43440849b868be53b2
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 40096 Mattis_Mathiesen_Filmography
+    expected_task_id: wikidbs__c40096__40096_mattis_mathiesen_filmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-2/40096 Mattis_Mathiesen_Filmography
+      digest_kind: sha256-tree-v1
+      sha256: f9196761730473f13ad246e3a30eee9b08ba91dd57602f70a4dccb6aa7ddb001
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 40262 ErikWittrupWillumsenFilmography
+    expected_task_id: wikidbs__c40262__40262_erikwittrupwillumsenfilmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-2/40262 ErikWittrupWillumsenFilmography
+      digest_kind: sha256-tree-v1
+      sha256: 3db65c2629d28becff002deb8871cac692dcd92a71d347468d1bb54d591207ec
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 60265 ROGER_VINCENT_FILMOGRAPHY
+    expected_task_id: wikidbs__c60265__60265_roger_vincent_filmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-3/60265 ROGER_VINCENT_FILMOGRAPHY
+      digest_kind: sha256-tree-v1
+      sha256: 72ce90bde8df3eae2d3bf8a206fe009681b1596314b46571c8d2de2e4a1db768
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 60432 MaurizioMattioliFilmography
+    expected_task_id: wikidbs__c60432__60432_mauriziomattiolifilmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-3/60432 MaurizioMattioliFilmography
+      digest_kind: sha256-tree-v1
+      sha256: b2b7af20cb1bb375134c8f204247faf19ae8565c8d052ecd82614e44bbe19a94
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 80113 LucianoSalceFilmography
+    expected_task_id: wikidbs__c80113__80113_lucianosalcefilmography
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-4/80113 LucianoSalceFilmography
+      digest_kind: sha256-tree-v1
+      sha256: fc065728be260d86825c134cef2a32ec299aa6718640bb5e7a90f1104432f35e
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d
+  - selector: 80193 HilmarOrnHilmarssonCompositions
+    expected_task_id: wikidbs__c80193__80193_hilmarornhilmarssoncompositions
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    pool: wikidbs
+    database:
+      path: pool://wikidbs/part-4/80193 HilmarOrnHilmarssonCompositions
+      digest_kind: sha256-tree-v1
+      sha256: a1696701e1698c352934d2f42def53c26f97a9367cabf68dbe6cd8f5a0e2c519
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d

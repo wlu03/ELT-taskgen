@@ -1,0 +1,1803 @@
+extractor_version: '3'
+pool: dlt
+records:
+- auth:
+    config:
+    - base_id
+    - table_names
+    secrets:
+    - access_token
+  catalog_excluded: true
+  connector: airtable
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_airtable
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/airtable
+  reason: AST scan found no statically named endpoints; connector resources are defined at runtime
+  record: dlt_airtable
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 1
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_airtable/source
+    files:
+    - __init__.py
+    primary_source: airtable_source
+    source_functions:
+    - name: airtable_source
+      resources: []
+  status: runtime-defined
+  tier: can_use_with_conditions
+  unresolved:
+  - defined_in: __init__.py:63
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - access_token
+  catalog_excluded: true
+  connector: asana
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_asana
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/asana_dlt
+  reason: canonical family 'asana' is present in an embedded benchmark contamination deny list
+  record: dlt_asana
+  resource_summary:
+    loadable: 8
+    loadable_names:
+    - projects
+    - sections
+    - stories
+    - tags
+    - tasks
+    - teams
+    - users
+    - workspaces
+    names:
+    - projects
+    - sections
+    - stories
+    - tags
+    - tasks
+    - teams
+    - users
+    - workspaces
+    paginated: 0
+    parent_dependent: 7
+    resources: 8
+    unresolved: 0
+    unselected: 0
+    with_cursor: 1
+    with_primary_key: 1
+  source_summary:
+    directory: dlt_asana/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: asana_source
+    source_functions:
+    - name: asana_source
+      resources:
+      - projects
+      - sections
+      - stories
+      - tags
+      - tasks
+      - teams
+      - users
+      - workspaces
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+- auth:
+    config:
+    - config_int
+    secrets:
+    - secret_dict
+    - secret_str
+  catalog_excluded: true
+  connector: chess
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_chess
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/chess
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_chess
+  resource_summary:
+    loadable: 3
+    loadable_names:
+    - players_games
+    - players_online_status
+    - players_profiles
+    names:
+    - players_archives
+    - players_games
+    - players_online_status
+    - players_profiles
+    paginated: 0
+    parent_dependent: 0
+    resources: 4
+    unresolved: 0
+    unselected: 1
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_chess/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: chess
+    source_functions:
+    - name: chess
+      resources:
+      - players_archives
+      - players_games
+      - players_online_status
+      - players_profiles
+    - name: chess_dlt_config_example
+      resources:
+      - config_values
+  status: no-transform-mart
+  tier: can_use
+  unresolved: []
+- auth:
+    config:
+    - account_id
+    secrets:
+    - access_token
+  catalog_excluded: true
+  connector: facebook_ads
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_facebook_ads
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/facebook_ads
+  reason: canonical family 'facebook_ads' is present in an embedded benchmark contamination deny list
+  record: dlt_facebook_ads
+  resource_summary:
+    loadable: 6
+    loadable_names:
+    - ad_creatives
+    - ad_sets
+    - ads
+    - campaigns
+    - facebook_insights
+    - leads
+    names:
+    - ad_creatives
+    - ad_sets
+    - ads
+    - campaigns
+    - facebook_insights
+    - leads
+    paginated: 6
+    parent_dependent: 0
+    resources: 6
+    unresolved: 0
+    unselected: 0
+    with_cursor: 1
+    with_primary_key: 6
+  source_summary:
+    directory: dlt_facebook_ads/source
+    files:
+    - __init__.py
+    - exceptions.py
+    - helpers.py
+    - settings.py
+    - utils.py
+    primary_source: facebook_ads
+    source_functions:
+    - name: facebook_ads
+      resources:
+      - ad_creatives
+      - ad_sets
+      - ads
+      - campaigns
+      - leads
+    - name: facebook_ads
+      resources:
+      - facebook_insights
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - api_secret_key
+    - domain
+  catalog_excluded: true
+  connector: freshdesk
+  pagination_hints:
+  - paginated_response
+  - per_page
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_freshdesk
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/freshdesk
+  reason: AST-derived manifest forms a TaskIR, but the source catalog excludes this record
+  record: dlt_freshdesk
+  resource_summary:
+    loadable: 6
+    loadable_names:
+    - agents
+    - companies
+    - contacts
+    - groups
+    - roles
+    - tickets
+    names:
+    - agents
+    - companies
+    - contacts
+    - groups
+    - roles
+    - tickets
+    paginated: 6
+    parent_dependent: 0
+    resources: 6
+    unresolved: 0
+    unselected: 0
+    with_cursor: 6
+    with_primary_key: 6
+  source_summary:
+    directory: dlt_freshdesk/source
+    files:
+    - __init__.py
+    - freshdesk_client.py
+    - settings.py
+    primary_source: freshdesk_source
+    source_functions:
+    - name: freshdesk_source
+      resources:
+      - agents
+      - companies
+      - contacts
+      - groups
+      - roles
+      - tickets
+  status: buildable
+  task_shape:
+    family_id: dlt__freshdesk
+    marts: 2
+    relationships: 0
+    tables: 6
+    task_id: dlt__freshdesk
+  tier: can_use
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - access_token
+  catalog_excluded: true
+  connector: github
+  pagination_hints:
+  - items_per_page
+  - next_page_url
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_github
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/github
+  reason: canonical family 'github' is present in an embedded benchmark contamination deny list
+  record: dlt_github
+  resource_summary:
+    loadable: 2
+    loadable_names:
+    - issues
+    - pull_requests
+    names:
+    - issues
+    - pull_requests
+    paginated: 0
+    parent_dependent: 0
+    resources: 2
+    unresolved: 0
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_github/source
+    files:
+    - __init__.py
+    - helpers.py
+    - queries.py
+    - settings.py
+    primary_source: github_reactions
+    source_functions:
+    - name: github_reactions
+      resources:
+      - issues
+      - pull_requests
+    - name: github_repo_events
+      resources:
+      - repo_events
+    - name: github_stargazers
+      resources:
+      - stargazers
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - credentials
+    - customer_id
+    - dev_token
+    - impersonated_email
+  catalog_excluded: true
+  connector: google_ads
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_google_ads
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/google_ads
+  reason: canonical family 'google_ads' is present in an embedded benchmark contamination deny list
+  record: dlt_google_ads
+  resource_summary:
+    loadable: 4
+    loadable_names:
+    - campaigns
+    - change_events
+    - customer_clients
+    - customers
+    names:
+    - campaigns
+    - change_events
+    - customer_clients
+    - customers
+    paginated: 0
+    parent_dependent: 0
+    resources: 4
+    unresolved: 0
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_google_ads/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/data_processing.py
+    - setup_script_gcp_oauth.py
+    primary_source: google_ads
+    source_functions:
+    - name: google_ads
+      resources:
+      - campaigns
+      - change_events
+      - customer_clients
+      - customers
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+- auth:
+    config:
+    - property_id
+    - queries
+    secrets:
+    - credentials
+  catalog_excluded: true
+  connector: google_analytics
+  pagination_hints:
+  - offset
+  - rows_per_page
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_google_analytics
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/google_analytics
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_google_analytics
+  resource_summary:
+    loadable: 2
+    loadable_names:
+    - dimensions
+    - metrics
+    names:
+    - dimensions
+    - get_metadata
+    - metrics
+    paginated: 0
+    parent_dependent: 2
+    resources: 3
+    unresolved: 2
+    unselected: 1
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_google_analytics/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/data_processing.py
+    - settings.py
+    - setup_script_gcp_oauth.py
+    primary_source: google_analytics
+    source_functions:
+    - name: google_analytics
+      resources:
+      - dimensions
+      - get_metadata
+      - metrics
+  status: no-transform-mart
+  tier: can_use_with_conditions
+  unresolved:
+  - defined_in: __init__.py:79
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:90
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config:
+    - range_names
+    - spreadsheet_url_or_id
+    secrets:
+    - credentials
+  catalog_excluded: true
+  connector: google_sheets
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_google_sheets
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/google_sheets
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_google_sheets
+  resource_summary:
+    loadable: 1
+    loadable_names:
+    - spreadsheet_info
+    names:
+    - spreadsheet_info
+    paginated: 0
+    parent_dependent: 0
+    resources: 1
+    unresolved: 1
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_google_sheets/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/api_calls.py
+    - helpers/data_processing.py
+    - setup_script_gcp_oauth.py
+    primary_source: google_spreadsheet
+    source_functions:
+    - name: google_spreadsheet
+      resources:
+      - spreadsheet_info
+  status: no-transform-mart
+  tier: connector_mechanics_only
+  unresolved:
+  - defined_in: __init__.py:142
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - api_key
+  catalog_excluded: true
+  connector: hubspot
+  pagination_hints:
+  - pagination
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_hubspot
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/hubspot
+  reason: canonical family 'hubspot' is present in an embedded benchmark contamination deny list
+  record: dlt_hubspot
+  resource_summary:
+    loadable: 2
+    loadable_names:
+    - owners
+    - properties
+    names:
+    - owners
+    - properties
+    paginated: 2
+    parent_dependent: 0
+    resources: 2
+    unresolved: 8
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 1
+  source_summary:
+    directory: dlt_hubspot/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    - utils.py
+    primary_source: hubspot
+    source_functions:
+    - name: hubspot
+      resources:
+      - owners
+      - properties
+    - name: (module-level)
+      resources:
+      - hubspot_events_for_objects
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved:
+  - defined_in: __init__.py:378
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:380
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:392
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:404
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:405
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:420
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:421
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:530
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - email_account
+    - host
+    - password
+  catalog_excluded: true
+  connector: inbox
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_inbox
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/inbox
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_inbox
+  resource_summary:
+    loadable: 3
+    loadable_names:
+    - attachments
+    - messages
+    - uids
+    names:
+    - attachments
+    - messages
+    - uids
+    paginated: 0
+    parent_dependent: 0
+    resources: 3
+    unresolved: 0
+    unselected: 0
+    with_cursor: 1
+    with_primary_key: 2
+  source_summary:
+    directory: dlt_inbox/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: inbox_source
+    source_functions:
+    - name: inbox_source
+      resources:
+      - attachments
+      - messages
+      - uids
+  status: no-transform-mart
+  tier: connector_mechanics_only
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - api_token
+    - email
+    - subdomain
+  catalog_excluded: true
+  connector: jira
+  pagination_hints:
+  - DEFAULT_PAGE_SIZE
+  - get_paginated_data
+  - next_page_token
+  - page_size
+  - use_cursor_pagination
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_jira
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/jira
+  reason: canonical family 'jira' is present in an embedded benchmark contamination deny list
+  record: dlt_jira
+  resource_summary:
+    loadable: 4
+    loadable_names:
+    - issues
+    - projects
+    - users
+    - workflows
+    names:
+    - issues
+    - projects
+    - users
+    - workflows
+    paginated: 4
+    parent_dependent: 0
+    resources: 4
+    unresolved: 1
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_jira/source
+    files:
+    - __init__.py
+    - settings.py
+    primary_source: jira
+    source_functions:
+    - name: jira
+      resources:
+      - issues
+      - projects
+      - users
+      - workflows
+    - name: jira_search
+      resources: []
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved:
+  - defined_in: __init__.py:67
+    form: dlt.resource(name='issues')
+    reason: duplicate resource name 'issues' at __init__.py:67; first definition (__init__.py:33) kept
+- auth:
+    config: []
+    secrets:
+    - credentials
+  catalog_excluded: true
+  connector: kafka
+  pagination_hints:
+  - OffsetTracker
+  - _cur_offsets
+  - _init_partition_offsets
+  - cur_offset
+  - current_offset
+  - end_offset
+  - end_ts_offsets
+  - get_watermark_offsets
+  - max_offset
+  - offset
+  - offsets_for_times
+  - start_ts_offsets
+  - ts_offsets
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_kafka
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/kafka
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_kafka
+  resource_summary:
+    loadable: 1
+    loadable_names:
+    - kafka_messages
+    names:
+    - kafka_messages
+    paginated: 1
+    parent_dependent: 0
+    resources: 1
+    unresolved: 0
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_kafka/source
+    files:
+    - __init__.py
+    - helpers.py
+    - sources/kafka/__init__.py
+    primary_source: (module-level)
+    source_functions:
+    - name: (module-level)
+      resources:
+      - kafka_messages
+  status: no-transform-mart
+  tier: connector_mechanics_only
+  unresolved: []
+- auth:
+    config: []
+    secrets: []
+  catalog_excluded: true
+  connector: kinesis
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_kinesis
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/kinesis
+  reason: AST scan found no statically named endpoints; connector resources are defined at runtime
+  record: dlt_kinesis
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 1
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_kinesis/source
+    files:
+    - __init__.py
+    - helpers.py
+    primary_source: ''
+    source_functions: []
+  status: runtime-defined
+  tier: connector_mechanics_only
+  unresolved:
+  - defined_in: __init__.py:19
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config:
+    - live_events_site_id
+    - queries
+    - site_id
+    - url
+    secrets:
+    - api_token
+  catalog_excluded: true
+  connector: matomo
+  pagination_hints:
+  - filter_offset
+  - rows_per_page
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_matomo
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/matomo
+  reason: AST-derived manifest forms a TaskIR, but the source catalog excludes this record
+  record: dlt_matomo
+  resource_summary:
+    loadable: 2
+    loadable_names:
+    - visitors
+    - visits
+    names:
+    - visitors
+    - visits
+    paginated: 1
+    parent_dependent: 1
+    resources: 2
+    unresolved: 2
+    unselected: 0
+    with_cursor: 1
+    with_primary_key: 2
+  source_summary:
+    directory: dlt_matomo/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/data_processing.py
+    - helpers/matomo_client.py
+    - settings.py
+    primary_source: matomo_visits
+    source_functions:
+    - name: matomo_reports
+      resources: []
+    - name: matomo_visits
+      resources:
+      - visitors
+      - visits
+  status: buildable
+  task_shape:
+    family_id: dlt__matomo
+    marts: 2
+    relationships: 1
+    tables: 2
+    task_id: dlt__matomo
+  tier: can_use
+  unresolved:
+  - defined_in: __init__.py:37
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:39
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config:
+    - collection_names
+    - database
+    - parallel
+    - write_disposition
+    secrets:
+    - connection_url
+  catalog_excluded: true
+  connector: mongodb
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_mongodb
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/mongodb
+  reason: AST scan found no statically named endpoints; connector resources are defined at runtime
+  record: dlt_mongodb
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 4
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_mongodb/source
+    files:
+    - __init__.py
+    - helpers.py
+    primary_source: mongodb
+    source_functions:
+    - name: mongodb
+      resources: []
+  status: runtime-defined
+  tier: connector_mechanics_only
+  unresolved:
+  - defined_in: __init__.py:72
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:73
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:96
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:148
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - mux_api_access_token
+    - mux_api_secret_key
+  catalog_excluded: true
+  connector: mux
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_mux
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/mux
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_mux
+  resource_summary:
+    loadable: 2
+    loadable_names:
+    - assets_resource
+    - views_resource
+    names:
+    - assets_resource
+    - views_resource
+    paginated: 1
+    parent_dependent: 0
+    resources: 2
+    unresolved: 0
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_mux/source
+    files:
+    - __init__.py
+    - settings.py
+    primary_source: mux_source
+    source_functions:
+    - name: mux_source
+      resources:
+      - assets_resource
+      - views_resource
+  status: no-transform-mart
+  tier: can_use_with_conditions
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - api_key
+  catalog_excluded: true
+  connector: notion
+  pagination_hints:
+  - has_more
+  - next_cursor
+  - page_size
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_notion
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/notion
+  reason: AST-derived endpoints cannot fund a graded transform mart; a row-count-only summary duplicates
+    the extraction reward
+  record: dlt_notion
+  resource_summary:
+    loadable: 1
+    loadable_names:
+    - notion_pages
+    names:
+    - notion_pages
+    paginated: 0
+    parent_dependent: 0
+    resources: 1
+    unresolved: 2
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_notion/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/client.py
+    - helpers/database.py
+    - settings.py
+    primary_source: (module-level)
+    source_functions:
+    - name: notion_databases
+      resources: []
+    - name: (module-level)
+      resources:
+      - notion_pages
+  status: no-transform-mart
+  tier: can_use_with_conditions
+  unresolved:
+  - defined_in: __init__.py:70
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:79
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - client_id
+    - client_secret
+  catalog_excluded: false
+  connector: personio
+  pagination_hints:
+  - DEFAULT_ITEMS_PER_PAGE
+  - get_pages
+  - items_per_page
+  - offset_by_page
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_personio
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/personio
+  reason: AST-derived manifest forms a TaskIR and the source catalog admits this record to candidate construction
+  record: dlt_personio
+  resource_summary:
+    loadable: 9
+    loadable_names:
+    - absence_types
+    - absences
+    - attendances
+    - custom_reports
+    - custom_reports_list
+    - document_categories
+    - employees
+    - employees_absences_balance
+    - projects
+    names:
+    - absence_types
+    - absences
+    - attendances
+    - custom_reports
+    - custom_reports_list
+    - document_categories
+    - employees
+    - employees_absences_balance
+    - projects
+    paginated: 9
+    parent_dependent: 2
+    resources: 9
+    unresolved: 0
+    unselected: 0
+    with_cursor: 3
+    with_primary_key: 9
+  source_summary:
+    directory: dlt_personio/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: personio
+    source_functions:
+    - name: personio
+      resources:
+      - absence_types
+      - absences
+      - attendances
+      - custom_reports
+      - custom_reports_list
+      - document_categories
+      - employees
+      - employees_absences_balance
+      - projects
+  status: admitted
+  task_shape:
+    family_id: dlt__personio
+    marts: 4
+    relationships: 2
+    tables: 9
+    task_id: dlt__personio
+  tier: can_use
+  unresolved: []
+- auth:
+    config: []
+    secrets: []
+  catalog_excluded: true
+  connector: pg_replication
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_pg_replication
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/pg_replication
+  reason: AST scan found no statically named endpoints; connector resources are defined at runtime
+  record: dlt_pg_replication
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 1
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_pg_replication/source
+    files:
+    - __init__.py
+    - decoders.py
+    - exceptions.py
+    - helpers.py
+    - schema_types.py
+    primary_source: ''
+    source_functions: []
+  status: runtime-defined
+  tier: connector_mechanics_only
+  unresolved:
+  - defined_in: __init__.py:20
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - company_domain
+    - pipedrive_api_key
+  catalog_excluded: false
+  connector: pipedrive
+  pagination_hints:
+  - _get_pages_for_rename
+  - _paginated_get
+  - get_pages
+  - pagination_info
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_pipedrive
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/pipedrive
+  reason: AST-derived manifest forms a TaskIR and the source catalog admits this record to candidate construction
+  record: dlt_pipedrive
+  resource_summary:
+    loadable: 18
+    loadable_names:
+    - activities
+    - activity_types
+    - custom_fields_mapping
+    - deals
+    - deals_flow
+    - deals_participants
+    - files
+    - filters
+    - leads
+    - notes
+    - organizations
+    - persons
+    - pipelines
+    - products
+    - projects
+    - stages
+    - tasks
+    - users
+    names:
+    - activities
+    - activity_types
+    - create_state
+    - custom_fields_mapping
+    - deals
+    - deals_flow
+    - deals_participants
+    - files
+    - filters
+    - leads
+    - notes
+    - organizations
+    - persons
+    - pipelines
+    - products
+    - projects
+    - stages
+    - tasks
+    - users
+    paginated: 18
+    parent_dependent: 2
+    resources: 19
+    unresolved: 0
+    unselected: 1
+    with_cursor: 15
+    with_primary_key: 17
+  source_summary:
+    directory: dlt_pipedrive/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/custom_fields_munger.py
+    - helpers/pages.py
+    - rest_v2/__init__.py
+    - settings.py
+    - typing.py
+    primary_source: pipedrive
+    source_functions:
+    - name: pipedrive
+      resources:
+      - activities
+      - activity_types
+      - create_state
+      - custom_fields_mapping
+      - deals
+      - deals_flow
+      - deals_participants
+      - files
+      - filters
+      - leads
+      - notes
+      - organizations
+      - persons
+      - pipelines
+      - products
+      - projects
+      - stages
+      - tasks
+      - users
+    - name: pipedrive_v2
+      resources: []
+  status: admitted
+  task_shape:
+    family_id: dlt__pipedrive
+    marts: 4
+    relationships: 2
+    tables: 18
+    task_id: dlt__pipedrive
+  tier: can_use
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - credentials
+  catalog_excluded: true
+  connector: salesforce
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_salesforce
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/salesforce
+  reason: canonical family 'salesforce' is present in an embedded benchmark contamination deny list
+  record: dlt_salesforce
+  resource_summary:
+    loadable: 15
+    loadable_names:
+    - account
+    - campaign
+    - campaign_member
+    - contact
+    - event
+    - lead
+    - opportunity
+    - opportunity_contact_role
+    - opportunity_line_item
+    - pricebook_2
+    - pricebook_entry
+    - product_2
+    - sf_user
+    - task
+    - user_role
+    names:
+    - account
+    - campaign
+    - campaign_member
+    - contact
+    - event
+    - lead
+    - opportunity
+    - opportunity_contact_role
+    - opportunity_line_item
+    - pricebook_2
+    - pricebook_entry
+    - product_2
+    - sf_user
+    - task
+    - user_role
+    paginated: 15
+    parent_dependent: 0
+    resources: 15
+    unresolved: 0
+    unselected: 0
+    with_cursor: 7
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_salesforce/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/client.py
+    - helpers/records.py
+    - settings.py
+    primary_source: salesforce
+    source_functions:
+    - name: salesforce
+      resources:
+      - account
+      - campaign
+      - campaign_member
+      - contact
+      - event
+      - lead
+      - opportunity
+      - opportunity_contact_role
+      - opportunity_line_item
+      - pricebook_2
+      - pricebook_entry
+      - product_2
+      - sf_user
+      - task
+      - user_role
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+- auth:
+    config: []
+    secrets: []
+  catalog_excluded: true
+  connector: scrapy
+  pagination_hints: []
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_scrapy
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/scraping
+  reason: AST scan found no statically named endpoints; connector resources are defined at runtime
+  record: dlt_scrapy
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 1
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_scrapy/source
+    files:
+    - __init__.py
+    - helpers.py
+    - queue.py
+    - runner.py
+    - settings.py
+    - types.py
+    primary_source: _register
+    source_functions:
+    - name: _register
+      resources: []
+  status: runtime-defined
+  tier: cannot_use_directly
+  unresolved:
+  - defined_in: runner.py:188
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config:
+    - organization_id
+    - shop_url
+    secrets:
+    - access_token
+    - private_app_password
+  catalog_excluded: true
+  connector: shopify
+  pagination_hints:
+  - DEFAULT_ITEMS_PER_PAGE
+  - get_pages
+  - items_per_page
+  - pagination_cursor_path
+  - pagination_variable_name
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_shopify
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/shopify_dlt
+  reason: canonical family 'shopify' is present in an embedded benchmark contamination deny list
+  record: dlt_shopify
+  resource_summary:
+    loadable: 3
+    loadable_names:
+    - customers
+    - orders
+    - products
+    names:
+    - customers
+    - orders
+    - products
+    paginated: 3
+    parent_dependent: 0
+    resources: 3
+    unresolved: 0
+    unselected: 0
+    with_cursor: 3
+    with_primary_key: 3
+  source_summary:
+    directory: dlt_shopify/source
+    files:
+    - __init__.py
+    - exceptions.py
+    - helpers.py
+    - settings.py
+    primary_source: shopify
+    source_functions:
+    - name: shopify
+      resources:
+      - customers
+      - orders
+      - products
+    - name: (module-level)
+      resources:
+      - shopify_partner_query
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+- auth:
+    config:
+    - selected_channels
+    secrets:
+    - access_token
+  catalog_excluded: true
+  connector: slack
+  pagination_hints:
+  - MAX_PAGE_SIZE
+  - _get_next_cursor
+  - get_pages
+  - has_next_page
+  - next_cursor
+  - page_size
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_slack
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/slack
+  reason: AST-derived manifest forms a TaskIR, but the source catalog excludes this record
+  record: dlt_slack
+  resource_summary:
+    loadable: 4
+    loadable_names:
+    - channels
+    - messages
+    - replies
+    - users
+    names:
+    - access_logs
+    - channels
+    - messages
+    - replies
+    - users
+    paginated: 4
+    parent_dependent: 1
+    resources: 5
+    unresolved: 4
+    unselected: 1
+    with_cursor: 1
+    with_primary_key: 5
+  source_summary:
+    directory: dlt_slack/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: slack
+    source_functions:
+    - name: slack
+      resources:
+      - access_logs
+      - channels
+      - messages
+      - replies
+      - users
+  status: buildable
+  task_shape:
+    family_id: dlt__slack
+    marts: 1
+    relationships: 0
+    tables: 4
+    task_id: dlt__slack
+  tier: can_use
+  unresolved:
+  - defined_in: __init__.py:259
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:262
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:273
+    form: dlt.transformer(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:273
+    form: pipe transformer
+    reason: parent of a piped transformer is a runtime value
+- auth:
+    config: []
+    secrets:
+    - api_secret_key
+    - domain
+  catalog_excluded: true
+  connector: strapi
+  pagination_hints:
+  - page_size
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_strapi
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/strapi
+  reason: AST scan found no statically named endpoints; connector resources are defined at runtime
+  record: dlt_strapi
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 2
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_strapi/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: strapi_source
+    source_functions:
+    - name: strapi_source
+      resources: []
+  status: runtime-defined
+  tier: can_use_with_conditions
+  unresolved:
+  - defined_in: __init__.py:28
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:29
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config: []
+    secrets:
+    - stripe_secret_key
+  catalog_excluded: true
+  connector: stripe
+  pagination_hints:
+  - pagination
+  - starting_after
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_stripe
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/stripe_analytics
+  reason: canonical family 'stripe' is present in an embedded benchmark contamination deny list
+  record: dlt_stripe
+  resource_summary:
+    loadable: 0
+    loadable_names: []
+    names: []
+    paginated: 0
+    parent_dependent: 0
+    resources: 0
+    unresolved: 4
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 0
+  source_summary:
+    directory: dlt_stripe/source
+    files:
+    - __init__.py
+    - helpers.py
+    - settings.py
+    primary_source: incremental_stripe_source
+    source_functions:
+    - name: incremental_stripe_source
+      resources: []
+    - name: stripe_source
+      resources: []
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved:
+  - defined_in: __init__.py:46
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:47
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+  - defined_in: __init__.py:93
+    form: for-loop
+    reason: loop iterable is a runtime value; resources created inside it cannot be named statically
+  - defined_in: __init__.py:94
+    form: dlt.resource(name=...)
+    reason: resource name is a runtime value (config/API-defined)
+- auth:
+    config:
+    - subdomain
+    secrets:
+    - access_token
+  catalog_excluded: false
+  connector: workable
+  pagination_hints:
+  - has_more
+  - pagination
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_workable
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/workable
+  reason: AST-derived manifest forms a TaskIR and the source catalog admits this record to candidate construction
+  record: dlt_workable
+  resource_summary:
+    loadable: 17
+    loadable_names:
+    - candidates
+    - candidates_activities
+    - candidates_offer
+    - custom_attributes
+    - events
+    - jobs
+    - jobs_activities
+    - jobs_application_form
+    - jobs_custom_attributes
+    - jobs_members
+    - jobs_questions
+    - jobs_recruiters
+    - jobs_stages
+    - members
+    - recruiters
+    - requisitions
+    - stages
+    names:
+    - candidates
+    - candidates_activities
+    - candidates_offer
+    - custom_attributes
+    - events
+    - jobs
+    - jobs_activities
+    - jobs_application_form
+    - jobs_custom_attributes
+    - jobs_members
+    - jobs_questions
+    - jobs_recruiters
+    - jobs_stages
+    - members
+    - recruiters
+    - requisitions
+    - stages
+    paginated: 8
+    parent_dependent: 9
+    resources: 17
+    unresolved: 0
+    unselected: 0
+    with_cursor: 1
+    with_primary_key: 1
+  source_summary:
+    directory: dlt_workable/source
+    files:
+    - __init__.py
+    - settings.py
+    - workable_client.py
+    primary_source: workable
+    source_functions:
+    - name: workable
+      resources:
+      - candidates
+      - candidates_activities
+      - candidates_offer
+      - custom_attributes
+      - events
+      - jobs
+      - jobs_activities
+      - jobs_application_form
+      - jobs_custom_attributes
+      - jobs_members
+      - jobs_questions
+      - jobs_recruiters
+      - jobs_stages
+      - members
+      - recruiters
+      - requisitions
+      - stages
+  status: admitted
+  task_shape:
+    family_id: dlt__workable
+    marts: 2
+    relationships: 9
+    tables: 17
+    task_id: dlt__workable
+  tier: can_use
+  unresolved: []
+- auth:
+    config: []
+    secrets:
+    - credentials
+  catalog_excluded: true
+  connector: zendesk
+  pagination_hints:
+  - INCREMENTAL_PAGE_SIZE
+  - OFFSET
+  - PAGE_SIZE
+  - PaginationType
+  - cursor_paginated
+  - get_pages
+  - pagination
+  - pagination_type
+  provenance:
+    commit: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    kind: dlt-verified-source
+    path: dlt/dlt_zendesk
+    upstream: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/zendesk
+  reason: canonical family 'zendesk' is present in an embedded benchmark contamination deny list
+  record: dlt_zendesk
+  resource_summary:
+    loadable: 12
+    loadable_names:
+    - addresses
+    - agents_activity
+    - calls
+    - calls_incremental
+    - current_queue_activity
+    - greeting_categories
+    - greetings
+    - ivrs
+    - legs_incremental
+    - lines
+    - phone_numbers
+    - settings
+    names:
+    - addresses
+    - agents_activity
+    - calls
+    - calls_incremental
+    - current_queue_activity
+    - greeting_categories
+    - greetings
+    - ivrs
+    - legs_incremental
+    - lines
+    - phone_numbers
+    - settings
+    paginated: 2
+    parent_dependent: 0
+    resources: 12
+    unresolved: 0
+    unselected: 0
+    with_cursor: 0
+    with_primary_key: 2
+  source_summary:
+    directory: dlt_zendesk/source
+    files:
+    - __init__.py
+    - helpers/__init__.py
+    - helpers/api_helpers.py
+    - helpers/credentials.py
+    - helpers/talk_api.py
+    - settings.py
+    primary_source: zendesk_talk
+    source_functions:
+    - name: zendesk_chat
+      resources:
+      - chats
+    - name: zendesk_support
+      resources:
+      - brands
+      - groups
+      - organizations
+      - sla_policies
+      - ticket_events
+      - ticket_fields
+      - ticket_metric_events
+      - tickets
+      - users
+    - name: zendesk_talk
+      resources:
+      - addresses
+      - agents_activity
+      - calls
+      - calls_incremental
+      - current_queue_activity
+      - greeting_categories
+      - greetings
+      - ivrs
+      - legs_incremental
+      - lines
+      - phone_numbers
+      - settings
+  status: contamination-blocked
+  tier: blocked_contamination
+  unresolved: []
+schema_version: '1'
+summary:
+  catalog_excluded: 26
+  status_counts:
+    admitted: 3
+    buildable: 3
+    contamination-blocked: 10
+    extraction-error: 0
+    no-transform-mart: 7
+    not-buildable: 0
+    runtime-defined: 6
+  tier_counts:
+    blocked_contamination: 10
+    can_use: 7
+    can_use_with_conditions: 5
+    cannot_use_directly: 1
+    connector_mechanics_only: 6
+  vendored_records: 29

@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "build_backend"
+backend-path = ["."]
+
+[project]
+name = "elt-taskgen"
+version = "0.2.0"
+description = "Offline factory that turns candidate data projects into verified RLVR ELT tasks (LLM agents propose and criticize; executable code decides acceptance)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+# These ranges are empirically validated. `uv.lock` is authoritative, and
+# releases reject dependency drift unless `--allow-unlocked-env` is used.
+# Terraform parsing uses the exact python-hcl2/lark pins below.
+dependencies = [
+    "pydantic>=2.9,<3",
+    "duckdb>=1.2,<2",
+    "pyyaml>=6,<7",
+    "sqlglot>=25.34,<31",
+    "python-hcl2==7.3.1",
+    "lark==1.3.1",
+]
+
+[dependency-groups]
+dev = [
+    "setuptools==84.0.0",
+]
+
+[project.optional-dependencies]
+# Cloud clients are optional so offline curation stays lightweight.
+# Certification uses these exact connector versions.
+runtime = [
+    "snowflake-connector-python==4.7.2",
+]
+runtime-snowflake = [
+    "snowflake-connector-python==4.7.2",
+]
+runtime-databricks = [
+    "databricks-sdk==0.133.0",
+    "databricks-sql-connector==4.4.0",
+]
+runtime-redshift = [
+    "redshift-connector==2.1.16",
+]
+runtime-all = [
+    "databricks-sdk==0.133.0",
+    "databricks-sql-connector==4.4.0",
+    "redshift-connector==2.1.16",
+    "snowflake-connector-python==4.7.2",
+]
+# Optional headless session backends for Claude Code and Codex.
+headless = [
+    "claude-agent-sdk==0.2.152",
+    "openai-codex==0.154.0",
+    "mcp==2.2.0",
+    "uvicorn==0.52.4",
+]
+
+[project.scripts]
+elt-taskgen = "elt_taskgen.cli:main"
+elt-taskgen-evidence-maintenance = "elt_taskgen.review.evidence_retention:main"
+elt-taskgen-parity-sample = "elt_taskgen.operator_tools:parity_sample_main"
+elt-taskgen-schemapile-index = "elt_taskgen.operator_tools:schemapile_index_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+# Restrict collection to the package suite; run artifacts may contain other tests.
+testpaths = ["tests"]

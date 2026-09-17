@@ -1,0 +1,5 @@
+column_name,column_description
+order_id,Unique order identifier.
+customer_id,Customer who placed the order; may be NULL.
+status,"Order status. always exactly one of 'cancelled', 'completed'."
+note,Free-text note; may be NULL or absent.

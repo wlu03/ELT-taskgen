@@ -1,0 +1,101 @@
+# Current five-source intake pins verified on 2026-09-07. Copy this file to an
+# operator directory before use. Relative `artifacts/` paths resolve beside the
+# copy; they are deliberately not satisfied by stale files in this checkout.
+schema_version: five-source-ingest-v1
+
+catalog:
+  path: package://config/sources.yaml
+  digest_kind: sha256-file
+  sha256: 935b5a1286627b088794122d75cc5103d244d83bdfb5a47a7e4b7ee00f31e004
+
+sources:
+  dbt:
+    pool: dbt
+    selector: dbt_twitter
+    expected_task_id: dbt__twitter_ads__twitter_ads__account_report_10fe7453
+    upstream_url: https://github.com/fivetran/dbt_twitter
+    upstream_revision: b610ac7661d788a5395520487925d9331603d254
+    adapter_version: 0.2.0
+    adapter_digest: 62b8084b34324fa44d7f5635a2f73daad66055579d62dcb6f435e0d25f529245
+    license: Apache-2.0
+    license_evidence: repository:LICENSE@b610ac7661d788a5395520487925d9331603d254
+    family: twitter_ads
+    manifest:
+      # Operator-supplied dbt v1.3.1 compiled manifest. The stale v1.3.0
+      # manifest from the earlier local run has different bytes and is refused.
+      path: artifacts/dbt_twitter-v1.3.1-manifest.json
+      digest_kind: sha256-file
+      sha256: f467ddab9e8518bfe51e86827df5e4cbcdb01fd95cf91c5c8bab3f03ebf0dfd4
+
+  dlt:
+    pool: dlt
+    selector: dlt_workable
+    expected_task_id: dlt__workable
+    upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/workable
+    upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
+    adapter_version: 0.2.0
+    adapter_digest: b82da7c59d552e53bb03b5d05d091f2770ca3199240cce868a80e2a0f5452ae0
+    license: Apache-2.0
+    license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
+    connector: workable
+    manifest:
+      path: package://config/dlt_connectors/workable.yaml
+      digest_kind: sha256-file
+      sha256: 0d6674ece51e3f9c563e47ed0c147bd2372848ccb01c6326f2a8037a0dd3ba9e
+
+  synsql:
+    pool: synsql
+    selector: fisheries_data_and_management
+    expected_task_id: synsql__fisheries_data_and_management__vessels_landings_distribution
+    upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    adapter_version: 0.2.0
+    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    license: Apache-2.0
+    license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
+    tables:
+      path: pool://synsql/tables.json
+      digest_kind: sha256-file
+      sha256: 68158df82b0f89f3330e42bd7d56088c1428360d51b9c235c0877ea20306da9c
+
+  schemapile:
+    pool: schemapile
+    selector: 045413_schema-047.sql
+    expected_task_id: schemapile__github_com_kykrueger_openbis_c106a4e57b99__045413_schema_047_sql
+    upstream_url: https://zenodo.org/records/12682521
+    upstream_revision: zenodo-record-12682521-v0.2
+    adapter_version: 0.2.0
+    adapter_digest: c4f0517e43b46e0b354575f7c6ce5a022d077f299a3a2d73be8691a10d9019b6
+    license: APACHE-2.0
+    license_evidence: selected-record:INFO.LICENSE
+    source:
+      path: pool://schemapile/schemapile-perm.json
+      digest_kind: sha256-file
+      sha256: 05173df706394dbbee2c69d4a6c2c8a40bc05b0fdbd944da7587cc0bdbb962d0
+    index:
+      # Copy the reviewed full-corpus v0.2 index or rebuild it, inspect it, and
+      # intentionally update this pin. A missing/mismatched index fails closed.
+      path: artifacts/schemapile-index-v0.2.json
+      digest_kind: sha256-file
+      sha256: e17e22c2a013b066ea6c18ab7de57cb97b9eba68548741e7db4780805b2d74e5
+
+  wikidbs:
+    pool: wikidbs
+    selector: 00012 METEC_SOLARWATT_TEAM_MEMBERS_DB
+    expected_task_id: wikidbs__c00012__00012_metec_solarwatt_team_members_db
+    upstream_url: https://zenodo.org/records/11559814
+    upstream_revision: zenodo-record-11559814
+    adapter_version: 0.2.0
+    adapter_digest: 327e0334d94ca4c5335cd7bd9bd4fbc276a8061f5539c14a5cec2283c67fee5f
+    license: CC-BY-4.0
+    license_evidence: zenodo-record:11559814:license
+    database:
+      path: pool://wikidbs/part-0/00012 METEC_SOLARWATT_TEAM_MEMBERS_DB
+      digest_kind: sha256-tree-v1
+      sha256: fbe2181141eaff47a1c4fef5f6161837ae60b782a1b0455c4ee79672e730dbfe
+    family_map:
+      path: package://config/wikidbs_family_map.csv.gz
+      digest_kind: sha256-file
+      sha256: 1cf16aa2f51ebc16617ab230ffb46591af116712669568c755d3525b48ad3492
+    verify_nodes: true
+    node_inventory_sha256: 15204a8c4e6815203ec826ec3ce91526fadea43a2dcf8c9cfe2d8ea56b8fde6d

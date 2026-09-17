@@ -1,0 +1,13 @@
+{
+  "schema_version": "dbt-duckdb-runtime-v1",
+  "python_requires": "==3.9.*",
+  "uv_lock": "uv.lock",
+  "uv_lock_sha256": "92129f2f0ec8b66b04116e8b2c378c1576adbd8287c86e8a99beea13f5d2e9db",
+  "installed_distributions": "installed-distributions.json",
+  "installed_distributions_sha256": "d389472818eca7afd2bbdc73de31ef9c8fde0707dc6a3096cfcb6ad76143222a",
+  "dbt_core": "1.10.22",
+  "dbt_duckdb": "1.10.0",
+  "duckdb": "1.4.5",
+  "network_required_at_execution": false,
+  "profile_owner": "harness"
+}
