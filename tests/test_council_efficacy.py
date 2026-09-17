@@ -59,6 +59,7 @@ from elt_taskgen.models import (
     PopulationName,
     TaskVariant,
     canonical_json,
+    readable_json,
     sha256_hex,
 )
 from elt_taskgen.review import council as council_mod
@@ -2191,7 +2192,9 @@ class OracleEndToEndTest(unittest.TestCase):
                 metrology_mod.run_metrology(OracleProvider(), seed=_SEEDS[0]),
                 Path(tmp),
             )
-            self.assertEqual(path.read_text(encoding="utf-8"), one)
+            self.assertEqual(
+                path.read_text(encoding="utf-8"), readable_json(json.loads(one))
+            )
             self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
             self.assertEqual(stat.S_IMODE(path.parent.stat().st_mode), 0o700)
 

@@ -23,6 +23,7 @@ from elt_taskgen.models import (
     Row,
     TaskIR,
     canonical_json,
+    readable_json,
 )
 # THE reward's comparator: "the gold moved" is asserted under it, not under CSV
 # bytes (no cycle — but this module must still never import gates).
@@ -497,5 +498,5 @@ def record_perturbation_probe(
         Path(workspace) / "tasks" / task.task_id / PERTURBATION_PROBE_EVIDENCE_REL
     )
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(canonical_json(record), encoding="utf-8")
+    path.write_text(readable_json(record), encoding="utf-8")
     return path

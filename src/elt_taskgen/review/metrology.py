@@ -36,6 +36,7 @@ from elt_taskgen.models import (
     Severity,
     TaskIR,
     canonical_json,
+    readable_json,
     sha256_hex,
 )
 from elt_taskgen.review.council import CRITIC_ROLES, Provider, render_view, run_council
@@ -4137,9 +4138,9 @@ def run_metrology(
 # Report artifact + admission marker (state, not artifact: workspace-scoped)
 
 def write_report(report: MetrologyReport, out_dir: Path) -> Path:
-    """Persist the metrology report as a canonical-JSON artifact."""
+    """Persist the metrology report as an indented-JSON artifact."""
     path = out_dir / REPORT_FILENAME
-    return write_private_text(path, report.to_canonical_json())
+    return write_private_text(path, readable_json(report.model_dump(mode="json")))
 
 
 def view_digest() -> str:

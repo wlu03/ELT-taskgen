@@ -19,6 +19,7 @@ from elt_taskgen.models import (
     PopulationName,
     TaskIR,
     canonical_json,
+    readable_json,
 )
 
 #: Where the census lands under tasks/<task_id>/. gates.py duplicates this
@@ -744,7 +745,7 @@ def record_artifact_census(workspace: Path, task: TaskIR, gold: Any = None) -> P
     census = build_artifact_census(workspace, task)
     path = Path(workspace) / "tasks" / task.task_id / EL_CENSUS_EVIDENCE_REL
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(census.to_canonical_json(), encoding="utf-8")
+    path.write_text(readable_json(census.model_dump(mode="json")), encoding="utf-8")
     return path
 
 

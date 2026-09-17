@@ -40,6 +40,7 @@ from elt_taskgen.models import (
     RepairRoute,
     Severity,
     canonical_json,
+    readable_json,
     sha256_hex,
 )
 from elt_taskgen.package_resources import resource_path
@@ -3612,12 +3613,12 @@ class TranscriptStore:
                 if not kept.exists():
                     _atomic_replace_bytes(
                         kept,
-                        canonical_json(previous).encode("utf-8"),
+                        readable_json(previous).encode("utf-8"),
                         boundary=self.record_dir,
                     )
         _atomic_replace_bytes(
             path,
-            canonical_json(entry).encode("utf-8"),
+            readable_json(entry).encode("utf-8"),
             boundary=self.record_dir,
         )
         return path
@@ -3651,7 +3652,7 @@ class TranscriptStore:
         path = _session_record_path(self.record_dir, role_name, session_key)
         _atomic_replace_bytes(
             path,
-            canonical_json(record).encode("utf-8"),
+            readable_json(record).encode("utf-8"),
             boundary=self.record_dir,
         )
         return path
@@ -6975,7 +6976,7 @@ class RoutedProvider:
         path = trajectory_record_path(Path(record_dir), account.role, digest)
         if _publish_bytes_once(
             path,
-            canonical_json(record).encode("utf-8"),
+            readable_json(record).encode("utf-8"),
             boundary=Path(record_dir),
         ):
             stored_record = record

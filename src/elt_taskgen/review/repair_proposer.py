@@ -41,6 +41,7 @@ from elt_taskgen.models import (
     _json_values_equal_exact,
     _parse_canonical_json_text,
     canonical_json,
+    readable_json,
     sha256_hex,
     task_from_json,
 )
@@ -2929,7 +2930,7 @@ def queue_adjudication(
         # Binding that sequence closes the crash window in which this file is
         # durable but the following BLOCKED row has not yet been appended.
         payload["source_report_id"] = source_report_id
-    _atomic_replace_text(path, canonical_json(payload))
+    _atomic_replace_text(path, readable_json(payload))
     return path
 
 
@@ -4163,7 +4164,7 @@ class AgenticRepairProposer:
         path.parent.mkdir(parents=True, exist_ok=True)
         data["certify"] = _certify_entries_to_keep(path, data["certify"])
         tmp = path.with_name(path.name + ".tmp")
-        tmp.write_text(canonical_json(data), encoding="utf-8")
+        tmp.write_text(readable_json(data), encoding="utf-8")
         tmp.replace(path)
         return path
 

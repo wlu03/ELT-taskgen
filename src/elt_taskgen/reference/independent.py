@@ -26,6 +26,7 @@ from elt_taskgen.models import (
     TaskIR,
     TaskVariant,
     canonical_json,
+    readable_json,
     sha256_hex,
 )
 from elt_taskgen.reference.duckdb_sandbox import sandboxed_memory_connection
@@ -1679,7 +1680,7 @@ def record_build_result(
         raise ValueError(
             f"build result is for task {result.task_id!r}, not {task.task_id!r}"
         )
-    document = canonical_json(_evidence_document(result)).encode("utf-8")
+    document = readable_json(_evidence_document(result)).encode("utf-8")
     path = _evidence_path(workspace, task.task_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     adj_path = adjudication_path(workspace, task.task_id)
@@ -1693,7 +1694,7 @@ def record_build_result(
     path.write_bytes(document)
     if result.status == STATUS_NEEDS_ADJUDICATION:
         adj_path.parent.mkdir(parents=True, exist_ok=True)
-        queue_document = canonical_json(
+        queue_document = readable_json(
             {
                 "task_id": result.task_id,
                 "task_content_hash": result.task_content_hash,
@@ -2287,7 +2288,7 @@ def record_load_build_result(
             f"load build result is for task {result.task_id!r}, not "
             f"{task.task_id!r}"
         )
-    document = canonical_json(_evidence_document(result)).encode("utf-8")
+    document = readable_json(_evidence_document(result)).encode("utf-8")
     path = _load_evidence_path(workspace, task.task_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     _archive_before_change(

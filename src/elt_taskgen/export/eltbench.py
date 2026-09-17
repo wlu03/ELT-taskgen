@@ -46,6 +46,7 @@ from elt_taskgen.models import (
     TaskIR,
     TaskVariant,
     canonical_json,
+    readable_json,
     sha256_hex,
     variant_task_id,
 )
@@ -2559,7 +2560,7 @@ def record_warehouse_census(
     }
     path = warehouse_census_path(task_root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(canonical_json(record) + "\n", encoding="utf-8")
+    path.write_text(readable_json(record) + "\n", encoding="utf-8")
     return path
 
 

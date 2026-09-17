@@ -3616,7 +3616,7 @@ def make_gates_runner(provider, *, destination="snowflake", extra_destinations=(
             _evidence_dir(engine, task)
             / VARIANT_ACCEPTANCE_EVIDENCE.format(variant=TaskVariant.FULL.value)
         ).write_text(
-            canonical_json(report.model_dump(mode="json")), encoding="utf-8"
+            readable_json(report.model_dump(mode="json")), encoding="utf-8"
         )
         if report.accepted:
             return StageOutcome(VERDICT_PASS, report)
@@ -3849,7 +3849,7 @@ def make_variant_gates_runner(
             _evidence_dir(engine, task)
             / VARIANT_ACCEPTANCE_EVIDENCE.format(variant=variant.value)
         ).write_text(
-            canonical_json(report.model_dump(mode="json")), encoding="utf-8"
+            readable_json(report.model_dump(mode="json")), encoding="utf-8"
         )
 
         if report.accepted:
@@ -15215,7 +15215,7 @@ def cmd_triage(args, provider=None) -> int:
             }
             path = _triage_path(engine, task.task_id)
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(canonical_json(record), encoding="utf-8")
+            path.write_text(readable_json(record), encoding="utf-8")
             labels = "  ".join(
                 f"{axis}={record['per_axis_labels'][axis]}"
                 for axis in sorted(record["per_axis_labels"])
@@ -15264,7 +15264,7 @@ def cmd_audit_approve(args) -> int:
         )
         path = _approval_path(engine, task.task_id)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(approval.to_canonical_json(), encoding="utf-8")
+        path.write_text(readable_json(approval.model_dump(mode="json")), encoding="utf-8")
         _rejection_path(engine, task.task_id).unlink(missing_ok=True)
         print(
             f"approval written: {path}\n"
@@ -15289,7 +15289,7 @@ def cmd_audit_reject(args) -> int:
         }
         path = _rejection_path(engine, task.task_id)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(canonical_json(record), encoding="utf-8")
+        path.write_text(readable_json(record), encoding="utf-8")
         _approval_path(engine, task.task_id).unlink(missing_ok=True)
         print(f"rejection recorded: {path}")
         return 0
