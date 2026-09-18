@@ -1,9 +1,12 @@
 """Freeze accepted tasks into an immutable release.
 
 Each release contains one public end-to-end task and private EL/T evidence,
-source populations, and DuckDB oracles. Oracle identity comes from the accepted
-census. Dependency drift is rejected unless ``allow_unlocked_env`` records it.
-This module verifies acceptance but does not decide it.
+source populations under populations/<population>/rendered/, and DuckDB
+oracles. Oracle identity comes from the BATTERY-CERTIFIED census: the digest
+the transform battery recorded for that population, not whatever the shipped
+warehouse happens to hash to, so a warehouse nobody certified cannot be frozen.
+Dependency drift is rejected unless ``allow_unlocked_env`` records it. This
+module verifies acceptance but does not decide it.
 """
 
 from __future__ import annotations
@@ -2984,7 +2987,10 @@ def verify_release(release_dir: Path) -> ReleaseVerification:
     Reject unknown pin kinds, invalid census use, inconsistent summaries,
     unreadable warehouses, file-set changes, and checksum disagreements.
     Equivalent warehouse data may verify when storage bytes differ because
-    current releases pin typed census contents.
+    current releases pin typed census contents rather than the .duckdb bytes.
+    That pin is over canonical cell text with NULL distinct from '': two
+    warehouses that differ only in storage layout verify, and two that differ
+    in whether a cell is absent or empty do not.
     """
     requested_release_dir = Path(release_dir)
     if requested_release_dir.is_symlink():

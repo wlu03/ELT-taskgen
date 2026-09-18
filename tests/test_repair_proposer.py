@@ -1765,12 +1765,18 @@ class RevalidationScopeTestCase(unittest.TestCase):
             path.write_text(yaml.safe_dump({"providers": {}}), encoding="utf-8")
             self.assertEqual(rp.proposer_attempt_budget(path), rp.DEFAULT_MAX_ATTEMPTS)
 
-    def test_committed_config_budget_agrees_with_the_default(self):
-        """Parity pin: the shipped config/agents.yaml `repair.max_attempts` is a
-        deliberate spend budget; drifting from DEFAULT_MAX_ATTEMPTS must be an
-        explicit decision, and an out-of-range or unparseable committed value
-        fails here."""
-        self.assertEqual(rp.proposer_attempt_budget(), rp.DEFAULT_MAX_ATTEMPTS)
+    #: The shipped config/agents.yaml budget, which docs/CONFIGURABLE_PIPELINE.md
+    #: documents as 3. It deliberately exceeds DEFAULT_MAX_ATTEMPTS, the value
+    #: used when no config file is present.
+    COMMITTED_MAX_ATTEMPTS = 3
+
+    def test_committed_config_budget_is_the_documented_one(self):
+        """Parity pin: the shipped `repair.max_attempts` is a deliberate spend
+        budget, so changing it is an explicit edit here as well, and an
+        out-of-range or unparseable committed value still fails."""
+        self.assertEqual(rp.proposer_attempt_budget(), self.COMMITTED_MAX_ATTEMPTS)
+        self.assertGreaterEqual(self.COMMITTED_MAX_ATTEMPTS, rp.DEFAULT_MAX_ATTEMPTS)
+        self.assertLessEqual(self.COMMITTED_MAX_ATTEMPTS, rp.DEFAULT_MAX_ATTEMPTS * 5)
 
     def test_attempt_budget_reads_config(self):
         import yaml

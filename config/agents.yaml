@@ -116,8 +116,11 @@ calibration:
       k: 4
       max_tokens: 8192
       effort: high
+    # Optional fourth tier. No default model: an optional tier is dropped when
+    # ELT_TASKGEN_OSS_MODEL is unset, which is what `optional` means, and the
+    # gateway credentials it needs are separate variables anyway.
     - provider: openai_compat
-      model: ${ELT_TASKGEN_OSS_MODEL:-moonshotai/kimi-k3}
+      model: ${ELT_TASKGEN_OSS_MODEL}
       k: 4
       max_tokens: 16384
       effort: null

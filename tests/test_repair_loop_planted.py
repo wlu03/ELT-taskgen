@@ -515,7 +515,15 @@ class CaseResult:
 class PlantedCorpusCase(A._BoundedFixture):
     """Drives one planted case through the bounded proposer."""
 
+    #: Attempts the planted doubles are scripted for. Each case authors one
+    #: response per attempt, so running the corpus at a larger budget makes the
+    #: last attempt a PROVIDER_FAULT on an exhausted script and turns an
+    #: abstention into a halt. The corpus exercises the loop, not the shipped
+    #: `repair.max_attempts`, which test_repair_proposer pins separately.
+    SCRIPTED_ATTEMPTS = 2
+
     def run_case(self, case: PlantedCase, *, consume_all: bool = True, **proposer_kw) -> CaseResult:
+        proposer_kw.setdefault("max_attempts", self.SCRIPTED_ATTEMPTS)
         workspace = self.workspace(case.name)
         runners = {
             "author": self.author_ok, "review": case.review,

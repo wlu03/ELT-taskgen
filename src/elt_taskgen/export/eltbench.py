@@ -2,6 +2,30 @@
 
 Keep answer keys and evaluation data private. Normalize runtime names, join S3
 parts before sync, and require serving rules for every configured table.
+
+PATH MAP. A bundle is not laid out the way upstream lays one out; it carries
+the same content under its own paths, and ``upstream_layout`` converts. The
+correspondence, one row per artifact:
+
+    public/<parent>/config.yaml, data_model.yaml -> elt-bench/snowflake/<db>/
+    public/<parent>/schemas/<table>.csv          -> elt-bench/schemas/<db>/<table>.csv
+    private/<parent>/answer_key/table.json       -> evaluation/table.json[<db>]
+    private/.../evaluation/sql/<mart>.sql        -> evaluation/sql/<db>/<mart>.sql
+    private/<parent>/answer_key/gold/<pop>/      -> agent_results/gt_<warehouse>/<db>/
+
+NAMING. ``database_name`` derives the warehouse name from the task id and
+bounds it by ``DATABASE_NAME_MAX_LEN``, which is ``S3_BUCKET_MAX_LEN`` less
+the ``-bucket`` suffix, so every name a task implies is creatable on S3,
+PostgreSQL and MongoDB alike. A longer name is truncated and given a digest of
+the full task id, so the emitted name is not recoverable from the task id by
+string rules; config.yaml is therefore the AUTHORITATIVE source of the runtime
+names, and nothing downstream should re-derive them.
+
+S3 SHAPE. A renderer may split one table into ``part-*.jsonl`` chunks, but the
+serving contract is a single object: concatenate every part in lexicographic
+order and upload that concatenation as s3://<bucket>/<table>.jsonl, the object
+config.yaml declares. Uploading only the first part silently loses rows
+whenever a population crosses a chunk boundary.
 """
 
 from __future__ import annotations

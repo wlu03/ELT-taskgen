@@ -1073,7 +1073,11 @@ from agg group by entity_id || 'suffix'
         """Ladder-order pin: the rung must never override an explicit test."""
         import inspect
 
+        # Search the rules tuple itself: the docstring above it names the same
+        # rules in prose, so a plain search over the whole function finds the
+        # summary rather than the ladder.
         src = inspect.getsource(dbt_adapter.mart_key_columns)
+        src = src[src.index("rules: tuple["):]
         rules_order = [
             "dbt_utils.unique_combination_of_columns test",
             "unique test",

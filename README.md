@@ -16,7 +16,15 @@ uv sync --frozen
 ```
 
 Install from `uv.lock`. A standalone `pip install -e .` ignores the lock, and
-release creation rejects unapproved dependency drift.
+release creation rejects unapproved dependency drift. To pin the same set for a
+tool that only reads requirements files:
+
+```bash
+uv export --frozen --no-emit-project --no-hashes --format requirements-txt > constraints.txt
+```
+
+`--no-emit-project` keeps the project itself out of the constraints, and
+`--no-hashes` keeps the file installable by `pip install -c`.
 
 For model-backed generation, configure credentials using `env.example`:
 
@@ -70,8 +78,10 @@ export ELT_TASKGEN_ADMISSION="$PWD/council/state/council.live_admitted"
 Use the same agent configuration for metrology and generation. Admission is
 bound to its original path and active configuration; replays cannot create it.
 
-Metrology and generation can incur model API charges. Review the example
-budgets before running. A final API call can exceed its budget allocation
+Metrology and generation can incur model API charges. A metrology run costs
+about $25 at list rates with caching, which is what `--budget-per-task 60`
+leaves room for. Most commands take a per-task budget with a default $5.00;
+`pipeline` defaults to 7.00. A final API call can exceed its budget allocation
 before the worker stops.
 
 ### Run the pipeline
@@ -92,6 +102,22 @@ Each task has five populations: development, primary, resampled,
 counterfactual, and stress. Development data is available to the solver;
 graded populations and reference answers remain private.
 
+### The ladder
+
+A task walks one serial ledger of stages (**15**), from `intake` through
+`generate`, `reference`, `author`, `review` and `attack`, the three gate
+stages, `calibrate`, `select`, `audit` and `release`. A stage that fails stops
+the task; nothing downstream runs on unproven evidence.
+
+Three gate rosters judge the task, and each roster is pinned:
+
+```text
+# 13 shared-integrity gates   task identity, determinism, contamination, keys
+# 15 EL gates                 the shared set plus artifact census and load
+# 16 T gates                  the shared set plus warehouse load, transform
+#                             surface and canonical reachability
+```
+
 Task defects produce permanent rejections within a workspace. Infrastructure,
 credential, admission, and budget failures stop without rejecting the task.
 Rerun the command after resolving those failures.
@@ -99,6 +125,20 @@ Rerun the command after resolving those failures.
 For fixed candidate counts, source allocations, and run reports, see the
 [configurable pipeline guide](docs/CONFIGURABLE_PIPELINE.md). Candidate-count
 runs do not replace rejected or blocked candidates.
+
+### Bounded review roles
+
+`config/agents.yaml` is the authority for what each review role may do, and
+every bounded behaviour is one key you can read and roll back:
+
+- `roles.population_adversary.session` and the matching shortcut-attacker
+  block enable those sessions and name their harness validators; set
+  `enabled: false` to return the role to a single scored call.
+- `measured_match_bit` stays false: an adversary is told whether its proposal
+  compiled, never whether the measured reward matrix matched its forecast.
+- `repair.routes_bounded` lists the repair routes a proposer may take.
+- `repair.certify.attack_enabled` stays false, so certification runs the
+  provider-free checks only.
 
 ## Creating a release
 
@@ -193,7 +233,8 @@ raw-data checks in the artifact workflow above.
 
 ## Warehouse evaluation
 
-Local scoring uses a DuckDB proxy, not a warehouse emulator. Warehouse
+The design is a semantic proxy (DuckDB) plus real-runtime adapters: local
+scoring uses the proxy, never a warehouse emulator, and warehouse
 certification requires a pinned run through real Airbyte, the selected
 warehouse, and the matching dbt adapter.
 
@@ -201,6 +242,22 @@ Use the [warehouse runbook](docs/WAREHOUSE_CONNECTORS.md) for Snowflake,
 Databricks, and Redshift setup and execution. Cloud results use the same
 private comparator as local evaluation. These runs are separate from ordinary
 RLVR scoring.
+
+## Historical releases
+
+Five schema-2 releases are frozen under `runs/<pool>_elt/release/`, one per
+task source. They are evidence that each pool once reached the release stage;
+they are not the current corpus. Their manifests are `schema 2.0` with the
+legacy split-public layout, and their warehouses are pinned under
+`duckdb-census/1`. Current code computes census version 2, so
+`elt-taskgen verify` re-checks every byte-pinned file in them and then
+fails closed on their warehouse census records.
+
+Those releases stay readable and are never re-judged, but their historical
+`pass` verdicts do not establish fresh upstream-source provenance, current
+bundle verification, or Airbyte/warehouse/dbt runtime certification. Re-running
+the batteries and re-freezing under the current contract is what makes a drive
+current again.
 
 ## Tests
 

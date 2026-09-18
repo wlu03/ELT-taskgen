@@ -2449,22 +2449,36 @@ class Phase4SeamTest(_SessionCase):
 
             self.assertEqual(digest([row]), digest([stripped]))
 
-    def test_run_council_source_is_byte_identical_to_phase_0(self):
+    def test_the_council_entry_points_match_their_reviewed_source(self):
         """Pin the reviewed council entry points by their source digest.
 
-        `run_council` remains byte-identical to Phase 0; `_parse_findings` now
-        independently enforces the closed provider response schema at its
-        consumer boundary, and `screen_findings` deliberately supplies task
-        mart cardinality to the deterministic screen. The reviewed helper rules preserve terminal
-        graded-fork withdrawals and void a POP major whose own structured
-        prediction concedes a hidden graded discriminator; neither adds a
-        session dispatch seam here. `findings_from_session` remains ADDED
-        beside these entry points.
+        `_parse_findings` is unmoved: it still independently enforces the closed
+        provider response schema at its consumer boundary. `run_council` and
+        `screen_findings` were re-pinned after a read of the current source,
+        which holds every property this test names and adds none of its own:
+
+          * `run_council` computes `leak_findings` BEFORE the first
+            `provider.complete`, and a FATAL leak returns without any provider
+            call at all, so a leaking `solver_prompt` never reaches four
+            external endpoints. That short circuit is a strengthening; nothing
+            in the loop was relaxed to get it.
+          * `screen_findings` keeps the documented order of decisions —
+            CODE-origin findings bypass screening untouched, a FATAL provider
+            finding is voided only by an explicit nullifying signal, and
+            duplicate detection runs over a finding_id ordering, so it stays
+            deterministic. It supplies mart cardinality to the screen through
+            `multi_mart`.
+          * neither function dispatches a session; `findings_from_session`
+            remains ADDED beside them, which the assertions below still hold.
+
+        A different digest here means one of those two functions was edited
+        again: read it, satisfy yourself that the properties above survive,
+        and re-pin deliberately. Never update the literal to quiet the test.
         """
         pinned = {
-            "run_council": "405efef1c6c4cad51294753137089e0da23c2bce6013764e066921dfeb3bd43a",
+            "run_council": "38290ea1e60c37157c7a26c7010855ad49853f66952ccbba0b2cb10c7d4cc506",
             "_parse_findings": "7668249ffd512cbf517091de3f0e1ecfed9a1491888a352d131e45c046bcef96",
-            "screen_findings": "47002389de0db019ba698b81fb3aae66af1f6d4c73b5d7e08595fc6bf1159e34",
+            "screen_findings": "cd518323c958a41e3d7998f2595e49988b74e9543bbfa5345322d41cccea5c8b",
         }
         for name, digest in pinned.items():
             with self.subTest(function=name):
@@ -2476,6 +2490,12 @@ class Phase4SeamTest(_SessionCase):
         self.assertNotIn("run_session", source)
         self.assertNotIn("findings_from_session", source)
         self.assertTrue(callable(_council.findings_from_session))
+        # The leak screen runs before the transport, not after it.
+        self.assertLess(
+            source.index("leak_findings"),
+            source.index("provider.complete"),
+            "a leaking solver_prompt would reach the providers before the screen",
+        )
 
     def test_policy_violation_under_trial_context_is_a_seat_outcome_not_exit_2(self):
         """SoT T4 POLICY_VIOLATION, metrology column: under a trial context a

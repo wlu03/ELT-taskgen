@@ -309,12 +309,29 @@ class ShortcutHandoffDischargeTest(unittest.TestCase):
                 self.assert_blocked(finding, malformed)
 
     def test_non_shortcut_role_or_kind_remains_blocking(self):
+        """The shortcut discharge is specific to a shortcut attacker's kind.
+
+        A population adversary is judged by its own rule instead, so the role
+        case here loses only on ``development``: no hidden population refutes
+        the blind-spot claim and the finding stays unresolved.
+        """
         wrong_role, role_outcome = _shortcut_handoff(
-            role=CouncilRole.POPULATION_ADVERSARY
+            role=CouncilRole.POPULATION_ADVERSARY,
+            transform_losses=frozenset({P.DEVELOPMENT}),
         )
         wrong_kind, kind_outcome = _shortcut_handoff(kind=AttackKind.NO_DEDUP)
         self.assert_blocked(wrong_role, role_outcome)
         self.assert_blocked(wrong_kind, kind_outcome)
+
+    def test_a_hidden_population_kill_discharges_a_blind_spot_claim(self):
+        """The same handoff with a hidden-population loss is discharged: the
+        adversary's claim that the populations cannot tell the difference is
+        refuted by the measurement, whatever it forecast."""
+        finding, outcome = _shortcut_handoff(
+            role=CouncilRole.POPULATION_ADVERSARY,
+            transform_losses=frozenset({P.DEVELOPMENT, P.COUNTERFACTUAL}),
+        )
+        self.assert_discharged(finding, outcome)
 
     def test_kill_in_the_wrong_stage_cannot_discharge(self):
         # CONSTANTS is a transform shortcut: an EL-only loss proves nothing.
@@ -737,21 +754,15 @@ class AttackStageWiringTest(_DemoFixtureMixin, unittest.TestCase):
         bad = _finding("pa-21-bad", _proposal(wrong_matrix))
 
         outcome = self._run_stage([good, bad])
-        self.assertEqual(outcome.verdict, "fail")
-        self.assertIs(outcome.route, RepairRoute.POPULATION)
-        self.assertIn("major proposal unresolved", outcome.payload.detail)
+        # The mispredicted forecast does not fail the stage: the adversary
+        # claims the populations cannot distinguish an INNER join, and the
+        # measurement refutes that claim on three hidden populations. A wrong
+        # guess about WHICH hidden population catches the mutant is not a
+        # defect to repair (the defterp rule, 2026-09-14). An unresolved major
+        # claim still fails the stage; that is
+        # ``test_an_unresolved_major_claim_names_one_deterministic_subject``.
+        self.assertEqual(outcome.verdict, "pass")
         payload = outcome.payload
-
-        # The repair handoff names exactly one deterministic critic subject,
-        # without forwarding its prose, id, matrix or private populations.
-        self.assertEqual(
-            payload.blocking_finding.model_dump(mode="json"),
-            {
-                "role": "population_adversary",
-                "severity": "major",
-                "identifiers": ["development", "join"],
-            },
-        )
 
         self.assertEqual(payload.promoted_proposals, ("proposed__pa-20-good",))
         self.assertEqual(len(payload.rejected_proposals), 1)
@@ -790,6 +801,23 @@ class AttackStageWiringTest(_DemoFixtureMixin, unittest.TestCase):
         # Every case measured is a case reported (no probe without evidence).
         self.assertEqual(
             set(payload.cases) - set(payload.rewards), set()
+        )
+
+    def test_an_unresolved_major_claim_names_one_deterministic_subject(self) -> None:
+        """A major claim with no executable proposal fails the stage, and the
+        repair handoff forwards a subject, not the critic's prose, id, matrix
+        or private populations."""
+        unresolved = _finding("pa-30-unresolved", None)
+        outcome = self._run_stage([unresolved])
+        self.assertEqual(outcome.verdict, "fail")
+        self.assertIs(outcome.route, RepairRoute.POPULATION)
+        self.assertEqual(
+            outcome.payload.blocking_finding.model_dump(mode="json"),
+            {
+                "role": "population_adversary",
+                "severity": "major",
+                "identifiers": ["development", "join"],
+            },
         )
 
     def test_pipedrive_shaped_missing_variant_proposal_is_an_unresolved_major(self):

@@ -16,6 +16,7 @@ import yaml
 from pydantic import ValidationError
 
 from elt_taskgen import cli as cli_mod
+from elt_taskgen.review import metrology as metrology_mod
 from elt_taskgen import demo_fixture
 from elt_taskgen.engine import (
     Engine,
@@ -470,6 +471,14 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
                 ],
             ) as workers,
             mock.patch.object(cli_mod, "_resolve_provider") as provider,
+            # This test is about worker wiring, not admission. The repository's
+            # own council record is a paid artifact whose freshness moves with
+            # the critic tool surface; the stale branch has its own test
+            # (test_live_preflight_refuses_stale_explicit_admission).
+            mock.patch(
+                "elt_taskgen.review.metrology.admission_status",
+                return_value=metrology_mod.AdmissionStatus(True, "admitted for this test"),
+            ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             self.assertEqual(cli_mod.cmd_pipeline(args), 0)

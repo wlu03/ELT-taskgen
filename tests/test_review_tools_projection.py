@@ -949,8 +949,10 @@ class RegistryTest(unittest.TestCase):
                 "abort", "check_load_plan", "replace_load_plan", "submit_load_plan",
             ),
             "independent_implementer": (
-                "abort", "dev_query", "dry_run_sql", "list_schemas", "run_mart_sql_dev",
-                "submit_sql_by_mart",
+                # check_submission is harness-only: registered for the role,
+                # never offered on the wire (see expected_wire below).
+                "abort", "check_submission", "dev_query", "dry_run_sql", "list_schemas",
+                "run_mart_sql_dev", "submit_sql_by_mart",
             ),
             "repair_proposer": (
                 "abort", "apply_edit_trial", "certify", "check_cheap", "check_scope",
@@ -960,7 +962,10 @@ class RegistryTest(unittest.TestCase):
         expected_wire = {
             "semantic_author": ("abort", "submit_prose"),
             "independent_loader": ("abort", "replace_load_plan", "submit_load_plan"),
-            "independent_implementer": expected["independent_implementer"],
+            "independent_implementer": (
+                "abort", "dev_query", "dry_run_sql", "list_schemas", "run_mart_sql_dev",
+                "submit_sql_by_mart",
+            ),
             "repair_proposer": expected["repair_proposer"],
         }
         for role in ROLES:
