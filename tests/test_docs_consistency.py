@@ -27,6 +27,8 @@ cites a module that no longer exists, or introduces a block as working "without
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 import tomllib
 import unittest
 from pathlib import Path
@@ -109,10 +111,11 @@ VOCABULARY_DOCS: tuple[str, ...] = CURRENT_DOCS + (
 )
 
 #: The published documents: every document the checks above read or the README
-#: links, and the documents and scripts those cite. `docs/` is otherwise
-#: private, and `.gitignore` publishes exactly this list. The glob-built sets
-#: above only check the files that are present, so a checkout missing one of
-#: these would check fewer documents and still pass without the presence test.
+#: links, and the documents and scripts those cite. `.gitignore` ignores
+#: `docs/`, so each of these reaches a clean checkout only because it is
+#: tracked. The glob-built sets above only check the files that are present,
+#: so a checkout missing one of these would check fewer documents and still
+#: pass without the presence test.
 REQUIRED_DOCS: tuple[str, ...] = (
     "docs/CONFIGURABLE_PIPELINE.md",
     "docs/EXECUTION_MODEL.md",
@@ -976,15 +979,20 @@ class TestRequiredDocumentsArePublished(unittest.TestCase):
                 self.assertTrue(path.is_file(), f"{rel} is missing")
                 self.assertTrue(path.read_text(encoding="utf-8").strip(), f"{rel} is empty")
 
-    def test_the_gitignore_allowlist_publishes_exactly_the_required_documents(self) -> None:
-        lines = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
-        self.assertIn("/docs/*", lines)
-        self.assertNotIn("/docs/", lines)
-        published = {
-            line[2:] for line in lines
-            if line.startswith("!/docs/") and not line.endswith("/")
-        }
-        self.assertEqual(published, set(REQUIRED_DOCS))
+    def test_every_required_document_is_tracked_by_git(self) -> None:
+        """`docs/` is ignored, so a required document that is not tracked is
+        present locally and missing from every clean checkout."""
+        git = shutil.which("git")
+        if git is None or not (REPO_ROOT / ".git").exists():
+            self.skipTest("not a git checkout; the presence test covers an export")
+        listed = subprocess.run(
+            [git, "ls-files", "-z", "--", "docs"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            check=True,
+        ).stdout.decode("utf-8")
+        tracked = set(listed.split("\0")) - {""}
+        self.assertEqual(sorted(set(REQUIRED_DOCS) - tracked), [])
 
 
 class TestCitedFilesExist(unittest.TestCase):
