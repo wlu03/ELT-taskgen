@@ -2,8 +2,8 @@
 
 ``SubprocessRunner`` kills the child process group at its deadline.
 ``DockerRunner`` requires an explicit network lane, an unprivileged user, and
-an argument list without privileged options. On timeout it kills the container,
-not only the Docker client.
+an argument list without privileged options. On a timeout, an interruption or a
+client error it kills the container by id, not only the Docker client.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import signal
 import subprocess
 import tempfile
 import threading
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -90,7 +91,9 @@ class _StreamTail:
     def _drain(self) -> None:
         try:
             while True:
-                chunk = self._stream.read(self._CHUNK)
+                # read1 returns what one read of the pipe yields, so a short
+                # write is captured at once rather than after a full chunk.
+                chunk = self._stream.read1(self._CHUNK)
                 if not chunk:
                     break
                 self._tail += chunk
@@ -106,7 +109,9 @@ class _StreamTail:
                 pass
 
     def text(self) -> str:
-        """Decode the tail; call only after the drain thread is joined."""
+        """Decode the tail of a stream that has reached EOF."""
+        if self.thread.is_alive():
+            raise RuntimeError("output capture has not finished draining")
         return bytes(self._tail).decode("utf-8", errors="replace")
 
 
@@ -176,10 +181,21 @@ class SubprocessRunner:
                 stderr=subprocess.PIPE,
                 start_new_session=True,
             )
+            deadline = time.monotonic() + self.timeout
             stdout_tail = _StreamTail(process.stdout, self.max_output_bytes)
             stderr_tail = _StreamTail(process.stderr, self.max_output_bytes)
             try:
-                returncode = process.wait(timeout=self.timeout)
+                returncode = process.wait(
+                    timeout=max(0.0, deadline - time.monotonic())
+                )
+                # Output is complete only at EOF on both pipes, and a
+                # descendant that inherited them keeps them open after the
+                # direct child exits. Draining shares the one deadline; if it
+                # has not finished by then, the run timed out.
+                for tail in (stdout_tail, stderr_tail):
+                    tail.thread.join(max(0.0, deadline - time.monotonic()))
+                if stdout_tail.thread.is_alive() or stderr_tail.thread.is_alive():
+                    raise subprocess.TimeoutExpired(process.args, self.timeout)
             except subprocess.TimeoutExpired as exc:
                 _kill_process_group(process)
                 process.wait()
@@ -192,8 +208,8 @@ class SubprocessRunner:
                 process.wait()
                 raise
             finally:
-                # Bounded joins: a grandchild holding the inherited pipes open
-                # must not hang the parent the way a full-buffer read would.
+                # Bounded joins after a kill: descendants in the killed group
+                # close the pipes; one outside it must not hang the parent.
                 stdout_tail.thread.join(5.0)
                 stderr_tail.thread.join(5.0)
         finally:
@@ -227,6 +243,8 @@ PROXY_BRIDGE_NETWORK = "elt-proxy-bridge"
 CLOUD_EGRESS_NETWORK = "elt-cloud-egress"
 
 _CONTAINER_USER = re.compile(r"^[0-9]{1,10}:[0-9]{1,10}$")
+#: runc refuses ids outside 0..2**31-1.
+_MAX_CONTAINER_ID = 2**31 - 1
 _HOST_NAMESPACE_FLAGS = ("--network", "--net", "--pid", "--ipc", "--uts", "--userns")
 _FORBIDDEN_SWITCHES = frozenset({"--privileged", "--cap-add", "--device"})
 _MOUNT_FLAGS = frozenset({"-v", "--volume", "--mount", "--tmpfs"})
@@ -309,8 +327,14 @@ class DockerRunner:
         resolved_user = _default_container_user() if user is None else str(user)
         if not _CONTAINER_USER.fullmatch(resolved_user):
             raise ValueError("container user must be a numeric uid:gid")
-        if resolved_user.startswith("0:"):
+        # Docker reads the ids as numbers, so "00:1000" is root: compare the
+        # parsed uid and forward the canonical spelling.
+        uid, gid = (int(part) for part in resolved_user.split(":"))
+        if uid > _MAX_CONTAINER_ID or gid > _MAX_CONTAINER_ID:
+            raise ValueError(f"container uid and gid must be in range 0-{_MAX_CONTAINER_ID}")
+        if uid == 0:
             raise ValueError("container user must not be root")
+        resolved_user = f"{uid}:{gid}"
         self.image = str(image)
         self.memory = str(memory)
         self.cpus = str(cpus)
@@ -337,18 +361,29 @@ class DockerRunner:
             return ["--network", CLOUD_EGRESS_NETWORK]
         return ["--network", "none"]
 
-    def _kill_container(self, cidfile: Path) -> None:
-        """Best-effort ``docker kill`` by container id after a client timeout."""
+    def _kill_container(self, cidfile: Path, cause: BaseException) -> bool:
+        """``docker kill`` this run's container by its recorded id.
+
+        Return False when an id was recorded but the kill did not run; the
+        caller then keeps the id file, and ``cause`` gains a note naming it.
+        A missing or empty id file means docker never recorded a container.
+        """
         try:
             container_id = cidfile.read_text(encoding="ascii").strip()
+        except FileNotFoundError:
+            return True
         except (OSError, UnicodeError):
-            return
-        if not re.fullmatch(r"[0-9a-fA-F]{12,64}", container_id):
-            return
-        try:
-            self.host_runner.run(("docker", "kill", container_id))
-        except (ProcessFailure, OSError, ValueError):
-            pass
+            container_id = None
+        if container_id == "":
+            return True
+        if container_id is not None and re.fullmatch(r"[0-9a-fA-F]{12,64}", container_id):
+            try:
+                self.host_runner.run(("docker", "kill", container_id))
+                return True
+            except (ProcessFailure, OSError, ValueError):
+                pass
+        cause.add_note(f"container cleanup did not run; its id file is kept at {cidfile}")
+        return False
 
     def run(
         self,
@@ -366,6 +401,7 @@ class DockerRunner:
         container_cwd = Path("/workspace") / relative_cwd
         cid_dir = Path(tempfile.mkdtemp(prefix="elt-taskgen-cid-"))
         cidfile = cid_dir / "container.id"
+        keep_cid_dir = False
         try:
             command = [
                 "docker",
@@ -393,6 +429,11 @@ class DockerRunner:
                 "--workdir",
                 str(container_cwd),
             ]
+            if stdin_path is not None:
+                # docker run keeps container stdin closed without it, so the
+                # file would reach only the client. No --tty: a terminal would
+                # alter the bytes.
+                command.append("--interactive")
             forwarded_env: dict[str, str] = {}
             for key, value in sorted((env or {}).items()):
                 if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", str(key)):
@@ -410,10 +451,17 @@ class DockerRunner:
                     env=forwarded_env or None,
                     stdin_path=stdin_path,
                 )
-            except ProcessTimeout:
-                # The docker client died with the deadline; the daemon keeps
-                # the container running until it is killed by id.
-                self._kill_container(cidfile)
+            except BaseException as exc:
+                if isinstance(exc, ProcessFailure) and not isinstance(exc, ProcessTimeout):
+                    # The client exited with the container's own status, and
+                    # --rm has already removed the container.
+                    raise
+                # A deadline, an interruption or a client error ends the docker
+                # client, not the container: the daemon keeps it running until
+                # it is killed by id. The id stays on disk until the kill runs.
+                keep_cid_dir = True
+                keep_cid_dir = not self._kill_container(cidfile, exc)
                 raise
         finally:
-            shutil.rmtree(cid_dir, ignore_errors=True)
+            if not keep_cid_dir:
+                shutil.rmtree(cid_dir, ignore_errors=True)

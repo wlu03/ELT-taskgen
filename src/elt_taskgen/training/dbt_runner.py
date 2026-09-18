@@ -74,6 +74,10 @@ DBT_PROFILE_TARGET = "local"
 
 MAX_DBT_MANIFEST_BYTES = 16 * 1024 * 1024
 MAX_DBT_PROJECT_YAML_BYTES = 512 * 1024
+#: Candidate YAML is composed and policy-walked recursively, so its nesting and
+#: the size of its alias-expanded tree are bounded before either happens.
+MAX_CANDIDATE_YAML_DEPTH = 64
+MAX_CANDIDATE_YAML_NODES = 1_000_000
 MAX_DBT_SQL_BYTES = 2 * 1024 * 1024
 
 _SAFE_PROJECT_NAME_RE = re.compile(r"[a-z][a-z0-9_]{0,127}")
@@ -322,6 +326,10 @@ def _construct_unique_mapping(loader, node, deep=False):
     result: dict[Any, Any] = {}
     for key_node, value_node in node.value:
         key = loader.construct_object(key_node, deep=deep)
+        try:
+            hash(key)
+        except TypeError as exc:
+            raise yaml.YAMLError("unhashable mapping key") from exc
         if key in result:
             raise yaml.YAMLError("duplicate mapping key")
         result[key] = loader.construct_object(value_node, deep=deep)
@@ -588,9 +596,64 @@ def _read_bounded_text(path: Path, limit: int, code: DbtErrorCode) -> str:
 def _load_unique_yaml(path: Path, *, limit: int = MAX_DBT_PROJECT_YAML_BYTES) -> Any:
     text = _read_bounded_text(path, limit, DbtErrorCode.PROJECT_INVALID)
     try:
-        return yaml.load(text, Loader=_UniqueSafeLoader)
+        # The event parser is iterative; composing nodes recurses once per
+        # nesting level, so depth is checked on the events first.
+        depth = 0
+        for event in yaml.parse(text, Loader=_UniqueSafeLoader):
+            if isinstance(event, (yaml.MappingStartEvent, yaml.SequenceStartEvent)):
+                depth += 1
+                if depth > MAX_CANDIDATE_YAML_DEPTH:
+                    raise yaml.YAMLError("candidate YAML nests too deeply")
+            elif isinstance(event, (yaml.MappingEndEvent, yaml.SequenceEndEvent)):
+                depth -= 1
+        document = yaml.load(text, Loader=_UniqueSafeLoader)
     except yaml.YAMLError as exc:
         raise DbtPolicyFailure(DbtErrorCode.PROJECT_INVALID) from exc
+    except ValueError as exc:
+        # A scalar the loader cannot construct, such as the date 2001-13-45.
+        raise DbtPolicyFailure(DbtErrorCode.PROJECT_INVALID) from exc
+    _reject_cyclic_or_oversized_yaml(document)
+    return document
+
+
+def _reject_cyclic_or_oversized_yaml(document: Any) -> None:
+    """Refuse a cycle, or an alias-expanded tree too deep or large to walk.
+
+    The policy walkers recurse over the expanded tree: a recursive alias
+    (``vars: &loop [*loop]``) never ends, and repeated aliases multiply the
+    work. Repeated references to one node are admitted and measured once.
+    """
+    measured: dict[int, tuple[int, int]] = {}
+    on_path: set[int] = set()
+    stack: list[tuple[Any, bool]] = [(document, False)]
+    while stack:
+        node, leaving = stack.pop()
+        if not isinstance(node, (dict, list)):
+            continue
+        ident = id(node)
+        children = tuple(node.values()) if isinstance(node, dict) else tuple(node)
+        if leaving:
+            on_path.discard(ident)
+            nodes, depth = 1, 1
+            for child in children:
+                if isinstance(child, (dict, list)):
+                    child_nodes, child_depth = measured[id(child)]
+                    nodes += child_nodes
+                    depth = max(depth, child_depth + 1)
+                else:
+                    nodes += 1
+            if nodes > MAX_CANDIDATE_YAML_NODES or depth > MAX_CANDIDATE_YAML_DEPTH:
+                raise DbtPolicyFailure(DbtErrorCode.PROJECT_INVALID)
+            measured[ident] = (nodes, depth)
+        elif ident not in measured:
+            on_path.add(ident)
+            stack.append((node, True))
+            for child in children:
+                if isinstance(child, (dict, list)):
+                    if id(child) in on_path:
+                        raise DbtPolicyFailure(DbtErrorCode.PROJECT_INVALID)
+                    if id(child) not in measured:
+                        stack.append((child, False))
 
 
 def _walk_project_files(project: Path) -> tuple[Path, ...]:

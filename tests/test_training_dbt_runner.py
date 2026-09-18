@@ -6,6 +6,7 @@ import copy
 import hashlib
 import json
 import tempfile
+import time
 import tomllib
 import unittest
 from pathlib import Path
@@ -24,6 +25,7 @@ from elt_taskgen.training.dbt_runner import (
     DBT_DUCKDB_INSTALLED_DISTRIBUTIONS_SHA256,
     DBT_DUCKDB_RUNTIME_MANIFEST_SHA256,
     DBT_DUCKDB_UV_LOCK_SHA256,
+    MAX_CANDIDATE_YAML_DEPTH,
     DbtCommandEvidence,
     DbtErrorCode,
     DbtPolicyFailure,
@@ -31,6 +33,7 @@ from elt_taskgen.training.dbt_runner import (
     DbtRuntimeConfig,
     DbtTrustedFailure,
     _fingerprint_physical_raw_state,
+    _load_unique_yaml,
     _prepare_execution_project,
     _validate_private_evidence,
     _validate_manifest_graph,
@@ -540,6 +543,65 @@ class PortableSqlPolicyTests(unittest.TestCase):
                 self.assertEqual(raised.exception.code, expected)
 
 
+class CandidateYamlBoundaryTests(unittest.TestCase):
+    """A02: candidate YAML that PyYAML parses into an unhashable key, a cycle,
+    or a tree too deep or large to walk, or that holds an unconstructable
+    scalar, is the candidate's PROJECT_INVALID failure, never an unclassified
+    exception that the runner turns into a no-label harness fault."""
+
+    HEADER = "name: audit\nconfig-version: 2\n"
+
+    def _load(self, body: str):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "dbt_project.yml"
+            path.write_text(self.HEADER + body, encoding="utf-8")
+            return _load_unique_yaml(path)
+
+    def test_malformed_shapes_are_project_invalid(self) -> None:
+        bomb = "".join(
+            f"l{i}: &l{i} ["
+            + ", ".join([f"*l{i - 1}"] * 10 if i else ["x"] * 10)
+            + "]\n"
+            for i in range(9)
+        )
+        chained = "".join(
+            f"c{i}: &c{i} " + "[" * 40 + (f"*c{i - 1}" if i else "x") + "]" * 40 + "\n"
+            for i in range(4)
+        )
+        cases = {
+            "unhashable sequence key": "? [a, b]\n: value\n",
+            "unhashable mapping key": "? {a: 1}\n: value\n",
+            "cyclic alias": "vars: &loop [*loop]\n",
+            "nesting one level too deep": "vars: " + "[" * MAX_CANDIDATE_YAML_DEPTH
+            + "]" * MAX_CANDIDATE_YAML_DEPTH + "\n",
+            "nesting deep enough to exhaust the parser": "vars: " + "[" * 50_000
+            + "]" * 50_000 + "\n",
+            "exponential alias expansion": bomb,
+            "aliases chained past the depth bound": chained,
+            "impossible date": "vars: {started: 2001-13-45}\n",
+        }
+        for label, body in cases.items():
+            with self.subTest(label):
+                started = time.monotonic()
+                with self.assertRaises(DbtPolicyFailure) as raised:
+                    self._load(body)
+                self.assertEqual(raised.exception.code, DbtErrorCode.PROJECT_INVALID)
+                self.assertLess(time.monotonic() - started, 10.0)
+
+    def test_admitted_shapes_still_load(self) -> None:
+        self.assertEqual(self._load("vars: {a: 1}\n")["vars"], {"a": 1})
+        deepest = "vars: " + "[" * (MAX_CANDIDATE_YAML_DEPTH - 1) + "]" * (
+            MAX_CANDIDATE_YAML_DEPTH - 1
+        ) + "\n"
+        self.assertIn("vars", self._load(deepest))
+        # A repeated alias is a shared reference, not a cycle.
+        doc = self._load("shared: &a [1, 2]\nvars: [*a, *a]\n")
+        self.assertEqual(doc["vars"], [[1, 2], [1, 2]])
+        with self.assertRaises(DbtPolicyFailure) as raised:
+            self._load("name: again\n")
+        self.assertEqual(raised.exception.code, DbtErrorCode.PROJECT_INVALID)
+
+
 class DbtRunnerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -634,6 +696,46 @@ class DbtRunnerIntegrationTests(unittest.TestCase):
                             namespace=namespace,
                         )
                     self.assertEqual(raised.exception.code, DbtErrorCode.GRAPH_INVALID)
+
+    def test_malformed_yaml_in_any_candidate_file_is_a_project_failure(self) -> None:
+        """A02 at the preparation boundary the scorer calls: every admitted
+        YAML file, not only dbt_project.yml."""
+        namespace = project_namespace(self.package, Path("candidate.duckdb"))
+        bodies = {
+            "unhashable key": "? [a, b]\n: value\n",
+            "cyclic alias": "x-audit: &loop [*loop]\n",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            control = root / "control"
+            _write_candidate(control, self.package)
+            self.assertIsInstance(
+                _prepare_execution_project(
+                    control / "elt",
+                    root / "control_execution",
+                    package=self.package,
+                    namespace=namespace,
+                ),
+                str,
+            )
+            index = 0
+            for relative in ("dbt_project.yml", "models/sources.yml", "models/schema.yml"):
+                for label, body in bodies.items():
+                    index += 1
+                    with self.subTest(file=relative, shape=label):
+                        candidate = root / f"candidate_{index}"
+                        _write_candidate(candidate, self.package)
+                        path = candidate / "elt" / relative
+                        existing = path.read_text(encoding="utf-8") if path.exists() else "version: 2\n"
+                        path.write_text(existing + body, encoding="utf-8")
+                        with self.assertRaises(DbtPolicyFailure) as raised:
+                            _prepare_execution_project(
+                                candidate / "elt",
+                                root / f"execution_{index}",
+                                package=self.package,
+                                namespace=namespace,
+                            )
+                        self.assertEqual(raised.exception.code, DbtErrorCode.PROJECT_INVALID)
 
     def test_packages_and_hooks_are_rejected_before_dbt_executes(self) -> None:
         namespace = project_namespace(self.package, Path("candidate.duckdb"))

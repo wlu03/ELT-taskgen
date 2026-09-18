@@ -15,14 +15,17 @@ from __future__ import annotations
 import inspect
 import os
 import resource
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from elt_taskgen.runtime import bootstrap, execution, source_environment
+from elt_taskgen.runtime import process as process_mod
 from elt_taskgen.runtime.process import (
     CLOUD_EGRESS_NETWORK,
     DEFAULT_SUBPROCESS_TIMEOUT_SECONDS,
@@ -112,6 +115,278 @@ class TestBoundedSubprocessCapture(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "out-text")
         self.assertEqual(result.stderr, "err-text")
+
+
+def _process_is_running(pid: int) -> bool:
+    """False for a pid that is gone or a zombie awaiting reaping."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    state = subprocess.run(
+        ["/bin/ps", "-o", "stat=", "-p", str(pid)],
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.strip()
+    return bool(state) and not state.startswith("Z")
+
+
+class TestEarlyParentExit(unittest.TestCase):
+    """A01: the direct child exits while a descendant holds its pipes open.
+
+    `process.wait()` sees only the direct child, so the run must also wait for
+    EOF on both pipes, within the same deadline, before it can report success.
+    """
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.pid_file = self.root / "descendant.pid"
+        self.tails: list = []
+        tails = self.tails
+
+        class RecordingTail(process_mod._StreamTail):
+            def __init__(self, stream, cap: int) -> None:
+                super().__init__(stream, cap)
+                tails.append(self)
+
+        patcher = mock.patch.object(process_mod, "_StreamTail", RecordingTail)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _script(self, descendant: str) -> str:
+        return (
+            "import subprocess, sys\n"
+            f"child = subprocess.Popen([sys.executable, '-c', {descendant!r}])\n"
+            f"open({str(self.pid_file)!r}, 'w').write(str(child.pid))\n"
+            "sys.stdout.write('stdout-marker\\n'); sys.stdout.flush()\n"
+            "sys.stderr.write('stderr-marker\\n'); sys.stderr.flush()\n"
+        )
+
+    def _kill_descendant_if_running(self) -> None:
+        if self.pid_file.exists():
+            pid = int(self.pid_file.read_text(encoding="utf-8"))
+            if _process_is_running(pid):
+                os.kill(pid, 9)
+
+    def test_a_descendant_holding_the_pipes_past_the_deadline_is_a_timeout(self) -> None:
+        self.addCleanup(self._kill_descendant_if_running)
+        runner = SubprocessRunner(timeout=1.0, max_output_bytes=4096)
+        start = time.monotonic()
+        with self.assertRaisesRegex(ProcessTimeout, "exceeded its runtime limit"):
+            runner.run([sys.executable, "-c", self._script("import time; time.sleep(60)")])
+        self.assertLess(time.monotonic() - start, 8.0)
+        self.assertTrue(self.pid_file.exists(), "the descendant was never created")
+        descendant = int(self.pid_file.read_text(encoding="utf-8"))
+        deadline = time.monotonic() + 10.0
+        while _process_is_running(descendant) and time.monotonic() < deadline:
+            time.sleep(0.1)
+        self.assertFalse(
+            _process_is_running(descendant), "the descendant survived the deadline"
+        )
+        self.assertEqual(len(self.tails), 2)
+        for tail in self.tails:
+            self.assertFalse(tail.thread.is_alive(), "a reader thread is still draining")
+
+    def test_a_descendant_that_finishes_in_time_leaves_complete_output(self) -> None:
+        """Control: the same shape succeeds when the descendant exits before
+        the deadline, and its later write is part of the captured output."""
+        self.addCleanup(self._kill_descendant_if_running)
+        descendant = (
+            "import sys, time; time.sleep(0.5); "
+            "sys.stdout.write('late-marker\\n'); sys.stdout.flush()"
+        )
+        result = SubprocessRunner(timeout=20.0, max_output_bytes=4096).run(
+            [sys.executable, "-c", self._script(descendant)]
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "stdout-marker\nlate-marker\n")
+        self.assertEqual(result.stderr, "stderr-marker\n")
+        for tail in self.tails:
+            self.assertFalse(tail.thread.is_alive())
+
+    def test_a_capture_that_is_still_draining_cannot_be_read(self) -> None:
+        read_end, write_end = os.pipe()
+        self.addCleanup(os.close, write_end)
+        os.write(write_end, b"partial")
+        tail = process_mod._StreamTail(os.fdopen(read_end, "rb"), 4096)
+        self.assertTrue(tail.thread.is_alive())
+        with self.assertRaisesRegex(RuntimeError, "has not finished draining"):
+            tail.text()
+
+
+class _DockerHost:
+    """Recording host runner: `docker run` writes the owned id (unless told
+    not to) and then raises `fail_with`; `docker kill` raises `kill_fails`."""
+
+    OWNED = "0123456789ab" * 4
+
+    def __init__(self, fail_with=None, *, write_cid=True, kill_fails=None):
+        self.fail_with = fail_with
+        self.write_cid = write_cid
+        self.kill_fails = kill_fails
+        self.calls: list[tuple[str, ...]] = []
+        self.cidfile: Path | None = None
+        self.stdin_paths: list[Path | None] = []
+
+    def run(self, argv, *, cwd=None, env=None, stdin_path=None):
+        argv = tuple(str(value) for value in argv)
+        self.calls.append(argv)
+        if argv[:2] == ("docker", "run"):
+            self.stdin_paths.append(stdin_path)
+            self.cidfile = Path(argv[argv.index("--cidfile") + 1])
+            if self.write_cid:
+                self.cidfile.write_text(self.OWNED, encoding="ascii")
+            if self.fail_with is not None:
+                raise self.fail_with
+        elif argv[:2] == ("docker", "kill") and self.kill_fails is not None:
+            raise self.kill_fails
+        return CommandResult(0)
+
+
+class TestDockerRunnerCleanup(unittest.TestCase):
+    """A03: a deadline, an interruption or a client error ends the docker
+    client, not the container, so the owned container is killed by id."""
+
+    IMAGE = "runner@sha256:" + "e" * 64
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.workspace = Path(self.temp.name) / "attempt"
+        self.workspace.mkdir()
+
+    def _run(self, host: _DockerHost) -> None:
+        DockerRunner(self.workspace, self.IMAGE, host_runner=host, user="1000:1000").run(
+            ("sleep", "600")
+        )
+
+    def _kill_calls(self, host: _DockerHost) -> list[tuple[str, ...]]:
+        return [call for call in host.calls if call[:2] == ("docker", "kill")]
+
+    def test_interruption_after_the_container_exists_kills_it_by_id(self) -> None:
+        for cause in (KeyboardInterrupt(), SystemExit(2), RuntimeError("client crashed")):
+            with self.subTest(cause=type(cause).__name__):
+                host = _DockerHost(cause)
+                with self.assertRaises(type(cause)) as raised:
+                    self._run(host)
+                self.assertIs(raised.exception, cause)
+                self.assertEqual(len(host.calls), 2)
+                self.assertEqual(host.calls[1], ("docker", "kill", _DockerHost.OWNED))
+                self.assertFalse(host.cidfile.parent.exists())
+
+    def test_the_timeout_control_still_kills_by_id(self) -> None:
+        host = _DockerHost(ProcessTimeout("docker exceeded its runtime limit"))
+        with self.assertRaises(ProcessTimeout):
+            self._run(host)
+        self.assertEqual(self._kill_calls(host), [("docker", "kill", _DockerHost.OWNED)])
+
+    def test_interruption_before_docker_records_an_id_kills_nothing(self) -> None:
+        host = _DockerHost(KeyboardInterrupt(), write_cid=False)
+        with self.assertRaises(KeyboardInterrupt):
+            self._run(host)
+        self.assertEqual(self._kill_calls(host), [])
+        self.assertFalse(host.cidfile.parent.exists())
+
+    def test_a_failed_kill_keeps_the_id_and_the_original_cause(self) -> None:
+        cause = KeyboardInterrupt()
+        host = _DockerHost(cause, kill_fails=ProcessFailure("docker failed with exit code 1"))
+        with self.assertRaises(KeyboardInterrupt) as raised:
+            self._run(host)
+        self.assertIs(raised.exception, cause)
+        self.assertEqual(self._kill_calls(host), [("docker", "kill", _DockerHost.OWNED)])
+        self.addCleanup(shutil.rmtree, host.cidfile.parent, True)
+        self.assertEqual(host.cidfile.read_text(encoding="ascii"), _DockerHost.OWNED)
+        self.assertTrue(any(str(host.cidfile) in note for note in cause.__notes__))
+
+    def test_a_nonzero_exit_and_a_normal_completion_kill_nothing(self) -> None:
+        failed = _DockerHost(ProcessFailure("docker failed with exit code 3"))
+        with self.assertRaises(ProcessFailure):
+            self._run(failed)
+        self.assertEqual(self._kill_calls(failed), [])
+        self.assertFalse(failed.cidfile.parent.exists())
+        completed = _DockerHost()
+        self._run(completed)
+        self.assertEqual(self._kill_calls(completed), [])
+        self.assertFalse(completed.cidfile.parent.exists())
+
+
+class TestDockerRunnerUserAndStdin(unittest.TestCase):
+    """A04: the non-root rule compares the numeric uid Docker will use.
+    A05: a stdin file reaches the container only with --interactive."""
+
+    IMAGE = "runner@sha256:" + "f" * 64
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.workspace = Path(self.temp.name) / "attempt"
+        self.workspace.mkdir()
+
+    def _options(self, host: _DockerHost) -> tuple[str, ...]:
+        command = host.calls[0]
+        return command[: command.index(self.IMAGE)]
+
+    def test_every_spelling_of_uid_zero_is_refused(self) -> None:
+        for user in ("0:1000", "00:1000", "0000:1000", "0000000000:1000", "000:0"):
+            with self.subTest(user=user):
+                with self.assertRaisesRegex(ValueError, "must not be root"):
+                    DockerRunner(self.workspace, self.IMAGE, host_runner=_DockerHost(), user=user)
+
+    def test_admitted_users_are_forwarded_canonically(self) -> None:
+        for user, forwarded in (
+            ("1000:1000", "1000:1000"),
+            ("01000:01000", "1000:1000"),
+            ("1000:0", "1000:0"),
+            ("2147483647:1", "2147483647:1"),
+        ):
+            with self.subTest(user=user):
+                host = _DockerHost()
+                DockerRunner(self.workspace, self.IMAGE, host_runner=host, user=user).run(("true",))
+                options = self._options(host)
+                self.assertEqual(options[options.index("--user") + 1], forwarded)
+                self.assertIn("--cap-drop=ALL", options)
+                self.assertEqual(options[options.index("--network") + 1], "none")
+
+    def test_malformed_and_out_of_range_users_are_refused(self) -> None:
+        for user in (
+            "2147483648:1", "1:2147483648", "4294967296:1000", "99999999999:1",
+            "-1:1000", "1000", "a:b", " 1000:1000", "1000:1000:1", "",
+        ):
+            with self.subTest(user=user):
+                with self.assertRaises(ValueError):
+                    DockerRunner(self.workspace, self.IMAGE, host_runner=_DockerHost(), user=user)
+
+    def test_a_stdin_file_opens_container_stdin_without_a_terminal(self) -> None:
+        for label, content in (("sentinel", b"sentinel\n"), ("empty", b"")):
+            with self.subTest(stdin=label):
+                stdin = self.workspace / f"{label}.txt"
+                stdin.write_bytes(content)
+                host = _DockerHost()
+                DockerRunner(self.workspace, self.IMAGE, host_runner=host, user="1000:1000").run(
+                    ("cat",), stdin_path=stdin
+                )
+                options = self._options(host)
+                self.assertIn("--interactive", options)
+                for terminal in ("--tty", "-t", "-it", "-ti"):
+                    self.assertNotIn(terminal, options)
+                self.assertEqual(host.stdin_paths, [stdin])
+        host = _DockerHost()
+        DockerRunner(self.workspace, self.IMAGE, host_runner=host, user="1000:1000").run(("cat",))
+        self.assertNotIn("--interactive", self._options(host))
+        self.assertEqual(host.stdin_paths, [None])
+
+    def test_a_stdin_file_outside_the_workspace_is_refused_before_launch(self) -> None:
+        outside = Path(self.temp.name) / "outside.txt"
+        outside.write_text("x", encoding="utf-8")
+        host = _DockerHost()
+        with self.assertRaisesRegex(ValueError, "must remain inside the solver workspace"):
+            DockerRunner(self.workspace, self.IMAGE, host_runner=host, user="1000:1000").run(
+                ("cat",), stdin_path=outside
+            )
+        self.assertEqual(host.calls, [])
 
 
 class TestExecutionBounds(unittest.TestCase):

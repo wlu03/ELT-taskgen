@@ -599,6 +599,74 @@ class WorkspaceScorerTests(unittest.TestCase):
                 self.assertNotIn("dbt_mart_schema_invalid", score.error_codes)
                 self.assertNotIn("dbt_mart_key_invalid", score.error_codes)
 
+    @unittest.skipUnless(
+        (DBT_RUNTIME_ROOT / ".venv" / "bin" / "python").is_file(),
+        "provision the pinned dbt runtime with: "
+        "uv sync --project runtime-images/dbt-duckdb --locked",
+    )
+    def test_real_malformed_candidate_yaml_is_scored_not_unlabelled(self) -> None:
+        """A02 through the production scorer, with no injected dependency.
+
+        Each submission is otherwise the correct candidate. Before the YAML
+        boundary classified these shapes, each one escaped preparation as an
+        unclassified exception and scored reward=None (harness_internal).
+        A real trusted failure (the runtime manifest is missing) must still
+        produce no label.
+        """
+
+        def append(relative: str, text: str):
+            def mutate(elt: Path) -> None:
+                path = elt.joinpath(*relative.split("/"))
+                existing = path.read_text(encoding="utf-8") if path.exists() else "version: 2\n"
+                path.write_text(existing + text, encoding="utf-8")
+
+            return mutate
+
+        runtime = DbtRuntimeConfig(
+            python=DBT_RUNTIME_ROOT / ".venv" / "bin" / "python",
+            manifest=DBT_RUNTIME_ROOT / "runtime.json",
+        )
+        cases = (
+            ("unhashable key in dbt_project.yml", append("dbt_project.yml", "? [a, b]\n: value\n")),
+            ("cyclic alias in dbt_project.yml", append("dbt_project.yml", "vars: &loop [*loop]\n")),
+            ("cyclic alias in sources.yml", append("models/sources.yml", "x-audit: &loop [*loop]\n")),
+            ("unhashable key in schema.yml", append("models/schema.yml", "? [a, b]\n: value\n")),
+        )
+        with portable_five_backend_release() as release_dir:
+            package = load_workspace_package(release_dir, TASK_ID)
+
+            def score(mutate, runtime_config):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    attempt = install_workspace(package, root / "authoring")
+                    _write_correct_candidate(attempt)
+                    if mutate is not None:
+                        mutate(attempt.elt_dir)
+                    sealed = seal_workspace(attempt, package, root / "sealed")
+                    return score_workspace(
+                        package,
+                        sealed,
+                        attempts_root=root / "runs",
+                        runtime_config=runtime_config,
+                    )
+
+            for label, mutate in cases:
+                with self.subTest(label):
+                    result = score(mutate, runtime)
+                    self.assertIsNone(result.failure)
+                    self.assertEqual(result.reward, 0.0)
+                    graded = [s for s in result.populations.values() if s.graded]
+                    self.assertTrue(graded)
+                    for population in graded:
+                        self.assertIn("dbt_project_invalid", population.error_codes)
+
+            broken = DbtRuntimeConfig(
+                python=runtime.python, manifest=runtime.manifest.parent / "missing.json"
+            )
+            trusted = score(None, broken)
+            self.assertIsNone(trusted.reward)
+            self.assertIsNotNone(trusted.failure)
+
     def test_strict_el_gates_a_diagnostic_dbt_pass(self) -> None:
         dbt_calls = 0
 
