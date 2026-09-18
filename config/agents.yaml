@@ -192,7 +192,10 @@ roles:
   shortcut_attacker:
     provider: anthropic
     model: claude-opus-5
-    max_tokens: 16384
+    # Matches population_adversary, the other session seat. At 16384 this seat
+    # truncated on turn 1 and halted metrology: it is the heaviest output
+    # producer of the four critics.
+    max_tokens: 32768
     effort: high
     # SoT T1.1: as the adversary, with `compile_probe` and no match-bit flag.
     session:

@@ -5112,8 +5112,8 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     PHASE4_VIEW_SHA256 = "84259537f8d8cb1d27d7921b9c0f79ef818de18da0ac3c492a238845851e4f05"
     # Includes the reviewed 2026-09-09 validator changes. Phase-0 rollback
     # pins remain unchanged and are rechecked by PROOF 5.
-    PHASE4_FINGERPRINT = "ee0520080d2e2bdb07fdae6d9ba344f434e87ff3b8238fc2c1b5b73fef710117"
-    PHASE3_TOOL_SURFACE = "0f5519eb5e4bf6dfb089eed3d3f63446eef1ccb61952f58ec97d0c65dc721a49"
+    PHASE4_FINGERPRINT = "db021be9b5547b9b02ff2fb364270c7b722877dd12e38cb57baff30343fc5d08"
+    PHASE3_TOOL_SURFACE = "99a52e0edd78f9e669632e8bdc230a3bb03803f73615ea146e8cf30b3650483b"
     PHASE3_CRITIC_DIGESTS = {
         # role: (role_behavior_sha256, policy_sha256)
         "ambiguity_critic": (
@@ -5125,7 +5125,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             "743304b6dab474d90aca0a38713f78a45e2a8237033923539a830ea37a94087f",
         ),
         "shortcut_attacker": (
-            "5191e2a89b84022834495bd06514396c03cbb3dd1002ede30e92fdfc15e65f89",
+            "c6cfa8a8f044349691be95b1a0b5cf0e4261d11db114e3a7fe468b057448f0d7",
             "ec94b0fd2a0ce53b845d8ab3dc82aa1c8681275dd2bd5136fb1092ae27f2f708",
         ),
         "feasibility_reviewer": (
@@ -5142,7 +5142,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     #: current feasibility route even though it rolls back the POP/SHC blocks.
     #: Recomputed after the diagnostic-code exemption: both values stay fixed
     #: because the rollback leaves `validators.code` empty.
-    PHASE0_BLOCKS_FINGERPRINT_HARNESS_6 = "b697410e7a5b445947594b5bfbc76756e9878e3bb04bbd8a5c6a4cd4f26bf78b"
+    PHASE0_BLOCKS_FINGERPRINT_HARNESS_6 = "4693f32cb87f839c6033492236e686d0de7bf5ece1e3d9bbe5923af09c355077"
     PHASE0_TOOL_SURFACE = "02c2aeebb234978bfc9679cf13ccc9884cc6a49b188013d974355d60756c0c3e"
     PHASE0_ONE_SHOT_DIGESTS = {
         "population_adversary": (
@@ -5150,7 +5150,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             "18b31457d86db46b2af8fbf59e44efbff44fc7b0c3c30f63add7c73895d2b281",
         ),
         "shortcut_attacker": (
-            "268e7c388466ba9bc5d9e1477bc404a7eb94a9a983f038bcb60118b8687421c3",
+            "f1e50bdea8dd16cad11b8c728ed55afe5b08358623f04bb7890b0f040ca9a6cb",
             "4802bbed0cb083cb69b44db2ea8d98aa061a558f576b19aa445bab0e2e9da3b0",
         ),
     }
@@ -5234,7 +5234,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
 
     #: Digest of the harness-6 fingerprint with protocol fields replaced by a
     #: sentinel. The legacy name remains for the Phase-3 decomposition.
-    PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS = "56fd731266c9faced5660cc312fd36da69061f4b432f4b02e5777cad70a13692"
+    PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS = "fff2486cb2125d46feacb54e5638ba6058f441f955318e44a81b3b524c0fa1bc"
     PROTOCOL_TERMS = ("harness_version", "pool_sha256", "view_sha256", "observable_state_sha256")
     #: SoT T1.1: the declared blocks, hashed verbatim (`loop_limits`).
     SOT_T1_1_BLOCKS = {
@@ -5262,7 +5262,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     PHASE3_ROUTES = {
         "ambiguity_critic": ("anthropic", "claude-opus-5", 16384, "high"),
         "population_adversary": ("anthropic", "claude-opus-5", 32768, "high"),
-        "shortcut_attacker": ("anthropic", "claude-opus-5", 16384, "high"),
+        "shortcut_attacker": ("anthropic", "claude-opus-5", 32768, "high"),
         "feasibility_reviewer": ("anthropic", "claude-opus-5", 8192, "high"),
     }
 
