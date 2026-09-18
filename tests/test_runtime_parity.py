@@ -920,6 +920,42 @@ class MutationBatteryTests(_FixtureMixin, unittest.TestCase):
                     f"gold={gold_csv!r} rows={rows!r} described={described!r}"
                 )
 
+    def test_the_switchable_comparator_agrees_on_non_finite_values(self):
+        """R01: the reward comparator rejects an unequal non-finite pair, and
+        the all-rules-on form must agree, or the mutation battery would judge
+        mutants against a second, weaker reward implementation. The seeded
+        sweep above draws no infinities, so this pins them explicitly."""
+        mart = self.marts["customer_rollup"]
+        columns = tuple(column.name for column in mart.columns)
+        numeric = "total_spend"
+        other = [name for name in columns if name != numeric]
+        for gold_value, submitted, matches in (
+            ("100.0", "inf", False),
+            ("100.0", "-inf", False),
+            ("inf", "-inf", False),
+            ("inf", "100.0", False),
+            ("inf", "inf", True),
+            ("100.0", "100.0", True),
+        ):
+            base = {name: "1" for name in other}
+            gold_csv = upstream_eval.rows_to_canonical_csv(
+                [dict(base, **{numeric: gold_value})], columns
+            )
+            case = parity.ComparatorCase(
+                f"non-finite-{gold_value}-{submitted}",
+                mart,
+                gold_csv,
+                (dict(base, **{numeric: submitted}),),
+                columns,
+            )
+            with self.subTest(gold=gold_value, submitted=submitted):
+                reference = parity.reference_comparator(case)
+                self.assertIs(reference, matches)
+                self.assertEqual(
+                    parity.compare_mart_with_rules(case, parity.REFERENCE_RULES),
+                    reference,
+                )
+
     def test_the_case_set_kills_every_mutant(self):
         report = parity.run_mutation_battery(self.cases)
         self.assertEqual(report.survived, ())

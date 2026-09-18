@@ -13,7 +13,8 @@ Two defects measured in the real demo run (docs/runs/demo.md §6.2, §8.4):
     separate executions.
 
 These tests pin BOTH the behaviour and its limits: what the screen catches,
-what it deliberately does not catch (rephrased retractions), that it never
+what it deliberately does not read (R02: withdrawal is the provider's
+`disposition` field, and no sentence in a finding withdraws it), that it never
 deletes or rewords a finding, and that everything it withholds is recorded on
 the finding itself.
 """
@@ -27,6 +28,7 @@ from elt_taskgen.models import (
     AttackKind,
     CouncilRole,
     Finding,
+    FindingDisposition,
     FindingProvenance,
     FindingScreenStatus,
     PopulationName,
@@ -37,6 +39,8 @@ from elt_taskgen.models import (
 from elt_taskgen.review import council
 from elt_taskgen.verification import attacks
 
+WITHDRAWN = FindingDisposition.WITHDRAWN
+
 
 def _task():
     return demo_fixture.demo_task()
@@ -44,7 +48,7 @@ def _task():
 
 def _finding(fid, *, severity=Severity.MAJOR, summary="s", detail="d", attack=None,
              proposed=None, role=CouncilRole.AMBIGUITY_CRITIC,
-             provenance=FindingProvenance.PROVIDER):
+             provenance=FindingProvenance.PROVIDER, disposition=None):
     return Finding(
         finding_id=fid,
         role=role,
@@ -54,7 +58,12 @@ def _finding(fid, *, severity=Severity.MAJOR, summary="s", detail="d", attack=No
         detail=detail,
         suggested_attack=attack,
         proposed_case=proposed,
+        disposition=disposition,
     )
+
+
+def _signals(out):
+    return tuple(out.screen.signals) if out.screen else ()
 
 
 GROUNDED = (
@@ -101,10 +110,12 @@ class SelfNullifyingFindingTest(unittest.TestCase):
         self.assertIs(out.severity, Severity.INFO)
         self.assertIs(out.screen.claimed_severity, Severity.MAJOR)
 
-    def test_retraction_in_the_closing_sentence_is_voided(self):
+    def test_a_closing_retraction_sentence_is_not_a_withdrawal(self):
+        """The recorded demo finding still voids, on its empty detail alone.
+        Its closing "No defect here, retracting." withdraws nothing; filed
+        with disposition 'withdrawn', it carries both signals."""
         task = _task()
-        junk = _finding(
-            "population_adversary-01",
+        recorded = dict(
             summary=(
                 "Both development and stress populations state every customer "
                 "has a completed order, so an INNER JOIN is only caught by "
@@ -113,15 +124,21 @@ class SelfNullifyingFindingTest(unittest.TestCase):
             ),
             detail="N/A",
         )
-        out = council.screen_findings(task, [junk])[0]
+        out = council.screen_findings(
+            task, [_finding("population_adversary-01", **recorded)]
+        )[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
-        self.assertIn("self_retracted", out.screen.signals)
-        self.assertIn("empty_detail", out.screen.signals)
+        self.assertEqual(_signals(out), ("empty_detail",))
 
-    def test_a_finding_explicitly_labeled_context_only_is_voided(self):
+        out = council.screen_findings(task, [_finding(
+            "population_adversary-01", disposition=WITHDRAWN, **recorded
+        )])[0]
+        self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
+        self.assertEqual(_signals(out), ("empty_detail", "self_retracted"))
+
+    def test_a_context_only_label_is_not_a_withdrawal(self):
         task = _task()
-        junk = _finding(
-            "population_adversary-02",
+        labeled = dict(
             role=CouncilRole.POPULATION_ADVERSARY,
             summary="Only counterfactual catches the inner_join variant.",
             detail=(
@@ -130,26 +147,43 @@ class SelfNullifyingFindingTest(unittest.TestCase):
                 "for coverage only."
             ),
         )
-        out = council.screen_findings(task, [junk])[0]
+        out = council.screen_findings(
+            task, [_finding("population_adversary-02", **labeled)]
+        )[0]
+        self.assertIsNone(out.screen)
+        self.assertIs(out.severity, Severity.MAJOR)
+
+        out = council.screen_findings(task, [_finding(
+            "population_adversary-02", disposition=WITHDRAWN, **labeled
+        )])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
         self.assertIn("self_retracted", out.screen.signals)
         self.assertIs(out.severity, Severity.INFO)
 
-    def test_terminal_context_clause_and_no_defect_filed_are_withdrawals(self):
+    def test_context_and_no_defect_clauses_are_not_withdrawals(self):
+        """Neither clause withdraws. The ungrounded one is still weak evidence."""
         task = _task()
         cases = (
             (
                 "Counterfactual guarantees the discriminator, so this is "
-                "reported as context for coverage only."
+                "reported as context for coverage only.",
+                (),
             ),
-            "No defect filed.",
+            ("No defect filed.", ("ungrounded_detail",)),
         )
-        for index, detail in enumerate(cases):
+        for index, (detail, prose_signals) in enumerate(cases):
             with self.subTest(detail=detail):
                 out = council.screen_findings(task, [_finding(
                     f"context-{index}",
                     summary="rule 2 may be ambiguous",
                     detail=detail,
+                )])[0]
+                self.assertEqual(_signals(out), prose_signals)
+                out = council.screen_findings(task, [_finding(
+                    f"context-{index}",
+                    summary="rule 2 may be ambiguous",
+                    detail=detail,
+                    disposition=WITHDRAWN,
                 )])[0]
                 self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
                 self.assertIn("self_retracted", out.screen.signals)
@@ -171,10 +205,11 @@ class SelfNullifyingFindingTest(unittest.TestCase):
             rationale="only stress declares duplicate headers",
         )
         junk = _finding(
-            "x-00", detail="N/A", summary="no defect here, retracting.",
-            attack=AttackKind.NO_DEDUP, proposed=proposal,
+            "x-00", detail=GROUNDED, summary="rule 2 dedupe is ambiguous",
+            attack=AttackKind.NO_DEDUP, proposed=proposal, disposition=WITHDRAWN,
         )
         out = council.screen_findings(task, [junk])[0]
+        self.assertEqual(_signals(out), ("self_retracted",))
         self.assertIsNone(out.suggested_attack)
         self.assertIsNone(out.proposed_case)
         self.assertIs(out.screen.withheld_attack, AttackKind.NO_DEDUP)
@@ -210,26 +245,33 @@ class SelfNullifyingFindingTest(unittest.TestCase):
         out = council.screen_findings(task, [probeless])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
 
-    def test_a_retraction_voids_even_when_a_probe_is_attached(self):
+    def test_a_withdrawal_voids_even_when_a_probe_is_attached(self):
         task = _task()
-        retracted = _finding(
-            "x-00", detail=GROUNDED, attack=AttackKind.NO_DEDUP,
+        retracting_prose = dict(
+            detail=GROUNDED, attack=AttackKind.NO_DEDUP,
             summary="on inspection rule 2 is fine. No defect here, retracting.",
         )
-        out = council.screen_findings(task, [retracted])[0]
+        out = council.screen_findings(task, [_finding("x-00", **retracting_prose)])[0]
+        self.assertIsNone(out.screen)
+        self.assertIs(out.suggested_attack, AttackKind.NO_DEDUP)
+
+        out = council.screen_findings(task, [_finding(
+            "x-00", disposition=WITHDRAWN, **retracting_prose
+        )])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
         self.assertIsNone(out.suggested_attack)
 
-    def test_filing_nothing_further_is_an_explicit_retraction(self):
+    def test_recorded_filing_nothing_further_needs_the_disposition(self):
         """Recorded DLT shape: the detail closes by withdrawing the filing.
 
-        A summary that still asserts a fork must not override the critic's own
-        final conclusion that it can state no second reading and is filing
-        nothing further.
+        As recorded (no disposition) the finding stays an active MAJOR claim
+        and blocks. Filed with disposition 'withdrawn', it is voided on that
+        field, and the evidence quotes the field, not the prose.
         """
+        from elt_taskgen import cli
+
         task = _task()
-        withdrawn = _finding(
-            "ambiguity_critic-00",
+        recorded = dict(
             summary=(
                 "distinct_amount_count has two incompatible readings for "
                 "customer_summary."
@@ -240,42 +282,66 @@ class SelfNullifyingFindingTest(unittest.TestCase):
                 "filing nothing further on this column."
             ),
         )
-        out = council.screen_findings(task, [withdrawn])[0]
-        self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
-        self.assertIn("self_retracted", out.screen.signals)
-        self.assertIn("filing nothing further", out.screen.evidence)
-        self.assertIs(out.screen.claimed_severity, Severity.MAJOR)
+        out = council.screen_findings(task, [_finding("ambiguity_critic-00", **recorded)])[0]
+        self.assertIsNone(out.screen)
+        self.assertIs(out.severity, Severity.MAJOR)
+        self.assertEqual(cli._blocking_proposal_failures([out], ())[0], [out])
 
-    def test_report_249_reasoned_graded_fork_withdrawal_is_voided(self):
-        """The Twitter critic disproved its own fork in one long sentence."""
+        out = council.screen_findings(task, [_finding(
+            "ambiguity_critic-00", disposition=WITHDRAWN, **recorded
+        )])[0]
+        self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
+        self.assertEqual(_signals(out), ("self_retracted",))
+        self.assertIn("disposition 'withdrawn'", out.screen.evidence)
+        self.assertNotIn("filing nothing further", out.screen.evidence)
+        self.assertIs(out.screen.claimed_severity, Severity.MAJOR)
+        self.assertEqual(cli._blocking_proposal_failures([out], ()), ([], []))
+
+    def test_report_249_graded_fork_withdrawal_needs_the_disposition(self):
+        """The Twitter critic disproved its own fork in one long sentence.
+
+        Against the demo task the recorded detail names nothing of the task,
+        so it is weak evidence; its closing withdrawal adds no signal. The
+        same closing clause after grounded evidence leaves an active claim.
+        """
+        from elt_taskgen import cli
+
         task = _task()
-        withdrawn = _finding(
-            "ambiguity_critic-00-c24c53df",
+        closing = (
+            "both readings produce identical graded rows, so I withdraw this "
+            "as a graded fork."
+        )
+        recorded = dict(
             summary="twitter_ads__account_report leaves a key/group-by fork.",
             detail=(
                 "Section 1 says one row exists per account_id, placement and "
                 "date_day, while Row content also lists the account_history "
                 "attributes. Since the prose explicitly declares "
                 "account_history, line_item_history and "
-                "promoted_tweet_history to have at most one row per id, both "
-                "readings produce identical graded rows, so I withdraw this "
-                "as a graded fork."
+                "promoted_tweet_history to have at most one row per id, "
+                + closing
             ),
         )
-        out = council.screen_findings(task, [withdrawn])[0]
+        fid = "ambiguity_critic-00-c24c53df"
+        out = council.screen_findings(task, [_finding(fid, **recorded)])[0]
+        self.assertEqual(_signals(out), ("ungrounded_detail",))
+
+        grounded = _finding(fid, summary=recorded["summary"], detail=f"{GROUNDED} Yet {closing}")
+        out = council.screen_findings(task, [grounded])[0]
+        self.assertIsNone(out.screen)
+        self.assertEqual(cli._blocking_proposal_failures([out], ())[0], [out])
+
+        out = council.screen_findings(task, [_finding(fid, disposition=WITHDRAWN, **recorded)])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
         self.assertIn("self_retracted", out.screen.signals)
-        self.assertIn("so i withdraw this as a graded fork", out.screen.evidence)
         self.assertIs(out.severity, Severity.INFO)
         self.assertIs(out.screen.claimed_severity, Severity.MAJOR)
-        from elt_taskgen import cli
-
         self.assertEqual(cli._blocking_proposal_failures([out], ()), ([], []))
 
-    def test_recorded_twitter_no_defect_fork_with_metadata_aside_is_voided(self):
-        """A filing-metadata aside cannot resurrect the preceding withdrawal."""
+    def test_recorded_twitter_no_defect_fork_with_metadata_aside(self):
+        """The recorded prose adds no signal; only the disposition withdraws."""
         task = _task()
-        withdrawn = _finding(
+        recorded = _finding(
             "ambiguity_critic-00-current-twitter",
             summary="twitter_ads__account_report appears to leave a null fork.",
             detail=(
@@ -286,13 +352,20 @@ class SelfNullifyingFindingTest(unittest.TestCase):
                 "not to fabricate; see other findings.)"
             ),
         )
+        out = council.screen_findings(task, [recorded])[0]
+        self.assertEqual(_signals(out), ("ungrounded_detail",))
+
+        withdrawn = _finding(
+            recorded.finding_id, summary=recorded.summary,
+            detail=recorded.detail, disposition=WITHDRAWN,
+        )
         out = council.screen_findings(task, [withdrawn])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
         self.assertIn("self_retracted", out.screen.signals)
         self.assertIs(out.severity, Severity.INFO)
 
-        live = withdrawn.model_copy(update={
-            "detail": withdrawn.detail + " But total_spend is still ambiguous."
+        live = recorded.model_copy(update={
+            "detail": recorded.detail + " But total_spend is still ambiguous."
         })
         self.assertIsNone(council.screen_findings(task, [live])[0].screen)
 
@@ -549,7 +622,7 @@ class SelfNullifyingFindingTest(unittest.TestCase):
         self.assertIs(out.severity, Severity.FATAL)
 
     def test_quoting_a_retraction_mid_argument_does_not_fire(self):
-        """The lexicon matches the CLOSING sentence only."""
+        """Quoted retraction words never withdraw a finding."""
         task = _task()
         good = _finding(
             "a-00",
@@ -631,18 +704,19 @@ class ProviderFatalScreeningTest(unittest.TestCase):
     provider-authored — and a provider is free to type `"severity": "fatal"`.
 
     The dbt apple_search_ads review was rejected by two such findings, both of
-    which withdraw their own claim in their own closing sentence. They match
-    `_terminal_withdrawal_clause` cleanly; nothing ever asked them.
+    which withdraw their own claim in their own closing sentence.
 
-    These tests pin the fix AND its blast radius: a provider fatal that
-    retracts itself is voided, a provider fatal that merely argues around
-    hedging language is untouched, a provider fatal with thin evidence is
-    NOTED and STILL FATAL (a rejection reason has no executable consequence by
-    nature, so evidence-absence must not silence it), and a code-authored leak
-    finding is exempt no matter what its text says.
+    R02: the screen no longer reads withdrawal from prose. Those recorded
+    fatals, filed without a disposition, stay fatal; filed with disposition
+    'withdrawn', they are voided. These tests pin that AND its blast radius: a
+    provider fatal that merely argues around hedging language is untouched, a
+    provider fatal with thin evidence is NOTED and STILL FATAL (a rejection
+    reason has no executable consequence by nature, so evidence-absence must
+    not silence it), and a code-authored leak finding is exempt no matter what
+    its text says.
     """
 
-    def _provider_fatal(self, payload):
+    def _provider_fatal(self, payload, disposition=None):
         return _finding(
             payload["finding_id"],
             severity=Severity.FATAL,
@@ -650,13 +724,27 @@ class ProviderFatalScreeningTest(unittest.TestCase):
             detail=payload["detail"],
             role=CouncilRole.FEASIBILITY_REVIEWER,
             provenance=FindingProvenance.PROVIDER,
+            disposition=disposition,
         )
 
-    def test_the_recorded_apple_search_ads_fatals_are_screened(self):
+    def test_the_recorded_apple_search_ads_fatals_stay_fatal_without_a_disposition(self):
+        """Their closing sentences withdraw nothing; the review would reject."""
         task = _task()
         findings = [
             self._provider_fatal(APPLE_FATAL_00),
             self._provider_fatal(APPLE_FATAL_01),
+        ]
+        screened = council.screen_findings(task, findings)
+        self.assertEqual(len(screened), 2)
+        for out in screened:
+            self.assertNotIn("self_retracted", _signals(out), out.finding_id)
+            self.assertIs(out.severity, Severity.FATAL)
+
+    def test_the_recorded_apple_search_ads_fatals_are_voided_by_the_disposition(self):
+        task = _task()
+        findings = [
+            self._provider_fatal(APPLE_FATAL_00, WITHDRAWN),
+            self._provider_fatal(APPLE_FATAL_01, WITHDRAWN),
         ]
         screened = council.screen_findings(task, findings)
         self.assertEqual(len(screened), 2)
@@ -674,27 +762,27 @@ class ProviderFatalScreeningTest(unittest.TestCase):
             [f for f in screened if f.severity is Severity.FATAL], []
         )
 
-    def test_the_matched_span_is_the_details_own_closing_sentence(self):
-        """Not the summary: both summaries assert the defect and stand."""
+    def test_the_withdrawal_evidence_is_the_field_not_a_sentence(self):
+        """The screen quotes no prose as the reason for a withdrawal."""
         task = _task()
-        out = council.screen_findings(
-            task, [self._provider_fatal(APPLE_FATAL_00)]
-        )[0]
-        self.assertIn("the defect is withdrawn.", out.screen.evidence)
-        out = council.screen_findings(
-            task, [self._provider_fatal(APPLE_FATAL_01)]
-        )[0]
-        self.assertIn("this finding is withdrawn upon verification.",
-                      out.screen.evidence)
+        for payload, sentence in (
+            (APPLE_FATAL_00, "the defect is withdrawn."),
+            (APPLE_FATAL_01, "this finding is withdrawn upon verification."),
+        ):
+            with self.subTest(finding=payload["finding_id"]):
+                out = council.screen_findings(
+                    task, [self._provider_fatal(payload, WITHDRAWN)]
+                )[0]
+                self.assertIn("disposition 'withdrawn'", out.screen.evidence)
+                self.assertNotIn(sentence, out.screen.evidence.lower())
 
     def test_a_genuine_fatal_that_merely_hedges_is_untouched(self):
         """THE OVER-CORRECTION GUARD.
 
         A real leak report that quotes and then REJECTS the 'this is not a
         defect' reading contains three separate retraction markers ('not a
-        defect', 'no issue here', 'no defect') — every one of them mid-
-        argument. `_closing_span` matches the last sentence only, so the
-        screen does not fire and the task is still rejected.
+        defect', 'no issue here', 'no defect'). No prose withdraws a finding,
+        so the screen does not fire and the task is still rejected.
         """
         task = _task()
         genuine = _finding(
@@ -791,22 +879,25 @@ class ProviderFatalScreeningTest(unittest.TestCase):
         self.assertIn("placeholder_text", out.screen.signals)
         self.assertIs(out.severity, Severity.INFO)
 
-    def test_a_retraction_appended_to_a_genuine_fatal_is_the_known_limit(self):
-        """Honest about the cost of screening fatals at all.
-
-        If a model appends a real withdrawal sentence to a real defect report,
-        the screen believes it — exactly as it does for a MAJOR. That is the
-        proposer contradicting itself, and the finding's words survive
-        verbatim with `claimed_severity=fatal` on the record, so the ledger
-        shows a human precisely what was withdrawn and by whom.
-        """
+    def test_a_retraction_sentence_appended_to_a_genuine_fatal_is_not_a_withdrawal(self):
+        """This was the known limit of reading withdrawal from prose: a real
+        withdrawal sentence appended to a real defect report voided it. Under
+        R02 the sentence withdraws nothing and the fatal stands; only the
+        provider's disposition field withdraws, with the claimed severity and
+        the finding's words kept on the record."""
         task = _task()
-        out = council.screen_findings(task, [_finding(
-            "feasibility_reviewer-10",
+        leak = dict(
             severity=Severity.FATAL,
             role=CouncilRole.FEASIBILITY_REVIEWER,
             summary="Solver prose leaks the reference SQL for customer_summary.",
             detail=GROUNDED + " On reflection, no defect.",
+        )
+        out = council.screen_findings(task, [_finding("feasibility_reviewer-10", **leak)])[0]
+        self.assertIsNone(out.screen)
+        self.assertIs(out.severity, Severity.FATAL)
+
+        out = council.screen_findings(task, [_finding(
+            "feasibility_reviewer-10", disposition=WITHDRAWN, **leak
         )])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
         self.assertIs(out.screen.claimed_severity, Severity.FATAL)
@@ -867,11 +958,10 @@ class ProviderFatalScreeningTest(unittest.TestCase):
                 self.assertIsNone(out.screen)
                 self.assertIs(out.severity, Severity.FATAL)
 
-    def test_a_terminal_unpunctuated_list_withdrawal_still_fires(self):
-        """Line boundaries harden negatives without losing real conclusions."""
+    def test_a_terminal_list_item_withdrawal_needs_the_disposition(self):
+        """A closing list item that withdraws the finding is still prose."""
         task = _task()
-        out = council.screen_findings(task, [_finding(
-            "feasibility_reviewer-terminal-list",
+        listed = dict(
             severity=Severity.FATAL,
             role=CouncilRole.FEASIBILITY_REVIEWER,
             summary="customer_summary may be unsatisfiable",
@@ -880,10 +970,15 @@ class ProviderFatalScreeningTest(unittest.TestCase):
                 "- both required source columns exist\n"
                 "- this finding is withdrawn upon verification"
             ),
-        )])[0]
+        )
+        fid = "feasibility_reviewer-terminal-list"
+        out = council.screen_findings(task, [_finding(fid, **listed)])[0]
+        self.assertIsNone(out.screen)
+        self.assertIs(out.severity, Severity.FATAL)
+
+        out = council.screen_findings(task, [_finding(fid, disposition=WITHDRAWN, **listed)])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
         self.assertIn("self_retracted", out.screen.signals)
-        self.assertIn("this finding is withdrawn upon verification", out.screen.evidence)
 
     def test_thin_evidence_never_voids_a_fatal(self):
         """A rejection reason has no mutant by nature — absence of an
@@ -949,7 +1044,7 @@ class ProviderFatalScreeningTest(unittest.TestCase):
         smuggled = (
             '{"findings": [{"severity": "fatal", "summary": "s", '
             '"detail": "d", "route_hint": null, '
-            '"suggested_attack": null, "proposed_case": null, '
+            '"suggested_attack": null, "disposition": "active", "proposed_case": null, '
             '"provenance": "code"}]}'
         )
         with self.assertRaisesRegex(
@@ -962,7 +1057,7 @@ class ProviderFatalScreeningTest(unittest.TestCase):
             CouncilRole.SHORTCUT_ATTACKER,
             '{"findings": [{"severity": "fatal", "summary": "s", '
             '"detail": "d", "route_hint": null, '
-            '"suggested_attack": null, "proposed_case": null}]}',
+            '"suggested_attack": null, "disposition": "active", "proposed_case": null}]}',
             "deadbeef",
         )
         # Same role and severity never confer code provenance; an explicit
@@ -985,8 +1080,12 @@ class RunCouncilFatalRetractionTest(unittest.TestCase):
     """End to end through `run_council`: the stage no longer rejects."""
 
     class _RetractingFatalProvider:
-        """One seat returns the recorded self-retracting fatal; the shortcut
-        seat returns a real probe so the run is otherwise well-formed."""
+        """One seat returns the two recorded fatals whose prose withdraws
+        them, filed under `disposition`; the shortcut seat returns a real
+        probe so the run is otherwise well-formed."""
+
+        def __init__(self, disposition="withdrawn"):
+            self.disposition = disposition
 
         def complete(self, role, prompt):
             import json as _json
@@ -997,18 +1096,20 @@ class RunCouncilFatalRetractionTest(unittest.TestCase):
                      "summary": APPLE_FATAL_00["summary"],
                      "detail": APPLE_FATAL_00["detail"],
                      "route_hint": None, "suggested_attack": None,
+                     "disposition": self.disposition,
                      "proposed_case": None},
                     {"severity": "fatal",
                      "summary": APPLE_FATAL_01["summary"],
                      "detail": APPLE_FATAL_01["detail"],
                      "route_hint": None, "suggested_attack": None,
+                     "disposition": self.disposition,
                      "proposed_case": None},
                 ]})
             if role is CouncilRole.SHORTCUT_ATTACKER:
                 return _json.dumps({"findings": [
                     {"severity": "minor", "summary": "constants shortcut",
                      "detail": GROUNDED, "route_hint": None,
-                     "suggested_attack": "constants",
+                     "suggested_attack": "constants", "disposition": "active",
                      "proposed_case": _wire_constants_proposal()},
                 ]})
             return '{"findings": []}'
@@ -1027,12 +1128,12 @@ class RunCouncilFatalRetractionTest(unittest.TestCase):
                                "declares no monetary column at all. There is "
                                "no reading of rule 2 under which this is "
                                "computable.",
-                     "route_hint": None, "suggested_attack": None,
+                     "route_hint": None, "suggested_attack": None, "disposition": "active",
                      "proposed_case": None},
                 ]})
             return '{"findings": []}'
 
-    def test_two_self_retracted_fatals_no_longer_reject_the_task(self):
+    def test_two_withdrawn_fatals_no_longer_reject_the_task(self):
         findings = council.run_council(_task(), self._RetractingFatalProvider())
         fatal = [f for f in findings if f.severity is Severity.FATAL]
         self.assertEqual(fatal, [], "a withdrawn finding must not reject")
@@ -1042,6 +1143,16 @@ class RunCouncilFatalRetractionTest(unittest.TestCase):
         for f in voided:
             self.assertIs(f.screen.claimed_severity, Severity.FATAL)
             self.assertIn("self_retracted", f.screen.signals)
+
+    def test_the_same_fatals_filed_active_still_reject(self):
+        """Their withdrawing prose is unchanged; only the field differs."""
+        findings = council.run_council(
+            _task(), self._RetractingFatalProvider(disposition="active")
+        )
+        fatal = [f for f in findings if f.severity is Severity.FATAL]
+        self.assertEqual(len(fatal), 2)
+        for f in fatal:
+            self.assertNotIn("self_retracted", _signals(f))
 
     def test_a_genuine_unretracted_fatal_still_rejects(self):
         findings = council.run_council(_task(), self._GenuineFatalProvider())
@@ -1055,7 +1166,8 @@ class ScreenLimitsTest(unittest.TestCase):
     """The screen's honesty: what it CANNOT catch is pinned too."""
 
     def test_a_rephrased_retraction_is_missed_by_design(self):
-        """A retraction in novel words survives. Recorded, not hidden."""
+        """A retraction in any words survives: the screen reads withdrawal
+        only from the disposition field (R02). Recorded, not hidden."""
         task = _task()
         sneaky = _finding(
             "a-00",
@@ -1064,7 +1176,7 @@ class ScreenLimitsTest(unittest.TestCase):
             detail=GROUNDED,
         )
         out = council.screen_findings(task, [sneaky])[0]
-        self.assertIsNone(out.screen)  # missed: the lexicon is not semantic
+        self.assertIsNone(out.screen)  # prose never withdraws a finding
 
     def test_grounding_is_defeated_by_naming_one_real_column(self):
         """The structural floor is a floor, not a content judgement."""
@@ -1265,6 +1377,7 @@ class MutantDedupTest(unittest.TestCase):
             "s-00", severity=Severity.MINOR, detail="N/A",
             summary="no defect here, retracting.",
             attack=AttackKind.KEYS_ONLY, role=CouncilRole.SHORTCUT_ATTACKER,
+            disposition=WITHDRAWN,
         )
         out = council.screen_findings(task, [junk])[0]
         self.assertEqual(out.screen.status, FindingScreenStatus.VOID)
@@ -1321,7 +1434,8 @@ class ScreenReportTest(unittest.TestCase):
             _finding("feasibility_reviewer-00", severity=Severity.FATAL,
                      role=CouncilRole.FEASIBILITY_REVIEWER,
                      summary=APPLE_FATAL_00["summary"],
-                     detail=APPLE_FATAL_00["detail"]),
+                     detail=APPLE_FATAL_00["detail"],
+                     disposition=WITHDRAWN),
             _finding("a-00", detail="N/A"),
         ]))
         self.assertIn("SELF-WITHDRAWN FATAL", line)

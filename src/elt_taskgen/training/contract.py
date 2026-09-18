@@ -9,7 +9,10 @@ from typing import Mapping
 
 WORKSPACE_SUBMISSION_SCHEMA_VERSION = "workspace-v1"
 WORKSPACE_RESULT_SCHEMA_VERSION = "workspace-result-v1"
-WORKSPACE_SCORER_VERSION = "0.2.0"
+#: 0.2.1: the shared comparator no longer matches an unequal non-finite
+#: pair (R01). Results and canonical records scored under 0.2.0 are not
+#: relabelled as measured by the fixed comparator.
+WORKSPACE_SCORER_VERSION = "0.2.1"
 ARTIFACT_WORKFLOW_PROXY_CLAIM = "artifact_workflow_proxy"
 WORKSPACE_POPULATION_AGGREGATION = "minimum"
 WORKSPACE_PROFILE_OWNER = "harness"

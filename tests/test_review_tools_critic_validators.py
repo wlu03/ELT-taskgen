@@ -90,7 +90,7 @@ def _finding(summary="an INNER join is indistinguishable on the stated populatio
              detail="every development customer has a completed order", attack="inner_join",
              proposed=None, severity="major") -> dict:
     return {"severity": severity, "summary": summary, "detail": detail, "route_hint": None,
-            "suggested_attack": attack, "proposed_case": proposed}
+            "suggested_attack": attack, "disposition": "active", "proposed_case": proposed}
 
 
 def _payload(*findings: dict) -> dict:
@@ -1259,11 +1259,24 @@ class BatchRepairTest(_CriticCase):
         boundary that once raised over it is no longer reachable."""
         record = json.loads(_D3_TRANSCRIPT.read_text(encoding="utf-8"))
         session, ctx = self.session(POP)
+        # R02: the recording predates the required `disposition` field. The
+        # live parser rejects it as recorded rather than inferring one; the
+        # same response under the current protocol carries "active". The
+        # committed file is not modified.
+        with self.assertRaisesRegex(
+            council.ProviderProtocolError, "missing required disposition"
+        ):
+            council._parse_findings(
+                CouncilRole.POPULATION_ADVERSARY, record["response"], TASK.content_hash()[:8]
+            )
+        response = json.loads(record["response"])
+        for item in response["findings"]:
+            item["disposition"] = "active"
         # The recorded response carries the wire's `role` echo beside the
         # findings; the validator takes the `report_findings` arguments.
-        payload = {"findings": json.loads(record["response"])["findings"]}
+        payload = {"findings": response["findings"]}
         (finding,) = council._parse_findings(
-            CouncilRole.POPULATION_ADVERSARY, record["response"], TASK.content_hash()[:8]
+            CouncilRole.POPULATION_ADVERSARY, json.dumps(response), TASK.content_hash()[:8]
         )
         self.assertEqual(dict(finding.proposed_case.params), {"variant": "second_hop"})
         text = f"{finding.summary} {finding.detail} {finding.proposed_case.rationale}"

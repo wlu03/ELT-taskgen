@@ -2231,7 +2231,7 @@ def _critic_finding(*, attack="inner_join", proposed=None, severity="major") -> 
         "summary": "an INNER join is indistinguishable on the stated populations",
         "detail": "every development customer has a completed order",
         "route_hint": None,
-        "suggested_attack": attack,
+        "suggested_attack": attack, "disposition": "active",
         "proposed_case": proposed,
     }
 
@@ -2452,8 +2452,10 @@ class Phase4SeamTest(_SessionCase):
     def test_the_council_entry_points_match_their_reviewed_source(self):
         """Pin the reviewed council entry points by their source digest.
 
-        `_parse_findings` is unmoved: it still independently enforces the closed
-        provider response schema at its consumer boundary. `run_council` and
+        `_parse_findings` was re-pinned for R02 after a read of the current
+        source: its only change passes the provider's `disposition` from an
+        item the closed schema has already validated. It still independently
+        enforces that schema at its consumer boundary. `run_council` and
         `screen_findings` were re-pinned after a read of the current source,
         which holds every property this test names and adds none of its own:
 
@@ -2477,13 +2479,17 @@ class Phase4SeamTest(_SessionCase):
         """
         pinned = {
             "run_council": "38290ea1e60c37157c7a26c7010855ad49853f66952ccbba0b2cb10c7d4cc506",
-            "_parse_findings": "7668249ffd512cbf517091de3f0e1ecfed9a1491888a352d131e45c046bcef96",
+            "_parse_findings": "dd946f5ea31fc3b9180f37e8a0e34031718ed5b07f4701a57a165ac5bdeb1d8c",
             "screen_findings": "cd518323c958a41e3d7998f2595e49988b74e9543bbfa5345322d41cccea5c8b",
         }
         for name, digest in pinned.items():
             with self.subTest(function=name):
                 source = _inspect.getsource(getattr(_council, name))
                 self.assertEqual(_hashlib.sha256(source.encode("utf-8")).hexdigest(), digest)
+        self.assertIn(
+            "validate_payload_for(role.value, wire_data)",
+            _inspect.getsource(_council._parse_findings),
+        )
         source = _inspect.getsource(_council.run_council)
         self.assertIn("provider.complete(role, view)", source)
         self.assertIn("if any(f.severity is Severity.FATAL for f in findings):", source)

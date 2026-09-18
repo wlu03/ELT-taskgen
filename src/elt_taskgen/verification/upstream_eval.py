@@ -246,6 +246,10 @@ def _vectors_match(gold: list[object], actual: list[object]) -> bool:
                 return False
             if x == y:
                 continue  # covers equal infinities exactly
+            if not (math.isfinite(x) and math.isfinite(y)):
+                # The tolerance is relative to the submitted value, so an
+                # infinite submission would make it infinite and pass.
+                return False
             if not (abs(x - y) <= ABS_TOL + REL_TOL * abs(y)):
                 return False
         return True

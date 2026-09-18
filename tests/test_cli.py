@@ -61,7 +61,7 @@ class CannedFindingsProvider:
                         "summary": "constants shortcut must lose reward",
                         "detail": "compile a constants mutant",
                         "route_hint": None,
-                        "suggested_attack": "constants",
+                        "suggested_attack": "constants", "disposition": "active",
                         "proposed_case": {
                             "kind": "constants",
                             "params": "{}",
@@ -521,7 +521,7 @@ class TestReviewStageDiligence(unittest.TestCase):
                                     "and total_spend to zero."
                                 ),
                                 "route_hint": None,
-                                "suggested_attack": "constants",
+                                "suggested_attack": "constants", "disposition": "active",
                                 "proposed_case": None,
                             }
                         ]
@@ -562,7 +562,7 @@ class TestReviewStageDiligence(unittest.TestCase):
                                     "and total_spend to zero."
                                 ),
                                 "route_hint": None,
-                                "suggested_attack": "constants",
+                                "suggested_attack": "constants", "disposition": "active",
                                 "proposed_case": {
                                     "kind": "constants",
                                     "params": "{}",
@@ -616,7 +616,7 @@ class TestReviewStageDiligence(unittest.TestCase):
                                     "two incompatible total_spend readings"
                                 ),
                                 "route_hint": self.route_hint,
-                                "suggested_attack": None,
+                                "suggested_attack": None, "disposition": "active",
                                 "proposed_case": None,
                             }
                         ]
@@ -962,33 +962,45 @@ class TestProposalFailureRoute(unittest.TestCase):
                 with self.assertRaises(ProviderProtocolError):
                     cli._validated_executable_findings(task, [finding(f"{role.value}-00", role)])
 
-    def test_a_major_finding_its_own_detail_withdraws_is_voided_not_blocking(self):
+    def test_a_major_finding_withdrawn_by_its_disposition_is_voided_not_blocking(self):
         """batch10 2026-09-11: lefty02w and lavestima blocked at attack on a
         MAJOR finding whose detail ended "this observation is therefore not a
         graded fork and I withdraw it" / "this passage does not change graded
-        output"; the proposer read the retraction and abstained."""
+        output"; the proposer read the retraction and abstained.
+
+        R02: that sentence withdraws nothing, so the recorded finding stays an
+        active claim and blocks. The critic withdraws it with disposition
+        'withdrawn', which voids it on record without blocking."""
         from elt_taskgen import demo_fixture
-        from elt_taskgen.models import CouncilRole, Finding, FindingScreenStatus, Severity
+        from elt_taskgen.models import (
+            CouncilRole, Finding, FindingDisposition, FindingScreenStatus, Severity,
+        )
 
         task = demo_fixture.demo_task()
 
-        def finding(detail, fid="ambiguity_critic-00"):
+        def finding(detail, fid="ambiguity_critic-00", disposition=None):
             return Finding(
                 finding_id=fid, role=CouncilRole.AMBIGUITY_CRITIC, severity=Severity.MAJOR,
                 summary="customer_summary never states what a NULL customer_id row does",
-                detail=detail,
+                detail=detail, disposition=disposition,
             )
 
-        withdrawn = finding(
+        detail = (
             "Rule 4 brings in orders whose customer_id matches. Reading A: a NULL "
             "customer_id never matches and is dropped. Reading B is the same under "
             "an equality join, so the graded values coincide — this observation is "
             "therefore not a graded fork and I withdraw it."
         )
+        out = cli._validated_executable_findings(task, [finding(detail)])
+        self.assertIsNone(out[0].screen)
+        blocking, _ = cli._blocking_proposal_failures(out, ())
+        self.assertEqual([f.finding_id for f in blocking], ["ambiguity_critic-00"])
+
+        withdrawn = finding(detail, disposition=FindingDisposition.WITHDRAWN)
         out = cli._validated_executable_findings(task, [withdrawn])
         self.assertEqual(len(out), 1)
         self.assertIs(out[0].screen.status, FindingScreenStatus.VOID)
-        self.assertIn(cli.WITHDRAWN_BY_OWN_DETAIL_SIGNAL, tuple(out[0].screen.signals))
+        self.assertIn(cli.WITHDRAWN_BY_DISPOSITION_SIGNAL, tuple(out[0].screen.signals))
         self.assertIs(out[0].screen.claimed_severity, Severity.MAJOR)
         self.assertIs(out[0].severity, Severity.INFO)
         blocking, problems = cli._blocking_proposal_failures(out, ())
@@ -1468,7 +1480,7 @@ class TestReviewTranscriptManifest(unittest.TestCase):
                                 "summary": "constant output probe",
                                 "detail": "emit constant output values",
                                 "route_hint": "population",
-                                "suggested_attack": "constants",
+                                "suggested_attack": "constants", "disposition": "active",
                                 "proposed_case": {
                                     "kind": "constants",
                                     "params": "{}",

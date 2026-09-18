@@ -7,7 +7,48 @@ __pycache__/
 build/
 dist/
 runs/
-/docs/
+# docs/ is private by default. Only the reviewed documents the README and
+# tests require are published; a new document stays local until it is
+# reviewed and listed here. tests/test_docs_consistency.py (REQUIRED_DOCS)
+# fails when a listed document is missing.
+/docs/*
+!/docs/CONFIGURABLE_PIPELINE.md
+!/docs/EXECUTION_MODEL.md
+!/docs/INTERFACES.md
+!/docs/README_full_20260814.md
+!/docs/SOURCES.md
+!/docs/TWO_STAGE_RLVR_CONTRACT.md
+!/docs/WAREHOUSE_CONNECTORS.md
+!/docs/difficulty/
+/docs/difficulty/*
+!/docs/difficulty/README.md
+!/docs/difficulty/scripts/
+/docs/difficulty/scripts/*
+!/docs/difficulty/scripts/measure_all.py
+!/docs/difficulty/scripts/measure_discriminating_power.py
+!/docs/experiments/
+/docs/experiments/*
+!/docs/experiments/README.md
+!/docs/experiments/PILOT-P2.md
+!/docs/experiments/PILOT-P3.md
+!/docs/experiments/PILOT-P4.md
+!/docs/experiments/PILOT-P5.md
+!/docs/plans/
+/docs/plans/*
+!/docs/plans/bounded_agents_phase0.md
+!/docs/plans/bounded_agents_phase1.md
+!/docs/plans/bounded_agents_phase2.md
+!/docs/plans/bounded_agents_phase3.md
+!/docs/plans/bounded_agents_phase4.md
+!/docs/plans/bounded_agents_phase5.md
+!/docs/plans/cloud_free_elt_agent_rlvr.md
+!/docs/plans/duckdb_rlvr_cloud_runtime_migration.md
+!/docs/plans/endtoend_runbook.md
+!/docs/plans/tinker_elt_rl_environment.md
+# The other run logs quote hidden test material and model transcripts.
+!/docs/runs/
+/docs/runs/*
+!/docs/runs/demo.md
 /council/tool_raw/
 /council/transcripts/
 secrets/

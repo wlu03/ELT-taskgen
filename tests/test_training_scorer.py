@@ -545,6 +545,60 @@ class WorkspaceScorerTests(unittest.TestCase):
             self.assertEqual(score.end_to_end_reward, 0.0)
             self.assertIn("local_sync_raw_content_mismatch", score.error_codes)
 
+    @unittest.skipUnless(
+        (DBT_RUNTIME_ROOT / ".venv" / "bin" / "python").is_file(),
+        "provision the pinned dbt runtime with: "
+        "uv sync --project runtime-images/dbt-duckdb --locked",
+    )
+    def test_real_infinite_measure_loses_only_its_mart(self) -> None:
+        """R01 through the production scorer, with no injected dependency: the
+        pinned dbt runtime, the real sync and the shared comparator.
+
+        The portable subset admits CAST('inf' AS DOUBLE) and the mart check
+        compares column names, not types, so the comparator is the only guard.
+        Before the non-finite guard this submission scored 1.0 on every graded
+        population. Keys, schema and extraction stay correct, so the loss can
+        only come from the numeric comparison, and event_wide is untouched.
+        """
+        infinite = _CUSTOMER_ROLLUP.replace(
+            "COALESCE(SUM(ot.order_total), 0) AS total_spend",
+            "CAST('inf' AS DOUBLE) AS total_spend",
+        )
+        self.assertNotEqual(infinite, _CUSTOMER_ROLLUP)
+        with portable_five_backend_release() as release_dir:
+            package = load_workspace_package(release_dir, TASK_ID)
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                attempt = install_workspace(package, root / "authoring")
+                _write_correct_candidate(attempt)
+                attempt.elt_dir.joinpath("models", "customer_rollup.sql").write_text(
+                    infinite.strip() + "\n", encoding="utf-8"
+                )
+                sealed = seal_workspace(attempt, package, root / "sealed")
+                result = score_workspace(
+                    package,
+                    sealed,
+                    attempts_root=root / "runs",
+                    runtime_config=DbtRuntimeConfig(
+                        python=DBT_RUNTIME_ROOT / ".venv" / "bin" / "python",
+                        manifest=DBT_RUNTIME_ROOT / "runtime.json",
+                    ),
+                )
+
+        self.assertEqual(result.reward, 0.5)
+        graded = [score for score in result.populations.values() if score.graded]
+        self.assertTrue(graded)
+        for score in graded:
+            with self.subTest(population=score.population):
+                self.assertTrue(score.strict_el_pass)
+                self.assertEqual(score.dbt_project, 1.0)
+                self.assertTrue(score.raw_immutable)
+                # One of two marts: customer_rollup lost credit, event_wide kept it.
+                self.assertEqual(score.mart_reward, 0.5)
+                self.assertEqual(score.end_to_end_reward, 0.5)
+                self.assertNotIn("dbt_mart_schema_invalid", score.error_codes)
+                self.assertNotIn("dbt_mart_key_invalid", score.error_codes)
+
     def test_strict_el_gates_a_diagnostic_dbt_pass(self) -> None:
         dbt_calls = 0
 

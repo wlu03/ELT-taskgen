@@ -47,7 +47,7 @@ VALID_FINDING = {
     "summary": "hard-coding the development outputs must score zero elsewhere",
     "detail": "compile a constants mutant and require reward loss",
     "route_hint": None,
-    "suggested_attack": "constants",
+    "suggested_attack": "constants", "disposition": "active",
     "proposed_case": {
         "kind": "constants",
         "params": "{}",
@@ -1930,7 +1930,7 @@ class RoleSystemPromptTest(unittest.TestCase):
     def test_unknown_critic_role_falls_back_to_generic_instructions(self):
         generic_finding = {
             key: value for key, value in VALID_FINDING.items()
-            if key != "proposed_case"
+            if key not in ("proposed_case", "disposition")
         }
         transport = FakeTransport([anthropic_tool_response([generic_finding])])
         backend = P.AnthropicBackend("sk-test", transport=transport)
@@ -2085,7 +2085,7 @@ class StringifiedFindingsCoercionTest(unittest.TestCase):
             "summary": "s",
             "detail": "d",
             "route_hint": None,
-            "suggested_attack": None,
+            "suggested_attack": None, "disposition": "active",
             "proposed_case": None,
         }
 
@@ -2124,7 +2124,7 @@ class StringifiedFindingsHardeningTest(unittest.TestCase):
 
         stringified = (
             '[{"severity":"major","summary":"line one\nline two",'
-            '"detail":"d","route_hint":null,"suggested_attack":null,'
+            '"detail":"d","route_hint":null,"suggested_attack":null, "disposition": "active",'
             '"proposed_case":null}]'
         )
         payload = {"findings": stringified}
@@ -2136,9 +2136,9 @@ class StringifiedFindingsHardeningTest(unittest.TestCase):
 
         truncated = (
             '[{"severity":"major","summary":"a","detail":"d",'
-            '"route_hint":null,"suggested_attack":null,"proposed_case":null},'
+            '"route_hint":null,"suggested_attack":null, "disposition": "active","proposed_case":null},'
             ' {"severity":"minor","summary":"b","detail":"d",'
-            '"route_hint":null,"suggested_attack":null,"proposed_case":null},'
+            '"route_hint":null,"suggested_attack":null, "disposition": "active","proposed_case":null},'
             ' {"severity": "major", "summ'
         )
         payload = {"findings": truncated}
@@ -2167,7 +2167,7 @@ class ProposedCaseTeachingCorrectionTest(unittest.TestCase):
 
         payload = {"findings": [{
             "severity": "major", "summary": "s", "detail": "d",
-            "route_hint": None, "suggested_attack": "no_dedup",
+            "route_hint": None, "suggested_attack": "no_dedup", "disposition": "active",
             "proposed_case": {"kind": "no_dedup"},  # missing required fields
         }]}
         problem = _validate_findings_payload(payload)

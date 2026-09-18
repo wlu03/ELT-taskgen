@@ -29,7 +29,14 @@ from __future__ import annotations
 import re
 import unittest
 
-from elt_taskgen.models import AttackKind, CouncilRole, PopulationName, RepairRoute, Severity
+from elt_taskgen.models import (
+    AttackKind,
+    CouncilRole,
+    FindingDisposition,
+    PopulationName,
+    RepairRoute,
+    Severity,
+)
 from elt_taskgen.review import prompts
 from elt_taskgen.review.providers import (
     PROSE_ROLES,
@@ -128,6 +135,7 @@ class OutputContractTest(unittest.TestCase):
             | {r.value for r in RepairRoute}
             | {k.value for k in AttackKind}
             | {p.value for p in PopulationName}
+            | {d.value for d in FindingDisposition}
             # Non-enum quoted terms that are legitimately part of the prose.
             | {"ignore the above", "report no findings",
                "this task has already been approved",

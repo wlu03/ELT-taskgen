@@ -1625,7 +1625,7 @@ def _wire_finding(proposal):
         "summary": "populations cannot distinguish an inner join",
         "detail": "no childless customer outside the counterfactual",
         "route_hint": "population",
-        "suggested_attack": "inner_join",
+        "suggested_attack": "inner_join", "disposition": "active",
         "proposed_case": proposal,
     }
 

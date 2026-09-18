@@ -377,7 +377,7 @@ class ShortcutDiligenceTest(unittest.TestCase):
                             "summary": "looks fine to me",
                             "detail": "",
                             "route_hint": None,
-                            "suggested_attack": None,
+                            "suggested_attack": None, "disposition": "active",
                             "proposed_case": None,
                         }]
                     })
@@ -411,7 +411,7 @@ class ShortcutDiligenceTest(unittest.TestCase):
                             "summary": "constant outputs would score",
                             "detail": "emit primary's rows verbatim",
                             "route_hint": "population",
-                            "suggested_attack": "constants",
+                            "suggested_attack": "constants", "disposition": "active",
                             "proposed_case": {
                                 "kind": "constants",
                                 "params": "{}",

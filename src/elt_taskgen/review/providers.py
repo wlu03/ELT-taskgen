@@ -34,6 +34,7 @@ from pydantic import ValidationError
 
 from elt_taskgen.models import (
     AttackKind,
+    FindingDisposition,
     PopulationName,
     ProposedAttackCase,
     RLVR_TASK_VARIANTS,
@@ -383,8 +384,8 @@ def findings_tool_schema(role_name: str | None = None) -> dict:
 
     Mirrors council._parse_findings exactly: a 'findings' list of Finding
     fields only, with no acceptance vocabulary anywhere. Every critic in
-    PROPOSAL_ROLES carries a required-and-nullable `proposed_case`; non-council
-    schema roles remain untouched.
+    PROPOSAL_ROLES carries a required-and-nullable `proposed_case` and a
+    required `disposition`; non-council schema roles remain untouched.
     """
     nullable_enum = lambda values: {  # noqa: E731 - tiny local helper
         "anyOf": [{"type": "string", "enum": values}, {"type": "null"}]
@@ -411,6 +412,18 @@ def findings_tool_schema(role_name: str | None = None) -> dict:
             "anyOf": [proposed_case_schema(), {"type": "null"}]
         }
         required.append("proposed_case")
+        # R02: withdrawal is this field and nothing else. The explanation text
+        # of a finding never withdraws it.
+        properties["disposition"] = {
+            "type": "string",
+            "enum": [d.value for d in FindingDisposition],
+            "description": (
+                "'active' when this finding stands; 'withdrawn' to retract a "
+                "finding you are filing anyway. Nothing written in summary or "
+                "detail withdraws a finding."
+            ),
+        }
+        required.append("disposition")
     return {
         "type": "object",
         "properties": {
@@ -581,8 +594,11 @@ def _validate_findings_payload(
         "route_hint",
         "suggested_attack",
     }
+    dispositions = {d.value for d in FindingDisposition}
     if proposal_required:
         required_fields.add("proposed_case")
+        # R02: mirrors findings_tool_schema; withdrawal is this field only.
+        required_fields.add("disposition")
     for i, item in enumerate(findings):
         if not isinstance(item, dict):
             return f"finding #{i} is not an object"
@@ -592,6 +608,12 @@ def _validate_findings_payload(
                 return (
                     f"finding #{i} is missing required proposed_case; send null "
                     "for a non-actionable finding or a complete executable case"
+                )
+            if proposal_required and missing == ["disposition"]:
+                return (
+                    f"finding #{i} is missing required disposition; send "
+                    "'active' for a finding that stands or 'withdrawn' to "
+                    "retract it"
                 )
             return (
                 f"finding #{i} is missing required field(s): "
@@ -616,6 +638,11 @@ def _validate_findings_payload(
         attack = item.get("suggested_attack")
         if attack is not None and attack not in attacks:
             return f"finding #{i} has invalid suggested_attack {attack!r}"
+        if proposal_required and item.get("disposition") not in dispositions:
+            return (
+                f"finding #{i} has invalid disposition {item.get('disposition')!r}; "
+                "send 'active' or 'withdrawn'"
+            )
         raw_proposal = item.get("proposed_case")
         if raw_proposal is not None and not normalized:
             # Validate live and replayed critic output before legacy normalization.
@@ -722,6 +749,9 @@ def _normalized_findings_text(role_name: str, data: dict) -> str:
             }
         if role_name in PROPOSAL_ROLES:
             normalized["proposed_case"] = proposal
+            # R02: the structured withdrawal travels with its finding; the
+            # validator has already required it, so it is never invented here.
+            normalized["disposition"] = item["disposition"]
         elif proposal is not None:
             normalized["proposed_case"] = proposal
         findings.append(normalized)
@@ -5094,6 +5124,10 @@ def session_findings_text(role_name: str, findings: Sequence[Any]) -> str:
         }
         if role_name in PROPOSAL_ROLES:
             item["proposed_case"] = proposal.model_dump(mode="json") if proposal is not None else None
+            # R02: carry the provider's disposition. A finding without one
+            # fails the validation below; the harness never supplies it.
+            disposition = getattr(finding, "disposition", None)
+            item["disposition"] = disposition.value if disposition is not None else None
         items.append(item)
     data = {"findings": items}
     # Session findings are already typed ProposedAttackCase instances produced

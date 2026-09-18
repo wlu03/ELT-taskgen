@@ -850,7 +850,7 @@ VALID_FINDING = {
     "summary": "constants shortcut must lose reward somewhere",
     "detail": "compile a constants mutant",
     "route_hint": None,
-    "suggested_attack": "constants",
+    "suggested_attack": "constants", "disposition": "active",
     "proposed_case": {
         "kind": "constants",
         "params": "{}",

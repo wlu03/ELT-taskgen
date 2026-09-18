@@ -108,6 +108,40 @@ VOCABULARY_DOCS: tuple[str, ...] = CURRENT_DOCS + (
     "docs/plans/cloud_free_elt_agent_rlvr.md",
 )
 
+#: The published documents: every document the checks above read or the README
+#: links, and the documents and scripts those cite. `docs/` is otherwise
+#: private, and `.gitignore` publishes exactly this list. The glob-built sets
+#: above only check the files that are present, so a checkout missing one of
+#: these would check fewer documents and still pass without the presence test.
+REQUIRED_DOCS: tuple[str, ...] = (
+    "docs/CONFIGURABLE_PIPELINE.md",
+    "docs/EXECUTION_MODEL.md",
+    "docs/INTERFACES.md",
+    "docs/README_full_20260814.md",
+    "docs/SOURCES.md",
+    "docs/TWO_STAGE_RLVR_CONTRACT.md",
+    "docs/WAREHOUSE_CONNECTORS.md",
+    "docs/difficulty/README.md",
+    "docs/difficulty/scripts/measure_all.py",
+    "docs/difficulty/scripts/measure_discriminating_power.py",
+    "docs/experiments/PILOT-P2.md",
+    "docs/experiments/PILOT-P3.md",
+    "docs/experiments/PILOT-P4.md",
+    "docs/experiments/PILOT-P5.md",
+    "docs/experiments/README.md",
+    "docs/plans/bounded_agents_phase0.md",
+    "docs/plans/bounded_agents_phase1.md",
+    "docs/plans/bounded_agents_phase2.md",
+    "docs/plans/bounded_agents_phase3.md",
+    "docs/plans/bounded_agents_phase4.md",
+    "docs/plans/bounded_agents_phase5.md",
+    "docs/plans/cloud_free_elt_agent_rlvr.md",
+    "docs/plans/duckdb_rlvr_cloud_runtime_migration.md",
+    "docs/plans/endtoend_runbook.md",
+    "docs/plans/tinker_elt_rl_environment.md",
+    "docs/runs/demo.md",
+)
+
 #: Ban emulator, replacement, and vendor-runtime equivalence claims. Ordinary
 #: CLI and upstream compatibility wording remains allowed.
 _EMULATOR_CLAIM = re.compile(
@@ -929,6 +963,28 @@ class TestStageNumbering(unittest.TestCase):
             self.assertTrue(found, f"runbook no longer states {name}'s ladder position")
             for number in found:
                 self.assertEqual(int(number), self._ladder_position(stage))
+
+
+class TestRequiredDocumentsArePublished(unittest.TestCase):
+    """R03: the required documents were ignored by git, so a clean checkout
+    lacked them while every local run still passed."""
+
+    def test_every_required_document_is_present_and_non_empty(self) -> None:
+        for rel in REQUIRED_DOCS:
+            with self.subTest(rel=rel):
+                path = REPO_ROOT / rel
+                self.assertTrue(path.is_file(), f"{rel} is missing")
+                self.assertTrue(path.read_text(encoding="utf-8").strip(), f"{rel} is empty")
+
+    def test_the_gitignore_allowlist_publishes_exactly_the_required_documents(self) -> None:
+        lines = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("/docs/*", lines)
+        self.assertNotIn("/docs/", lines)
+        published = {
+            line[2:] for line in lines
+            if line.startswith("!/docs/") and not line.endswith("/")
+        }
+        self.assertEqual(published, set(REQUIRED_DOCS))
 
 
 class TestCitedFilesExist(unittest.TestCase):

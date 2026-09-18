@@ -637,6 +637,18 @@ class ProposedAttackCase(CanonicalModel):
         return self
 
 
+class FindingDisposition(str, Enum):
+    """The providing critic's own structured statement about its finding.
+
+    This is the ONLY authority for withdrawal. Explanation text never is: a
+    finding whose detail says "I withdraw nothing." or "I withdraw this
+    finding." stays whatever its disposition says.
+    """
+
+    ACTIVE = "active"
+    WITHDRAWN = "withdrawn"
+
+
 class FindingScreenStatus(str, Enum):
     """What the deterministic post-parse screen decided about one finding."""
 
@@ -717,6 +729,40 @@ class Finding(CanonicalModel):
     proposed_case: ProposedAttackCase | None = None
     #: ``None`` means unchanged; otherwise the screen retains withheld claims.
     screen: FindingScreen | None = None
+    #: The provider's structured statement that this finding stands or is
+    #: withdrawn. The live critic protocol requires it. ``None`` exists only for
+    #: records written before the field did: such a finding is ACTIVE and its
+    #: withdrawal is never re-read from its explanation text.
+    disposition: FindingDisposition | None = None
+
+    @model_validator(mode="after")
+    def _only_a_provider_can_withdraw(self) -> "Finding":
+        if (
+            self.disposition is FindingDisposition.WITHDRAWN
+            and self.provenance is not FindingProvenance.PROVIDER
+        ):
+            raise ValueError(
+                "only a provider finding can be withdrawn; a code finding "
+                "(a leak screen, a verified check) carries no disposition"
+            )
+        return self
+
+    @model_serializer(mode="wrap")
+    def _omit_undeclared_disposition(self, handler: Any) -> Any:
+        # A record written before `disposition` existed keeps its exact
+        # serialized bytes, so digests over historical findings still verify.
+        data = handler(self)
+        if isinstance(data, dict) and data.get("disposition") is None:
+            data.pop("disposition", None)
+        return data
+
+    @property
+    def withdrawn(self) -> bool:
+        """True only for a provider finding explicitly withdrawn by its provider."""
+        return (
+            self.disposition is FindingDisposition.WITHDRAWN
+            and self.provenance is FindingProvenance.PROVIDER
+        )
 
 
 class RepairEditOp(str, Enum):

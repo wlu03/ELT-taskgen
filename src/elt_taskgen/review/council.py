@@ -26,6 +26,7 @@ from elt_taskgen.models import (
     AttackKind,
     CouncilRole,
     Finding,
+    FindingDisposition,
     FindingProvenance,
     FindingScreen,
     FindingScreenStatus,
@@ -964,6 +965,13 @@ def _parse_findings(role: CouncilRole, raw: str, id_suffix: str) -> list[Finding
                     route_hint=RepairRoute(route_hint) if route_hint else None,
                     suggested_attack=parsed_suggested,
                     proposed_case=parsed_proposal,
+                    # The closed schema requires it from every critic, so a
+                    # missing or unknown value never reaches here as a finding.
+                    disposition=(
+                        FindingDisposition(item["disposition"])
+                        if item.get("disposition") is not None
+                        else None
+                    ),
                 )
             )
         except (ValueError, TypeError) as exc:
@@ -996,64 +1004,6 @@ _PLACEHOLDER_CLAUSES: tuple[re.Pattern[str], ...] = (
     re.compile(r"example\s+finding"),
     re.compile(r"fill\s+(?:this|it)\s+in(?:\s+later)?"),
     re.compile(r"lorem\s+ipsum"),
-)
-
-#: Whole terminal-clause grammars for withdrawing the finding's own claim.
-#: Quoted markers do not match; only the final sentence or list item is checked.
-_WITHDRAWAL_NOUN = r"(?:finding|claim|defect|issue|concern|ambiguity|problem)"
-_GRADED_FORK_WITHDRAWAL = (
-    r"(?:(?:[^.!?;\r\n]{1,256},\s*)?"
-    r"(?:so|thus|therefore|accordingly)\s+)?"
-    r"(?:i|we)\s+(?:hereby\s+)?(?:retract|withdraw)\s+"
-    r"(?:this|it)\s+as\s+a\s+graded\s+fork"
-)
-_TERMINAL_WITHDRAWAL_CLAUSES: tuple[re.Pattern[str], ...] = (
-    re.compile(
-        rf"(?:this|the)\s+{_WITHDRAWAL_NOUN}\s+"
-        r"(?:is|was|has been)\s+(?:hereby\s+)?(?:withdrawn|retracted)"
-        r"(?:\s+(?:upon|after)\s+[a-z0-9][a-z0-9 _-]{0,80})?"
-    ),
-    re.compile(
-        rf"(?:i|we)\s+(?:hereby\s+)?(?:retract|withdraw)"
-        rf"(?:\s+(?:this|the|my|our)\s+{_WITHDRAWAL_NOUN})?"
-    ),
-    re.compile(
-        rf"(?:(?:i|we)\s+(?:am|are)\s+)?(?:retracting|withdrawing)"
-        rf"(?:\s+(?:this|the|my|our)(?:\s+{_WITHDRAWAL_NOUN})?)?"
-    ),
-    # Require an active withdrawal and no-defect conclusion in the same clause.
-    re.compile(
-        r"(?:(?:i|we)\s+(?:am|are)\s+)?withdrawing\s+this\s+as\s+a\s+fork"
-        r"\s*[-—–:]\s*no\s+defect\s+is\s+claimed"
-    ),
-    # Match only a terminal first-person graded-fork withdrawal.
-    re.compile(_GRADED_FORK_WITHDRAWAL),
-    re.compile(
-        r"(?:(?:on reflection|upon re-examination|after (?:review|verification)|"
-        r"therefore|thus|so|accordingly|in conclusion)\s*[:,]?\s*)?"
-        r"(?:(?:there is|i find|we find)\s+)?"
-        rf"(?:no\s+{_WITHDRAWAL_NOUN}(?:\s+here)?|"
-        rf"not\s+(?:a|an)\s+{_WITHDRAWAL_NOUN}|"
-        rf"(?:this|it)\s+is\s+not\s+(?:a|an)\s+{_WITHDRAWAL_NOUN})"
-        r"(?:\s*,\s*(?:(?:i|we)\s+(?:am|are)\s+)?"
-        r"(?:retracting|withdrawing)"
-        rf"(?:\s+(?:this|the)\s+{_WITHDRAWAL_NOUN})?)?"
-    ),
-    re.compile(rf"no\s+{_WITHDRAWAL_NOUN}\s+(?:is\s+)?filed"),
-    re.compile(r"(?:there is\s+)?no\s+(?:action|change)\s+needed(?:\s+here)?"),
-    re.compile(r"(?:this\s+(?:is|was)\s+)?(?:a\s+)?false alarm"),
-    re.compile(r"disregard\s+(?:this|the)\s+finding"),
-    re.compile(
-        r"(?:[^,]{1,256},\s*)?"
-        r"(?:(?:so|thus|therefore|accordingly)\s+)?"
-        r"(?:this\s+(?:is|was)\s+(?:(?:reported|included|provided|offered)\s+as\s+)?)?"
-        r"context(?:\s+for\s+coverage)?\s+only"
-    ),
-    re.compile(r"this\s+is\s+acceptable\s+as\s+specified"),
-    re.compile(
-        r"(?:(?:i|we)\s+(?:am|are)\s+)?filing\s+nothing\s+further"
-        r"(?:\s+(?:on|for|about)\s+[a-z0-9_ -]{1,96})?"
-    ),
 )
 
 #: Flag only an explicit mismatch between a global empty-param executable and
@@ -1106,67 +1056,11 @@ PROPOSAL_CASE_NAME_PREFIX = "proposed__"
 
 _WORD_RE = re.compile(r"[a-z0-9_]+")
 _RULE_REF_RE = re.compile(r"\brule\s*#?\s*\d+\b")
-_CLOSING_BOUNDARY_RE = re.compile(r"(?:\r?\n)+|(?<=[.!?;])(?:[ \t]+|$)")
-_LIST_PREFIX_RE = re.compile(r"^\s*(?:(?:[-*+•‣▪])|(?:\d{1,3}[.)]))\s+")
 
 
 def _norm_text(text: str) -> str:
     """Lowercase, whitespace-collapsed form used by every screen comparison."""
     return " ".join(text.lower().split())
-
-
-def _closing_span(text: str) -> str:
-    """The finding's last sentence OR line/list item, normalized.
-
-    Newlines must be boundaries before whitespace is collapsed: otherwise an
-    unpunctuated bullet quoting "no defect" in the middle of a real fatal turns
-    the whole body into one apparent closing span.  A retraction is a conclusion;
-    matching only the final structural clause keeps quoted/negated language in
-    earlier evidence from being screened.
-    """
-    raw = text.strip()
-    if not raw:
-        return ""
-    parts: list[str] = []
-    for raw_part in _CLOSING_BOUNDARY_RE.split(raw):
-        part = _LIST_PREFIX_RE.sub("", raw_part.strip())
-        normalized = _norm_text(part)
-        if normalized:
-            parts.append(normalized)
-    return parts[-1] if parts else ""
-
-
-def _terminal_withdrawal_clause(text: str) -> str | None:
-    """Return a genuine terminal withdrawal clause, never a marker hit.
-
-    The terminal punctuation is irrelevant to the grammar, but quotes and
-    arbitrary leading/trailing assertions are deliberately retained: neither
-    ``the author wrote 'no defect'`` nor ``no defect, but the leak stands`` is
-    itself a withdrawal.
-    """
-    # A final parenthetical that merely records the already-made filing
-    # classification must not hide the preceding withdrawal.  Do not skip
-    # arbitrary asides: only the exact metadata shape emitted by the critic
-    # contract is ignored, and the preceding clause must independently match
-    # the closed withdrawal grammar above.
-    raw = text.strip()
-    without_aside = re.sub(
-        r"\s*\(filed\s+at\s+info\s+per\s+instruction\s+not\s+to\s+"
-        r"fabricate(?:;\s*see\s+other\s+findings)?\.?\)\s*$",
-        "",
-        raw,
-        flags=re.IGNORECASE,
-    )
-    candidates = (raw,) if without_aside == raw else (raw, without_aside)
-    for candidate in candidates:
-        closing = _closing_span(candidate)
-        clause = closing.rstrip(" .!?;").strip()
-        if clause and any(
-            pattern.fullmatch(clause)
-            for pattern in _TERMINAL_WITHDRAWAL_CLAUSES
-        ):
-            return closing
-    return None
 
 
 def _placeholder_clause(text: str) -> str | None:
@@ -1266,12 +1160,11 @@ def _screen_signals(
             f"detail={finding.detail.strip()[:80]!r}"
         )
 
-    for field in (finding.summary, finding.detail):
-        closing = _terminal_withdrawal_clause(field)
-        if closing is not None:
-            signals.append("self_retracted")
-            evidence.append(f"terminal clause retracts: {closing[-160:]!r}")
-            break
+    if finding.withdrawn:
+        # R02: withdrawal is the provider's structured disposition. No
+        # sentence in summary or detail withdraws a finding.
+        signals.append("self_retracted")
+        evidence.append("the provider filed this finding with disposition 'withdrawn'")
 
     proposal = finding.proposed_case
     if (
@@ -1602,8 +1495,8 @@ def screen_report(findings: list[Finding]) -> str:
         ]
         if withdrawn_fatal:
             parts.append(
-                "SELF-WITHDRAWN FATAL (claimed fatal, retracted by its own "
-                "terminal clause; re-read before trusting) "
+                "SELF-WITHDRAWN FATAL (claimed fatal, voided for the signals "
+                "listed above; re-read before trusting) "
                 + ", ".join(f.finding_id for f in withdrawn_fatal)
             )
     if dup:

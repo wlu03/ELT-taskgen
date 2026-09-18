@@ -58,6 +58,7 @@ from elt_taskgen.verification.upstream_eval import (
     REL_TOL,
     RewardResult,
     _numeric_value,
+    _vectors_match,
     compare_mart,
     compare_stage1,
     evaluate,
@@ -552,6 +553,78 @@ class TestUpstreamEvalComparator(unittest.TestCase):
     def _gold_csv(self, rows: list[Row]) -> str:
         ordered = sort_rows(rows, self.mart.key_columns, MART_COLS)
         return rows_to_canonical_csv(ordered, MART_COLS)
+
+    def test_unequal_non_finite_values_do_not_match(self) -> None:
+        """R01. The tolerance is relative to the SUBMITTED value, so an infinite
+        submission made the right-hand side infinite and `inf <= inf` passed:
+        a finite gold of 100 matched a submitted `inf`. Unequal values where
+        either side is non-finite must never match, in either argument order,
+        as strings or as numbers."""
+        inf = float("inf")
+        for gold, actual in (
+            (["100"], ["inf"]),
+            (["100"], ["-inf"]),
+            (["inf"], ["-inf"]),
+            (["-inf"], ["inf"]),
+            (["100"], ["Infinity"]),
+            ([100.0], [inf]),
+            ([100.0], [-inf]),
+            ([inf], [-inf]),
+            ([inf], [100.0]),
+            ([-inf], [100.0]),
+            (["inf"], ["100"]),
+            (["0"], ["inf"]),
+            (["-100"], ["-inf"]),
+        ):
+            with self.subTest(gold=gold, actual=actual):
+                self.assertFalse(_vectors_match(gold, actual))
+
+    def test_the_non_finite_guard_preserves_every_existing_outcome(self) -> None:
+        """Controls measured on the comparator before the R01 guard: matching
+        infinities, finite tolerance on both sides of its boundary (including
+        zero and negatives, with the existing gold/submitted argument order),
+        nulls, NaN-as-null, text normalization, empty and ragged vectors."""
+        inf, nan = float("inf"), float("nan")
+        for label, gold, actual, want in (
+            ("equal finite text", ["100"], ["100"], True),
+            ("equal finite number", [100.0], [100.0], True),
+            ("matching +inf", ["inf"], ["inf"], True),
+            ("matching -inf", ["-inf"], ["-inf"], True),
+            ("matching +inf number", [inf], [inf], True),
+            ("inf spellings agree", ["Infinity"], ["inf"], True),
+            ("inside tolerance", ["100"], ["100.5"], True),
+            ("outside tolerance", ["100"], ["102"], False),
+            ("outside, other order", ["102"], ["100"], False),
+            ("zero equal", ["0"], ["0"], True),
+            ("zero, inside the absolute floor", ["0"], ["1e-10"], True),
+            ("zero, outside the absolute floor", ["0"], ["1e-8"], False),
+            ("negative inside", ["-100"], ["-100.5"], True),
+            ("negative outside", ["-100"], ["-102"], False),
+            ("both null", [None], [None], True),
+            ("both null sentinels", ["NaN"], ["null"], True),
+            ("NaN is null", [nan], [None], True),
+            ("single-sided null", [None], ["1"], False),
+            ("text case and trim", [" Abc "], ["abc"], True),
+            ("text differs", ["abc"], ["abd"], False),
+            ("empty vectors", [], [], True),
+            ("unequal lengths", ["1"], ["1", "2"], False),
+        ):
+            with self.subTest(label):
+                self.assertIs(_vectors_match(gold, actual), want)
+
+    def test_compare_mart_rejects_a_non_finite_measure(self) -> None:
+        """R01 at the mart boundary: same keys, finite gold measure. The correct
+        finite submission passes; replacing only that measure with an infinity
+        fails the mart."""
+        gold = self._gold_csv(
+            [{"customer_id": 1, "completed_order_count": 2, "total_spend": 100.0}]
+        )
+        correct = [{"customer_id": 1, "completed_order_count": 2, "total_spend": 100.0}]
+        self.assertTrue(compare_mart(gold, correct, self.mart))
+        for bad in (float("inf"), float("-inf"), "inf", "-Infinity"):
+            with self.subTest(total_spend=bad):
+                submitted = [dict(correct[0], total_spend=bad)]
+                self.assertFalse(compare_mart(gold, submitted, self.mart))
 
     def test_compare_mart_row_order_irrelevant(self) -> None:
         gold_rows: list[Row] = [

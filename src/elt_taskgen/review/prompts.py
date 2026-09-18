@@ -166,6 +166,13 @@ _COUNCIL_CONTRACT = (
     "in the view, and never claim to have executed anything: you cannot run "
     "code.\n"
     "\n"
+    "DISPOSITION. Every finding carries a disposition field. Set it to "
+    "'active' for a finding you stand behind. If you file a finding and then "
+    "conclude it does not hold, set 'withdrawn' rather than deleting it, so "
+    "the record keeps what you examined. The field is the only way to "
+    "withdraw: nothing you write in summary or detail withdraws a finding, "
+    "and the harness never reads a withdrawal out of your prose.\n"
+    "\n"
 )
 
 CRITIC_PREFIX = SHARED_PREFIX + _COUNCIL_CONTRACT

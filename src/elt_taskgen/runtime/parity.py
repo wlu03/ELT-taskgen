@@ -1073,6 +1073,10 @@ def _vectors_match(
                 return False
             if x == y:
                 continue
+            # Same guard as upstream_eval._vectors_match, so the default rules
+            # stay equal to the reward comparator on non-finite values.
+            if not (math.isfinite(x) and math.isfinite(y)):
+                return False
             if not abs(x - y) <= rules.numeric_abs_tol + rules.numeric_rel_tol * abs(y):
                 return False
             continue

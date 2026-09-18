@@ -126,21 +126,10 @@ UNCOMPILABLE_AFTER_CORRECTIONS_SIGNAL = "uncompilable_after_corrections"
 #: nothing upstream could tell it its proposal was malformed.
 UNCOMPILABLE_NO_CHANNEL_SIGNAL = "uncompilable_no_correction_channel"
 
-#: A self-withdrawn MAJOR finding stays in the screen record but does not block.
-WITHDRAWN_BY_OWN_DETAIL_SIGNAL = "withdrawn_by_own_detail"
-_WITHDRAWAL_RE = re.compile(
-    r"\bI withdraw\b|\bwithdrawn\b|\bnot (?:a )?(?:graded )?(?:fork|divergence)\b|"
-    r"\bnon-divergent\b|\bdoes not (?:change|alter|affect) (?:the )?graded output\b|"
-    r"\bgraded values (?:therefore )?coincide\b|"
-    r"\bboth readings (?:give|yield|emit|produce) (?:the same|identical)\b|"
-    r"\bno second incompatible graded output\b",
-    re.IGNORECASE,
-)
-#: Only the CLOSING sentences of the detail count: a withdrawal is a
-#: conclusion, and "one might say this is not a graded fork, but it is" is
-#: an argument that presses on.
-_WITHDRAWAL_TAIL_SENTENCES = 2
-_SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\"'])")
+#: A MAJOR finding its own provider withdrew (structured `disposition`, R02)
+#: stays in the screen record but does not block. Explanation text never
+#: withdraws a finding.
+WITHDRAWN_BY_DISPOSITION_SIGNAL = "withdrawn_by_disposition"
 
 
 #: A proposal that removes behavior absent from the contract is not a fork;
@@ -187,23 +176,6 @@ def _proposal_targets_a_rule_the_task_never_states(task, proposal) -> bool:
         for op in (getattr(getattr(mart, "plan", None), "ops", None) or ())
     )
     return not declared
-
-
-def _detail_withdraws_the_finding(finding) -> bool:
-    detail = str(getattr(finding, "detail", "") or "").strip()
-    if not detail:
-        return False
-    sentences = [x for x in _SENTENCE_END_RE.split(detail) if x.strip()]
-    closing = " ".join(sentences[-_WITHDRAWAL_TAIL_SENTENCES:])
-    match = _WITHDRAWAL_RE.search(closing)
-    if match is None:
-        return False
-    # "this is not a graded fork, but it is: ..." and "both readings emit the
-    # same key row, but link_count differs" concede nothing: a contrast word
-    # later in the SAME sentence turns the withdrawal back into a claim.
-    rest = closing[match.end():]
-    same_sentence = re.split(r"(?<=[.!?])\s", rest, maxsplit=1)[0]
-    return re.search(r"\b(?:but|yet|however|except|nevertheless)\b", same_sentence) is None
 
 
 def _seat_has_compile_channel(role, *, agents_config=None) -> bool:
@@ -1686,8 +1658,9 @@ def make_review_runner(provider):
                 failure_code=CRITIC_MANIFEST_FAILURE_CODE,
                 recovery_prerequisite=CRITIC_MANIFEST_RECOVERY,
             )
-        # The screened list: a voided finding (withdrawn by its own detail, or
-        # a proposal against a rule no mart declares) is INFO and holds nothing.
+        # The screened list: a voided finding (withdrawn by its provider's
+        # disposition, or a proposal against a rule no mart declares) is INFO
+        # and holds nothing.
         pending_adjudication = _critic_adjudication_block(validated_findings)
         if pending_adjudication is not None:
             return pending_adjudication
@@ -2205,13 +2178,16 @@ def _validated_executable_findings(
         if (
             claimed_severity in {Severity.MAJOR, Severity.FATAL}
             and claimed_proposal is None
-            and _detail_withdraws_the_finding(finding)
+            and finding.withdrawn
         ):
+            # Only the provider's structured disposition withdraws a finding,
+            # and only its own. A withdrawal never withholds an executable
+            # proposal here: a finding that carries one is measured as usual.
             voided[index] = _void(
                 finding,
-                [WITHDRAWN_BY_OWN_DETAIL_SIGNAL],
-                "the finding's own closing sentences withdraw it as not a "
-                "graded fork; the claim is kept on record and does not block",
+                [WITHDRAWN_BY_DISPOSITION_SIGNAL],
+                "the providing critic filed this finding with disposition "
+                "'withdrawn'; the claim is kept on record and does not block",
             )
             continue
         claimed = finding.model_copy(

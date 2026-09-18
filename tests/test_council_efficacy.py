@@ -125,7 +125,7 @@ def _finding(summary: str, detail: str = "", severity: str = "minor",
         "summary": summary,
         "detail": detail,
         "route_hint": None,
-        "suggested_attack": suggested_attack,
+        "suggested_attack": suggested_attack, "disposition": "active",
         # Every critic finding carries the required nullable field.  Findings
         # that claim an executable attack get the exact active wire shape;
         # observations without an attack explicitly carry null.
@@ -4264,7 +4264,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                             "detail": "An individual population says INNER JOIN is "
                             "indistinguishable here by design.",
                             "route_hint": "specification",
-                            "suggested_attack": None,
+                            "suggested_attack": None, "disposition": "active",
                             "proposed_case": None,
                         }
                     )
@@ -5112,24 +5112,29 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     PHASE4_VIEW_SHA256 = "84259537f8d8cb1d27d7921b9c0f79ef818de18da0ac3c492a238845851e4f05"
     # Includes the reviewed 2026-09-09 validator changes. Phase-0 rollback
     # pins remain unchanged and are rechecked by PROOF 5.
-    PHASE4_FINGERPRINT = "db021be9b5547b9b02ff2fb364270c7b722877dd12e38cb57baff30343fc5d08"
-    PHASE3_TOOL_SURFACE = "99a52e0edd78f9e669632e8bdc230a3bb03803f73615ea146e8cf30b3650483b"
+    # Re-pinned for R02: every critic's report_findings schema now requires
+    # `disposition` and the shared critic prompt explains it, so each behavior
+    # digest, the tool surface and the fingerprint moved; policy digests, pool
+    # and view did not. The committed admission predates this and is stale
+    # until an authorized re-earn.
+    PHASE4_FINGERPRINT = "f1d45af9847ae888c0f0e5125c4b9c9569936fbde15160a321d0c4d9bb9fc603"
+    PHASE3_TOOL_SURFACE = "59e90d9b66de2e70cfd68ee76d169e4301148ef43ad54f9dcbed98491c82ee24"
     PHASE3_CRITIC_DIGESTS = {
         # role: (role_behavior_sha256, policy_sha256)
         "ambiguity_critic": (
-            "66802c7825e820bf7cec8bfc11adad1eaf04a6f1af8731d4de8383843f807f86",
+            "47debf976e7b1e06ad814189d8dfd7cf1a84769fe0fa5d06ee2de64bf22731ea",
             "ded41da03e5710434a563a86f84d53cd39ab5538322f68adb770b107eaff4d88",
         ),
         "population_adversary": (
-            "35849276453dbbede22543cb9e5143df82fe8c078b50a6bbfb7c09095886620b",
+            "f23f83aaf7e736aeda1f7b7a0c3a64aac091ff184a039f4f7422f316e8bfdf1e",
             "743304b6dab474d90aca0a38713f78a45e2a8237033923539a830ea37a94087f",
         ),
         "shortcut_attacker": (
-            "c6cfa8a8f044349691be95b1a0b5cf0e4261d11db114e3a7fe468b057448f0d7",
+            "c93fbd7b810987ba2214658b1f14846c272c1bb4042846c3c6afe16eb9bbcd5c",
             "ec94b0fd2a0ce53b845d8ab3dc82aa1c8681275dd2bd5136fb1092ae27f2f708",
         ),
         "feasibility_reviewer": (
-            "77ffb5edd38ad3dd188b23dbf16f430587dcd0293eed3d2ed164cb8f52ba3426",
+            "5d8908d6c540b3ab5771a94d33a48ca5cd6d11d23089de2857e8146fdca1d09b",
             "42290d5971a32991fa09a1a49e6dff0b1b9fe88092f12a6785f2e0eed1034522",
         ),
     }
@@ -5141,16 +5146,17 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     #: Re-pinned with PHASE4_FINGERPRINT: this counterfactual shares the
     #: current feasibility route even though it rolls back the POP/SHC blocks.
     #: Recomputed after the diagnostic-code exemption: both values stay fixed
-    #: because the rollback leaves `validators.code` empty.
-    PHASE0_BLOCKS_FINGERPRINT_HARNESS_6 = "4693f32cb87f839c6033492236e686d0de7bf5ece1e3d9bbe5923af09c355077"
-    PHASE0_TOOL_SURFACE = "02c2aeebb234978bfc9679cf13ccc9884cc6a49b188013d974355d60756c0c3e"
+    #: because the rollback leaves `validators.code` empty. Re-pinned with
+    #: PHASE4_FINGERPRINT for R02: the rollback shares the critic wire schema.
+    PHASE0_BLOCKS_FINGERPRINT_HARNESS_6 = "ae237308c79201e6665701d667864165346b4b2019c6f4ea01db5d53630d360a"
+    PHASE0_TOOL_SURFACE = "816383774aedca3eca5e11773c35de61b4097745c56ed1000ca9b1158137d990"
     PHASE0_ONE_SHOT_DIGESTS = {
         "population_adversary": (
-            "56d2339b47c4abf2ab9a78136ca83a3af7896255161b0c484efe365fb220c349",
+            "df36d92841ab0a38ae9aa2209d745bbfc0dfe52d82a773bf43912abe675f99ad",
             "18b31457d86db46b2af8fbf59e44efbff44fc7b0c3c30f63add7c73895d2b281",
         ),
         "shortcut_attacker": (
-            "f1e50bdea8dd16cad11b8c728ed55afe5b08358623f04bb7890b0f040ca9a6cb",
+            "3a3ed77773b476d7edb4139d111d941041850f42342987f16e472380d2648005",
             "4802bbed0cb083cb69b44db2ea8d98aa061a558f576b19aa445bab0e2e9da3b0",
         ),
     }
@@ -5234,7 +5240,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
 
     #: Digest of the harness-6 fingerprint with protocol fields replaced by a
     #: sentinel. The legacy name remains for the Phase-3 decomposition.
-    PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS = "fff2486cb2125d46feacb54e5638ba6058f441f955318e44a81b3b524c0fa1bc"
+    PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS = "d45280df6279b1399058738dae3b25cee47958ad4f9fda3246d57e6bd993d1c4"
     PROTOCOL_TERMS = ("harness_version", "pool_sha256", "view_sha256", "observable_state_sha256")
     #: SoT T1.1: the declared blocks, hashed verbatim (`loop_limits`).
     SOT_T1_1_BLOCKS = {
