@@ -1418,6 +1418,15 @@ class TaskIR(CanonicalModel):
         mart_names = [m.name for m in self.marts]
         if len(mart_names) != len(set(mart_names)):
             raise ValueError("duplicate mart names")
+        # Databricks and Redshift land the raw tables into the same schema the
+        # marts are built in, so a mart named after a raw table would overwrite
+        # that table on a real warehouse. Refuse the task instead of shipping
+        # one whose meaning depends on the destination.
+        shadowed = sorted(
+            {name.casefold() for name in mart_names} & {name.casefold() for name in table_names}
+        )
+        if shadowed:
+            raise ValueError(f"marts shadow raw tables: {shadowed}")
 
         pop_names = [p.name for p in self.populations]
         if len(pop_names) != len(set(pop_names)):

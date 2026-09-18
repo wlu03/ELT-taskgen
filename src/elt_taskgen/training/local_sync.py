@@ -560,12 +560,32 @@ def _listed_raw_tables(
     return names
 
 
+def shared_schema_mart_names(
+    package: WorkspacePackage, namespace: NamespaceProjection
+) -> frozenset[str]:
+    """Mart names that are materialized INTO the raw schema, casefolded.
+
+    Databricks and Redshift land the raw tables into the task-named schema,
+    which is also the dbt target schema, so after dbt the marts are tables in
+    the raw schema. They are not raw tables and are checked as marts; a task
+    whose mart shadows a raw table is refused by ``TaskIR`` itself, so nothing
+    a raw table is named can be excluded here. Snowflake keeps the two schemas
+    apart and gets the empty set, leaving its check exactly as strict.
+    """
+
+    if namespace.mart_schema.casefold() != namespace.raw_schema.casefold():
+        return frozenset()
+    return frozenset(mart.name.casefold() for mart in package.task.marts)
+
+
 def _verify_connection(
     package: WorkspacePackage,
     population: str,
     namespace: NamespaceProjection,
     expected: Mapping[str, RawTableFingerprint],
     con: duckdb.DuckDBPyConnection,
+    *,
+    allow_marts: bool = False,
 ) -> RawStateVerification:
     expected_tables = {table.name: table for table in package.task.tables}
     try:
@@ -574,8 +594,15 @@ def _verify_connection(
         raise LocalSyncHarnessError(LocalSyncErrorCode.DUCKDB_FAILED) from None
     listed_folded = {name.casefold(): name for name in listed}
     expected_folded = {name.casefold(): name for name in expected_tables}
+    # Only the post-dbt re-verification passes ``allow_marts``: during EL no
+    # mart exists yet, so a table with a mart's name would be an intruder.
+    ignored = (
+        shared_schema_mart_names(package, namespace) if allow_marts else frozenset()
+    )
     unexpected = tuple(
-        name for name in listed if name.casefold() not in expected_folded
+        name
+        for name in listed
+        if name.casefold() not in expected_folded and name.casefold() not in ignored
     )
 
     actual_counts: dict[str, int] = {}
@@ -727,6 +754,7 @@ def verify_raw_state(
                 execution.namespace,
                 execution.expected_fingerprints,
                 con,
+                allow_marts=True,
             )
         finally:
             con.close()
@@ -887,6 +915,7 @@ __all__ = [
     "SyncLifecycleState",
     "TerraformIntentDestinationLike",
     "raw_state_immutable",
+    "shared_schema_mart_names",
     "raw_state_fingerprints",
     "run_local_sync",
     "verify_raw_state",

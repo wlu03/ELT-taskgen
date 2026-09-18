@@ -413,10 +413,56 @@ class PortableSqlPolicyTests(unittest.TestCase):
                 with self.assertRaises(DbtPolicyFailure):
                     rewrite_model_sql(sql, destination)
 
-    def test_compatibility_subset_version_is_v3(self) -> None:
-        # v3 (2026-09-16) is the first version measured against live
-        # destinations; see tests/test_warehouse_differential.py.
-        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v3")
+    def test_compatibility_subset_version_is_v4(self) -> None:
+        # v4 is the first version whose whole admitted surface was measured
+        # against live destinations; see tests/test_warehouse_differential.py.
+        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v4")
+
+    def test_the_constructs_a_destination_cannot_compile_are_refused(self) -> None:
+        """Each refusal below was measured: the destination rejected the SQL
+        outright while the grading engine ran it."""
+        source = "{{ source('raw', 'orders') }}"
+        for destination, sql in (
+            # Redshift: cannot cast a boolean-valued expression to text, even
+            # when a parenthesis hides the comparison.
+            (Destination.REDSHIFT, f"SELECT CAST((a > 1) AS TEXT) AS s FROM {source}"),
+            (Destination.REDSHIFT, f"SELECT CAST(((a > 1) AND (a < 9)) AS TEXT) AS s FROM {source}"),
+            (Destination.REDSHIFT, f"SELECT CAST((a IS NULL) AS TEXT) AS s FROM {source}"),
+            (Destination.REDSHIFT, f"SELECT CAST((TRUE) AS TEXT) AS s FROM {source}"),
+            # Redshift: no aggregate FILTER clause.
+            (Destination.REDSHIFT, f"SELECT COUNT(*) FILTER (WHERE a > 1) AS s FROM {source}"),
+            # Redshift: an aggregate window with ORDER BY needs an explicit frame.
+            (Destination.REDSHIFT, f"SELECT SUM(a) OVER (ORDER BY a) AS s FROM {source}"),
+            (Destination.REDSHIFT, f"SELECT LAST_VALUE(a) OVER (ORDER BY a) AS s FROM {source}"),
+            # Redshift and Databricks: no DISTINCT window aggregate.
+            (Destination.REDSHIFT, f"SELECT COUNT(DISTINCT a) OVER () AS s FROM {source}"),
+            (Destination.DATABRICKS, f"SELECT COUNT(DISTINCT a) OVER () AS s FROM {source}"),
+            # Databricks: TO_CHAR's datetime pattern.
+            (Destination.DATABRICKS, f"SELECT TO_CHAR(CAST(a AS TIMESTAMP), 'YYYY-MM') AS s FROM {source}"),
+        ):
+            with self.subTest(destination=destination.value, refused=sql):
+                with self.assertRaises(DbtPolicyFailure):
+                    rewrite_model_sql(sql, destination)
+
+    def test_the_window_shapes_those_destinations_do_run_stay_admitted(self) -> None:
+        """The refusals are narrow: ranking and navigation windows, and any
+        window carrying an explicit frame, were measured to agree."""
+        source = "{{ source('raw', 'orders') }}"
+        for destination, sql in (
+            (Destination.REDSHIFT, f"SELECT ROW_NUMBER() OVER (ORDER BY a) AS s FROM {source}"),
+            (Destination.REDSHIFT, f"SELECT RANK() OVER (ORDER BY a) AS s FROM {source}"),
+            (Destination.REDSHIFT, f"SELECT LAG(a) OVER (ORDER BY a) AS s FROM {source}"),
+            (
+                Destination.REDSHIFT,
+                f"SELECT SUM(a) OVER (ORDER BY a ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS s FROM {source}",
+            ),
+            (Destination.REDSHIFT, f"SELECT SUM(a) OVER (PARTITION BY a) AS s FROM {source}"),
+            (Destination.DATABRICKS, f"SELECT COUNT(a) OVER (ORDER BY a) AS s FROM {source}"),
+            (Destination.SNOWFLAKE, f"SELECT COUNT(DISTINCT a) OVER () AS s FROM {source}"),
+            (Destination.SNOWFLAKE, f"SELECT CAST((a > 1) AS TEXT) AS s FROM {source}"),
+        ):
+            with self.subTest(destination=destination.value, admitted=sql):
+                rewrite_model_sql(sql, destination)
 
     def test_direct_relations_unknown_features_and_file_readers_fail_closed(self) -> None:
         cases = (

@@ -3414,19 +3414,27 @@ def _canonical_block(error: str, *, blocked_on: str, failure_code: str) -> Stage
 def _ensure_canonical_reachability(
     engine: Engine, task: TaskIR, variant_out_dir: Path
 ) -> StageOutcome | None:
-    """Derive and score the canonical Terraform and dbt transform artifact.
+    """Derive and score the canonical Terraform + dbt artifact for the T unit,
+    once per destination the task ships.
 
-    Record measured task outcomes; block on environment, harness, or human
-    prerequisites. This function never rejects.
+    Writes ``reports/canonical_reachability.json`` and the private artifacts
+    under ``answer_key/runtime/canonical/<destination>/`` for the battery's
+    canonical-reachability gate to judge, then returns None. It RECORDS only
+    outcomes that describe the task on the workspace channel: a full score and
+    a measured shortfall or an emitter gap. Anything that says nothing about
+    the task returns BLOCKED without recording: the pinned dbt runtime
+    missing, a substrate or IO failure, a harness, infrastructure or
+    real-runtime failure, a timeout of the reference solution (environment),
+    or the grader refusing the task package (human). No outcome rejects.
     """
     import tempfile
 
     from elt_taskgen.training import canonical
-    from elt_taskgen.training.package import WorkspacePackageError
+    from elt_taskgen.training.package import WorkspacePackageError, shipped_destinations
 
     task_root = engine.task_dir(task.task_id)
     answer_key_dir = _answer_key_dir(engine, task)
-    # A previous identity's or run's record never survives into this one.
+    # A previous identity's or run's evidence never survives into this one.
     stale_evidence = task_root / canonical.REACHABILITY_EVIDENCE_REL
     if stale_evidence.is_file() and not stale_evidence.is_symlink():
         stale_evidence.unlink()
@@ -3443,77 +3451,101 @@ def _ensure_canonical_reachability(
             blocked_on=BLOCKED_ON_ENVIRONMENT,
             failure_code="canonical_runtime_unavailable",
         )
+    try:
+        destinations = shipped_destinations(answer_key_dir)
+    except Exception as exc:  # noqa: BLE001 - the private tree is unreadable
+        return _canonical_block(
+            "The task's private connector contracts could not be read "
+            f"({type(exc).__name__}: {exc}).",
+            blocked_on=BLOCKED_ON_ENVIRONMENT,
+            failure_code="canonical_substrate_failed",
+        )
+
+    records: dict[str, canonical.CanonicalReachabilityRecord] = {}
+    files_by_destination: dict[str, dict[str, str]] = {}
     scratch = Path(tempfile.mkdtemp(prefix="canonical-reachability-"))
     try:
-        try:
-            package = canonical.build_workspace_substrate(
-                task=task,
-                answer_key_dir=answer_key_dir,
-                public_dir=_public_dir(engine, task),
-                populations_root=task_root / "populations",
-                oracle_dir=Path(variant_out_dir) / "task" / _warehouse_dirname(),
-                scratch=scratch / "substrate",
-            )
-        except WorkspacePackageError as exc:
-            return _canonical_block(
-                "The workspace grader refused the exported task package while "
-                f"preparing the canonical-reachability check ({exc}).",
-                blocked_on=BLOCKED_ON_HUMAN,
-                failure_code="canonical_task_package_invalid",
-            )
-        except Exception as exc:  # noqa: BLE001 - environment, never a judgement
-            return _canonical_block(
-                "The canonical-reachability workspace could not be laid out "
-                f"({type(exc).__name__}: {exc}).",
-                blocked_on=BLOCKED_ON_ENVIRONMENT,
-                failure_code="canonical_substrate_failed",
-            )
-        try:
-            files = canonical.render_canonical_project(package)
-        except canonical.CanonicalArtifactError as exc:
-            record = canonical.build_render_failure_record(
-                task,
-                destination=package.destination,
+        for destination in destinations:
+            name = destination.value
+            try:
+                package = canonical.build_workspace_substrate(
+                    task=task,
+                    answer_key_dir=answer_key_dir,
+                    public_dir=_public_dir(engine, task),
+                    populations_root=task_root / "populations",
+                    oracle_dir=Path(variant_out_dir) / "task" / _warehouse_dirname(),
+                    scratch=scratch / f"substrate-{name}",
+                    destination=destination,
+                )
+            except WorkspacePackageError as exc:
+                return _canonical_block(
+                    "The workspace grader refused the exported task package while "
+                    f"preparing the canonical-reachability check for {name} ({exc}).",
+                    blocked_on=BLOCKED_ON_HUMAN,
+                    failure_code="canonical_task_package_invalid",
+                )
+            except Exception as exc:  # noqa: BLE001 - environment, never a judgement
+                return _canonical_block(
+                    "The canonical-reachability workspace could not be laid out for "
+                    f"{name} ({type(exc).__name__}: {exc}).",
+                    blocked_on=BLOCKED_ON_ENVIRONMENT,
+                    failure_code="canonical_substrate_failed",
+                )
+            try:
+                files = canonical.render_canonical_project(package)
+            except canonical.CanonicalArtifactError as exc:
+                records[name] = canonical.build_render_failure_record(
+                    task,
+                    destination=destination,
+                    runtime_config=runtime_config,
+                    error=f"{type(exc).__name__}: {exc}",
+                    airbyte_contract_sha256=package.airbyte_contract_sha256,
+                )
+                files_by_destination[name] = {}
+                continue
+            try:
+                sealed, result = canonical.score_canonical_artifact(
+                    package,
+                    files,
+                    scratch=scratch / f"score-{name}",
+                    runtime_config=runtime_config,
+                )
+            except Exception as exc:  # noqa: BLE001 - install/seal/scorer faults
+                return _canonical_block(
+                    "Scoring the canonical artifact failed inside the workspace "
+                    f"harness for {name} ({type(exc).__name__}: {exc}).",
+                    blocked_on=BLOCKED_ON_ENVIRONMENT,
+                    failure_code="canonical_harness_failed",
+                )
+            outcome = canonical.classify_score(result)
+            if outcome == canonical.OUTCOME_ENVIRONMENT:
+                return _canonical_block(
+                    "The workspace grader produced no label for the canonical "
+                    f"artifact on {name} ({canonical.shortfall_summary(result)}); this "
+                    "describes the host or the harness, not the task.",
+                    blocked_on=BLOCKED_ON_ENVIRONMENT,
+                    failure_code="canonical_grader_unavailable",
+                )
+            if outcome == canonical.OUTCOME_TASK_PACKAGE:
+                return _canonical_block(
+                    "The workspace grader refused the task package for the canonical "
+                    f"artifact on {name} ({canonical.shortfall_summary(result)}).",
+                    blocked_on=BLOCKED_ON_HUMAN,
+                    failure_code="canonical_task_package_invalid",
+                )
+            records[name] = canonical.build_reachability_record(
+                package,
+                files=files,
+                sealed=sealed,
+                result=result,
                 runtime_config=runtime_config,
-                error=f"{type(exc).__name__}: {exc}",
-                airbyte_contract_sha256=package.airbyte_contract_sha256,
             )
-            canonical.record_canonical_reachability(
-                task_dir=task_root, answer_key_dir=answer_key_dir, record=record, files={}
-            )
-            return None
-        try:
-            sealed, result = canonical.score_canonical_artifact(
-                package, files, scratch=scratch / "score", runtime_config=runtime_config
-            )
-        except Exception as exc:  # noqa: BLE001 - install/seal/scorer faults
-            return _canonical_block(
-                "Scoring the canonical artifact failed inside the workspace "
-                f"harness ({type(exc).__name__}: {exc}).",
-                blocked_on=BLOCKED_ON_ENVIRONMENT,
-                failure_code="canonical_harness_failed",
-            )
-        outcome = canonical.classify_score(result)
-        if outcome == canonical.OUTCOME_ENVIRONMENT:
-            return _canonical_block(
-                "The workspace grader produced no label for the canonical "
-                f"artifact ({canonical.shortfall_summary(result)}); this describes "
-                "the host or the harness, not the task.",
-                blocked_on=BLOCKED_ON_ENVIRONMENT,
-                failure_code="canonical_grader_unavailable",
-            )
-        if outcome == canonical.OUTCOME_TASK_PACKAGE:
-            return _canonical_block(
-                "The workspace grader refused the task package for the canonical "
-                f"artifact ({canonical.shortfall_summary(result)}).",
-                blocked_on=BLOCKED_ON_HUMAN,
-                failure_code="canonical_task_package_invalid",
-            )
-        record = canonical.build_reachability_record(
-            package, files=files, sealed=sealed, result=result, runtime_config=runtime_config
-        )
+            files_by_destination[name] = dict(files)
         canonical.record_canonical_reachability(
-            task_dir=task_root, answer_key_dir=answer_key_dir, record=record, files=files
+            task_dir=task_root,
+            answer_key_dir=answer_key_dir,
+            records=records,
+            files=files_by_destination,
         )
         return None
     finally:

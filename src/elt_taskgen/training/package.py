@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -18,6 +19,7 @@ from elt_taskgen.destinations import (
 )
 from elt_taskgen.export import eltbench
 from elt_taskgen.export.eltbench import (
+    EXTRA_DESTINATIONS_DIRNAME,
     PRIVATE_AIRBYTE_CONNECTOR_CONTRACT,
     build_data_model,
     public_documentation,
@@ -273,13 +275,68 @@ def _validate_airbyte_contract(
         )
 
 
+def private_contract_rel(destination: Destination, bundle_root: Destination) -> str:
+    """Where a destination's private connector contract lives.
+
+    The bundle root keeps the unsuffixed name the upstream layout expects;
+    every extra destination the package ships carries its own copy beside it,
+    named by that destination (``export.eltbench`` writes both).
+    """
+    if destination is bundle_root:
+        return PRIVATE_AIRBYTE_CONNECTOR_CONTRACT
+    stem, suffix = os.path.splitext(PRIVATE_AIRBYTE_CONNECTOR_CONTRACT)
+    return f"{stem}.{destination.value}{suffix}"
+
+
+def bundle_root_destination(answer_key_dir: Path) -> Destination:
+    """The destination the unsuffixed private contract names."""
+    document = _read_json_object(
+        Path(answer_key_dir) / PRIVATE_AIRBYTE_CONNECTOR_CONTRACT,
+        "private Airbyte connector contract",
+    )
+    destination = document.get("destination")
+    key = destination.get("key") if isinstance(destination, Mapping) else None
+    try:
+        return Destination(str(key))
+    except ValueError:
+        raise WorkspacePackageError(
+            "private Airbyte contract names no known destination"
+        ) from None
+
+
+def shipped_destinations(answer_key_dir: Path) -> tuple[Destination, ...]:
+    """Every destination this task ships, bundle root first.
+
+    Read from the private tree alone, so packaging, release and the workspace
+    all agree on the set without consulting the public bundle.
+    """
+    answer_key_dir = Path(answer_key_dir)
+    root = bundle_root_destination(answer_key_dir)
+    extras = [
+        destination
+        for destination in Destination
+        if destination is not root
+        and (answer_key_dir / private_contract_rel(destination, root)).is_file()
+    ]
+    return (root, *sorted(extras, key=lambda item: item.value))
+
+
 def load_workspace_package(
     release_dir: Path,
     task_id: str,
     *,
+    destination: Destination | str | None = None,
     verify: bool = True,
 ) -> WorkspacePackage:
-    """Load a verified schema-3 task for independently versioned workspace replay."""
+    """Load a verified schema-3 task for independently versioned workspace replay.
+
+    ``destination`` selects which of the task's shipped destinations to load.
+    The default is the bundle root, the one the public ``config.yaml`` names.
+    Any other shipped destination reads its own private connector contract and
+    takes its logical namespace from ``destinations/<name>/config.yaml``; the
+    public task, its documentation, schemas and data model are shared and are
+    validated the same way for every destination.
+    """
 
     try:
         semantic = load_semantic_package(release_dir, task_id, verify=verify)
@@ -290,27 +347,52 @@ def load_workspace_package(
         raise WorkspacePackageError("combined public task directory is missing")
     documentation_path = _validate_public_semantics(public_dir, semantic)
 
-    config = _read_yaml_object(public_dir / "config.yaml", "config.yaml")
+    root_config = _read_yaml_object(public_dir / "config.yaml", "config.yaml")
     try:
-        destination = destination_from_config(config)
-        contract = destination_contract(destination)
+        bundle_root = destination_from_config(root_config)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise WorkspacePackageError("public destination configuration is invalid") from exc
+    if destination is None:
+        selected = bundle_root
+    else:
+        try:
+            selected = Destination(destination)
+        except ValueError:
+            raise WorkspacePackageError(
+                f"unknown destination {destination!r}"
+            ) from None
+    if selected is bundle_root:
+        config = root_config
+    else:
+        config_path = (
+            public_dir / EXTRA_DESTINATIONS_DIRNAME / selected.value / "config.yaml"
+        )
+        if config_path.is_symlink() or not config_path.is_file():
+            raise WorkspacePackageError(
+                f"task ships no public configuration for destination {selected.value!r}"
+            )
+        config = _read_yaml_object(config_path, f"destinations/{selected.value}/config.yaml")
+    try:
+        contract = destination_contract(selected)
         values = config[contract.config_section]["config"]
         logical_namespace = str(values[contract.logical_namespace_field])
     except (KeyError, TypeError, ValueError) as exc:
         raise WorkspacePackageError("public destination configuration is invalid") from exc
     if not logical_namespace:
         raise WorkspacePackageError("public destination namespace is empty")
-    manifest_destination = semantic.manifest.destinations.get(task_id)
-    if manifest_destination != destination.value:
-        raise WorkspacePackageError("manifest and public destination disagree")
+    if selected is bundle_root:
+        # The manifest records the bundle root only; an extra destination is
+        # identified by its own contract, checked below.
+        manifest_destination = semantic.manifest.destinations.get(task_id)
+        if manifest_destination != selected.value:
+            raise WorkspacePackageError("manifest and public destination disagree")
 
-    airbyte_contract_path = (
-        semantic.release_dir
-        / "private"
-        / task_id
-        / "answer_key"
-        / PRIVATE_AIRBYTE_CONNECTOR_CONTRACT
-    )
+    answer_key_dir = semantic.release_dir / "private" / task_id / "answer_key"
+    airbyte_contract_path = answer_key_dir / private_contract_rel(selected, bundle_root)
+    if airbyte_contract_path.is_symlink() or not airbyte_contract_path.is_file():
+        raise WorkspacePackageError(
+            f"task ships no private connector contract for destination {selected.value!r}"
+        )
     airbyte_contract = _read_json_object(
         airbyte_contract_path,
         "private Airbyte connector contract",
@@ -330,7 +412,7 @@ def load_workspace_package(
     }
     _validate_airbyte_contract(
         airbyte_contract,
-        destination=destination,
+        destination=selected,
         expected_source_keys=expected_source_keys,
         logical_namespace=logical_namespace,
     )
@@ -341,7 +423,7 @@ def load_workspace_package(
         semantic=semantic,
         public_dir=public_dir,
         documentation_path=documentation_path,
-        destination=destination,
+        destination=selected,
         logical_namespace=logical_namespace,
         airbyte_contract_path=airbyte_contract_path,
         airbyte_contract=_deep_freeze(airbyte_contract),
@@ -353,6 +435,9 @@ def load_workspace_package(
 
 __all__ = [
     "WorkspacePackage",
+    "bundle_root_destination",
+    "private_contract_rel",
+    "shipped_destinations",
     "WorkspacePackageError",
     "load_workspace_package",
     "public_tree_digest",

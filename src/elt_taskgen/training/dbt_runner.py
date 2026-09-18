@@ -38,6 +38,7 @@ from elt_taskgen.training.local_sync import (
     LocalSyncExecution,
     LocalSyncHarnessError,
     raw_state_immutable,
+    shared_schema_mart_names,
     verify_raw_state,
 )
 from elt_taskgen.training.package import WorkspacePackage
@@ -67,7 +68,7 @@ DBT_DUCKDB_INSTALLED_DISTRIBUTIONS_SHA256 = (
 DBT_DUCKDB_RUNTIME_MANIFEST_SHA256 = (
     "0fa9adbb840e0cbeb0308e0ce16dc37900de3d162af5d12db6d547f9c3a5d7fc"
 )
-DBT_COMPATIBILITY_SUBSET_VERSION = "portable-dbt-sql-v3"
+DBT_COMPATIBILITY_SUBSET_VERSION = "portable-dbt-sql-v4"
 DBT_PROFILE_NAME = "elt_taskgen"
 DBT_PROFILE_TARGET = "local"
 
@@ -1174,19 +1175,68 @@ _BOOLEAN_VALUED_NODES = (
 )
 
 
+def _unwrap_parens(node: exp.Expression) -> exp.Expression:
+    """Strip redundant parentheses, which carry no type of their own.
+
+    Without this the rule below saw only a Cast's direct child, so a
+    parenthesis hid every comparison from it.
+    """
+
+    while isinstance(node, exp.Paren):
+        node = node.this
+    return node
+
+
 def _boolean_text_cast(node: exp.Expression, destination: Destination) -> bool:
     if destination is not Destination.REDSHIFT or not isinstance(node, exp.Cast):
         return False
     target = node.args.get("to")
     if not (isinstance(target, exp.DataType) and target.this in _TEXT_DATA_TYPES):
         return False
-    operand = node.this
+    operand = _unwrap_parens(node.this)
     if isinstance(operand, _BOOLEAN_VALUED_NODES):
         return True
     if isinstance(operand, exp.Cast):
         inner = operand.args.get("to")
         return isinstance(inner, exp.DataType) and inner.this is exp.DataType.Type.BOOLEAN
     return False
+
+
+#: Redshift requires an explicit frame when one of these carries an ORDER BY.
+#: ROW_NUMBER, RANK, DENSE_RANK, LAG and LEAD do not, and stay admitted.
+_FRAME_REQUIRING_WINDOW_FUNCTIONS = (
+    exp.Sum,
+    exp.Avg,
+    exp.Count,
+    exp.Min,
+    exp.Max,
+    exp.FirstValue,
+    exp.LastValue,
+    exp.NthValue,
+)
+
+
+def _window_problem(node: exp.Expression, destination: Destination) -> bool:
+    """Window shapes a destination refuses to compile.
+
+    Databricks and Redshift both reject a DISTINCT window aggregate. Snowflake
+    runs it and agrees, so it stays admitted there.
+    """
+
+    if not isinstance(node, exp.Window):
+        return False
+    function = node.this
+    if destination in {Destination.DATABRICKS, Destination.REDSHIFT} and any(
+        isinstance(child, exp.Distinct) for child in function.walk()
+    ):
+        return True
+    if destination is not Destination.REDSHIFT:
+        return False
+    if not isinstance(function, _FRAME_REQUIRING_WINDOW_FUNCTIONS):
+        return False
+    if not node.args.get("order"):
+        return False
+    return node.args.get("spec") is None
 
 
 def _operand_is_timestamp(node: exp.Expression, timestamp_columns: frozenset[str]) -> bool:
@@ -1447,6 +1497,18 @@ def rewrite_model_sql(
     if any(_unsafe_text_cast(node, normalized_unsafe_columns) for node in tree.walk()):
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
     if any(_boolean_text_cast(node, resolved_destination) for node in tree.walk()):
+        raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
+    if any(_window_problem(node, resolved_destination) for node in tree.walk()):
+        raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
+    if resolved_destination is Destination.REDSHIFT and any(
+        isinstance(node, exp.Filter) for node in tree.walk()
+    ):
+        # Redshift has no aggregate FILTER (WHERE ...) clause.
+        raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
+    if resolved_destination is Destination.DATABRICKS and any(
+        isinstance(node, exp.ToChar) for node in tree.walk()
+    ):
+        # Spark refuses TO_CHAR's datetime pattern outright.
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
     cte_names = {
         cte.alias_or_name.casefold()
@@ -1746,11 +1808,20 @@ def _mart_relation(namespace: "NamespaceProjection", mart: str) -> str:
 def _fingerprint_physical_raw_state(
     database_path: Path,
     namespace: "NamespaceProjection",
+    *,
+    ignored_tables: frozenset[str] = frozenset(),
 ) -> str:
     """Digest every raw table, column, type, and value independent of order.
 
     Include metadata and unexpected tables; this proves immutability, not EL
     correctness.
+
+    ``ignored_tables`` (casefolded) is the marts a destination materializes
+    INTO the raw schema, which is Databricks and Redshift: their raw landing
+    schema is the dbt target schema, so a mart is a new table there and would
+    otherwise read as a raw mutation. It is empty for Snowflake, and a mart can
+    never be named after a raw table, so no raw table is ever excluded; the
+    digest of the raw tables themselves is unchanged.
     """
 
     if database_path.is_symlink() or not database_path.is_file():
@@ -1770,6 +1841,8 @@ def _fingerprint_physical_raw_state(
             if len({name.casefold() for name in table_names}) != len(table_names):
                 raise DbtTrustedFailure(DbtErrorCode.INPUT_DATABASE_INVALID)
             for table_name in table_names:
+                if table_name.casefold() in ignored_tables:
+                    continue
                 relation = _relation_sql((namespace.raw_schema, table_name))
                 cursor = connection.execute("SELECT * FROM " + relation)
                 columns = tuple(
@@ -2434,7 +2507,10 @@ def run_dbt_project(
         database.relative_to(attempt)
     except ValueError as exc:
         raise DbtTrustedFailure(DbtErrorCode.INPUT_DATABASE_INVALID) from exc
-    raw_before = _fingerprint_physical_raw_state(database, namespace)
+    ignored_tables = shared_schema_mart_names(package, namespace)
+    raw_before = _fingerprint_physical_raw_state(
+        database, namespace, ignored_tables=ignored_tables
+    )
 
     state_dir = attempt / ".workspace-runtime" / "dbt"
     try:
@@ -2466,7 +2542,9 @@ def run_dbt_project(
         _write_profile(profiles_dir, database, namespace)
     except DbtPolicyFailure as failure:
         _post_dbt_raw_state(package, sync_execution)
-        raw_after = _fingerprint_physical_raw_state(database, namespace)
+        raw_after = _fingerprint_physical_raw_state(
+            database, namespace, ignored_tables=ignored_tables
+        )
         return _empty_result(
             package, runtime, raw_before, raw_after, commands, [failure.code]
         )
@@ -2495,7 +2573,9 @@ def run_dbt_project(
             _bounded_tree_size(state_dir, bounds.max_state_bytes)
         except DbtPolicyFailure as failure:
             _post_dbt_raw_state(package, sync_execution)
-            raw_after = _fingerprint_physical_raw_state(database, namespace)
+            raw_after = _fingerprint_physical_raw_state(
+                database, namespace, ignored_tables=ignored_tables
+            )
             return _empty_result(
                 package,
                 runtime,
@@ -2506,13 +2586,17 @@ def run_dbt_project(
             )
         if command_run.timed_out:
             _post_dbt_raw_state(package, sync_execution)
-            raw_after = _fingerprint_physical_raw_state(database, namespace)
+            raw_after = _fingerprint_physical_raw_state(
+                database, namespace, ignored_tables=ignored_tables
+            )
             return _empty_result(
                 package, runtime, raw_before, raw_after, commands, [DbtErrorCode.TIMEOUT]
             )
         if command_run.evidence.output_truncated:
             _post_dbt_raw_state(package, sync_execution)
-            raw_after = _fingerprint_physical_raw_state(database, namespace)
+            raw_after = _fingerprint_physical_raw_state(
+                database, namespace, ignored_tables=ignored_tables
+            )
             return _empty_result(
                 package,
                 runtime,
@@ -2523,7 +2607,9 @@ def run_dbt_project(
             )
         if not command_run.evidence.succeeded:
             _post_dbt_raw_state(package, sync_execution)
-            raw_after = _fingerprint_physical_raw_state(database, namespace)
+            raw_after = _fingerprint_physical_raw_state(
+                database, namespace, ignored_tables=ignored_tables
+            )
             return _empty_result(
                 package, runtime, raw_before, raw_after, commands, [failure_code]
             )
@@ -2537,7 +2623,9 @@ def run_dbt_project(
                 )
             except DbtPolicyFailure as failure:
                 _post_dbt_raw_state(package, sync_execution)
-                raw_after = _fingerprint_physical_raw_state(database, namespace)
+                raw_after = _fingerprint_physical_raw_state(
+                database, namespace, ignored_tables=ignored_tables
+            )
                 return _empty_result(
                     package,
                     runtime,
@@ -2548,7 +2636,9 @@ def run_dbt_project(
                 )
 
     raw_after_state = _post_dbt_raw_state(package, sync_execution)
-    raw_after = _fingerprint_physical_raw_state(database, namespace)
+    raw_after = _fingerprint_physical_raw_state(
+        database, namespace, ignored_tables=ignored_tables
+    )
     error_codes: list[DbtErrorCode] = []
     immutable = (
         raw_before == raw_after

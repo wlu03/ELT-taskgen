@@ -7,12 +7,17 @@ private source data or re-pinning its release identity.
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+from elt_taskgen.airbyte_connector_config import build_airbyte_connector_contract
+from elt_taskgen.destinations import Destination
+from elt_taskgen.export import eltbench as eltbench_mod
 from elt_taskgen.export import release as release_mod
 
 
@@ -36,4 +41,32 @@ def portable_five_backend_release() -> Iterator[Path]:
         yield release_dir
 
 
-__all__ = ["TASK_ID", "portable_five_backend_release"]
+def add_extra_destinations(
+    release_dir: Path, task, extras=(Destination.DATABRICKS, Destination.REDSHIFT)
+) -> tuple[str, ...]:
+    """Give a copied release the extra destinations a real package ships.
+
+    The committed fixture was frozen with the bundle root alone. The public
+    configs and private contracts written here come from the SAME writers the
+    exporter uses, so the tree is shaped like a real multi-destination task
+    rather than hand-built. It no longer matches the release manifest, so a
+    caller loads it with ``verify=False``; the seal is what refuses a
+    destination added to a frozen release.
+
+    Returns every shipped destination name, bundle root first.
+    """
+
+    public_dir = release_dir / "public" / task.task_id
+    answer_key = release_dir / "private" / task.task_id / "answer_key"
+    configs = eltbench_mod.write_extra_destinations(public_dir, task, list(extras))
+    stem, suffix = os.path.splitext(eltbench_mod.PRIVATE_AIRBYTE_CONNECTOR_CONTRACT)
+    for name, config in configs.items():
+        (answer_key / f"{stem}.{name}{suffix}").write_text(
+            json.dumps(build_airbyte_connector_contract(config), indent=2, sort_keys=True)
+            + "\n",
+            encoding="utf-8",
+        )
+    return ("snowflake", *sorted(configs))
+
+
+__all__ = ["TASK_ID", "add_extra_destinations", "portable_five_backend_release"]

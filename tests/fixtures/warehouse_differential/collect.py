@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path("/Users/wesleylu/Projects/Research/kang-lab/ELT-taskgen")
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src")); sys.path.insert(0, str(HERE))
-from probes import PROBES
+from probes import PROBES, candidate_sql
 from elt_taskgen.destinations import Destination
 from elt_taskgen.training import dbt_runner as R
 from elt_taskgen.runtime import snowflake as sf, databricks as db, redshift as rs
@@ -29,27 +29,6 @@ TARGETS = {
     "redshift": (Destination.REDSHIFT, rs, ROOT / "secrets/redshift-admin.json"),
 }
 ABS_TOL, REL_TOL = 1e-9, 1e-2
-
-
-def candidate_sql(probe: dict, destination: Destination) -> str:
-    """What a solver targeting THIS destination writes.
-
-    The probe expression is authored once in DuckDB spelling and transpiled
-    with sqlglot, which is exactly how the canonical emitter renders reference
-    SQL into a destination dialect. A probe may override the rendering per
-    destination when the idiom has no transpilation.
-    """
-    import sqlglot
-
-    override = (probe.get("per_destination") or {}).get(destination.value)
-    if override is not None:
-        expr = override
-    else:
-        expr = sqlglot.transpile(
-            f"SELECT {probe['expr']}", read="duckdb", write=destination.value
-        )[0].removeprefix("SELECT ")
-    frm = probe.get("from_clause")
-    return f"SELECT {expr} AS v" + (f" FROM {frm}" if frm else "")
 
 
 def duckdb_sql(probe: dict, destination: Destination) -> tuple[str, str]:

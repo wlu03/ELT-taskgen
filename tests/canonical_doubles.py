@@ -94,6 +94,41 @@ def write_canonical_reachability(
     stale = task_dir / "answer_key" / canonical.CANONICAL_ARTIFACT_REL
     if stale.exists():
         canonical.remove_scratch_tree(stale)
+    # One record per destination the task ships, as the real producer writes.
+    from elt_taskgen.training.package import shipped_destinations
+
+    records = {}
+    files_by_destination = {}
+    for shipped in shipped_destinations(task_dir / "answer_key"):
+        records[shipped.value] = record.model_copy(
+            update={
+                "destination": shipped.value,
+                "airbyte_contract_sha256": _contract_digest(
+                    task_dir / "answer_key", shipped
+                ),
+            }
+        )
+        files_by_destination[shipped.value] = files
     return canonical.record_canonical_reachability(
-        task_dir=task_dir, answer_key_dir=task_dir / "answer_key", record=record, files=files
+        task_dir=task_dir,
+        answer_key_dir=task_dir / "answer_key",
+        records=records,
+        files=files_by_destination,
     )
+
+
+def _contract_digest(answer_key_dir: Path, destination) -> str:
+    import hashlib
+    import json as _json
+
+    from elt_taskgen.models import canonical_json
+    from elt_taskgen.training.package import (
+        bundle_root_destination,
+        private_contract_rel,
+    )
+
+    path = answer_key_dir / private_contract_rel(
+        destination, bundle_root_destination(answer_key_dir)
+    )
+    document = _json.loads(path.read_text(encoding="utf-8"))
+    return hashlib.sha256(canonical_json(document).encode("utf-8")).hexdigest()

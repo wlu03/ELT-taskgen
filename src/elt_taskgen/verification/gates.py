@@ -3922,11 +3922,14 @@ def _gate_el_populations_load(
 
 
 def _gate_canonical_reachability(task: TaskIR, workspace: Path) -> GateResult:
-    """Verify that the transform answer key is reachable through the RLVR workspace.
+    """The T unit's answer key is reachable on the RLVR workspace channel, for
+    every destination the task ships.
 
-    Read the current validate-transform record without producing it. Missing or stale
-    evidence requests rerun; current evidence below full reward reports failing
-    populations and grader codes.
+    Reads the report the validate-t runner produced (never produces it: a gate
+    judges evidence). A missing or stale report is a currency refusal whose
+    remedy is "re-run validate-t" (the runner rewrites it before the battery
+    runs); a present, current report short of full reward on any destination is
+    a judgement naming that destination and the grader's error codes.
     """
     from elt_taskgen.training import canonical
 
@@ -3942,49 +3945,58 @@ def _gate_canonical_reachability(task: TaskIR, workspace: Path) -> GateResult:
         task, directory, directory / "answer_key"
     )
     if loaded.problem is not None:
-        return _fail(name, f"canonical reachability evidence is not current: {loaded.problem}")
-    record = loaded.record
-    assert record is not None
-    evidence: dict[str, str] = {
-        "destination": record.destination,
-        "artifact_sha256": record.artifact_sha256,
-        "seal_sha256": record.seal_sha256,
-        "compatibility_subset": record.compatibility_subset,
-        "workspace_scorer_version": record.workspace_scorer_version,
-    }
-    if record.render_error:
+        return _fail(
+            name, f"canonical reachability evidence is not current: {loaded.problem}"
+        )
+    report = loaded.report
+    assert report is not None
+    evidence: dict[str, str] = {}
+    shortfalls: list[str] = []
+    for destination in sorted(report.records):
+        record = report.records[destination]
+        evidence[f"{destination}:artifact_sha256"] = record.artifact_sha256
+        evidence[f"{destination}:seal_sha256"] = record.seal_sha256
+        evidence[f"{destination}:compatibility_subset"] = record.compatibility_subset
+        if record.render_error:
+            shortfalls.append(
+                f"{destination}: the canonical artifact could not be derived "
+                f"({plain(record.render_error)})"
+            )
+            continue
+        result = record.result
+        assert result is not None
+        for population in result.graded_populations:
+            score = result.populations[population]
+            evidence[f"{destination}:{population}:end_to_end"] = str(score.end_to_end_reward)
+            evidence[f"{destination}:{population}:terraform"] = str(score.terraform_contract)
+            evidence[f"{destination}:{population}:strict_raw_tables"] = str(score.strict_raw_tables)
+            evidence[f"{destination}:{population}:dbt_project"] = str(score.dbt_project)
+            evidence[f"{destination}:{population}:mart_reward"] = str(score.mart_reward)
+            codes = getattr(score, "error_codes", ()) or ()
+            if codes:
+                evidence[f"{destination}:{population}:error_codes"] = ",".join(
+                    sorted(str(code) for code in codes)
+                )
+        if not record.reachable:
+            shortfalls.append(f"{destination}: {plain(canonical.shortfall_summary(result))}")
+    if shortfalls:
         return _fail(
             name,
-            "the canonical Terraform + dbt artifact could not be derived from "
-            f"the private answer key: {plain(record.render_error)}",
+            "the canonical Terraform + dbt solution derived from the private answer "
+            "key does not earn 1.0 through the RLVR workspace channel on "
+            + "; ".join(shortfalls)
+            + "; a solver cannot be rewarded for a mart the portable dbt subset or "
+            "the Terraform intent validators refuse",
             evidence,
         )
-    result = record.result
-    assert result is not None
-    for population in result.graded_populations:
-        score = result.populations[population]
-        evidence[f"{population}:end_to_end"] = str(score.end_to_end_reward)
-        evidence[f"{population}:terraform"] = str(score.terraform_contract)
-        evidence[f"{population}:strict_raw_tables"] = str(score.strict_raw_tables)
-        evidence[f"{population}:dbt_project"] = str(score.dbt_project)
-        evidence[f"{population}:mart_reward"] = str(score.mart_reward)
-        codes = getattr(score, "error_codes", ()) or ()
-        if codes:
-            evidence[f"{population}:error_codes"] = ",".join(sorted(str(c) for c in codes))
-    if not record.reachable:
-        return _fail(
-            name,
-            "the canonical Terraform + dbt solution derived from the private "
-            "answer key does not earn 1.0 through the RLVR workspace channel "
-            f"({plain(canonical.shortfall_summary(result))}); a solver cannot be "
-            "rewarded for a mart the portable dbt subset or the Terraform "
-            "intent validators refuse",
-            evidence,
-        )
+    populations = max(
+        (len(record.result.graded_populations) for record in report.records.values() if record.result),
+        default=0,
+    )
     return _ok(
         name,
-        f"canonical solution scores 1.0 on {len(result.graded_populations)} "
-        f"graded populations through the workspace channel",
+        f"canonical solution scores 1.0 on {populations} graded populations for "
+        f"{len(report.records)} destination(s): {', '.join(sorted(report.records))}",
         evidence,
     )
 

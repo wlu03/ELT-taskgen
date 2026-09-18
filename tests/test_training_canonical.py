@@ -36,6 +36,11 @@ from elt_taskgen.training.terraform_intent import (
 from elt_taskgen.verification import gates, upstream_eval
 from elt_taskgen.verification.strict_diagnostic import load_sources_duckdb_strict
 
+try:
+    from workspace_proxy_fixture import add_extra_destinations
+except ImportError:  # running as tests.test_training_canonical
+    from tests.workspace_proxy_fixture import add_extra_destinations
+
 FIXTURE_RELEASE = Path(__file__).resolve().parent / "fixtures" / "semantic_gate" / "release"
 TASK_ID = "gate__five_backend_probe"
 DBT_RUNTIME_ROOT = Path(__file__).resolve().parents[1] / "runtime-images" / "dbt-duckdb"
@@ -207,6 +212,89 @@ class CanonicalDerivationTests(unittest.TestCase):
             )
 
 
+class MultiDestinationTests(unittest.TestCase):
+    """A task ships one public bundle and a configuration per destination, and
+    the portable subset's rules differ per destination, so reachability is
+    proved once per destination rather than once per task (2026-09-17).
+    """
+
+    def setUp(self) -> None:
+        self.root = Path(tempfile.mkdtemp(prefix="canonical-multi-"))
+        self.addCleanup(shutil.rmtree, self.root, True)
+        self.release = self.root / "release"
+        shutil.copytree(FIXTURE_RELEASE, self.release)
+        # Read the task while the copy still matches the fixture's seal.
+        self.task = load_workspace_package(self.release, TASK_ID).task
+        self.destinations = add_extra_destinations(self.release, self.task)
+        self.answer_key = self.release / "private" / TASK_ID / "answer_key"
+
+    def test_the_package_lists_and_loads_every_shipped_destination(self) -> None:
+        from elt_taskgen.training.package import shipped_destinations
+
+        self.assertEqual(
+            tuple(item.value for item in shipped_destinations(self.answer_key)),
+            self.destinations,
+        )
+        namespaces = set()
+        graphs: list[str] = []
+        for name in self.destinations:
+            with self.subTest(destination=name):
+                # verify=False: the fixture's manifest seals the single-destination
+                # freeze it was made from, which the next test asserts directly.
+                package = load_workspace_package(
+                    self.release, TASK_ID, destination=name, verify=False
+                )
+                self.assertEqual(package.destination.value, name)
+                self.assertEqual(
+                    package.airbyte_contract["destination"]["key"], name
+                )
+                self.assertTrue(package.logical_namespace)
+                namespaces.add(package.logical_namespace)
+                # Each destination compiles its own Terraform from its own contract.
+                text = canonical.render_canonical_main_tf(package.airbyte_contract)
+                path = self.root / f"main-{name}.tf"
+                path.write_text(text, encoding="utf-8")
+                graph = compile_terraform_intent(package, path)
+                self.assertEqual(graph, expected_terraform_graph(package))
+                graphs.append(json.dumps(graph, sort_keys=True, default=str))
+        # The mart names are a property of the task, so every destination
+        # shares the logical namespace; what changes is the connector contract
+        # and therefore the intent graph the solver's Terraform must compile to.
+        self.assertEqual(len(namespaces), 1)
+        self.assertEqual(len(set(graphs)), len(self.destinations))
+
+    def test_a_destination_added_after_the_freeze_is_refused(self) -> None:
+        """The release seal covers the shipped destination set: files added to
+        a frozen release are not loadable, so this test's own fixture could
+        never be mistaken for a release."""
+        from elt_taskgen.training.package import WorkspacePackageError
+
+        with self.assertRaises(WorkspacePackageError):
+            load_workspace_package(self.release, TASK_ID, destination="redshift")
+
+    def test_every_shipped_destination_needs_its_own_record(self) -> None:
+        from tests.canonical_doubles import write_canonical_reachability
+
+        workspace = self.root / "workspace"
+        task_dir = workspace / "tasks" / TASK_ID
+        answer_key = task_dir / "answer_key"
+        shutil.copytree(self.answer_key, answer_key)
+        write_canonical_reachability(workspace, self.task)
+        self.assertIsNone(
+            canonical.load_canonical_reachability(self.task, task_dir, answer_key).problem
+        )
+        canonical.assert_canonical_ready(self.task, answer_key)
+
+        canonical.remove_scratch_tree(canonical.artifact_dir(answer_key, "redshift"))
+        problem = canonical.load_canonical_reachability(
+            self.task, task_dir, answer_key
+        ).problem
+        self.assertIsNotNone(problem)
+        self.assertIn("redshift", problem)
+        with self.assertRaisesRegex(ValueError, "redshift"):
+            canonical.assert_canonical_ready(self.task, answer_key)
+
+
 class CanonicalGateTests(unittest.TestCase):
     """The gate judges the record; it never produces it."""
 
@@ -241,7 +329,8 @@ class CanonicalGateTests(unittest.TestCase):
             airbyte_contract_sha256=self.package.airbyte_contract_sha256,
         )
         canonical.record_canonical_reachability(
-            task_dir=task_dir, answer_key_dir=answer_key, record=record, files={}
+            task_dir=task_dir, answer_key_dir=answer_key,
+            records={record.destination: record}, files={record.destination: {}},
         )
         result = gates._gate_canonical_reachability(self.package.task, root)
         self.assertFalse(result.passed)
@@ -273,12 +362,16 @@ class CanonicalGateTests(unittest.TestCase):
         from tests.canonical_doubles import write_canonical_reachability
 
         write_canonical_reachability(root, self.package.task)
-        record = canonical.CanonicalReachabilityRecord.model_validate_json(
+        report = canonical.CanonicalReachabilityReport.model_validate_json(
             (task_dir / canonical.REACHABILITY_EVIDENCE_REL).read_text(encoding="utf-8")
         )
+        record = next(iter(report.records.values()))
         failed = record.model_copy(update={"reachable": False, "result": None, "files": {}, "render_error": "ValueError: gold drift; re-run reference-run"})
         failed = canonical.CanonicalReachabilityRecord.model_validate(failed.model_dump())
-        canonical.record_canonical_reachability(task_dir=task_dir, answer_key_dir=answer_key, record=failed, files={})
+        canonical.record_canonical_reachability(
+            task_dir=task_dir, answer_key_dir=answer_key,
+            records={failed.destination: failed}, files={failed.destination: {}},
+        )
         verdict = gates._gate_canonical_reachability(self.package.task, root)
         self.assertFalse(verdict.passed)
         self.assertFalse(repair.is_currency_refusal(verdict))
@@ -293,12 +386,69 @@ class CanonicalGateTests(unittest.TestCase):
         )
         stale = record.model_copy(update={"compatibility_subset": "portable-dbt-sql-v1"})
         canonical.record_canonical_reachability(
-            task_dir=task_dir, answer_key_dir=answer_key, record=stale, files={}
+            task_dir=task_dir, answer_key_dir=answer_key,
+            records={stale.destination: stale}, files={stale.destination: {}},
         )
         result = gates._gate_canonical_reachability(self.package.task, root)
         self.assertFalse(result.passed)
         self.assertIn(DBT_COMPATIBILITY_SUBSET_VERSION, result.details)
         self.assertIn("re-run validate-t", result.details)
+
+
+@unittest.skipUnless(
+    _RUNTIME_PRESENT,
+    "provision the pinned dbt runtime with: uv sync --project runtime-images/dbt-duckdb --locked",
+)
+class CanonicalRealScoreEveryDestinationTests(unittest.TestCase):
+    """Reachability is a per-destination claim, so prove it per destination.
+
+    This is the test the 2026-09-17 finding needed: Databricks and Redshift
+    both scored 0.0 on every population because their raw landing schema is
+    also the dbt target schema and the mart read as a raw mutation. One
+    destination passing says nothing about the others.
+    """
+
+    def test_the_canonical_artifact_scores_one_on_every_shipped_destination(self) -> None:
+        from tests.workspace_proxy_fixture import portable_five_backend_release
+
+        with portable_five_backend_release() as release_dir:
+            task = load_workspace_package(release_dir, TASK_ID).task
+            destinations = add_extra_destinations(release_dir, task)
+            self.assertEqual(destinations, ("snowflake", "databricks", "redshift"))
+            for name in destinations:
+                with self.subTest(destination=name):
+                    package = load_workspace_package(
+                        release_dir, TASK_ID, destination=name, verify=False
+                    )
+                    files = canonical.render_canonical_project(package)
+                    scratch = Path(tempfile.mkdtemp(prefix=f"canonical-{name}-"))
+                    try:
+                        sealed, result = canonical.score_canonical_artifact(
+                            package,
+                            files,
+                            scratch=scratch,
+                            runtime_config=canonical.default_dbt_runtime_config(),
+                        )
+                    finally:
+                        canonical.remove_scratch_tree(scratch)
+                    self.assertEqual(
+                        result.reward,
+                        1.0,
+                        canonical.shortfall_summary(result),
+                    )
+                    self.assertEqual(
+                        set(result.graded_populations),
+                        {"primary", "resampled", "counterfactual", "stress"},
+                    )
+                    record = canonical.build_reachability_record(
+                        package,
+                        files=files,
+                        sealed=sealed,
+                        result=result,
+                        runtime_config=canonical.default_dbt_runtime_config(),
+                    )
+                    self.assertTrue(record.reachable)
+                    self.assertEqual(record.destination, name)
 
 
 @unittest.skipUnless(
@@ -338,12 +488,15 @@ class CanonicalRealScoreTests(unittest.TestCase):
             (answer_key / "runtime").mkdir(parents=True)
             shutil.copyfile(package.airbyte_contract_path, answer_key / "runtime" / "airbyte_connector_contract.json")
             canonical.record_canonical_reachability(
-                task_dir=task_dir, answer_key_dir=answer_key, record=record, files=files
+                task_dir=task_dir, answer_key_dir=answer_key,
+                records={record.destination: record}, files={record.destination: files},
             )
             self.assertIsNone(canonical.load_canonical_reachability(package.task, task_dir, answer_key).problem)
             verdict = gates._gate_canonical_reachability(package.task, root)
             self.assertTrue(verdict.passed, verdict.details)
-            self.assertEqual(verdict.evidence["primary:end_to_end"], "1.0")
+            self.assertEqual(
+                verdict.evidence[f"{package.destination.value}:primary:end_to_end"], "1.0"
+            )
             # A byte changed after scoring detaches the record from the artifact.
             model = canonical.artifact_dir(answer_key, package.destination) / "elt" / "models" / f"{package.task.marts[0].name}.sql"
             model.write_text(model.read_text(encoding="utf-8") + "\n-- edited\n", encoding="utf-8")
@@ -389,7 +542,8 @@ class CanonicalPackagingControlTests(unittest.TestCase):
         )
         self.assertTrue(record.reachable)
         canonical.record_canonical_reachability(
-            task_dir=root / "task", answer_key_dir=private / "answer_key", record=record, files=files
+            task_dir=root / "task", answer_key_dir=private / "answer_key",
+            records={record.destination: record}, files={record.destination: files},
         )
         canonical.assert_canonical_ready(package.task, private / "answer_key")
 
@@ -401,6 +555,33 @@ class CanonicalPackagingControlTests(unittest.TestCase):
         model.write_text(model.read_text(encoding="utf-8").replace("SELECT", "SELECT DISTINCT", 1), encoding="utf-8")
         control = pv._canonical_reachability_control(fresh, TASK_ID)
         self.assertFalse(control.passed)
+
+    def test_the_control_covers_every_shipped_destination_not_the_bundle_root(self) -> None:
+        """A package ships a configuration per destination. The control that
+        only looked at the bundle root would have passed a package whose
+        Databricks and Redshift marts were unreachable, which is what they
+        were until 2026-09-17."""
+        from elt_taskgen.export import package_verification as pv
+
+        release = FIXTURE_RELEASE / "private" / TASK_ID
+        root = Path(tempfile.mkdtemp(prefix="canonical-control-multi-"))
+        self.addCleanup(canonical.remove_scratch_tree, root)
+        fresh = root / "fresh" / "package"
+        private = fresh / "private" / TASK_ID
+        shutil.copytree(FIXTURE_RELEASE / "public" / TASK_ID, fresh / "public" / TASK_ID)
+        shutil.copytree(release / "oracle", fresh / "public" / f"{TASK_ID}__t" / "warehouse")
+        shutil.copytree(release / "answer_key", private / "answer_key")
+        shutil.copytree(release / "populations", private / "populations")
+        shutil.copyfile(release / "semantic" / "task_ir.json", private / "task_ir.json")
+        task = load_workspace_package(FIXTURE_RELEASE, TASK_ID).task
+        add_extra_destinations(fresh, task)
+
+        # No destination carries a packaged record, so the control names all
+        # three and scores none of them.
+        control = pv._canonical_reachability_control(fresh, TASK_ID)
+        self.assertFalse(control.passed)
+        for name in ("snowflake", "databricks", "redshift"):
+            self.assertIn(f"{name}: ", control.observed)
 
 
 if __name__ == "__main__":

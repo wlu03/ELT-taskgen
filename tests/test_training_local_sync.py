@@ -16,6 +16,7 @@ from elt_taskgen.training.local_sync import (
     LocalSyncHarnessError,
     raw_state_immutable,
     run_local_sync,
+    shared_schema_mart_names,
     verify_raw_state,
 )
 from elt_taskgen.training.namespace import project_namespace
@@ -23,9 +24,17 @@ from elt_taskgen.training.package import load_workspace_package
 from elt_taskgen.training.terraform_intent import expected_terraform_graph
 
 try:
-    from workspace_proxy_fixture import TASK_ID, portable_five_backend_release
+    from workspace_proxy_fixture import (
+        TASK_ID,
+        add_extra_destinations,
+        portable_five_backend_release,
+    )
 except ImportError:  # running as tests.test_training_local_sync
-    from tests.workspace_proxy_fixture import TASK_ID, portable_five_backend_release
+    from tests.workspace_proxy_fixture import (
+        TASK_ID,
+        add_extra_destinations,
+        portable_five_backend_release,
+    )
 
 
 _ROUTES = {
@@ -389,6 +398,106 @@ class LocalSyncTests(unittest.TestCase):
             self.assertEqual(
                 raised.exception.code, LocalSyncErrorCode.DATABASE_NOT_FRESH
             )
+
+
+class SharedRawAndMartSchemaTests(unittest.TestCase):
+    """Databricks and Redshift land the raw tables into the task-named schema,
+    which is also the dbt target schema, so after dbt the marts are tables in
+    the raw schema.
+
+    Found on 2026-09-17 while scoring the canonical artifact for every shipped
+    destination: the raw-immutability check digested the whole raw schema, so
+    the mart itself read as a raw mutation and both non-Snowflake destinations
+    scored 0.0 on every population. The raw tables are still compared exactly;
+    only a table that IS a declared mart is not counted as raw.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.release_context = portable_five_backend_release()
+        cls.release_dir = cls.release_context.__enter__()
+        cls.addClassCleanup(cls.release_context.__exit__, None, None, None)
+        base = load_workspace_package(cls.release_dir, TASK_ID)
+        add_extra_destinations(cls.release_dir, base.task)
+        cls.package = load_workspace_package(
+            cls.release_dir, TASK_ID, destination=Destination.DATABRICKS, verify=False
+        )
+        cls.snowflake = base
+
+    def _run(self, root: Path):
+        return run_local_sync(
+            self.package, "primary", _intent(self.package), root / "attempt.duckdb"
+        )
+
+    def _create_table(self, execution, name: str) -> None:
+        con = duckdb.connect(str(execution.database_path))
+        try:
+            schema = execution.namespace.raw_schema
+            con.execute(
+                f'CREATE TABLE "{schema}"."{name}" AS SELECT 1 AS customer_id'
+            )
+        finally:
+            con.close()
+
+    def test_only_the_colliding_destinations_exclude_marts(self) -> None:
+        databricks = project_namespace(self.package, Path("attempt.duckdb"))
+        self.assertEqual(databricks.raw_schema, databricks.mart_schema)
+        self.assertEqual(
+            shared_schema_mart_names(self.package, databricks),
+            {mart.name.casefold() for mart in self.package.task.marts},
+        )
+        snowflake = project_namespace(self.snowflake, Path("attempt.duckdb"))
+        self.assertNotEqual(snowflake.raw_schema, snowflake.mart_schema)
+        self.assertEqual(shared_schema_mart_names(self.snowflake, snowflake), frozenset())
+
+    def test_a_mart_in_the_raw_schema_is_not_a_raw_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            execution = self._run(Path(directory))
+            self.assertTrue(execution.upstream_stage1)
+            self.assertEqual(execution.strict_raw_tables, 1.0)
+            for mart in self.package.task.marts:
+                self._create_table(execution, mart.name)
+            after = verify_raw_state(self.package, execution)
+            self.assertEqual(after.unexpected_tables, ())
+            self.assertTrue(raw_state_immutable(execution.raw_state, after))
+
+    def test_any_other_new_table_in_the_raw_schema_still_is(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            execution = self._run(Path(directory))
+            self._create_table(execution, "scratch_side_table")
+            after = verify_raw_state(self.package, execution)
+            self.assertEqual(after.unexpected_tables, ("scratch_side_table",))
+            self.assertFalse(raw_state_immutable(execution.raw_state, after))
+
+    def test_changing_a_raw_table_is_still_a_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            execution = self._run(Path(directory))
+            for mart in self.package.task.marts:
+                self._create_table(execution, mart.name)
+            con = duckdb.connect(str(execution.database_path))
+            try:
+                schema = execution.namespace.raw_schema
+                con.execute(f'DELETE FROM "{schema}"."customers"')
+            finally:
+                con.close()
+            after = verify_raw_state(self.package, execution)
+            self.assertFalse(raw_state_immutable(execution.raw_state, after))
+
+    def test_a_mart_may_not_be_named_after_a_raw_table(self) -> None:
+        """The exclusion is only safe because a mart can never shadow a raw
+        table, which ``TaskIR`` refuses outright."""
+        task = self.package.task
+        payload = task.model_dump(mode="json")
+        original = payload["marts"][0]["name"]
+        shadow = payload["tables"][0]["name"]
+        payload["marts"][0]["name"] = shadow
+        payload["marts"][0]["plan"]["mart"] = shadow
+        reference = payload.get("reference") or {}
+        by_mart = reference.get("sql_by_mart") or {}
+        if original in by_mart:
+            by_mart[shadow] = by_mart.pop(original)
+        with self.assertRaisesRegex(ValueError, "marts shadow raw tables"):
+            type(task).model_validate(payload)
 
 
 class NamespaceProjectionTests(unittest.TestCase):

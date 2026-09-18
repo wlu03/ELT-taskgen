@@ -33,7 +33,13 @@ from elt_taskgen.training.dbt_runner import (
     DbtRuntimeConfig,
 )
 from elt_taskgen.training.models import WorkspaceScoreResult
-from elt_taskgen.training.package import WorkspacePackage, load_workspace_package
+from elt_taskgen.training.package import (
+    WorkspacePackage,
+    bundle_root_destination,
+    load_workspace_package,
+    private_contract_rel,
+    shipped_destinations,
+)
 from elt_taskgen.training.scorer import score_workspace
 from elt_taskgen.training.workspace import (
     SealedWorkspace,
@@ -43,6 +49,8 @@ from elt_taskgen.training.workspace import (
 from elt_taskgen.workspace import repo_root
 
 CANONICAL_RECORD_SCHEMA_VERSION = "canonical-reachability-v1"
+#: The workspace report that carries one record per shipped destination.
+CANONICAL_REPORT_SCHEMA_VERSION = "canonical-reachability-report-v1"
 #: Relative to ``answer_key/``: ``runtime/canonical/<destination>/``.
 CANONICAL_ARTIFACT_REL = "runtime/canonical"
 #: Relative to ``tasks/<task_id>/``.
@@ -514,7 +522,7 @@ def build_workspace_substrate(
         if oracle.is_symlink() or not oracle.is_file():
             raise CanonicalSubstrateError(f"transform oracle {oracle} is missing")
         shutil.copyfile(oracle, oracle_root / oracle.name)
-    resolved_destination = destination or eltbench.destination_from_config(
+    bundle_root = eltbench.destination_from_config(
         __import__("yaml").safe_load((public_root / "config.yaml").read_text(encoding="utf-8"))
     )
     manifest = release_mod.ReleaseManifest(
@@ -530,13 +538,15 @@ def build_workspace_substrate(
         scorer_version=SCORER_VERSION,
         generator_version=release_mod.GENERATOR_VERSION,
         semantic_scorer_version=SEMANTIC_SCORER_VERSION,
-        destinations={tid: resolved_destination.value},
+        # The manifest records the BUNDLE ROOT; an extra destination is
+        # identified by its own private contract.
+        destinations={tid: bundle_root.value},
         el_sources={tid: el_sources},
     )
     (scratch / "release_manifest.json").write_text(
         manifest.model_dump_json(indent=2) + "\n", encoding="utf-8"
     )
-    return load_workspace_package(scratch, tid, verify=False)
+    return load_workspace_package(scratch, tid, destination=destination, verify=False)
 
 
 # --- scoring ----------------------------------------------------------------
@@ -776,102 +786,219 @@ def artifact_dir(answer_key_dir: Path, destination: Destination | str) -> Path:
     return Path(answer_key_dir) / CANONICAL_ARTIFACT_REL / value
 
 
+class CanonicalReachabilityReport(BaseModel):
+    """Every shipped destination's record for one task, as validate-t wrote it.
+
+    A task ships one public bundle and a configuration per destination, and
+    the grader's rules differ per destination, so reachability is proved once
+    per destination rather than once per task.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    schema_version: str = CANONICAL_REPORT_SCHEMA_VERSION
+    task_id: str = Field(min_length=1)
+    task_content_hash: str = Field(min_length=64, max_length=64)
+    records: dict[str, CanonicalReachabilityRecord]
+
+    @model_validator(mode="after")
+    def _records_match_the_task(self) -> "CanonicalReachabilityReport":
+        if not self.records:
+            raise ValueError("a reachability report covers at least one destination")
+        for destination, record in self.records.items():
+            if record.destination != destination:
+                raise ValueError("record key and destination disagree")
+            if (
+                record.task_id != self.task_id
+                or record.task_content_hash != self.task_content_hash
+            ):
+                raise ValueError("record and report describe different tasks")
+        return self
+
+    @property
+    def reachable(self) -> bool:
+        return all(record.reachable for record in self.records.values())
+
+    def shortfalls(self) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                destination
+                for destination, record in self.records.items()
+                if not record.reachable
+            )
+        )
+
+
 def record_canonical_reachability(
     *,
     task_dir: Path,
     answer_key_dir: Path,
-    record: CanonicalReachabilityRecord,
-    files: Mapping[str, str],
+    records: Mapping[str, CanonicalReachabilityRecord],
+    files: Mapping[str, Mapping[str, str]],
 ) -> Path:
-    """Persist the artifact and its record privately; return the reports path."""
+    """Persist one artifact and record per destination, plus the report the
+    transform battery reads; return the report path."""
 
-    target = artifact_dir(answer_key_dir, record.destination)
-    if target.exists():
-        remove_scratch_tree(target)
-    target.mkdir(parents=True, exist_ok=True)
-    if files:
-        write_canonical_files(target / "elt", files)
-    (target / "reachability.json").write_text(
-        canonical_json(record.model_dump(mode="json")) + "\n", encoding="utf-8"
+    if not records:
+        raise CanonicalArtifactError("nothing to record: no destination was scored")
+    root = Path(answer_key_dir) / CANONICAL_ARTIFACT_REL
+    if root.exists():
+        remove_scratch_tree(root)
+    first = next(iter(records.values()))
+    for destination, record in records.items():
+        target = artifact_dir(answer_key_dir, destination)
+        target.mkdir(parents=True, exist_ok=True)
+        destination_files = files.get(destination) or {}
+        if destination_files:
+            write_canonical_files(target / "elt", destination_files)
+        (target / "reachability.json").write_text(
+            canonical_json(record.model_dump(mode="json")) + "\n", encoding="utf-8"
+        )
+    report = CanonicalReachabilityReport(
+        task_id=first.task_id,
+        task_content_hash=first.task_content_hash,
+        records=dict(records),
     )
     evidence = Path(task_dir) / REACHABILITY_EVIDENCE_REL
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text(
-        canonical_json(record.model_dump(mode="json")) + "\n", encoding="utf-8"
+        canonical_json(report.model_dump(mode="json")) + "\n", encoding="utf-8"
     )
     return evidence
 
 
 @dataclass(frozen=True)
 class ReachabilityEvidence:
-    record: CanonicalReachabilityRecord | None
+    report: CanonicalReachabilityReport | None
     problem: str | None
+
+    @property
+    def record(self) -> CanonicalReachabilityRecord | None:
+        """The bundle-root record, for callers that report a single line."""
+        if self.report is None or not self.report.records:
+            return None
+        return next(iter(self.report.records.values()))
+
+
+def _record_problem(
+    task: TaskIR, record: CanonicalReachabilityRecord, answer_key_dir: Path
+) -> str | None:
+    """Everything that binds ONE destination's record to the task on disk."""
+    if record.schema_version != CANONICAL_RECORD_SCHEMA_VERSION:
+        return f"{record.destination}: record schema is not current"
+    if record.compatibility_subset != DBT_COMPATIBILITY_SUBSET_VERSION:
+        return (
+            f"{record.destination}: record predates the portable dbt subset "
+            f"{DBT_COMPATIBILITY_SUBSET_VERSION}"
+        )
+    if record.workspace_scorer_version != WORKSPACE_SCORER_VERSION:
+        return f"{record.destination}: record predates the current workspace scorer"
+    expected_reference = {
+        mart: _sha256_text(sql) for mart, sql in dict(task.reference.sql_by_mart).items()
+    }
+    if record.reference_sql_sha256 != expected_reference:
+        return f"{record.destination}: record was scored against different reference SQL"
+    bound = _bind_record_to_private_tree(record, Path(answer_key_dir))
+    if bound is not None:
+        return f"{record.destination}: {bound}"
+    return None
 
 
 def load_canonical_reachability(
     task: TaskIR, task_dir: Path, answer_key_dir: Path
 ) -> ReachabilityEvidence:
-    """Load a record bound to task, reference, contract, pins, and artifact bytes."""
+    """Read validate-t's report back for the gate.
 
+    Every destination the task SHIPS must have a record, and each record is
+    bound to the task identity, the reference SQL, that destination's connector
+    contract, the current pins and the artifact bytes. Any drift is a problem
+    string the gate reports verbatim; the gate never repairs evidence.
+    """
+
+    answer_key_dir = Path(answer_key_dir)
     evidence = Path(task_dir) / REACHABILITY_EVIDENCE_REL
     rerun = "re-run validate-t"
     if evidence.is_symlink() or not evidence.is_file():
         return ReachabilityEvidence(None, f"{REACHABILITY_EVIDENCE_REL} is missing; {rerun}")
     try:
         evidence_text = evidence.read_text(encoding="utf-8")
-        record = CanonicalReachabilityRecord.model_validate_json(evidence_text)
+        report = CanonicalReachabilityReport.model_validate_json(evidence_text)
     except (OSError, UnicodeError, ValueError) as exc:
         return ReachabilityEvidence(
             None, f"{REACHABILITY_EVIDENCE_REL} is unreadable ({type(exc).__name__}); {rerun}"
         )
-    if record.schema_version != CANONICAL_RECORD_SCHEMA_VERSION:
-        return ReachabilityEvidence(record, f"record schema is not current; {rerun}")
-    if record.task_id != task.task_id or record.task_content_hash != task.content_hash():
-        return ReachabilityEvidence(record, f"record was produced for another task identity; {rerun}")
-    if record.compatibility_subset != DBT_COMPATIBILITY_SUBSET_VERSION:
+    if report.schema_version != CANONICAL_REPORT_SCHEMA_VERSION:
+        return ReachabilityEvidence(report, f"report schema is not current; {rerun}")
+    if report.task_id != task.task_id or report.task_content_hash != task.content_hash():
         return ReachabilityEvidence(
-            record,
-            f"record predates the portable dbt subset {DBT_COMPATIBILITY_SUBSET_VERSION}; {rerun}",
+            report, f"report was produced for another task identity; {rerun}"
         )
-    if record.workspace_scorer_version != WORKSPACE_SCORER_VERSION:
-        return ReachabilityEvidence(record, f"record predates the current workspace scorer; {rerun}")
-    expected_reference = {
-        mart: _sha256_text(sql) for mart, sql in dict(task.reference.sql_by_mart).items()
-    }
-    if record.reference_sql_sha256 != expected_reference:
-        return ReachabilityEvidence(record, f"record was scored against different reference SQL; {rerun}")
-    problem = _bind_record_to_private_tree(record, Path(answer_key_dir))
-    if problem is not None:
-        return ReachabilityEvidence(record, f"{problem}; {rerun}")
-    target = artifact_dir(answer_key_dir, record.destination)
-    private_record = target / "reachability.json"
     try:
-        if private_record.is_symlink() or not private_record.is_file():
-            return ReachabilityEvidence(record, f"private canonical record is missing; {rerun}")
-        if private_record.read_text(encoding="utf-8") != evidence_text:
-            return ReachabilityEvidence(record, f"private and workspace canonical records disagree; {rerun}")
-    except (OSError, UnicodeError) as exc:
-        return ReachabilityEvidence(record, f"private canonical record is unreadable ({type(exc).__name__}); {rerun}")
-    return ReachabilityEvidence(record, None)
+        expected = {item.value for item in shipped_destinations(answer_key_dir)}
+    except Exception as exc:  # noqa: BLE001 - a malformed private tree is a problem
+        return ReachabilityEvidence(
+            report, f"shipped destinations cannot be read ({type(exc).__name__}); {rerun}"
+        )
+    missing = sorted(expected - set(report.records))
+    extra = sorted(set(report.records) - expected)
+    if missing:
+        return ReachabilityEvidence(
+            report, f"no record for shipped destination(s) {missing}; {rerun}"
+        )
+    if extra:
+        return ReachabilityEvidence(
+            report, f"record(s) for destination(s) {extra} the task does not ship; {rerun}"
+        )
+    for destination in sorted(expected):
+        record = report.records[destination]
+        problem = _record_problem(task, record, answer_key_dir)
+        if problem is not None:
+            return ReachabilityEvidence(report, f"{problem}; {rerun}")
+        private_record = artifact_dir(answer_key_dir, destination) / "reachability.json"
+        try:
+            if private_record.is_symlink() or not private_record.is_file():
+                return ReachabilityEvidence(
+                    report, f"{destination}: private canonical record is missing; {rerun}"
+                )
+            stored = CanonicalReachabilityRecord.model_validate_json(
+                private_record.read_text(encoding="utf-8")
+            )
+        except (OSError, UnicodeError, ValueError) as exc:
+            return ReachabilityEvidence(
+                report,
+                f"{destination}: private canonical record is unreadable "
+                f"({type(exc).__name__}); {rerun}",
+            )
+        if stored != record:
+            return ReachabilityEvidence(
+                report,
+                f"{destination}: private and workspace canonical records disagree; {rerun}",
+            )
+    return ReachabilityEvidence(report, None)
 
 
 def _bind_record_to_private_tree(
     record: CanonicalReachabilityRecord, answer_key_dir: Path
 ) -> str | None:
-    """Shared by the gate and packaging: the record must describe the
-    bundle-root connector contract on disk and the artifact bytes beside it."""
+    """Shared by the gate and packaging: the record must describe THIS
+    destination's connector contract and the artifact bytes beside it."""
 
-    contract_path = answer_key_dir / PRIVATE_AIRBYTE_CONNECTOR_CONTRACT
+    try:
+        root = bundle_root_destination(answer_key_dir)
+        destination = Destination(record.destination)
+    except Exception:  # noqa: BLE001
+        return "record names no known destination"
+    contract_path = answer_key_dir / private_contract_rel(destination, root)
     try:
         document = json.loads(contract_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as exc:
-        return f"bundle-root connector contract is unreadable ({type(exc).__name__})"
-    destination = document.get("destination") if isinstance(document, dict) else None
-    key = destination.get("key") if isinstance(destination, dict) else None
+        return f"connector contract is unreadable ({type(exc).__name__})"
+    declared = document.get("destination") if isinstance(document, dict) else None
+    key = declared.get("key") if isinstance(declared, dict) else None
     if key != record.destination:
         return (
-            f"record describes destination {record.destination!r} but the bundle-root "
-            f"contract names {key!r}"
+            f"record describes destination {record.destination!r} but its contract "
+            f"names {key!r}"
         )
     digest = hashlib.sha256(canonical_json(document).encode("utf-8")).hexdigest()
     if record.airbyte_contract_sha256 != digest:
@@ -890,7 +1017,12 @@ def _bind_record_to_private_tree(
 
 
 def assert_canonical_ready(task: TaskIR, answer_key_dir: Path) -> None:
-    """Require a reachable canonical record bound to current private inputs."""
+    """Refuse (ValueError) unless the private tree carries a current,
+    REACHABLE record for EVERY destination the task ships.
+
+    Shared by local packaging and the release freezer, which ship these bytes;
+    the transform battery gate judges the same records in the workspace.
+    """
     answer_key_dir = Path(answer_key_dir)
     remedy = (
         "run validate-t again for this task; a local package directory that "
@@ -898,14 +1030,11 @@ def assert_canonical_ready(task: TaskIR, answer_key_dir: Path) -> None:
         "one before freezing again"
     )
     try:
-        document = json.loads(
-            (answer_key_dir / PRIVATE_AIRBYTE_CONNECTOR_CONTRACT).read_text(encoding="utf-8")
-        )
-        destination = str(document["destination"]["key"])
-    except (OSError, UnicodeError, ValueError, KeyError, TypeError) as exc:
+        destinations = shipped_destinations(answer_key_dir)
+    except Exception as exc:  # noqa: BLE001
         raise ValueError(
-            "canonical workspace artifact cannot be checked: the bundle-root "
-            f"connector contract is unreadable ({type(exc).__name__}); {remedy}"
+            "canonical workspace artifact cannot be checked: the private connector "
+            f"contracts are unreadable ({type(exc).__name__}); {remedy}"
         ) from None
     root = answer_key_dir / CANONICAL_ARTIFACT_REL
     present = (
@@ -913,51 +1042,41 @@ def assert_canonical_ready(task: TaskIR, answer_key_dir: Path) -> None:
         if root.is_dir() and not root.is_symlink()
         else []
     )
-    record_path = root / destination / "reachability.json"
-    if record_path.is_symlink() or not record_path.is_file():
-        raise ValueError(
-            "canonical workspace artifact missing: no private "
-            f"answer_key/{CANONICAL_ARTIFACT_REL}/{destination}/reachability.json; {remedy}"
-        )
-    unexpected = [name for name in present if name != destination]
+    expected = [item.value for item in destinations]
+    unexpected = [name for name in present if name not in expected]
     if unexpected:
         raise ValueError(
-            f"canonical workspace artifact has entries for {unexpected} beside the "
-            f"bundle-root destination {destination!r}; {remedy}"
+            f"canonical workspace artifact has entries for {unexpected}, which this "
+            f"task does not ship (it ships {expected}); {remedy}"
         )
-    try:
-        record = CanonicalReachabilityRecord.model_validate_json(
-            record_path.read_text(encoding="utf-8")
-        )
-    except (OSError, UnicodeError, ValueError) as exc:
-        raise ValueError(
-            f"canonical reachability record is invalid ({type(exc).__name__}); {remedy}"
-        ) from None
     problems: list[str] = []
-    if record.task_id != task.task_id or record.task_content_hash != task.content_hash():
-        problems.append("record was produced for another task identity")
-    if record.schema_version != CANONICAL_RECORD_SCHEMA_VERSION:
-        problems.append("record schema is not current")
-    if record.compatibility_subset != DBT_COMPATIBILITY_SUBSET_VERSION:
-        problems.append(f"record predates the portable dbt subset {DBT_COMPATIBILITY_SUBSET_VERSION}")
-    if record.workspace_scorer_version != WORKSPACE_SCORER_VERSION:
-        problems.append("record predates the current workspace scorer")
-    expected_reference = {
-        mart: _sha256_text(sql) for mart, sql in dict(task.reference.sql_by_mart).items()
-    }
-    if record.reference_sql_sha256 != expected_reference:
-        problems.append("record was scored against different reference SQL")
-    bound = _bind_record_to_private_tree(record, answer_key_dir)
-    if bound is not None:
-        problems.append(bound)
-    if not record.reachable:
-        problems.append(
-            "the canonical solution is not reachable on the workspace channel "
-            f"({record.render_error or shortfall_summary(record.result)})"
-        )
+    for destination in expected:
+        record_path = root / destination / "reachability.json"
+        if record_path.is_symlink() or not record_path.is_file():
+            problems.append(f"{destination}: no reachability.json")
+            continue
+        try:
+            record = CanonicalReachabilityRecord.model_validate_json(
+                record_path.read_text(encoding="utf-8")
+            )
+        except (OSError, UnicodeError, ValueError) as exc:
+            problems.append(f"{destination}: record is invalid ({type(exc).__name__})")
+            continue
+        if record.task_id != task.task_id or record.task_content_hash != task.content_hash():
+            problems.append(f"{destination}: record was produced for another task identity")
+            continue
+        problem = _record_problem(task, record, answer_key_dir)
+        if problem is not None:
+            problems.append(problem)
+            continue
+        if not record.reachable:
+            problems.append(
+                f"{destination}: the canonical solution is not reachable "
+                f"({record.render_error or shortfall_summary(record.result)})"
+            )
     if problems:
         raise ValueError(
-            "canonical workspace artifact is stale or unreachable: "
+            "canonical workspace artifact is missing, stale or unreachable: "
             + "; ".join(problems)
             + f"; {remedy}"
         )
@@ -977,6 +1096,8 @@ __all__ = [
     "classify_score",
     "contract_digest",
     "CanonicalReachabilityRecord",
+    "CanonicalReachabilityReport",
+    "CANONICAL_REPORT_SCHEMA_VERSION",
     "ReachabilityEvidence",
     "artifact_dir",
     "assert_canonical_ready",

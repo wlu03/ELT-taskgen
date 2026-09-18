@@ -353,17 +353,26 @@ def _provider_free_controls(fresh_package: Path, task_id: str) -> tuple[PackageC
 def _canonical_reachability_control(
     fresh_package: Path, task_id: str
 ) -> PackageControlResult:
-    """Require the packaged canonical solution to score 1.0 after copying."""
+    """Re-score the packaged canonical Terraform + dbt artifact of EVERY
+    destination the task ships, through the real workspace grader.
+
+    This is the packaging-time twin of the transform battery's
+    canonical-reachability gate: the gate judged the workspace bytes, this
+    control judges the bytes that ship, on the pinned dbt runtime, with no
+    provider involved.
+    """
     import tempfile
 
     from elt_taskgen.export.eltbench import WAREHOUSE_DIRNAME
     from elt_taskgen.models import variant_task_id
     from elt_taskgen.training import canonical
+    from elt_taskgen.training.package import shipped_destinations
 
     name = CANONICAL_CONTROL_NAME
     expected = (
-        "the packaged canonical Terraform + dbt artifact scores exactly 1.0 on "
-        "every graded population through the workspace channel"
+        "the packaged canonical Terraform + dbt artifact of every shipped "
+        "destination scores exactly 1.0 on every graded population through the "
+        "workspace channel"
     )
     runtime_config = canonical.default_dbt_runtime_config()
     if not canonical.dbt_runtime_available(runtime_config):
@@ -379,48 +388,73 @@ def _canonical_reachability_control(
     private = fresh_package / "private" / task_id
     public = fresh_package / "public" / task_id
     task = task_from_json((private / "task_ir.json").read_text(encoding="utf-8"))
+    oracle_dir = (
+        fresh_package
+        / "public"
+        / variant_task_id(task_id, TaskVariant.TRANSFORM)
+        / WAREHOUSE_DIRNAME
+    )
     scratch = Path(tempfile.mkdtemp(prefix="canonical-control-", dir=fresh_package.parent))
+    observations: list[str] = []
+    populations: tuple[str, ...] = ()
+    passed = True
     try:
         try:
-            package = canonical.build_workspace_substrate(
-                task=task,
-                answer_key_dir=private / "answer_key",
-                public_dir=public,
-                populations_root=private / "populations",
-                oracle_dir=fresh_package / "public" / variant_task_id(task_id, TaskVariant.TRANSFORM) / WAREHOUSE_DIRNAME,
-                scratch=scratch / "substrate",
-            )
-            target = canonical.artifact_dir(private / "answer_key", package.destination)
-            record = canonical.CanonicalReachabilityRecord.model_validate_json(
-                (target / "reachability.json").read_text(encoding="utf-8")
-            )
-            files = {
-                rel: (target / "elt" / rel).read_text(encoding="utf-8")
-                for rel in sorted(record.files)
-            }
-            sealed, result = canonical.score_canonical_artifact(
-                package, files, scratch=scratch / "score", runtime_config=runtime_config
-            )
+            destinations = shipped_destinations(private / "answer_key")
         except Exception as exc:  # noqa: BLE001 - the control fails closed
             return PackageControlResult(
                 name=name,
                 passed=False,
                 expected=expected,
-                observed=f"{type(exc).__name__}: {exc}",
+                observed=f"shipped destinations unreadable: {type(exc).__name__}: {exc}",
             )
-        reachable = canonical._result_is_full(result)
+        for destination in destinations:
+            value = destination.value
+            try:
+                package = canonical.build_workspace_substrate(
+                    task=task,
+                    answer_key_dir=private / "answer_key",
+                    public_dir=public,
+                    populations_root=private / "populations",
+                    oracle_dir=oracle_dir,
+                    scratch=scratch / f"substrate-{value}",
+                    destination=destination,
+                )
+                target = canonical.artifact_dir(private / "answer_key", destination)
+                record = canonical.CanonicalReachabilityRecord.model_validate_json(
+                    (target / "reachability.json").read_text(encoding="utf-8")
+                )
+                files = {
+                    rel: (target / "elt" / rel).read_text(encoding="utf-8")
+                    for rel in sorted(record.files)
+                }
+                sealed, result = canonical.score_canonical_artifact(
+                    package,
+                    files,
+                    scratch=scratch / f"score-{value}",
+                    runtime_config=runtime_config,
+                )
+            except Exception as exc:  # noqa: BLE001 - the control fails closed
+                passed = False
+                observations.append(f"{value}: {type(exc).__name__}: {exc}")
+                continue
+            reachable = canonical._result_is_full(result)
+            same_bytes = sealed.submission.artifact_sha256 == record.artifact_sha256
+            passed = passed and reachable and same_bytes
+            populations = populations or tuple(result.graded_populations)
+            observations.append(
+                f"{value}: reward={result.reward}; failure="
+                f"{result.failure.error_code.value if result.failure else None}; "
+                f"shortfall={canonical.shortfall_summary(result)}; artifact_sha256 "
+                f"packaged={record.artifact_sha256[:16]} scored="
+                f"{sealed.submission.artifact_sha256[:16]}"
+            )
         return PackageControlResult(
             name=name,
-            passed=reachable and sealed.submission.artifact_sha256 == record.artifact_sha256,
+            passed=passed and bool(observations),
             expected=expected,
-            observed=(
-                f"reward={result.reward}; failure="
-                f"{result.failure.error_code.value if result.failure else None}; "
-                f"shortfall={canonical.shortfall_summary(result)}; "
-                f"artifact_sha256 packaged={record.artifact_sha256[:16]} "
-                f"scored={sealed.submission.artifact_sha256[:16]}"
-            ),
-            populations_checked=tuple(result.graded_populations),
+            observed="; ".join(observations) or "no destination was scored",
+            populations_checked=populations,
         )
     finally:
         canonical.remove_scratch_tree(scratch)
