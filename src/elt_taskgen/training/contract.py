@@ -15,7 +15,10 @@ WORKSPACE_RESULT_SCHEMA_VERSION = "workspace-result-v1"
 #: 0.2.2: candidate YAML with an unhashable key, a cycle, excessive nesting or
 #: alias expansion, or an unconstructable scalar is a scored project-invalid
 #: failure, not a no-label harness fault (A02).
-WORKSPACE_SCORER_VERSION = "0.2.2"
+#: 0.2.3: the dbt rewrite moved to portable-dbt-sql-v5, which changes the
+#: result of a bare DECIMAL on Databricks and Redshift and refuses alias-hidden
+#: text casts the destinations render differently.
+WORKSPACE_SCORER_VERSION = "0.2.3"
 ARTIFACT_WORKFLOW_PROXY_CLAIM = "artifact_workflow_proxy"
 WORKSPACE_POPULATION_AGGREGATION = "minimum"
 WORKSPACE_PROFILE_OWNER = "harness"

@@ -251,11 +251,13 @@ class RuntimeImageTests(unittest.TestCase):
                 matrix["matrix_version"] = "10"
                 matrix["certification_stage_evidence_schema_version"] = "1.1"
                 matrix["certification_attestation_schema_version"] = "1.2"
+                # v10 matrices were recorded under canonical fingerprint version 1.
+                matrix["canonical_fingerprint_version"] = "1"
                 self.assertEqual(
                     validate_recorded_certification_matrix(matrix, destination),
                     matrix,
                 )
-                with self.assertRaisesRegex(ValueError, "v11"):
+                with self.assertRaisesRegex(ValueError, f"v{CERTIFICATION_MATRIX_VERSION}"):
                     validate_certification_matrix(matrix, destination)
 
                 for field in (
@@ -277,6 +279,31 @@ class RuntimeImageTests(unittest.TestCase):
                 unsupported, Destination.SNOWFLAKE
             )
 
+    def test_recorded_v11_matrix_keeps_fingerprint_version_1(self) -> None:
+        """v11 matrices recorded canonical fingerprint version 1. They stay
+        verifiable as v11, and neither version is relabelled as the other."""
+        for destination in Destination:
+            with self.subTest(destination=destination.value):
+                current = certification_matrix(destination)
+                self.assertEqual(current["canonical_fingerprint_version"], "2")
+                recorded = dict(current)
+                recorded["matrix_version"] = "11"
+                recorded["canonical_fingerprint_version"] = "1"
+                self.assertEqual(
+                    validate_recorded_certification_matrix(recorded, destination),
+                    recorded,
+                )
+                with self.assertRaisesRegex(ValueError, f"v{CERTIFICATION_MATRIX_VERSION}"):
+                    validate_certification_matrix(recorded, destination)
+                relabelled = dict(recorded)
+                relabelled["canonical_fingerprint_version"] = "2"
+                with self.assertRaisesRegex(ValueError, "canonical_fingerprint_version"):
+                    validate_recorded_certification_matrix(relabelled, destination)
+                stale = dict(current)
+                stale["canonical_fingerprint_version"] = "1"
+                with self.assertRaisesRegex(ValueError, "canonical_fingerprint_version"):
+                    validate_certification_matrix(stale, destination)
+
     def test_recorded_v10_validation_does_not_follow_current_contract_drift(
         self,
     ) -> None:
@@ -285,6 +312,7 @@ class RuntimeImageTests(unittest.TestCase):
         matrix["matrix_version"] = "10"
         matrix["certification_stage_evidence_schema_version"] = "1.1"
         matrix["certification_attestation_schema_version"] = "1.2"
+        matrix["canonical_fingerprint_version"] = "1"
 
         with (
             patch.object(

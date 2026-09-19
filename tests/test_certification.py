@@ -1057,6 +1057,8 @@ class CertificationTestCase(unittest.TestCase):
             "matrix_version": "10",
             "certification_stage_evidence_schema_version": "1.1",
             "certification_attestation_schema_version": "1.2",
+            # v10 matrices were recorded under canonical fingerprint version 1.
+            "canonical_fingerprint_version": "1",
         }
         self.assertEqual(
             runtime_matrix.validate_recorded_certification_matrix(

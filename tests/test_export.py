@@ -3179,6 +3179,8 @@ class TestLayeredIdentities(_FreezeReleaseHarness):
             matrix["certification_stage_evidence_schema_version"] = "1.1"
             matrix["certification_attestation_schema_version"] = "1.2"
             matrix["certification_pending_schema_version"] = "1.0"
+            # v10 matrices were recorded under canonical fingerprint version 1.
+            matrix["canonical_fingerprint_version"] = "1"
             # Validate before deliberately taking the hash-only compatibility
             # path. This mirrors verify_release and prevents a malformed
             # synthetic historical record from becoming a test fixture.

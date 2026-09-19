@@ -1,0 +1,367 @@
+{
+  "destination": "databricks",
+  "generated_at": "2026-09-18T19:56:27Z",
+  "collector_version": "2",
+  "reward_rule": {
+    "comparator": "elt_taskgen.verification.upstream_eval._vectors_match",
+    "order": "reference=warehouse, candidate=duckdb",
+    "workspace_scorer_version": "0.2.2"
+  },
+  "rewrite": {
+    "subset_version": "portable-dbt-sql-v4",
+    "sqlglot": "30.16.0"
+  },
+  "probes": [
+    {
+      "id": "bare_decimal_scale",
+      "rule": "bare DECIMAL cast of 1.2345",
+      "subset": "admitted",
+      "candidate_sql": "SELECT CAST(1.2345 AS DECIMAL) AS v",
+      "warehouse": "1",
+      "warehouse_type": "decimal",
+      "warehouse_value": {
+        "py": "decimal",
+        "v": "1",
+        "column": "decimal"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "1.235",
+      "duckdb_type": "decimal",
+      "duckdb_value": {
+        "py": "decimal",
+        "v": "1.235",
+        "column": "DECIMAL(18,3)"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "DIFFERENT",
+      "exact_agreement": false,
+      "reward_rule_agreement": false,
+      "warehouse_typed": [
+        "number",
+        "1"
+      ],
+      "duckdb_typed": [
+        "number",
+        "1.235"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "bare_decimal_half",
+      "rule": "bare DECIMAL cast of -1.5",
+      "subset": "admitted",
+      "candidate_sql": "SELECT CAST(-1.5 AS DECIMAL) AS v",
+      "warehouse": "-2",
+      "warehouse_type": "decimal",
+      "warehouse_value": {
+        "py": "decimal",
+        "v": "-2",
+        "column": "decimal"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "-1.5",
+      "duckdb_type": "decimal",
+      "duckdb_value": {
+        "py": "decimal",
+        "v": "-1.500",
+        "column": "DECIMAL(18,3)"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "DIFFERENT",
+      "exact_agreement": false,
+      "reward_rule_agreement": false,
+      "warehouse_typed": [
+        "number",
+        "-2"
+      ],
+      "duckdb_typed": [
+        "number",
+        "-1.5"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "bare_decimal_overflow",
+      "rule": "bare DECIMAL cast of an 11-digit value",
+      "subset": "admitted",
+      "candidate_sql": "SELECT CAST(12345678901.5 AS DECIMAL) AS v",
+      "warehouse": null,
+      "warehouse_error": "ServerOperationError: [NUMERIC_VALUE_OUT_OF_RANGE.WITH_SUGGESTION]  12345678901.5 cannot be represented as Decimal(10, 0). If necessary set \"spark.sql.ansi.enable",
+      "warehouse_error_kind": "sql",
+      "duckdb": "12345678901.5",
+      "duckdb_type": "decimal",
+      "duckdb_value": {
+        "py": "decimal",
+        "v": "12345678901.500",
+        "column": "DECIMAL(18,3)"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "DIFFERENT",
+      "disagreement": "native_error_local_success"
+    },
+    {
+      "id": "explicit_decimal_default",
+      "rule": "explicit DECIMAL(18,0) cast of 1.2345",
+      "subset": "admitted",
+      "candidate_sql": "SELECT CAST(1.2345 AS DECIMAL(18, 0)) AS v",
+      "warehouse": "1",
+      "warehouse_type": "decimal",
+      "warehouse_value": {
+        "py": "decimal",
+        "v": "1",
+        "column": "decimal"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "1",
+      "duckdb_type": "decimal",
+      "duckdb_value": {
+        "py": "decimal",
+        "v": "1",
+        "column": "DECIMAL(18,0)"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "identical",
+      "exact_agreement": true,
+      "reward_rule_agreement": true,
+      "warehouse_typed": [
+        "number",
+        "1"
+      ],
+      "duckdb_typed": [
+        "number",
+        "1"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "cte_double_text",
+      "rule": "DOUBLE cast to text through a CTE alias",
+      "subset": "admitted",
+      "candidate_sql": "WITH s AS (SELECT CAST(1.0 AS DOUBLE) AS x) SELECT CAST(x AS STRING) AS v FROM s",
+      "warehouse": "1.0",
+      "warehouse_type": "str",
+      "warehouse_value": {
+        "py": "str",
+        "v": "1.0",
+        "column": "string"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "1.0",
+      "duckdb_type": "str",
+      "duckdb_value": {
+        "py": "str",
+        "v": "1.0",
+        "column": "VARCHAR"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "identical",
+      "exact_agreement": true,
+      "reward_rule_agreement": true,
+      "warehouse_typed": [
+        "text",
+        "1.0"
+      ],
+      "duckdb_typed": [
+        "text",
+        "1.0"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "subquery_double_md5",
+      "rule": "MD5 over a DOUBLE cast to text through a subquery alias",
+      "subset": "admitted",
+      "candidate_sql": "SELECT MD5(CAST(x AS STRING)) AS v FROM (SELECT CAST(0.1 AS DOUBLE) + CAST(0.2 AS DOUBLE) AS x) AS s",
+      "warehouse": "f8b37f00bdc6a8c31de8bbe2cc2b053a",
+      "warehouse_type": "str",
+      "warehouse_value": {
+        "py": "str",
+        "v": "f8b37f00bdc6a8c31de8bbe2cc2b053a",
+        "column": "string"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "f8b37f00bdc6a8c31de8bbe2cc2b053a",
+      "duckdb_type": "str",
+      "duckdb_value": {
+        "py": "str",
+        "v": "f8b37f00bdc6a8c31de8bbe2cc2b053a",
+        "column": "VARCHAR"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "identical",
+      "exact_agreement": true,
+      "reward_rule_agreement": true,
+      "warehouse_typed": [
+        "text",
+        "f8b37f00bdc6a8c31de8bbe2cc2b053a"
+      ],
+      "duckdb_typed": [
+        "text",
+        "f8b37f00bdc6a8c31de8bbe2cc2b053a"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "cte_double_text_shorthand",
+      "rule": "DOUBLE cast to text with :: through a CTE alias",
+      "subset": "admitted",
+      "candidate_sql": "WITH s AS (SELECT 1.0::DOUBLE AS x) SELECT x::STRING AS v FROM s",
+      "warehouse": "1.0",
+      "warehouse_type": "str",
+      "warehouse_value": {
+        "py": "str",
+        "v": "1.0",
+        "column": "string"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "1.0",
+      "duckdb_type": "str",
+      "duckdb_value": {
+        "py": "str",
+        "v": "1.0",
+        "column": "VARCHAR"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "identical",
+      "exact_agreement": true,
+      "reward_rule_agreement": true,
+      "warehouse_typed": [
+        "text",
+        "1.0"
+      ],
+      "duckdb_typed": [
+        "text",
+        "1.0"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "cte_bool_text",
+      "rule": "a boolean cast to text through a CTE alias",
+      "subset": "admitted",
+      "candidate_sql": "WITH s AS (SELECT (1 < 2) AS f) SELECT CAST(f AS STRING) AS v FROM s",
+      "warehouse": "true",
+      "warehouse_type": "str",
+      "warehouse_value": {
+        "py": "str",
+        "v": "true",
+        "column": "string"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "true",
+      "duckdb_type": "str",
+      "duckdb_value": {
+        "py": "str",
+        "v": "true",
+        "column": "VARCHAR"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "identical",
+      "exact_agreement": true,
+      "reward_rule_agreement": true,
+      "warehouse_typed": [
+        "text",
+        "true"
+      ],
+      "duckdb_typed": [
+        "text",
+        "true"
+      ],
+      "shape_agreement": true
+    },
+    {
+      "id": "last_value_no_frame",
+      "rule": "LAST_VALUE with ORDER BY and no frame, NULL key present",
+      "subset": "admitted",
+      "candidate_sql": "SELECT CAST(SUM(lv) AS STRING) || ',' || CAST(MIN(lv) AS STRING) || ',' || CAST(MAX(lv) AS STRING) AS v FROM (SELECT LAST_VALUE(x) OVER (PARTITION BY k ORDER BY o) AS lv FROM (SELECT 1 AS k, 1 AS o, 10 AS x UNION ALL SELECT 1, 2, 20 UNION ALL SELECT 1, 3, 30 UNION ALL SELECT 1, CAST(NULL AS INT), 40 UNION ALL SELECT 2, 5, 50 UNION ALL SELECT 2, 6, 60) AS d) AS w",
+      "warehouse": "210,10,60",
+      "warehouse_type": "str",
+      "warehouse_value": {
+        "py": "str",
+        "v": "210,10,60",
+        "column": "string"
+      },
+      "warehouse_shape": [
+        1,
+        1
+      ],
+      "duckdb": "210,10,60",
+      "duckdb_type": "str",
+      "duckdb_value": {
+        "py": "str",
+        "v": "210,10,60",
+        "column": "VARCHAR"
+      },
+      "duckdb_shape": [
+        1,
+        1
+      ],
+      "duckdb_engine": "1.4.5",
+      "verdict": "identical",
+      "exact_agreement": true,
+      "reward_rule_agreement": true,
+      "warehouse_typed": [
+        "text",
+        "210,10,60"
+      ],
+      "duckdb_typed": [
+        "text",
+        "210,10,60"
+      ],
+      "shape_agreement": true
+    }
+  ]
+}

@@ -403,6 +403,91 @@ class CanonicalFingerprintTests(unittest.TestCase):
             CanonicalRelationFingerprint(**(base | {"row_count": True}))
         with self.assertRaises(ValidationError):
             CanonicalRelationFingerprint(**(base | {"row_count": "1"}))
+        # A version-1 record was produced by the lossy number canonicalization
+        # and is refused rather than read as current evidence.
+        with self.assertRaises(ValidationError):
+            CanonicalRelationFingerprint(**(base | {"version": "1"}))
+
+
+class ExactNumberFingerprintTests(unittest.TestCase):
+    """Version 2: every significant digit of a JSON or FLOAT number is kept,
+    and no fingerprint depends on the caller's Decimal context."""
+
+    FIRST = "123456789012345678901234567890"
+    SECOND = "123456789012345678901234567891"
+
+    def _fingerprint(self, value: object, column_type: ColumnType) -> str:
+        return canonical_relation_fingerprint(
+            actual_columns=("v",),
+            expected_columns=(("v", column_type),),
+            rows=({"v": value},),
+        ).result_digest
+
+    def test_distinct_long_numbers_keep_distinct_fingerprints(self) -> None:
+        cases = (
+            (f'{{"n": {self.FIRST}}}', f'{{"n": {self.SECOND}}}', ColumnType.JSON),
+            (f"[{self.FIRST}]", f"[{self.SECOND}]", ColumnType.JSON),
+            (f"{self.FIRST}.5", f"{self.SECOND}.5", ColumnType.FLOAT),
+            (decimal.Decimal(self.FIRST), decimal.Decimal(self.SECOND), ColumnType.FLOAT),
+        )
+        for first, second, column_type in cases:
+            with self.subTest(first=first, column_type=column_type.value):
+                self.assertNotEqual(
+                    canonical_cell(first, column_type, label="v"),
+                    canonical_cell(second, column_type, label="v"),
+                )
+                self.assertNotEqual(
+                    self._fingerprint(first, column_type),
+                    self._fingerprint(second, column_type),
+                )
+        self.assertEqual(
+            canonical_cell(f'{{"n": {self.SECOND}}}', ColumnType.JSON, label="v"),
+            ["json", f'["object",[["n",["number","{self.SECOND}"]]]]'],
+        )
+
+    def test_equivalent_spellings_share_one_fingerprint(self) -> None:
+        groups = (
+            ("1", "1.0", "1e0", "10e-1", "0.1e1"),
+            ("100", "1e2", "100.000"),
+            ("0", "-0", "0.0", "0e5"),
+            (f"{self.FIRST}", f"{self.FIRST}.000", "1.23456789012345678901234567890e29"),
+        )
+        for spellings in groups:
+            with self.subTest(spellings=spellings):
+                fingerprints = {
+                    self._fingerprint(f'{{"n": {text}}}', ColumnType.JSON)
+                    for text in spellings
+                }
+                self.assertEqual(len(fingerprints), 1)
+                floats = {self._fingerprint(text, ColumnType.FLOAT) for text in spellings}
+                self.assertEqual(len(floats), 1)
+
+    def test_fingerprints_do_not_depend_on_the_decimal_context(self) -> None:
+        cases = (
+            (f'{{"n": {self.FIRST}, "m": 12345.678}}', ColumnType.JSON),
+            (12345.678, ColumnType.FLOAT),
+            (decimal.Decimal(self.SECOND), ColumnType.FLOAT),
+            (decimal.Decimal("12345678901234567890123456789.123456789"), ColumnType.DECIMAL),
+            (decimal.Decimal("1.5"), ColumnType.DECIMAL),
+        )
+        baseline = [self._fingerprint(value, kind) for value, kind in cases]
+        contexts = (
+            {"prec": 3},
+            {"prec": 5, "rounding": decimal.ROUND_DOWN},
+            {"traps": (decimal.Inexact, decimal.Rounded)},
+            {"Emax": 10, "Emin": -10},
+        )
+        for settings in contexts:
+            with self.subTest(context=settings), decimal.localcontext() as context:
+                for name, setting in settings.items():
+                    if name == "traps":
+                        for signal in setting:
+                            context.traps[signal] = True
+                    else:
+                        setattr(context, name, setting)
+                self.assertEqual(
+                    [self._fingerprint(value, kind) for value, kind in cases], baseline
+                )
 
 
 if __name__ == "__main__":

@@ -4,20 +4,21 @@ the pinned DuckDB engine, through the grader's own rewrite.
 For each probe the candidate SQL is what a solver writes for its destination.
 The DuckDB side is produced by training.dbt_runner.rewrite_model_sql, i.e. the
 exact text the local grader would execute, and is run on the PINNED engine
-(runtime-images/dbt-duckdb, DuckDB 1.4.5) in a subprocess. Values are rendered
-canonically and compared both exactly and under the evaluator's numeric
-tolerance. Nothing is written to any warehouse and no credential value is
-printed.
+(runtime-images/dbt-duckdb, DuckDB 1.4.5) in a subprocess. Each value is
+recorded with its driver column type and compared by `compare.py`: exact typed
+agreement first, then agreement under the scorer's own comparator. Nothing is
+written to any warehouse and no credential value is printed.
 """
 import json, subprocess, sys, time
-from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path("/Users/wesleylu/Projects/Research/kang-lab/ELT-taskgen")
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src")); sys.path.insert(0, str(HERE))
 from probes import PROBES, candidate_sql
+from compare import COLLECTOR_VERSION, REWARD_RULE_ORDER, display, encode, error_kind, outcome, typed
 from elt_taskgen.destinations import Destination
+from elt_taskgen.training.contract import WORKSPACE_SCORER_VERSION
 from elt_taskgen.training import dbt_runner as R
 from elt_taskgen.runtime import snowflake as sf, databricks as db, redshift as rs
 
@@ -28,7 +29,6 @@ TARGETS = {
     "databricks": (Destination.DATABRICKS, db, ROOT / "secrets/databricks-admin.json"),
     "redshift": (Destination.REDSHIFT, rs, ROOT / "secrets/redshift-admin.json"),
 }
-ABS_TOL, REL_TOL = 1e-9, 1e-2
 
 
 def duckdb_sql(probe: dict, destination: Destination) -> tuple[str, str]:
@@ -63,50 +63,41 @@ def duckdb_sql(probe: dict, destination: Destination) -> tuple[str, str]:
     return status, transpiled.replace("VARCHAR(MAX)", "TEXT").replace("TEXT(MAX)", "TEXT")
 
 
-def render(value) -> str:
-    if value is None:
-        return "NULL"
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, Decimal):
-        return format(value.normalize(), "f")
-    if isinstance(value, float):
-        return repr(value)
-    if isinstance(value, (bytes, bytearray)):
-        return value.hex()
-    return str(value)
-
-
-def numerically_close(a: str, b: str) -> bool:
+def native_duckdb_sql(probe: dict, destination: Destination) -> tuple[str, str]:
+    """(status, sql) for a native probe: the destination's own full statement,
+    through the same rewrite and the same measured fallback as duckdb_sql."""
+    candidate = probe["native"][destination.value]
     try:
-        x, y = float(a), float(b)
-    except (TypeError, ValueError):
-        return False
-    return abs(x - y) <= max(ABS_TOL, REL_TOL * max(abs(x), abs(y)))
+        return "admitted", R.rewrite_model_sql(candidate, destination)
+    except R.DbtPolicyFailure as exc:
+        status = exc.code.value
+    except Exception as exc:  # noqa: BLE001
+        status = f"rewrite_error:{type(exc).__name__}"
+    import sqlglot
+
+    try:
+        transpiled = sqlglot.transpile(candidate, read=destination.value, write="duckdb")[0]
+    except Exception:  # noqa: BLE001
+        return status, ""
+    return status, transpiled.replace("VARCHAR(MAX)", "TEXT").replace("TEXT(MAX)", "TEXT")
 
 
 def run_duckdb(statements: dict[str, str]) -> dict[str, dict]:
     payload = json.dumps(statements)
-    # The subprocess renders values with the SAME canonical function, so the
-    # comparison never depends on a repr round trip.
+    # The subprocess records each value with `compare.encode`, losslessly and
+    # with its column type, so nothing is compared as display text.
     script = (
         "import json,sys,duckdb\n"
-        "from decimal import Decimal\n"
-        "def render(value):\n"
-        "    if value is None: return 'NULL'\n"
-        "    if isinstance(value, bool): return 'true' if value else 'false'\n"
-        "    if isinstance(value, Decimal): return format(value.normalize(), 'f')\n"
-        "    if isinstance(value, float): return repr(value)\n"
-        "    if isinstance(value, (bytes, bytearray)): return value.hex()\n"
-        "    return str(value)\n"
+        f"sys.path.insert(0, {str(HERE)!r})\n"
+        "from compare import encode\n"
         "stmts=json.loads(sys.stdin.read())\n"
         "con=duckdb.connect(':memory:')\n"
         "con.execute(\"SET TimeZone='UTC'\")\n"
         "out={}\n"
         "for key,sql in stmts.items():\n"
         "    try:\n"
-        "        cur=con.execute(sql); row=cur.fetchone()\n"
-        "        out[key]={'ok':True,'value':render(row[0]),'type':type(row[0]).__name__,'engine':duckdb.__version__}\n"
+        "        cur=con.execute(sql); rows=cur.fetchall()\n"
+        "        out[key]={'ok':True,'value':encode(rows[0][0], str(cur.description[0][1])),'shape':[len(rows),len(cur.description)],'engine':duckdb.__version__}\n"
         "    except Exception as exc:\n"
         "        out[key]={'ok':False,'error':f'{type(exc).__name__}: {str(exc)[:160]}','engine':duckdb.__version__}\n"
         "print(json.dumps(out))\n"
@@ -121,8 +112,19 @@ def run_duckdb(statements: dict[str, str]) -> dict[str, dict]:
 
 def main() -> None:
     name = sys.argv[1]
+    if "--native" in sys.argv[2:]:
+        from native_probes import NATIVE_PROBES
+
+        collect(name, NATIVE_PROBES, native_duckdb_sql,
+                lambda probe, destination: probe["native"][destination.value],
+                f"native_{name}.json")
+    else:
+        collect(name, PROBES, duckdb_sql, candidate_sql, f"differential_{name}.json")
+
+
+def collect(name, probes, prepare, candidate_for, output) -> None:
     destination, mod, path = TARGETS[name]
-    prepared = {p["id"]: duckdb_sql(p, destination) for p in PROBES}
+    prepared = {p["id"]: prepare(p, destination) for p in probes}
     duck_stmts = {pid: sql for pid, (_status, sql) in prepared.items() if sql}
     duck = run_duckdb(duck_stmts)
 
@@ -153,47 +155,65 @@ def main() -> None:
                 cursor.execute(statement); break
             except Exception:
                 rollback(); continue
-        for probe in PROBES:
+        for probe in probes:
             pid = probe["id"]
             status, _ = prepared[pid]
-            candidate = candidate_sql(probe, destination)
+            candidate = candidate_for(probe, destination)
             entry = {"id": pid, "rule": probe["rule"], "subset": status,
                      "candidate_sql": candidate}
+            warehouse_value = duckdb_value = None
+            warehouse_error_kind = None
             try:
                 cursor.execute(candidate)
-                row = cursor.fetchone()
-                entry["warehouse"] = render(row[0])
-                entry["warehouse_type"] = type(row[0]).__name__
+                rows = cursor.fetchall()
+                warehouse_value = encode(rows[0][0], cursor.description[0][1])
+                entry["warehouse"] = display(typed(warehouse_value, name))
+                entry["warehouse_type"] = warehouse_value["py"]
+                entry["warehouse_value"] = warehouse_value
+                entry["warehouse_shape"] = [len(rows), len(cursor.description)]
             except Exception as exc:
                 entry["warehouse"] = None
                 entry["warehouse_error"] = f"{type(exc).__name__}: {str(exc)[:140]}"
+                warehouse_error_kind = error_kind(exc)
+                entry["warehouse_error_kind"] = warehouse_error_kind
                 rollback()
             record = duck.get(pid)
             if record and record.get("ok"):
-                entry["duckdb"] = record["value"]
-                entry["duckdb_type"] = record["type"]
+                duckdb_value = record["value"]
+                entry["duckdb"] = display(typed(duckdb_value, "duckdb"))
+                entry["duckdb_type"] = duckdb_value["py"]
+                entry["duckdb_value"] = duckdb_value
+                entry["duckdb_shape"] = record["shape"]
                 entry["duckdb_engine"] = record["engine"]
             else:
                 entry["duckdb"] = None
                 entry["duckdb_error"] = (record or {}).get("error", "not executed")
-            w, d = entry.get("warehouse"), entry.get("duckdb")
-            textual = entry.get("warehouse_type") == "str" or entry.get("duckdb_type") == "str"
-            if w is None or d is None:
-                entry["verdict"] = "not_comparable"
-            elif w == d:
-                entry["verdict"] = "identical"
-            elif not textual and numerically_close(w, d):
-                # Numeric tolerance is the evaluator's; TEXT is compared byte
-                # for byte because hashes and concatenations consume it.
-                entry["verdict"] = "within_tolerance"
-            else:
-                entry["verdict"] = "DIFFERENT"
+            entry.update(outcome(warehouse_value, warehouse_error_kind, duckdb_value, name))
+            if entry.get("warehouse_shape") and entry.get("duckdb_shape"):
+                entry["shape_agreement"] = entry["warehouse_shape"] == entry["duckdb_shape"]
             results.append(entry)
     finally:
         try: conn.close()
         except Exception: pass
-    out = HERE / f"differential_{name}.json"
-    out.write_text(json.dumps({"destination": name, "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "probes": results}, indent=2))
+    out = HERE / output
+    import sqlglot
+
+    document = {
+        "destination": name,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "collector_version": COLLECTOR_VERSION,
+        "reward_rule": {
+            "comparator": "elt_taskgen.verification.upstream_eval._vectors_match",
+            "order": REWARD_RULE_ORDER,
+            "workspace_scorer_version": WORKSPACE_SCORER_VERSION,
+        },
+        "rewrite": {
+            "subset_version": R.DBT_COMPATIBILITY_SUBSET_VERSION,
+            "sqlglot": sqlglot.__version__,
+        },
+        "probes": results,
+    }
+    out.write_text(json.dumps(document, indent=2))
     counts: dict[str, int] = {}
     for entry in results:
         counts[entry["verdict"]] = counts.get(entry["verdict"], 0) + 1

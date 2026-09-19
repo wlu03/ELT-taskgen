@@ -37,7 +37,7 @@ from elt_taskgen.verification.parity_scope import PARITY_SCOPE_POLICY_VERSION
 
 #: Version of the matrix RECIPE itself (which keys exist and how values are
 #: spelled). Bumping it deliberately rotates every certification identity.
-CERTIFICATION_MATRIX_VERSION = "11"
+CERTIFICATION_MATRIX_VERSION = "12"
 
 #: Sealed-record schemas affect certification identity.
 CERTIFICATION_STAGE_EVIDENCE_SCHEMA_VERSION = "1.2"
@@ -48,6 +48,11 @@ CERTIFICATION_PENDING_SCHEMA_VERSION = "1.0"
 _V10_STAGE_EVIDENCE_SCHEMA_VERSION = "1.1"
 _V10_ATTESTATION_SCHEMA_VERSION = "1.2"
 _V10_PENDING_SCHEMA_VERSION = "1.0"
+# v11 differs from v10 only in these schema versions. Its matrices record
+# canonical fingerprint version 1; v12 records version 2.
+_V11_STAGE_EVIDENCE_SCHEMA_VERSION = "1.2"
+_V11_ATTESTATION_SCHEMA_VERSION = "1.3"
+_V11_PENDING_SCHEMA_VERSION = "1.0"
 _V10_SEMANTIC_FIELDS = {
     "canonical_fingerprint_version": "1",
     "parity_contract_version": "1",
@@ -482,7 +487,10 @@ def validate_recorded_certification_matrix(
     matrix: Mapping[str, str],
     destination: Destination | str,
 ) -> dict[str, str]:
-    """Validate a frozen matrix using its recorded version, starting at v10."""
+    """Validate a frozen matrix using its recorded version, starting at v10.
+
+    v10 and v11 share their semantic, warehouse and dbt fields literally.
+    """
 
     if not isinstance(matrix, Mapping):
         raise ValueError("certification matrix must be a mapping (fail closed)")
@@ -498,6 +506,20 @@ def validate_recorded_certification_matrix(
             stage_evidence_schema_version=_V10_STAGE_EVIDENCE_SCHEMA_VERSION,
             attestation_schema_version=_V10_ATTESTATION_SCHEMA_VERSION,
             pending_schema_version=_V10_PENDING_SCHEMA_VERSION,
+            expected_keys=_V10_CERTIFICATION_MATRIX_KEYS,
+            warehouse_fields=_V10_WAREHOUSE_FIELDS[contract.destination],
+            semantic_fields=_V10_SEMANTIC_FIELDS,
+            dbt_fields=_V10_DBT_FIELDS[contract.destination],
+        )
+    if version == "11":
+        contract = destination_contract(destination)
+        return _validate_certification_matrix_recipe(
+            matrix,
+            contract.destination,
+            matrix_version="11",
+            stage_evidence_schema_version=_V11_STAGE_EVIDENCE_SCHEMA_VERSION,
+            attestation_schema_version=_V11_ATTESTATION_SCHEMA_VERSION,
+            pending_schema_version=_V11_PENDING_SCHEMA_VERSION,
             expected_keys=_V10_CERTIFICATION_MATRIX_KEYS,
             warehouse_fields=_V10_WAREHOUSE_FIELDS[contract.destination],
             semantic_fields=_V10_SEMANTIC_FIELDS,

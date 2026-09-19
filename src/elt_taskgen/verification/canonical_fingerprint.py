@@ -21,10 +21,21 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 from elt_taskgen.models import ColumnType, canonical_json, sha256_hex
 
 
-CANONICAL_FINGERPRINT_VERSION = "1"
+#: 2: JSON and FLOAT numbers keep every significant digit whatever the
+#: caller's Decimal context; version 1 rounded them to its precision.
+CANONICAL_FINGERPRINT_VERSION = "2"
 DECIMAL_PRECISION = 38
 DECIMAL_SCALE = 9
 _DECIMAL_QUANTUM = decimal.Decimal(1).scaleb(-DECIMAL_SCALE)
+#: A complete context, so DECIMAL canonicalization never inherits the
+#: caller's rounding, traps or exponent limits.
+_DECIMAL_CONTEXT = decimal.Context(
+    prec=DECIMAL_PRECISION + DECIMAL_SCALE + 4,
+    rounding=decimal.ROUND_HALF_EVEN,
+    Emin=decimal.MIN_EMIN,
+    Emax=decimal.MAX_EMAX,
+    traps=[decimal.InvalidOperation, decimal.DivisionByZero, decimal.Overflow],
+)
 _INTEGER_BOUNDS = {
     ColumnType.INTEGER: (-(2**31), 2**31 - 1),
     ColumnType.BIGINT: (-(2**63), 2**63 - 1),
@@ -151,8 +162,7 @@ def _canonical_decimal(value: object, *, label: str) -> str:
         # Python's process-default Decimal context has precision 28, which is
         # too small for the admitted DECIMAL(38,9) boundary.  Keep this local
         # so parity canonicalization does not mutate process-wide arithmetic.
-        with decimal.localcontext() as context:
-            context.prec = DECIMAL_PRECISION + DECIMAL_SCALE + 4
+        with decimal.localcontext(_DECIMAL_CONTEXT):
             quantized = number.quantize(_DECIMAL_QUANTUM)
             unscaled = quantized.scaleb(DECIMAL_SCALE).to_integral_exact()
     except decimal.InvalidOperation as exc:
@@ -172,13 +182,27 @@ def _canonical_decimal(value: object, *, label: str) -> str:
     return format(quantized, f".{DECIMAL_SCALE}f")
 
 
-def _canonical_float(value: object, *, label: str) -> str:
-    number = _decimal_value(value, label=label)
+def _exact_number_text(number: decimal.Decimal) -> str:
+    """Fixed-point text of ``number`` with trailing zeros removed.
+
+    ``Decimal.normalize()`` rounds to the current context's precision, so two
+    30-digit numbers could share one spelling. This drops only zero digits,
+    exactly and without any context: 1, 1.0 and 1e0 all become "1".
+    """
     if number == 0:
         return "0"
+    sign, digits, exponent = number.as_tuple()
+    kept = len(digits)
+    while kept > 1 and digits[kept - 1] == 0:
+        kept -= 1
+    stripped = decimal.Decimal((sign, digits[:kept], exponent + len(digits) - kept))
+    return format(stripped, "f")
+
+
+def _canonical_float(value: object, *, label: str) -> str:
     # Normalize spelling while preserving the exact decimal supplied by the
     # driver. This is intentionally not a tolerance comparison.
-    return format(number.normalize(), "f")
+    return _exact_number_text(_decimal_value(value, label=label))
 
 
 def _canonical_boolean(value: object, *, label: str) -> bool:
@@ -239,10 +263,7 @@ def _canonical_timestamp(
 
 
 def _json_number(value: object, *, label: str) -> str:
-    number = _decimal_value(value, label=label)
-    if number == 0:
-        return "0"
-    return format(number.normalize(), "f")
+    return _exact_number_text(_decimal_value(value, label=label))
 
 
 def _json_node(value: object, *, label: str) -> object:

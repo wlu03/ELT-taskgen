@@ -421,7 +421,7 @@ tracked in `IMPLEMENTATION_REVIEW_2026-08-31.md` (maintainer-local; not publishe
   dbt invocation, digest, and exact successful model roster before it can
   enter typed evidence;
 - the certification state machine derives pass/fail from sealed strict result
-  records, seals runner/preflight observations, verifies closed v10/v11
+  records, seals runner/preflight observations, verifies closed v10/v11/v12
   matrix protocols under their recorded rules, and refuses missing runtime
   observations or runner-image drift;
 - `runtime certification` exposes the release-bound sandbox, pending nonce,

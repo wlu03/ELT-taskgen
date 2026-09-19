@@ -416,10 +416,12 @@ class PortableSqlPolicyTests(unittest.TestCase):
                 with self.assertRaises(DbtPolicyFailure):
                     rewrite_model_sql(sql, destination)
 
-    def test_compatibility_subset_version_is_v4(self) -> None:
+    def test_compatibility_subset_version_is_v5(self) -> None:
         # v4 is the first version whose whole admitted surface was measured
         # against live destinations; see tests/test_warehouse_differential.py.
-        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v4")
+        # v5 adds the natively measured bare-DECIMAL defaults and alias-aware
+        # guards; see tests/test_warehouse_differential_compare.py.
+        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v5")
 
     def test_the_constructs_a_destination_cannot_compile_are_refused(self) -> None:
         """Each refusal below was measured: the destination rejected the SQL
@@ -602,6 +604,100 @@ class CandidateYamlBoundaryTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, DbtErrorCode.PROJECT_INVALID)
 
 
+class NativeCompatibilityRewriteTests(unittest.TestCase):
+    """portable-dbt-sql-v5, from the native probes of 2026-09-18
+    (tests/fixtures/warehouse_differential/native_*.json)."""
+
+    SOURCE = "{{ source('raw', 'orders') }}"
+    TEXT = {
+        Destination.SNOWFLAKE: "VARCHAR",
+        Destination.DATABRICKS: "STRING",
+        Destination.REDSHIFT: "VARCHAR(MAX)",
+    }
+    DOUBLE = {
+        Destination.SNOWFLAKE: "DOUBLE",
+        Destination.DATABRICKS: "DOUBLE",
+        Destination.REDSHIFT: "DOUBLE PRECISION",
+    }
+
+    def test_a_bare_decimal_takes_its_destinations_default(self) -> None:
+        defaults = {
+            Destination.SNOWFLAKE: "DECIMAL(38, 0)",
+            Destination.DATABRICKS: "DECIMAL(10, 0)",
+            Destination.REDSHIFT: "DECIMAL(18, 0)",
+        }
+        for destination, expected in defaults.items():
+            for spelling in ("CAST(v AS DECIMAL)", "v::DECIMAL"):
+                with self.subTest(destination=destination.value, spelling=spelling):
+                    rewritten = rewrite_model_sql(
+                        f"SELECT {spelling} AS d FROM {self.SOURCE}", destination
+                    )
+                    self.assertIn(expected, rewritten)
+            explicit = rewrite_model_sql(
+                f"SELECT CAST(v AS DECIMAL(12, 4)) AS d FROM {self.SOURCE}", destination
+            )
+            self.assertIn("DECIMAL(12, 4)", explicit)
+
+    def test_alias_hidden_text_casts_are_refused_like_direct_ones(self) -> None:
+        for destination in Destination:
+            text, double = self.TEXT[destination], self.DOUBLE[destination]
+            refused = {
+                "direct": f"SELECT MD5(CAST(CAST(v AS {double}) AS {text})) AS h FROM {self.SOURCE}",
+                "cte": (
+                    f"WITH s AS (SELECT CAST(v AS {double}) AS x FROM {self.SOURCE}) "
+                    f"SELECT MD5(CAST(x AS {text})) AS h FROM s"
+                ),
+                "chained cte": (
+                    f"WITH a AS (SELECT CAST(v AS {double}) AS x FROM {self.SOURCE}), "
+                    f"b AS (SELECT x AS y FROM a) SELECT CAST(y AS {text}) AS h FROM b"
+                ),
+                "subquery": (
+                    f"SELECT CAST(x AS {text}) AS h FROM "
+                    f"(SELECT CAST(v AS {double}) AS x FROM {self.SOURCE}) AS s"
+                ),
+                "timestamp": (
+                    f"WITH s AS (SELECT CAST(v AS TIMESTAMP) AS t FROM {self.SOURCE}) "
+                    f"SELECT CAST(t AS {text}) AS h FROM s"
+                ),
+            }
+            for label, sql in refused.items():
+                with self.subTest(destination=destination.value, form=label):
+                    with self.assertRaises(DbtPolicyFailure) as raised:
+                        rewrite_model_sql(sql, destination)
+                    self.assertEqual(raised.exception.code, DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
+            with self.subTest(destination=destination.value, form="integer control"):
+                rewrite_model_sql(
+                    f"WITH s AS (SELECT CAST(v AS INT) AS x FROM {self.SOURCE}) "
+                    f"SELECT MD5(CAST(x AS {text})) AS h FROM s",
+                    destination,
+                )
+
+    def test_redshift_boolean_text_casts_follow_aliases_and_declared_columns(self) -> None:
+        for destination in Destination:
+            text = self.TEXT[destination]
+            cte = (
+                f"WITH s AS (SELECT (v > 0) AS f FROM {self.SOURCE}) "
+                f"SELECT CAST(f AS {text}) AS h FROM s"
+            )
+            declared = f"SELECT CAST(flag AS {text}) AS h FROM {self.SOURCE}"
+            with self.subTest(destination=destination.value):
+                if destination is Destination.REDSHIFT:
+                    for sql, columns in ((cte, frozenset()), (declared, frozenset({"FLAG"}))):
+                        with self.assertRaises(DbtPolicyFailure) as raised:
+                            rewrite_model_sql(sql, destination, boolean_columns=columns)
+                        self.assertEqual(
+                            raised.exception.code, DbtErrorCode.COMPATIBILITY_UNSUPPORTED
+                        )
+                    # Without the declaration the column's type is unknown here.
+                    rewrite_model_sql(declared, destination)
+                else:
+                    # Both render a boolean as 'true'/'false', as DuckDB does.
+                    rewrite_model_sql(cte, destination)
+                    rewrite_model_sql(
+                        declared, destination, boolean_columns=frozenset({"flag"})
+                    )
+
+
 class DbtRunnerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -736,6 +832,40 @@ class DbtRunnerIntegrationTests(unittest.TestCase):
                                 namespace=namespace,
                             )
                         self.assertEqual(raised.exception.code, DbtErrorCode.PROJECT_INVALID)
+
+    def test_a_ref_cannot_hide_a_double_from_the_text_cast_guard(self) -> None:
+        """An upstream model's output is read by name through ref(), so the
+        runner follows aliases across the whole project."""
+        namespace = project_namespace(self.package, Path("candidate.duckdb"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for index, (cast, admitted) in enumerate((("DOUBLE", False), ("INT", True))):
+                with self.subTest(upstream=cast):
+                    candidate = root / f"candidate_{index}"
+                    _write_candidate(candidate, self.package)
+                    models = candidate / "elt" / "models"
+                    (models / "upstream.sql").write_text(
+                        f"SELECT order_id, CAST(quantity AS {cast}) AS x "
+                        "FROM {{ source('raw', 'order_items') }}\n",
+                        encoding="utf-8",
+                    )
+                    (models / "downstream.sql").write_text(
+                        "SELECT order_id, MD5(CAST(x AS VARCHAR)) AS h "
+                        "FROM {{ ref('upstream') }}\n",
+                        encoding="utf-8",
+                    )
+                    if admitted:
+                        _prepare_execution_project(
+                            candidate / "elt", root / f"execution_{index}",
+                            package=self.package, namespace=namespace,
+                        )
+                        continue
+                    with self.assertRaises(DbtPolicyFailure) as raised:
+                        _prepare_execution_project(
+                            candidate / "elt", root / f"execution_{index}",
+                            package=self.package, namespace=namespace,
+                        )
+                    self.assertEqual(raised.exception.code, DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
 
     def test_packages_and_hooks_are_rejected_before_dbt_executes(self) -> None:
         namespace = project_namespace(self.package, Path("candidate.duckdb"))

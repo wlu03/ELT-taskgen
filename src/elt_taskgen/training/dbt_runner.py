@@ -20,7 +20,7 @@ import stat
 import subprocess
 import sys
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path, PurePosixPath
@@ -68,7 +68,11 @@ DBT_DUCKDB_INSTALLED_DISTRIBUTIONS_SHA256 = (
 DBT_DUCKDB_RUNTIME_MANIFEST_SHA256 = (
     "0fa9adbb840e0cbeb0308e0ce16dc37900de3d162af5d12db6d547f9c3a5d7fc"
 )
-DBT_COMPATIBILITY_SUBSET_VERSION = "portable-dbt-sql-v4"
+#: v5: a bare DECIMAL keeps its destination's default precision and scale,
+#: and the text-rendering and Redshift boolean guards follow aliases through
+#: CTEs, subqueries and ref(). Measured natively in
+#: tests/fixtures/warehouse_differential/native_*.json.
+DBT_COMPATIBILITY_SUBSET_VERSION = "portable-dbt-sql-v5"
 DBT_PROFILE_NAME = "elt_taskgen"
 DBT_PROFILE_TARGET = "local"
 
@@ -1194,17 +1198,14 @@ def _is_admitted_redshift_varchar_max(
     )
 
 
-def _unsafe_text_cast(node: exp.Expression, unsafe_columns: frozenset[str]) -> bool:
-    """Return whether a text cast has a statically destination-specific operand."""
-    if not isinstance(node, exp.Cast):
-        return False
-    target = node.args.get("to")
-    if not (isinstance(target, exp.DataType) and target.this in _TEXT_DATA_TYPES):
-        return False
-    # The whole operand subtree is inspected: ROUND(CAST(x AS DOUBLE)) and
-    # CAST(a AS DOUBLE) / CAST(b AS DOUBLE) render per destination exactly as a
-    # bare double does.
-    for inner in node.this.walk():
+def _carries_text_rendering(expression: exp.Expression, names: frozenset[str]) -> bool:
+    """Whether a value renders as destination-specific text.
+
+    The whole subtree is inspected: ROUND(CAST(x AS DOUBLE)) and
+    CAST(a AS DOUBLE) / CAST(b AS DOUBLE) render per destination exactly as a
+    bare double does. `names` are columns already known to carry it.
+    """
+    for inner in expression.walk():
         if isinstance(inner, exp.Cast):
             target_type = inner.args.get("to")
             if (
@@ -1212,9 +1213,54 @@ def _unsafe_text_cast(node: exp.Expression, unsafe_columns: frozenset[str]) -> b
                 and target_type.this in _DESTINATION_SPECIFIC_TEXT_SOURCES
             ):
                 return True
-        if isinstance(inner, exp.Column) and inner.name.casefold() in unsafe_columns:
+        if isinstance(inner, exp.Column) and inner.name.casefold() in names:
             return True
     return False
+
+
+def _unsafe_text_cast(node: exp.Expression, unsafe_columns: frozenset[str]) -> bool:
+    """Return whether a text cast has a statically destination-specific operand."""
+    if not isinstance(node, exp.Cast):
+        return False
+    target = node.args.get("to")
+    if not (isinstance(target, exp.DataType) and target.this in _TEXT_DATA_TYPES):
+        return False
+    return _carries_text_rendering(node.this, unsafe_columns)
+
+
+def _alias_closure(
+    tree: exp.Expression,
+    seed: frozenset[str],
+    carries: Callable[[exp.Expression, frozenset[str]], bool],
+) -> frozenset[str]:
+    """`seed` plus every column name that carries a property through an alias.
+
+    A CTE, subquery or column-alias list can rename a value so a guard that
+    reads only the cast's own operand no longer sees its type. Names are
+    followed until nothing is added. Like the seed, they are matched by name
+    anywhere in the model, which can only refuse more.
+    """
+    found = set(seed)
+    while True:
+        added: set[str] = set()
+        current = frozenset(found)
+        for alias in tree.find_all(exp.Alias):
+            name = alias.alias.casefold() if alias.alias else ""
+            if name and name not in current and carries(alias.this, current):
+                added.add(name)
+        for table_alias in tree.find_all(exp.TableAlias):
+            columns = table_alias.columns
+            query = table_alias.parent.this if table_alias.parent is not None else None
+            if not columns or not isinstance(query, exp.Query):
+                continue
+            for column, projection in zip(columns, query.selects):
+                name = column.name.casefold()
+                value = projection.this if isinstance(projection, exp.Alias) else projection
+                if name and name not in current and carries(value, current):
+                    added.add(name)
+        if not added:
+            return current
+        found |= added
 
 
 #: Boolean-valued nodes cannot be portably cast to text on Redshift.
@@ -1250,19 +1296,29 @@ def _unwrap_parens(node: exp.Expression) -> exp.Expression:
     return node
 
 
-def _boolean_text_cast(node: exp.Expression, destination: Destination) -> bool:
-    if destination is not Destination.REDSHIFT or not isinstance(node, exp.Cast):
-        return False
-    target = node.args.get("to")
-    if not (isinstance(target, exp.DataType) and target.this in _TEXT_DATA_TYPES):
-        return False
-    operand = _unwrap_parens(node.this)
+def _carries_boolean(expression: exp.Expression, names: frozenset[str]) -> bool:
+    """Whether a value is boolean: a boolean-valued node, a cast to BOOLEAN, or
+    a column already known to be boolean."""
+    operand = _unwrap_parens(expression)
     if isinstance(operand, _BOOLEAN_VALUED_NODES):
         return True
     if isinstance(operand, exp.Cast):
         inner = operand.args.get("to")
         return isinstance(inner, exp.DataType) and inner.this is exp.DataType.Type.BOOLEAN
-    return False
+    return isinstance(operand, exp.Column) and operand.name.casefold() in names
+
+
+def _boolean_text_cast(
+    node: exp.Expression,
+    destination: Destination,
+    boolean_columns: frozenset[str] = frozenset(),
+) -> bool:
+    if destination is not Destination.REDSHIFT or not isinstance(node, exp.Cast):
+        return False
+    target = node.args.get("to")
+    if not (isinstance(target, exp.DataType) and target.this in _TEXT_DATA_TYPES):
+        return False
+    return _carries_boolean(node.this, boolean_columns)
 
 
 #: Redshift requires an explicit frame when one of these carries an ORDER BY.
@@ -1342,6 +1398,27 @@ def _md5_argument_is_text(
     if isinstance(operand, exp.Column) and operand.name.casefold() in json_columns:
         return False
     return True
+
+
+#: A bare DECIMAL takes its destination's default precision and scale; DuckDB's
+#: own default is DECIMAL(18,3). sqlglot already writes Snowflake's as (38, 0).
+#: Measured on each destination: tests/fixtures/warehouse_differential/native_*.json.
+_BARE_DECIMAL_DEFAULTS: dict[Destination, tuple[int, int]] = {
+    Destination.DATABRICKS: (10, 0),
+    Destination.REDSHIFT: (18, 0),
+}
+
+
+def _apply_bare_decimal_defaults(tree: exp.Expression, destination: Destination) -> None:
+    default = _BARE_DECIMAL_DEFAULTS.get(destination)
+    if default is None:
+        return
+    for data_type in tree.find_all(exp.DataType):
+        if data_type.this is exp.DataType.Type.DECIMAL and not data_type.expressions:
+            data_type.set(
+                "expressions",
+                [exp.DataTypeParam(this=exp.Literal.number(value)) for value in default],
+            )
 
 
 def _validate_decimal_casts(tree: exp.Expression) -> None:
@@ -1499,10 +1576,13 @@ def rewrite_model_sql(
     json_columns: frozenset[str] = frozenset(),
     float_or_temporal_columns: frozenset[str] = frozenset(),
     timestamp_columns: frozenset[str] = frozenset(),
+    boolean_columns: frozenset[str] = frozenset(),
 ) -> str:
     """Rewrite one declared dialect into the closed portable DuckDB subset.
 
     Rewrite Redshift dot navigation only for TaskIR-declared JSON roots.
+    `float_or_temporal_columns` and `boolean_columns` name the columns whose
+    text rendering the guards must know about; aliases are followed here.
     """
 
     masked, tokens = _mask_jinja(sql)
@@ -1515,6 +1595,7 @@ def rewrite_model_sql(
     normalized_timestamp_columns = frozenset(
         name.casefold() for name in timestamp_columns
     )
+    normalized_boolean_columns = frozenset(name.casefold() for name in boolean_columns)
     try:
         lexical_tokens = tokenize(masked, read=dialect)
         if (
@@ -1557,9 +1638,17 @@ def rewrite_model_sql(
         for node in tree.find_all(exp.MD5)
     ):
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
-    if any(_unsafe_text_cast(node, normalized_unsafe_columns) for node in tree.walk()):
+    # A CTE or subquery alias must not hide the operand type these guards read.
+    text_unsafe_names = _alias_closure(
+        tree, normalized_unsafe_columns, _carries_text_rendering
+    )
+    boolean_names = _alias_closure(tree, normalized_boolean_columns, _carries_boolean)
+    if any(_unsafe_text_cast(node, text_unsafe_names) for node in tree.walk()):
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
-    if any(_boolean_text_cast(node, resolved_destination) for node in tree.walk()):
+    if any(
+        _boolean_text_cast(node, resolved_destination, boolean_names)
+        for node in tree.walk()
+    ):
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
     if any(_window_problem(node, resolved_destination) for node in tree.walk()):
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
@@ -1632,6 +1721,7 @@ def rewrite_model_sql(
         function = window.this
         if isinstance(function, (exp.RowNumber, exp.Rank, exp.DenseRank)) and not window.args.get("order"):
             raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
+    _apply_bare_decimal_defaults(tree, resolved_destination)
     _validate_decimal_casts(tree)
     try:
         rewritten = tree.transform(
@@ -1664,6 +1754,44 @@ def rewrite_model_sql(
             raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
     prefix = "\n".join(config_tokens)
     return (prefix + "\n" if prefix else "") + rewritten + "\n"
+
+
+def _project_alias_names(
+    sql_paths: Sequence[Path],
+    destination: Destination,
+    *,
+    text_rendering: frozenset[str],
+    boolean: frozenset[str],
+) -> tuple[frozenset[str], frozenset[str]]:
+    """Column names across every candidate model that carry destination-specific
+    text rendering, or are boolean.
+
+    A model reads an upstream model's output by column name through ref(), so
+    an alias that hides a DOUBLE or a boolean in one model must be known to
+    every other model's rewrite. Names are followed until nothing is added. A
+    model that does not parse is skipped here; its own rewrite refuses it.
+    """
+    trees: list[exp.Expression] = []
+    for path in sql_paths:
+        sql = _read_bounded_text(path, MAX_DBT_SQL_BYTES, DbtErrorCode.PROJECT_INVALID)
+        masked, _tokens = _mask_jinja(sql)
+        try:
+            statements = parse(masked, read=destination.value)
+        except Exception:  # noqa: BLE001 - rewrite_model_sql reports it
+            continue
+        trees.extend(statement for statement in statements if statement is not None)
+    text_names = frozenset(name.casefold() for name in text_rendering)
+    boolean_names = frozenset(name.casefold() for name in boolean)
+    while True:
+        next_text = text_names.union(
+            *(_alias_closure(tree, text_names, _carries_text_rendering) for tree in trees)
+        )
+        next_boolean = boolean_names.union(
+            *(_alias_closure(tree, boolean_names, _carries_boolean) for tree in trees)
+        )
+        if next_text == text_names and next_boolean == boolean_names:
+            return text_names, boolean_names
+        text_names, boolean_names = next_text, next_boolean
 
 
 def _logical_source_names(sources_doc: Mapping[str, Any]) -> tuple[str, ...]:
@@ -1824,6 +1952,18 @@ def _prepare_execution_project(
         for column in table.columns
         if column.type.value == "timestamp"
     )
+    boolean_columns = frozenset(
+        column.name
+        for table in package.task.tables
+        for column in table.columns
+        if column.type.value == "boolean"
+    )
+    text_rendering_names, boolean_names = _project_alias_names(
+        sql_paths,
+        package.destination,
+        text_rendering=float_or_temporal_columns,
+        boolean=boolean_columns,
+    )
     for source_path in sql_paths:
         relative = source_path.relative_to(candidate_elt)
         sql = _read_bounded_text(source_path, MAX_DBT_SQL_BYTES, DbtErrorCode.PROJECT_INVALID)
@@ -1831,8 +1971,9 @@ def _prepare_execution_project(
             sql,
             package.destination,
             json_columns=json_columns,
-            float_or_temporal_columns=float_or_temporal_columns,
+            float_or_temporal_columns=text_rendering_names,
             timestamp_columns=timestamp_columns,
+            boolean_columns=boolean_names,
         )
         (execution_project / relative).write_text(rewritten, encoding="utf-8")
     return project_name

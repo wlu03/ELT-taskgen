@@ -291,7 +291,7 @@ class WarehouseDifferentialTests(unittest.TestCase):
         self.assertEqual(descending["databricks"]["warehouse"], "2")
 
     def test_the_subset_version_moved_with_the_evidence(self) -> None:
-        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v4")
+        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v5")
 
 
 class AdmittedSurfaceCoverageTests(unittest.TestCase):
