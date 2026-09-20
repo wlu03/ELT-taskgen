@@ -1,0 +1,9 @@
+column_name,column_description
+code,Column CODE of table PROJECTS.
+description,Column DESCRIPTION of table PROJECTS. may be NULL.
+grou_id,Column GROU_ID of table PROJECTS.
+id,Column ID of table PROJECTS.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table PROJECTS. may be NULL.
+pers_id_leader,Column PERS_ID_LEADER of table PROJECTS. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table PROJECTS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table PROJECTS.

@@ -1,0 +1,47 @@
+Airbyte:
+  config:
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: wikidbs__c60265__60265_roger_vincent_filmography
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/wikidbs__c60265__60265_roger_vincent_filmography/composer_biographies.csv
+  sync_mode: full_refresh_append
+  table: composer_biographies
+- format: csv
+  path: http://elt-files:8080/wikidbs__c60265__60265_roger_vincent_filmography/film_industry_professionals.csv
+  sync_mode: full_refresh_append
+  table: film_industry_professionals
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: wikidbs__c60265__60265_roger_vincent_filmography
+    sync_mode: full_refresh_append
+    tables:
+    - filmography_details
+postgres:
+  config:
+    database: wikidbs__c60265__60265_roger_vincent_filmography
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - film_directors
+    - filmography_cast_members
+    user: postgres

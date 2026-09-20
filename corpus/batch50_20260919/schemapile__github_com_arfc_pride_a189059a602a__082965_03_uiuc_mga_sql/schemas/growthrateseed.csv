@@ -1,0 +1,5 @@
+column_name,column_description
+growthrate_seed,Column growthrate_seed of table GrowthRateSeed. may be NULL.
+growthrate_seed_notes,Column growthrate_seed_notes of table GrowthRateSeed. may be NULL.
+growthrate_seed_units,Column growthrate_seed_units of table GrowthRateSeed. may be NULL.
+tech,Column tech of table GrowthRateSeed. may be NULL.

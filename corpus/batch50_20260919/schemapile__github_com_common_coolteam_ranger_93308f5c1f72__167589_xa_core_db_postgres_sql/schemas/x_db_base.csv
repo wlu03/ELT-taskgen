@@ -1,0 +1,6 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_db_base. may be NULL.
+create_time,Column create_time of table x_db_base. may be NULL.
+id,Column id of table x_db_base.
+upd_by_id,Column upd_by_id of table x_db_base. may be NULL.
+update_time,Column update_time of table x_db_base. may be NULL.

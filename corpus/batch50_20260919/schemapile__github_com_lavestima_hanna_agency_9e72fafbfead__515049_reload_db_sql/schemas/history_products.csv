@@ -1,0 +1,12 @@
+column_name,column_description
+active,Column Active of table History_Products.
+date_edited,Column Date_Edited of table History_Products.
+id,Column ID of table History_Products.
+id_categories,Column ID_CATEGORIES of table History_Products. may be NULL.
+id_producers,Column ID_PRODUCERS of table History_Products. may be NULL.
+id_products,Column ID_PRODUCTS of table History_Products.
+name,Column Name of table History_Products. may be NULL.
+price_customer,Column Price_Customer of table History_Products. may be NULL.
+price_producer,Column Price_Producer of table History_Products. may be NULL.
+qr_code_path,Column QR_Code_Path of table History_Products. may be NULL.
+user_edited,Column User_Edited of table History_Products.

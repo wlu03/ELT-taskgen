@@ -1,0 +1,7 @@
+column_name,column_description
+activo,Column activo of table cventa.pais_empresa.
+codigo,Column codigo of table cventa.pais_empresa.
+codigo_postal,Column codigo_postal of table cventa.pais_empresa. may be NULL.
+iva,Column iva of table cventa.pais_empresa.
+nombre,Column nombre of table cventa.pais_empresa.
+pais_empresa,Column pais_empresa of table cventa.pais_empresa.

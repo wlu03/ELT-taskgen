@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column ID of table Parameters.
+name,Column Name of table Parameters.
+unit,Column Unit of table Parameters. may be NULL.

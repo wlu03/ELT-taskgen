@@ -1,0 +1,34 @@
+column_name,column_description
+fullname,fullname of notableindividuals (real vendored values).
+biography,biography of notableindividuals (real vendored values). may be NULL.
+profession,profession of notableindividuals (real vendored values). may be NULL.
+viafid,viafid of notableindividuals (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of notableindividuals (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of notableindividuals (real vendored values). may be NULL.
+gndid,gndid of notableindividuals (real vendored values). may be NULL.
+imdbid,imdbid of notableindividuals (real vendored values). may be NULL.
+birthdate,birthdate of notableindividuals (real vendored values). may be NULL.
+nationality,nationality of notableindividuals (real vendored values). may be NULL.
+entitytype,entitytype of notableindividuals (real vendored values).
+birthplace,birthplace of notableindividuals (real vendored values). may be NULL.
+freebaseid,freebaseid of notableindividuals (real vendored values). may be NULL.
+honorsawarded,honorsawarded of notableindividuals (real vendored values). may be NULL.
+firstname,firstname of notableindividuals (real vendored values).
+allocinepersonid,allocinepersonid of notableindividuals (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of notableindividuals (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of notableindividuals (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of notableindividuals (real vendored values). may be NULL.
+portpersonid,portpersonid of notableindividuals (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of notableindividuals (real vendored values). may be NULL.
+filmportalid,filmportalid of notableindividuals (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of notableindividuals (real vendored values). may be NULL.
+lastname,lastname of notableindividuals (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of notableindividuals (real vendored values). may be NULL.
+gender,gender of notableindividuals (real vendored values).
+profileimage,profileimage of notableindividuals (real vendored values). may be NULL.
+danskfilmogtvpersonid,danskfilmogtvpersonid of notableindividuals (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of notableindividuals (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of notableindividuals (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of notableindividuals (real vendored values). may be NULL.
+ivipersonid,ivipersonid of notableindividuals (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of notableindividuals (real vendored values). may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+date_created,Column date_created of table follow.
+follower_id,Column follower_id of table follow.
+following_id,Column following_id of table follow.

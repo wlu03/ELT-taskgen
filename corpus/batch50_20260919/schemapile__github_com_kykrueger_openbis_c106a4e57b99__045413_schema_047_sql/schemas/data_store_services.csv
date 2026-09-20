@@ -1,0 +1,5 @@
+column_name,column_description
+data_store_id,Column DATA_STORE_ID of table DATA_STORE_SERVICES.
+id,Column ID of table DATA_STORE_SERVICES.
+kind,Column KIND of table DATA_STORE_SERVICES.
+label,Column LABEL of table DATA_STORE_SERVICES.

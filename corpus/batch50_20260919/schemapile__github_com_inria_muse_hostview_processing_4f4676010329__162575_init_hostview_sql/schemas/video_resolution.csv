@@ -1,0 +1,7 @@
+column_name,column_description
+ended_at,Column ended_at of table video_resolution. may be NULL.
+id,Column id of table video_resolution.
+res_x,Column res_x of table video_resolution. may be NULL.
+res_y,Column res_y of table video_resolution. may be NULL.
+started_at,Column started_at of table video_resolution. may be NULL.
+video_session_id,Column video_session_id of table video_resolution.

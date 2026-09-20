@@ -1,0 +1,9 @@
+column_name,column_description
+testing_id,Unique identifier for each testing data entry.
+country_id,Reference to the country. may be NULL.
+date,Date for which the testing data is recorded. may be NULL.
+new_tests_smoothed_per_thousand,Smoothed rate of new tests per thousand population. may be NULL.
+positive_rate,Percentage of positive test results. may be NULL.
+total_tests,Total number of tests conducted up to the recorded date. may be NULL.
+testing_type,"Types of tests conducted (e.g., PCR, antigen). always exactly one of 'PCR', 'antigen'. may be NULL."
+source,"Source of the data (e.g., WHO, CDC, local health authorities). always exactly one of 'WHO', 'CDC', 'local health authorities'. may be NULL."

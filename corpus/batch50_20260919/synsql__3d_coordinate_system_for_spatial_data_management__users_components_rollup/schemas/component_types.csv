@@ -1,0 +1,6 @@
+column_name,column_description
+component_type_id,Unique identifier for each component type.
+type_name,"Name of the component type (e.g., structural, electrical, mechanical). always exactly one of 'structural', 'electrical', 'mechanical'. may be NULL."
+description,Description of the component type. may be NULL.
+parent_type_id,Reference to the parent component type (for hierarchical categorization). may be NULL.
+is_active,Indicates if the component type is active or not. may be NULL.

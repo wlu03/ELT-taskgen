@@ -1,0 +1,7 @@
+column_name,column_description
+arrival,Column arrival of table trip_destination. may be NULL.
+departure,Column departure of table trip_destination. may be NULL.
+dest_order,Column dest_order of table trip_destination. may be NULL.
+destination_id,Column destination_id of table trip_destination.
+trip_destination_id,Column trip_destination_id of table trip_destination.
+trip_id,Column trip_id of table trip_destination.

@@ -1,0 +1,9 @@
+column_name,column_description
+type_id,Unique identifier for each animation type.
+type_name,Name of the animation type. may be NULL.
+description,Description of the animation type. may be NULL.
+created_at,Date and time the animation type was created. may be NULL.
+created_by,ID of the user who created the animation type. may be NULL.
+updated_at,Date and time the animation type was last updated. may be NULL.
+updated_by,ID of the user who last updated the animation type. may be NULL.
+is_active,Flag to indicate if the animation type is active. may be NULL.

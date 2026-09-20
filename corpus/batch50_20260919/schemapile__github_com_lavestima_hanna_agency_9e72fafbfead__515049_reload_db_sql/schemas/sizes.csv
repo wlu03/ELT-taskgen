@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column ID of table Sizes.
+name,Column Name of table Sizes.
+note,Column Note of table Sizes. may be NULL.

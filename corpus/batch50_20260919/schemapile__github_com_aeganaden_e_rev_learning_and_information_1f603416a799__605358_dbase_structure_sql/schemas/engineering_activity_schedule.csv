@@ -1,0 +1,5 @@
+column_name,column_description
+activity_schedule_date,Column activity_schedule_date of table engineering.activity_schedule.
+activity_schedule_end_time,Column activity_schedule_end_time of table engineering.activity_schedule.
+activity_schedule_id,Column activity_schedule_id of table engineering.activity_schedule.
+activity_schedule_start_time,Column activity_schedule_start_time of table engineering.activity_schedule.

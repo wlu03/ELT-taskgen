@@ -1,0 +1,11 @@
+column_name,column_description
+path_id,Unique identifier for each motion path.
+robot_id,ID of the robot associated with the path. may be NULL.
+path_name,Name of the motion path. may be NULL.
+description,Description of the motion path. may be NULL.
+start_date,Date the path started. may be NULL.
+end_date,Date the path ended. may be NULL.
+version,Version of the motion path. may be NULL.
+status,"Status of the path (e.g., active, inactive, archived). always exactly one of 'active', 'inactive', 'archived'. may be NULL."
+created_by,User who created the path. may be NULL.
+modified_by,User who last modified the path. may be NULL.

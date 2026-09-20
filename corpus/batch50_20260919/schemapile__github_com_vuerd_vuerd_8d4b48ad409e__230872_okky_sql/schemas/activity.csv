@@ -1,0 +1,11 @@
+column_name,column_description
+article_id,Column article_id of table activity.
+avatar_id,Column avatar_id of table activity.
+content_id,Column content_id of table activity.
+date_created,Column date_created of table activity.
+id,Column id of table activity.
+last_updated,Column last_updated of table activity.
+point,Column point of table activity.
+point_type,Column point_type of table activity.
+type,Column type of table activity.
+version,Column version of table activity.

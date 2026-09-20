@@ -1,0 +1,10 @@
+column_name,column_description
+approved,Column approved of table test_case. may be NULL.
+create_date,Column create_date of table test_case.
+creator_id,Column creator_id of table test_case.
+description,Column description of table test_case. may be NULL.
+id,Column id of table test_case.
+name,Column name of table test_case. may be NULL.
+priority,Column priority of table test_case. may be NULL.
+result,Column result of table test_case. may be NULL.
+test_set_id,Column test_set_id of table test_case.

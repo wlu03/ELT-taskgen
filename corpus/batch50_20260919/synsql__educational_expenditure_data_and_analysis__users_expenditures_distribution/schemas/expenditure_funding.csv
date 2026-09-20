@@ -1,0 +1,6 @@
+column_name,column_description
+exp_id,Reference to the expenditure record.
+fund_id,Reference to the funding source. may be NULL.
+allocation_date,Date when the funding was allocated. may be NULL.
+allocation_amount,Amount allocated from the funding source. may be NULL.
+notes,Notes or comments related to the allocation. may be NULL.

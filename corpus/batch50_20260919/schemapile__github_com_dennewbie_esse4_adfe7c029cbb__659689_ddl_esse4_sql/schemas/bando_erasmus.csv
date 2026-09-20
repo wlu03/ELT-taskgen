@@ -1,0 +1,6 @@
+column_name,column_description
+cfu,Column CFU of table bando_erasmus.
+data_emissione,Column data_emissione of table bando_erasmus.
+numero_bando_erasmus,Column numero_bando_erasmus of table bando_erasmus.
+numero_posti,Column numero_posti of table bando_erasmus.
+scadenza,Column scadenza of table bando_erasmus.

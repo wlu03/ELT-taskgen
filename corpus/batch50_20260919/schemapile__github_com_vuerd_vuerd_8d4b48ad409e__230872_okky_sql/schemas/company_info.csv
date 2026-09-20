@@ -1,0 +1,10 @@
+column_name,column_description
+company_id,Column company_id of table company_info. may be NULL.
+description,Column description of table company_info. may be NULL.
+email,Column email of table company_info.
+employee_number,Column employee_number of table company_info.
+homepage_url,Column homepage_url of table company_info. may be NULL.
+id,Column id of table company_info.
+tel,Column tel of table company_info.
+version,Column version of table company_info.
+welfare,Column welfare of table company_info. may be NULL.

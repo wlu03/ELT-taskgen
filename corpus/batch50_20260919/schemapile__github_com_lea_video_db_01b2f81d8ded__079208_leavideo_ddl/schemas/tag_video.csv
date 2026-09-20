@@ -1,0 +1,3 @@
+column_name,column_description
+tagid,Column tagID of table Tag_Video.
+videoid,Column videoID of table Tag_Video.

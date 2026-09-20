@@ -1,0 +1,38 @@
+column_name,column_description
+full_name,full name of producer (real vendored values).
+biography,biography of producer (real vendored values).
+gender,gender of producer (real vendored values).
+viaf_id,viaf id of producer (real vendored values). may be NULL.
+international_standard_name_identifier,international standard name identifier of producer (real vendored values). may be NULL.
+nationality,nationality of producer (real vendored values). may be NULL.
+birthplace,birthplace of producer (real vendored values). may be NULL.
+im_db_id,im db id of producer (real vendored values).
+library_of_congress_authority_id,library of congress authority id of producer (real vendored values). may be NULL.
+gnd_id,gnd id of producer (real vendored values). may be NULL.
+entity_type,entity type of producer (real vendored values).
+birth_date,birth date of producer (real vendored values). may be NULL.
+freebase_id,freebase id of producer (real vendored values). may be NULL.
+first_name,first name of producer (real vendored values).
+profession,profession of producer (real vendored values).
+allo_cine_person_id,allo cine person id of producer (real vendored values). may be NULL.
+all_movie_person_id,all movie person id of producer (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of producer (real vendored values). may be NULL.
+port_person_id,port person id of producer (real vendored values). may be NULL.
+elonet_person_id,elonet person id of producer (real vendored values). may be NULL.
+national_library_of_spain_id,national library of spain id of producer (real vendored values). may be NULL.
+csfd_person_id,csfd person id of producer (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of producer (real vendored values). may be NULL.
+id_ref_id,id ref id of producer (real vendored values). may be NULL.
+languages,languages of producer (real vendored values). may be NULL.
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of producer (real vendored values). may be NULL.
+nl_cr_aut_id,nl cr aut id of producer (real vendored values). may be NULL.
+related_film_category,related film category of producer (real vendored values). may be NULL.
+plwabn_id,plwabn id of producer (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of producer (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of producer (real vendored values). may be NULL.
+filmru_person_id,filmru person id of producer (real vendored values). may be NULL.
+ivi_person_id,ivi person id of producer (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of producer (real vendored values).
+alma_mater,alma mater of producer (real vendored values). may be NULL.
+surname,surname of producer (real vendored values). may be NULL.
+prabook_id,prabook id of producer (real vendored values). may be NULL.

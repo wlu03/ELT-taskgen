@@ -1,0 +1,7 @@
+column_name,column_description
+banner_id,Column banner_id of table banner_click.
+click_count,Column click_count of table banner_click.
+date_created,Column date_created of table banner_click.
+id,Column id of table banner_click.
+ip,Column ip of table banner_click.
+version,Column version of table banner_click.

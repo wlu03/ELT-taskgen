@@ -1,0 +1,5 @@
+column_name,column_description
+activo,Column activo of table cventa.vendedor.
+fecha_sis,Column fecha_sis of table cventa.vendedor.
+usuario,Column usuario of table cventa.vendedor.
+vendedor,Column vendedor of table cventa.vendedor.

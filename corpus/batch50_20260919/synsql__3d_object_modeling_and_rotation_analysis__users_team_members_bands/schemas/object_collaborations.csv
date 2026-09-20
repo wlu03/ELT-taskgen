@@ -1,0 +1,6 @@
+column_name,column_description
+collaboration_id,Unique identifier for each collaboration.
+object_id,ID of the object being collaborated on. may be NULL.
+team_id,ID of the team collaborating on the object. may be NULL.
+collaboration_date,Date when the collaboration started. may be NULL.
+status,"Status of the collaboration (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."

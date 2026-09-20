@@ -1,0 +1,6 @@
+column_name,column_description
+detail_id,Unique identifier for each report detail.
+report_id,ID of the report the detail belongs to. may be NULL.
+object_id,ID of the object being reported on. may be NULL.
+user_id,ID of the user who accessed the object. may be NULL.
+access_date,Date when the object was accessed. may be NULL.

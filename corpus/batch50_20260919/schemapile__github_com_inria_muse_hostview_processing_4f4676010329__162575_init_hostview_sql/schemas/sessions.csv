@@ -1,0 +1,8 @@
+column_name,column_description
+device_id,Column device_id of table sessions. may be NULL.
+ended_at,Column ended_at of table sessions. may be NULL.
+file_id,Column file_id of table sessions. may be NULL.
+id,Column id of table sessions.
+start_event,Column start_event of table sessions. may be NULL.
+started_at,Column started_at of table sessions. may be NULL.
+stop_event,Column stop_event of table sessions. may be NULL.

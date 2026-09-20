@@ -1,0 +1,12 @@
+column_name,column_description
+artist_id,Column artist_id of table artist.
+artist_name,Column artist_name of table artist.
+biography,Column biography of table artist.
+facebook_link,Column facebook_link of table artist. may be NULL.
+instagram_link,Column instagram_link of table artist. may be NULL.
+members,Column members of table artist.
+soft_delete,Column soft_delete of table artist. may be NULL.
+spotify_link,Column spotify_link of table artist. may be NULL.
+twitter_link,Column twitter_link of table artist. may be NULL.
+verified,Column verified of table artist. may be NULL.
+website_link,Column website_link of table artist. may be NULL.

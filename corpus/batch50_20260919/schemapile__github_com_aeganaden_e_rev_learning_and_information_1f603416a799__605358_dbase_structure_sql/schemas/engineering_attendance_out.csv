@@ -1,0 +1,4 @@
+column_name,column_description
+attendance_out_id,Column attendance_out_id of table engineering.attendance_out.
+attendance_out_time,Column attendance_out_time of table engineering.attendance_out.
+lecturer_attendance_id,Column lecturer_attendance_id of table engineering.attendance_out.

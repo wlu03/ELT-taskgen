@@ -1,0 +1,9 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+film_id,Reference to the film. may be NULL.
+user_id,Reference to the user accessing the data. may be NULL.
+access_date,Date when the data was accessed. may be NULL.
+access_type,"Type of access (e.g., view, edit). always exactly one of 'view', 'edit'. may be NULL."
+ip_address,IP address of the user accessing the data. may be NULL.
+user_agent,User agent string of the browser used. may be NULL.
+device_type,"Type of device used (e.g., desktop, mobile). always exactly one of 'desktop', 'mobile'. may be NULL."

@@ -1,0 +1,10 @@
+column_name,column_description
+activo,Column activo of table cventa.factura_serie.
+codigo,Column codigo of table cventa.factura_serie. may be NULL.
+correlativo,Column correlativo of table cventa.factura_serie.
+descripcion,Column descripcion of table cventa.factura_serie. may be NULL.
+empresa,Column empresa of table cventa.factura_serie.
+factura_serie,Column factura_serie of table cventa.factura_serie.
+fin,Column fin of table cventa.factura_serie.
+inicio,Column inicio of table cventa.factura_serie.
+nombre,Column nombre of table cventa.factura_serie.

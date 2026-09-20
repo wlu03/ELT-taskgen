@@ -1,0 +1,10 @@
+column_name,column_description
+content_id,Column content_id of table media. may be NULL.
+created_at,Column created_at of table media. may be NULL.
+exif,Column exif of table media. may be NULL.
+filename,Column filename of table media. may be NULL.
+heritage_id,Column heritage_id of table media. may be NULL.
+id,Column id of table media.
+order,Column order of table media. may be NULL.
+page_id,Column page_id of table media. may be NULL.
+updated_at,Column updated_at of table media. may be NULL.

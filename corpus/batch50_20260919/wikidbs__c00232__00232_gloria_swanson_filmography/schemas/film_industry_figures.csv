@@ -1,0 +1,64 @@
+column_name,column_description
+full_name,full name of film industry figures (real vendored values).
+biography,biography of film industry figures (real vendored values).
+viaf_id,viaf id of film industry figures (real vendored values).
+isni_identifier,isni identifier of film industry figures (real vendored values). may be NULL.
+commons_category,commons category of film industry figures (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of film industry figures (real vendored values).
+gnd_id,gnd id of film industry figures (real vendored values). may be NULL.
+im_db_id,im db id of film industry figures (real vendored values).
+id_ref_id,id ref id of film industry figures (real vendored values). may be NULL.
+birthplace,birthplace of film industry figures (real vendored values).
+deathplace,deathplace of film industry figures (real vendored values).
+citizenship,citizenship of film industry figures (real vendored values).
+birth_date,birth date of film industry figures (real vendored values).
+death_date,death date of film industry figures (real vendored values).
+entity_type,entity type of film industry figures (real vendored values).
+freebase_id,freebase id of film industry figures (real vendored values).
+awards,awards of film industry figures (real vendored values). may be NULL.
+first_name,first name of film industry figures (real vendored values).
+profession,profession of film industry figures (real vendored values).
+nationale_thesaurus_voor_auteursnamen_id,nationale thesaurus voor auteursnamen id of film industry figures (real vendored values). may be NULL.
+nla_trove_people_id,nla trove people id of film industry figures (real vendored values). may be NULL.
+fast_id,fast id of film industry figures (real vendored values). may be NULL.
+national_library_of_spain_id,national library of spain id of film industry figures (real vendored values). may be NULL.
+elonet_person_id,elonet person id of film industry figures (real vendored values). may be NULL.
+allo_cine_person_id,allo cine person id of film industry figures (real vendored values). may be NULL.
+all_movie_person_id,all movie person id of film industry figures (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of film industry figures (real vendored values). may be NULL.
+port_person_id,port person id of film industry figures (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of film industry figures (real vendored values). may be NULL.
+profile_image,profile image of film industry figures (real vendored values). may be NULL.
+surname,surname of film industry figures (real vendored values). may be NULL.
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of film industry figures (real vendored values). may be NULL.
+gender,gender of film industry figures (real vendored values).
+nl_cr_aut_id,nl cr aut id of film industry figures (real vendored values). may be NULL.
+deutsche_biographie_gnd_id,deutsche biographie gnd id of film industry figures (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of film industry figures (real vendored values). may be NULL.
+native_name,native name of film industry figures (real vendored values). may be NULL.
+nukat_id,nukat id of film industry figures (real vendored values). may be NULL.
+cinematheque_quebecoise_person_id,cinematheque quebecoise person id of film industry figures (real vendored values). may be NULL.
+languages,languages of film industry figures (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of film industry figures (real vendored values).
+open_library_id,open library id of film industry figures (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of film industry figures (real vendored values). may be NULL.
+m_ymovies_person_id,m ymovies person id of film industry figures (real vendored values). may be NULL.
+fandango_person_id,fandango person id of film industry figures (real vendored values). may be NULL.
+filmru_person_id,filmru person id of film industry figures (real vendored values). may be NULL.
+acmi_id,acmi id of film industry figures (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of film industry figures (real vendored values).
+find_a_grave_memorial_id,find a grave memorial id of film industry figures (real vendored values). may be NULL.
+burial_site,burial site of film industry figures (real vendored values). may be NULL.
+partner,partner of film industry figures (real vendored values). may be NULL.
+csfd_person_id,csfd person id of film industry figures (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of film industry figures (real vendored values). may be NULL.
+snac_ark_id,snac ark id of film industry figures (real vendored values). may be NULL.
+encyclopdia_britannica_online_id,encyclopdia britannica online id of film industry figures (real vendored values). may be NULL.
+american_national_biography_id,american national biography id of film industry figures (real vendored values). may be NULL.
+american_film_institute_person_id,american film institute person id of film industry figures (real vendored values). may be NULL.
+death_cause,death cause of film industry figures (real vendored values). may be NULL.
+career_start_year,career start year of film industry figures (real vendored values). may be NULL.
+genicom_profile_id,genicom profile id of film industry figures (real vendored values). may be NULL.
+plwabn_id,plwabn id of film industry figures (real vendored values). may be NULL.
+wiki_tree_person_id,wiki tree person id of film industry figures (real vendored values). may be NULL.
+prabook_id,prabook id of film industry figures (real vendored values). may be NULL.

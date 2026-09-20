@@ -1,0 +1,7 @@
+column_name,column_description
+created_date,Column created_date of table user_permission. may be NULL.
+display_name,Column display_name of table user_permission. may be NULL.
+id,Column id of table user_permission.
+name,Column name of table user_permission.
+readonly,Column readonly of table user_permission.
+updated_date,Column updated_date of table user_permission. may be NULL.

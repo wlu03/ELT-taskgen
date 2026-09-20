@@ -1,0 +1,5 @@
+column_name,column_description
+avatar_id,Column avatar_id of table notification_read.
+id,Column id of table notification_read.
+last_read,Column last_read of table notification_read.
+version,Column version of table notification_read.

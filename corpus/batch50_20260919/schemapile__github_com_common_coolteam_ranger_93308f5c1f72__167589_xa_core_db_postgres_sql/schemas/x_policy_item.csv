@@ -1,0 +1,10 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_policy_item. may be NULL.
+create_time,Column create_time of table x_policy_item. may be NULL.
+delegate_admin,Column delegate_admin of table x_policy_item.
+guid,Column guid of table x_policy_item. may be NULL.
+id,Column id of table x_policy_item.
+policy_id,Column policy_id of table x_policy_item.
+sort_order,Column sort_order of table x_policy_item. may be NULL.
+upd_by_id,Column upd_by_id of table x_policy_item. may be NULL.
+update_time,Column update_time of table x_policy_item. may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+created_at,Column created_at of table devices. may be NULL.
+device_id,Column device_id of table devices. may be NULL.
+id,Column id of table devices.
+secret_token,Column secret_token of table devices. may be NULL.
+user_id,Column user_id of table devices. may be NULL.

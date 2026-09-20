@@ -1,0 +1,10 @@
+column_name,column_description
+object_id,Unique identifier for each object.
+object_name,Name of the object. may be NULL.
+description,Description of the object. may be NULL.
+category_id,ID of the category. may be NULL.
+object_type,"Type of the object (e.g., static, dynamic). always exactly one of 'static', 'dynamic'. may be NULL."
+object_size,Size of the object. may be NULL.
+object_color,Color of the object. may be NULL.
+object_material,Material of the object. may be NULL.
+object_weight,Weight of the object. may be NULL.

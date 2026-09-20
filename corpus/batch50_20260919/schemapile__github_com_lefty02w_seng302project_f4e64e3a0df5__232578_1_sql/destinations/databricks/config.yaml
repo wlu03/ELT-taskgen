@@ -1,0 +1,121 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/artist_profile_photo.jsonl
+    sync_mode: full_refresh_append
+    table: artist_profile_photo
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/event_type.jsonl
+    sync_mode: full_refresh_append
+    table: event_type
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/events.jsonl
+    sync_mode: full_refresh_append
+    table: events
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/follow_destination.jsonl
+    sync_mode: full_refresh_append
+    table: follow_destination
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/nationality.jsonl
+    sync_mode: full_refresh_append
+    table: nationality
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/personal_photo.jsonl
+    sync_mode: full_refresh_append
+    table: personal_photo
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/profile_traveller_type.jsonl
+    sync_mode: full_refresh_append
+    table: profile_traveller_type
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/roles.jsonl
+    sync_mode: full_refresh_append
+    table: roles
+  - path: s3://schemapile--github-com-lefty02w-seng302proj-1dada3299e37-bucket/trip_destination.jsonl
+    sync_mode: full_refresh_append
+    table: trip_destination
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - attend_event
+    - destination
+    - destination_request
+    - destination_traveller_type
+    - event_artists
+    - follow_artist
+    - music_genre
+    - profile
+    - profile_roles
+    - traveller_type
+    - trip
+    - type_of_events
+    - undo_stack
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: schemapile__github_com_lefty02w_seng302proj_1dada3299e37
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lefty02w_seng302proj_1dada3299e37/artist_profile.csv
+  sync_mode: full_refresh_append
+  table: artist_profile
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lefty02w_seng302proj_1dada3299e37/destination_photo.csv
+  sync_mode: full_refresh_append
+  table: destination_photo
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lefty02w_seng302proj_1dada3299e37/event_photo.csv
+  sync_mode: full_refresh_append
+  table: event_photo
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lefty02w_seng302proj_1dada3299e37/passport_country.csv
+  sync_mode: full_refresh_append
+  table: passport_country
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lefty02w_seng302proj_1dada3299e37/profile_passport_country.csv
+  sync_mode: full_refresh_append
+  table: profile_passport_country
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lefty02w_seng302proj_1dada3299e37/treasure_hunt.csv
+  sync_mode: full_refresh_append
+  table: treasure_hunt
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_lefty02w_seng302proj_1dada3299e37
+    sync_mode: full_refresh_append
+    tables:
+    - artist_country
+    - destination_change
+    - event_genres
+    - thumbnail_link
+postgres:
+  config:
+    database: schemapile__github_com_lefty02w_seng302proj_1dada3299e37
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - artist
+    - artist_genre
+    - photo
+    - profile_nationality
+    user: postgres

@@ -1,0 +1,9 @@
+column_name,column_description
+allele_id,Unique identifier for each allele.
+allele_name,Name of the HLA allele. may be NULL.
+description,Description of the allele. may be NULL.
+class,"Class of the HLA allele (e.g., Class I, Class II). always exactly one of 'Class I', 'Class II'. may be NULL."
+isotype,Isotype of the allele. may be NULL.
+sequence,Amino acid sequence of the allele. may be NULL.
+binding_site,Binding site of the allele. may be NULL.
+references,List of publications or references related to the allele. may be NULL.

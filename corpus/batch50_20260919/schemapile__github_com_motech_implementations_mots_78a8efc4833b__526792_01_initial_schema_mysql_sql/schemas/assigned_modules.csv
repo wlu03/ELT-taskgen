@@ -1,0 +1,5 @@
+column_name,column_description
+created_date,Column created_date of table assigned_modules. may be NULL.
+health_worker_id,Column health_worker_id of table assigned_modules. may be NULL.
+id,Column id of table assigned_modules.
+updated_date,Column updated_date of table assigned_modules. may be NULL.

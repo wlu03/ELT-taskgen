@@ -1,0 +1,45 @@
+column_name,column_description
+filmtitle,filmtitle of filmographyandsoundtracks (real vendored values).
+filmdescription,filmdescription of filmographyandsoundtracks (real vendored values).
+imdbid,imdbid of filmographyandsoundtracks (real vendored values).
+filmtype,filmtype of filmographyandsoundtracks (real vendored values).
+filmdirector,filmdirector of filmographyandsoundtracks (real vendored values).
+leadcast,leadcast of filmographyandsoundtracks (real vendored values). may be NULL.
+filmaffinityfilmid,filmaffinityfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+language,language of filmographyandsoundtracks (real vendored values).
+screenwriter,screenwriter of filmographyandsoundtracks (real vendored values). may be NULL.
+filmproducer,filmproducer of filmographyandsoundtracks (real vendored values). may be NULL.
+cinematographer,cinematographer of filmographyandsoundtracks (real vendored values). may be NULL.
+productioncountry,productioncountry of filmographyandsoundtracks (real vendored values).
+filmgenre,filmgenre of filmographyandsoundtracks (real vendored values).
+freebaseid,freebaseid of filmographyandsoundtracks (real vendored values). may be NULL.
+rottentomatoesid,rottentomatoesid of filmographyandsoundtracks (real vendored values). may be NULL.
+releasedate,releasedate of filmographyandsoundtracks (real vendored values).
+allmovietitleid,allmovietitleid of filmographyandsoundtracks (real vendored values). may be NULL.
+dnffilmid,dnffilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+allocinefilmid,allocinefilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+originaltitle,originaltitle of filmographyandsoundtracks (real vendored values). may be NULL.
+composer,composer of filmographyandsoundtracks (real vendored values).
+filmcolor,filmcolor of filmographyandsoundtracks (real vendored values). may be NULL.
+filmduration,filmduration of filmographyandsoundtracks (real vendored values). may be NULL.
+kinopoiskfilmid,kinopoiskfilmid of filmographyandsoundtracks (real vendored values).
+scopedkfilmid,scopedkfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+elfilmfilmid,elfilmfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+tcmmoviedatabasefilmid,tcmmoviedatabasefilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+portfilmid,portfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+csfdfilmid,csfdfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+ldifid,ldifid of filmographyandsoundtracks (real vendored values). may be NULL.
+ofdbfilmid,ofdbfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+eidrcontentid,eidrcontentid of filmographyandsoundtracks (real vendored values). may be NULL.
+moviemeterfilmid,moviemeterfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+isancode,isancode of filmographyandsoundtracks (real vendored values). may be NULL.
+lumierefilmid,lumierefilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+tmdbmovieid,tmdbmovieid of filmographyandsoundtracks (real vendored values). may be NULL.
+letterboxdfilmid,letterboxdfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+trakttvid,trakttvid of filmographyandsoundtracks (real vendored values). may be NULL.
+kinoboxfilmid,kinoboxfilmid of filmographyandsoundtracks (real vendored values).
+plexmediakey,plexmediakey of filmographyandsoundtracks (real vendored values). may be NULL.
+filmvandaagid,filmvandaagid of filmographyandsoundtracks (real vendored values). may be NULL.
+filmwebplfilmid,filmwebplfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+doubanfilmid,doubanfilmid of filmographyandsoundtracks (real vendored values). may be NULL.
+kvikmyndirfilmid,kvikmyndirfilmid of filmographyandsoundtracks (real vendored values). may be NULL.

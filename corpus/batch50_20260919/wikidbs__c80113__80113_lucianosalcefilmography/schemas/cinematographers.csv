@@ -1,0 +1,50 @@
+column_name,column_description
+name,name of cinematographers (real vendored values).
+biography,biography of cinematographers (real vendored values).
+nationality,nationality of cinematographers (real vendored values).
+birthplace,birthplace of cinematographers (real vendored values). may be NULL.
+viafid,viafid of cinematographers (real vendored values). may be NULL.
+internationalstandardnameidentifierisni,internationalstandardnameidentifierisni of cinematographers (real vendored values). may be NULL.
+imdbid,imdbid of cinematographers (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of cinematographers (real vendored values). may be NULL.
+gndid,gndid of cinematographers (real vendored values). may be NULL.
+idrefid,idrefid of cinematographers (real vendored values). may be NULL.
+placeofdeath,placeofdeath of cinematographers (real vendored values). may be NULL.
+entitytype,entitytype of cinematographers (real vendored values).
+profession,profession of cinematographers (real vendored values).
+birthdate,birthdate of cinematographers (real vendored values). may be NULL.
+deathdate,deathdate of cinematographers (real vendored values). may be NULL.
+freebaseid,freebaseid of cinematographers (real vendored values). may be NULL.
+firstname,firstname of cinematographers (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of cinematographers (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of cinematographers (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of cinematographers (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of cinematographers (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of cinematographers (real vendored values). may be NULL.
+portpersonid,portpersonid of cinematographers (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of cinematographers (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of cinematographers (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of cinematographers (real vendored values).
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of cinematographers (real vendored values). may be NULL.
+filmportalid,filmportalid of cinematographers (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of cinematographers (real vendored values). may be NULL.
+cinematografoitnameorcompanyid,cinematografoitnameorcompanyid of cinematographers (real vendored values). may be NULL.
+conorsiid,conorsiid of cinematographers (real vendored values). may be NULL.
+gender,gender of cinematographers (real vendored values).
+nlcrautid,nlcrautid of cinematographers (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of cinematographers (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of cinematographers (real vendored values). may be NULL.
+languages,languages of cinematographers (real vendored values).
+plwabnid,plwabnid of cinematographers (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of cinematographers (real vendored values).
+surname,surname of cinematographers (real vendored values). may be NULL.
+relatedcategory,relatedcategory of cinematographers (real vendored values). may be NULL.
+prabookid,prabookid of cinematographers (real vendored values). may be NULL.
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of cinematographers (real vendored values). may be NULL.
+nukatid,nukatid of cinematographers (real vendored values). may be NULL.
+cinematografoitnameorcompanyidnew,cinematografoitnameorcompanyidnew of cinematographers (real vendored values). may be NULL.
+moviewalkerpresspersonid,moviewalkerpresspersonid of cinematographers (real vendored values). may be NULL.
+ivipersonid,ivipersonid of cinematographers (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of cinematographers (real vendored values).
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of cinematographers (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of cinematographers (real vendored values). may be NULL.

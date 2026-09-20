@@ -1,0 +1,5 @@
+column_name,column_description
+created_date,Column created_date of table chw_group. may be NULL.
+id,Column id of table chw_group.
+name,Column name of table chw_group.
+updated_date,Column updated_date of table chw_group. may be NULL.

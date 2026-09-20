@@ -1,0 +1,10 @@
+column_name,column_description
+material_id,Unique identifier for each material.
+material_name,Name of the material. may be NULL.
+material_type,"Type of material (e.g., ABS, PLA, PETG). always exactly one of 'ABS', 'PLA', 'PETG'. may be NULL."
+composition,"Composition of the material (e.g., percentage of additives). may be NULL."
+manufacturer,Manufacturer of the material. may be NULL.
+supplier,Supplier of the material. may be NULL.
+cost,Cost of the material per unit. may be NULL.
+density,Density of the material. may be NULL.
+melting_point,Melting point of the material. may be NULL.

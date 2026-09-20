@@ -1,0 +1,9 @@
+column_name,column_description
+enrollment_id,Column enrollment_id of table engineering.lecturer_feedback.
+lecturer_feedback_comment,Column lecturer_feedback_comment of table engineering.lecturer_feedback.
+lecturer_feedback_department,Column lecturer_feedback_department of table engineering.lecturer_feedback.
+lecturer_feedback_id,Column lecturer_feedback_id of table engineering.lecturer_feedback.
+lecturer_feedback_timedate,Column lecturer_feedback_timedate of table engineering.lecturer_feedback.
+lecturer_id,Column lecturer_id of table engineering.lecturer_feedback.
+offering_id,Column offering_id of table engineering.lecturer_feedback.
+student_id,Column student_id of table engineering.lecturer_feedback.

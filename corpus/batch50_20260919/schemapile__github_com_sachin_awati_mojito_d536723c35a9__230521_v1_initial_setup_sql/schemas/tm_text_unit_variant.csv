@@ -1,0 +1,11 @@
+column_name,column_description
+comment,Column comment of table tm_text_unit_variant. may be NULL.
+content,Column content of table tm_text_unit_variant. may be NULL.
+content_md5,Column content_md5 of table tm_text_unit_variant. may be NULL.
+created_by_user_id,Column created_by_user_id of table tm_text_unit_variant. may be NULL.
+created_date,Column created_date of table tm_text_unit_variant. may be NULL.
+id,Column id of table tm_text_unit_variant.
+included_in_localized_file,Column included_in_localized_file of table tm_text_unit_variant. may be NULL.
+locale_id,Column locale_id of table tm_text_unit_variant. may be NULL.
+status,Column status of table tm_text_unit_variant.
+tm_text_unit_id,Column tm_text_unit_id of table tm_text_unit_variant. may be NULL.

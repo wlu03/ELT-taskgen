@@ -1,0 +1,6 @@
+column_name,column_description
+lecturer_attendance_date,Column lecturer_attendance_date of table engineering.lecturer_attendance.
+lecturer_attendance_id,Column lecturer_attendance_id of table engineering.lecturer_attendance.
+lecturer_id,Column lecturer_id of table engineering.lecturer_attendance.
+offering_id,Column offering_id of table engineering.lecturer_attendance.
+schedule_id,Column schedule_id of table engineering.lecturer_attendance.

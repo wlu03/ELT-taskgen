@@ -1,0 +1,40 @@
+column_name,column_description
+_fivetran_synced,When the record was last synced by Fivetran. may be NULL.
+account_id,The ID of the related account.
+billed_charge_local_micro,The spend for the promoted tweet on that day. may be NULL.
+clicks,"The clicks for the promoted tweet on that day. Includes clicks on the URL (shortened or regular links), profile pic, screen name, username, detail, hashtags, and likes. may be NULL."
+conversion_custom_metric,The number of conversions of type CUSTOM. Included by the `twitter_ads__conversion_fields` variable by default. may be NULL.
+conversion_custom_sale_amount,The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. may be NULL.
+conversion_purchases_metric,"Total number of purchases. The sum of post view, post engagement, and assisted purchases for both your website and mobile app. Included by the `twitter_ads__conversion_fields` variable by default. may be NULL."
+conversion_purchases_sale_amount,The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. may be NULL.
+conversion_sign_ups_metric,"Total number of sign ups. This is the same as the sum of post views, post engagements and assisted sign ups. This is also the sum of website and mobile app sign ups. may be NULL."
+conversion_sign_ups_sale_amount,The sale amount corresponding to sign ups. may be NULL.
+date,The date of the performance.
+impressions,The impressions for the promoted tweet on that day.  This is the number of users who see a Promoted Ad either in their home timeline or search results. may be NULL.
+mobile_conversion_add_to_carts_assisted,Number of **assisted** (engaged with ad but did not immediately convert) mobile conversions of type ADD_TO_CART. may be NULL.
+mobile_conversion_add_to_carts_post_engagement,Number of **post-engagement** mobile conversions of type ADD_TO_CART. may be NULL.
+mobile_conversion_add_to_carts_post_view,Number of **post-view** mobile conversions of type ADD_TO_CART. may be NULL.
+mobile_conversion_add_to_carts_sale_amount,The sale amount corresponding to mobile conversions of type ADD_TO_CART. may be NULL.
+mobile_conversion_add_to_wishlists_assisted,Number of **assisted** (engaged with ad but did not immediately convert) mobile conversions of type ADD_TO_WISHLIST. may be NULL.
+mobile_conversion_add_to_wishlists_post_engagement,Number of **post-engagement** mobile conversions of type ADD_TO_WISHLIST. may be NULL.
+mobile_conversion_add_to_wishlists_post_view,Number of **post-view** mobile conversions of type ADD_TO_WISHLIST. may be NULL.
+mobile_conversion_add_to_wishlists_sale_amount,The sale amount corresponding to mobile conversions of type ADD_TO_WISHLIST. may be NULL.
+mobile_conversion_checkouts_initiated_assisted,Number of **assisted** (engaged with ad but did not immediately convert) mobile conversions of type CHECKOUT_INITIATED. may be NULL.
+mobile_conversion_checkouts_initiated_post_engagement,Number of **post-engagement** mobile conversions of type CHECKOUT_INITIATED. may be NULL.
+mobile_conversion_checkouts_initiated_post_view,Number of **post-view** mobile conversions of type CHECKOUT_INITIATED. may be NULL.
+mobile_conversion_checkouts_initiated_sale_amount,The sale amount corresponding to mobile conversions of type CHECKOUT_INITIATED. may be NULL.
+mobile_conversion_content_views_assisted,Number of **assisted** (engaged with ad but did not immediately convert) mobile conversions of type CONTENT_VIEW. may be NULL.
+mobile_conversion_content_views_post_engagement,Number of **post-engagement** mobile conversions of type CONTENT_VIEW. may be NULL.
+mobile_conversion_content_views_post_view,Number of **post-view** mobile conversions of type CONTENT_VIEW. may be NULL.
+mobile_conversion_content_views_sale_amount,The sale amount corresponding to mobile conversions of type CONTENT_VIEW. may be NULL.
+mobile_conversion_payment_info_additions_assisted,Number of **assisted** (engaged with ad but did not immediately convert) mobile conversions of type PAYMENT_INFO_ADDITION. may be NULL.
+mobile_conversion_payment_info_additions_post_engagement,Number of **post-engagement** mobile conversions of type PAYMENT_INFO_ADDITION. may be NULL.
+mobile_conversion_payment_info_additions_post_view,Number of **post-view** mobile conversions of type PAYMENT_INFO_ADDITION. may be NULL.
+mobile_conversion_payment_info_additions_sale_amount,The sale amount corresponding to mobile conversions of type PAYMENT_INFO_ADDITION. may be NULL.
+mobile_conversion_searches_assisted,Number of **assisted** (engaged with ad but did not immediately convert) mobile conversions of type SEARCH. may be NULL.
+mobile_conversion_searches_post_engagement,Number of **post-engagement** mobile conversions of type SEARCH. may be NULL.
+mobile_conversion_searches_post_view,Number of **post-view** mobile conversions of type SEARCH. may be NULL.
+mobile_conversion_searches_sale_amount,The sale amount corresponding to mobile conversions of type SEARCH. may be NULL.
+placement,"Where on Twitter the ad is being displayed. Possible values include 'ALL_ON_TWITTER', 'PUBLISHER_NETWORK', 'TWITTER_PROFILE', 'TWITTER_SEARCH', 'TWITTER_TIMELINE', and 'TAP_*', which are more granular options for `PUBLISHER_NETWORK`."
+promoted_tweet_id,The ID of the related promoted tweet.
+url_clicks,The url clicks for the promoted tweet on that day. may be NULL.

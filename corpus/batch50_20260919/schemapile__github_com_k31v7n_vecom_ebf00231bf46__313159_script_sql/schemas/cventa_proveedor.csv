@@ -1,0 +1,16 @@
+column_name,column_description
+activo,Column activo of table cventa.proveedor.
+contacto,Column contacto of table cventa.proveedor. may be NULL.
+credito_contado,Column credito_contado of table cventa.proveedor.
+dias_credito,Column dias_credito of table cventa.proveedor.
+direccion,Column direccion of table cventa.proveedor.
+empresa,Column empresa of table cventa.proveedor.
+fecha_sis,Column fecha_sis of table cventa.proveedor.
+nit,Column nit of table cventa.proveedor.
+nombre,Column nombre of table cventa.proveedor.
+proveedor,Column proveedor of table cventa.proveedor.
+proveedor_clasificacion,Column proveedor_clasificacion of table cventa.proveedor.
+proveedor_tipo,Column proveedor_tipo of table cventa.proveedor.
+razon_social,Column razon_social of table cventa.proveedor.
+telefono,Column telefono of table cventa.proveedor.
+usuario,Column usuario of table cventa.proveedor.

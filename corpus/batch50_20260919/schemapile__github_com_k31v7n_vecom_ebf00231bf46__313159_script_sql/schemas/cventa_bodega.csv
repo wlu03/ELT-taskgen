@@ -1,0 +1,7 @@
+column_name,column_description
+bodega,Column bodega of table cventa.bodega.
+bodega_tipo,Column bodega_tipo of table cventa.bodega.
+codigo,Column codigo of table cventa.bodega. may be NULL.
+empresa,Column empresa of table cventa.bodega.
+nombre,Column nombre of table cventa.bodega.
+ubicacion,Column ubicacion of table cventa.bodega. may be NULL.

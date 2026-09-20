@@ -1,0 +1,6 @@
+column_name,column_description
+buffered_minus_current,Column buffered_minus_current of table video_buffered_play_time_sample. may be NULL.
+current_video_playtime,Column current_video_playtime of table video_buffered_play_time_sample. may be NULL.
+id,Column id of table video_buffered_play_time_sample.
+logged_at,Column logged_at of table video_buffered_play_time_sample. may be NULL.
+video_session_id,Column video_session_id of table video_buffered_play_time_sample.

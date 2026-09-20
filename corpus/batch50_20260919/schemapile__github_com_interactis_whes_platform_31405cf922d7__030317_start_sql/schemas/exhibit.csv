@@ -1,0 +1,7 @@
+column_name,column_description
+active,Column active of table exhibit. may be NULL.
+content_id,Column content_id of table exhibit. may be NULL.
+created_at,Column created_at of table exhibit. may be NULL.
+id,Column id of table exhibit.
+type,Column type of table exhibit. may be NULL.
+updated_at,Column updated_at of table exhibit. may be NULL.

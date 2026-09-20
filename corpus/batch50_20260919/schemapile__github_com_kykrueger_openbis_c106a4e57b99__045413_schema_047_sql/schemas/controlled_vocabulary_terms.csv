@@ -1,0 +1,9 @@
+column_name,column_description
+code,Column CODE of table CONTROLLED_VOCABULARY_TERMS.
+covo_id,Column COVO_ID of table CONTROLLED_VOCABULARY_TERMS.
+description,Column DESCRIPTION of table CONTROLLED_VOCABULARY_TERMS. may be NULL.
+id,Column ID of table CONTROLLED_VOCABULARY_TERMS.
+label,Column LABEL of table CONTROLLED_VOCABULARY_TERMS. may be NULL.
+ordinal,Column ORDINAL of table CONTROLLED_VOCABULARY_TERMS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table CONTROLLED_VOCABULARY_TERMS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table CONTROLLED_VOCABULARY_TERMS.

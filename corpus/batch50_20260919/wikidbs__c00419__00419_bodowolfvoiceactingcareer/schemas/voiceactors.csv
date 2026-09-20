@@ -1,0 +1,30 @@
+column_name,column_description
+actorname,actorname of voiceactors (real vendored values).
+actordescription,actordescription of voiceactors (real vendored values).
+viafid,viafid of voiceactors (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of voiceactors (real vendored values). may be NULL.
+primaryoccupation,primaryoccupation of voiceactors (real vendored values).
+musicbrainzartistid,musicbrainzartistid of voiceactors (real vendored values). may be NULL.
+gndid,gndid of voiceactors (real vendored values). may be NULL.
+imdbid,imdbid of voiceactors (real vendored values). may be NULL.
+entitytype,entitytype of voiceactors (real vendored values).
+birthplace,birthplace of voiceactors (real vendored values). may be NULL.
+birthdate,birthdate of voiceactors (real vendored values).
+freebaseid,freebaseid of voiceactors (real vendored values). may be NULL.
+nationality,nationality of voiceactors (real vendored values).
+firstname,firstname of voiceactors (real vendored values).
+discogsartistid,discogsartistid of voiceactors (real vendored values). may be NULL.
+languages,languages of voiceactors (real vendored values).
+filmportalid,filmportalid of voiceactors (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of voiceactors (real vendored values). may be NULL.
+nativename,nativename of voiceactors (real vendored values). may be NULL.
+surname,surname of voiceactors (real vendored values). may be NULL.
+gender,gender of voiceactors (real vendored values).
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of voiceactors (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of voiceactors (real vendored values). may be NULL.
+deutschesynchronkarteidubbingvoiceactorid,deutschesynchronkarteidubbingvoiceactorid of voiceactors (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of voiceactors (real vendored values). may be NULL.
+deutschesynchronkarteipersonid,deutschesynchronkarteipersonid of voiceactors (real vendored values).
+kinoboxpersonid,kinoboxpersonid of voiceactors (real vendored values). may be NULL.
+googleknowledgegraphid,googleknowledgegraphid of voiceactors (real vendored values). may be NULL.
+myanimelistpeopleid,myanimelistpeopleid of voiceactors (real vendored values). may be NULL.

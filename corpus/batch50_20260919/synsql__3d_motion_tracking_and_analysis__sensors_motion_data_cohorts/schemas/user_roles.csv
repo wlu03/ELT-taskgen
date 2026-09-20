@@ -1,0 +1,3 @@
+column_name,column_description
+user_id,Foreign key referencing the users table.
+role_id,Foreign key referencing the roles table. may be NULL.

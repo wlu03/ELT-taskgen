@@ -1,0 +1,28 @@
+column_name,column_description
+fullname,fullname of danishfilmindustrypersonnel (real vendored values).
+biography,biography of danishfilmindustrypersonnel (real vendored values). may be NULL.
+birthdate,birthdate of danishfilmindustrypersonnel (real vendored values). may be NULL.
+deathdate,deathdate of danishfilmindustrypersonnel (real vendored values). may be NULL.
+entitytype,entitytype of danishfilmindustrypersonnel (real vendored values).
+birthplace,birthplace of danishfilmindustrypersonnel (real vendored values). may be NULL.
+deathplace,deathplace of danishfilmindustrypersonnel (real vendored values). may be NULL.
+profession,profession of danishfilmindustrypersonnel (real vendored values). may be NULL.
+gender,gender of danishfilmindustrypersonnel (real vendored values).
+imdbid,imdbid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+nationality,nationality of danishfilmindustrypersonnel (real vendored values). may be NULL.
+firstname,firstname of danishfilmindustrypersonnel (real vendored values). may be NULL.
+viafid,viafid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of danishfilmindustrypersonnel (real vendored values).
+kinopoiskpersonid,kinopoiskpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+danskefilmpersonid,danskefilmpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+lastname,lastname of danishfilmindustrypersonnel (real vendored values).
+gravsteddkid,gravsteddkid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+danskfilmogtvpersonid,danskfilmogtvpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+freebaseid,freebaseid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of danishfilmindustrypersonnel (real vendored values). may be NULL.

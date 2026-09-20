@@ -1,0 +1,9 @@
+column_name,column_description
+ag_id_grantee,Column AG_ID_GRANTEE of table ROLE_ASSIGNMENTS. may be NULL.
+dbin_id,Column DBIN_ID of table ROLE_ASSIGNMENTS. may be NULL.
+grou_id,Column GROU_ID of table ROLE_ASSIGNMENTS. may be NULL.
+id,Column ID of table ROLE_ASSIGNMENTS.
+pers_id_grantee,Column PERS_ID_GRANTEE of table ROLE_ASSIGNMENTS. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table ROLE_ASSIGNMENTS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table ROLE_ASSIGNMENTS.
+role_code,Column ROLE_CODE of table ROLE_ASSIGNMENTS.

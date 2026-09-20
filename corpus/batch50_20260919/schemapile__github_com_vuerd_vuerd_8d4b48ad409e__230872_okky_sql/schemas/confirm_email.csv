@@ -1,0 +1,7 @@
+column_name,column_description
+date_expired,Column date_expired of table confirm_email.
+email,Column email of table confirm_email.
+id,Column id of table confirm_email.
+secured_key,Column secured_key of table confirm_email.
+user_id,Column user_id of table confirm_email.
+version,Column version of table confirm_email.

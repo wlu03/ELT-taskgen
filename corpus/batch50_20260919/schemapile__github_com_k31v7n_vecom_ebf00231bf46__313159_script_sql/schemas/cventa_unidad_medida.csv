@@ -1,0 +1,4 @@
+column_name,column_description
+codigo,Column codigo of table cventa.unidad_medida.
+nombre,Column nombre of table cventa.unidad_medida.
+unidad_medida,Column unidad_medida of table cventa.unidad_medida.

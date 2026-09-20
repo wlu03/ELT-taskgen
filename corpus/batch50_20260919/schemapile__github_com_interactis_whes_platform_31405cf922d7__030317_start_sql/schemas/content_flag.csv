@@ -1,0 +1,6 @@
+column_name,column_description
+content_id,Column content_id of table content_flag. may be NULL.
+created_at,Column created_at of table content_flag. may be NULL.
+flag_id,Column flag_id of table content_flag. may be NULL.
+id,Column id of table content_flag.
+updated_at,Column updated_at of table content_flag. may be NULL.

@@ -1,0 +1,10 @@
+column_name,column_description
+version_id,Unique identifier for each version of the object.
+object_id,ID of the object being versioned. may be NULL.
+version_number,Version number of the object. may be NULL.
+version_details,Details of the changes made in this version. may be NULL.
+versioned_at,Date and time the version was created. may be NULL.
+version_type,"Type of version (e.g., major, minor, patch). always exactly one of 'major', 'minor', 'patch'. may be NULL."
+created_by,ID of the user who created the version. may be NULL.
+ip_address,IP address from which the version was created. may be NULL.
+user_agent,User agent string of the device used to create the version. may be NULL.

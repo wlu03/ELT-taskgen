@@ -1,0 +1,7 @@
+column_name,column_description
+create_date,Column create_date of table test_step_execution.
+creator_id,Column creator_id of table test_step_execution.
+id,Column id of table test_step_execution.
+status_id,Column status_id of table test_step_execution.
+test_plan_sprint_case_id,Column test_plan_sprint_case_id of table test_step_execution.
+test_step_id,Column test_step_id of table test_step_execution.

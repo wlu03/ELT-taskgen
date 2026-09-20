@@ -1,0 +1,7 @@
+column_name,column_description
+sensor_id,Unique identifier for each sensor.
+sensor_name,Name of the sensor. may be NULL.
+sensor_type,"Type of the sensor (e.g., camera, LIDAR). always exactly one of 'camera', 'LIDAR'. may be NULL."
+sensor_description,Description of the sensor. may be NULL.
+sensor_accuracy,Accuracy of the sensor. may be NULL.
+sensor_version,Version of the sensor. may be NULL.

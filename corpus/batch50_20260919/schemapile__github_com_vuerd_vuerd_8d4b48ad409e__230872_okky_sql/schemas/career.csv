@@ -1,0 +1,5 @@
+column_name,column_description
+company_id,Column company_id of table career.
+id,Column id of table career.
+resume_id,Column resume_id of table career.
+version,Column version of table career.

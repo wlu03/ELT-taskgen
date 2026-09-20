@@ -1,0 +1,11 @@
+column_name,column_description
+common_name,Column common_name of table user. may be NULL.
+created_by_user_id,Column created_by_user_id of table user. may be NULL.
+created_date,Column created_date of table user. may be NULL.
+enabled,Column enabled of table user. may be NULL.
+given_name,Column given_name of table user. may be NULL.
+id,Column id of table user.
+last_modified_date,Column last_modified_date of table user. may be NULL.
+password,Column password of table user. may be NULL.
+surname,Column surname of table user. may be NULL.
+username,Column username of table user.

@@ -1,0 +1,23 @@
+column_name,column_description
+filmtitle,filmtitle of filmographyandcontributions (real vendored values).
+filmdescription,filmdescription of filmographyandcontributions (real vendored values).
+imdbid,imdbid of filmographyandcontributions (real vendored values). may be NULL.
+filmtype,filmtype of filmographyandcontributions (real vendored values).
+releasedate,releasedate of filmographyandcontributions (real vendored values).
+animatorrufilmid,animatorrufilmid of filmographyandcontributions (real vendored values).
+productioncompany,productioncompany of filmographyandcontributions (real vendored values).
+countryoforigin,countryoforigin of filmographyandcontributions (real vendored values).
+kinopoiskfilmid,kinopoiskfilmid of filmographyandcontributions (real vendored values). may be NULL.
+filmdirector,filmdirector of filmographyandcontributions (real vendored values).
+screenwriter,screenwriter of filmographyandcontributions (real vendored values). may be NULL.
+voiceactor,voiceactor of filmographyandcontributions (real vendored values).
+animationmethod,animationmethod of filmographyandcontributions (real vendored values).
+originallanguage,originallanguage of filmographyandcontributions (real vendored values). may be NULL.
+productiondesigner,productiondesigner of filmographyandcontributions (real vendored values). may be NULL.
+musiccomposer,musiccomposer of filmographyandcontributions (real vendored values). may be NULL.
+lumierefilmid,lumierefilmid of filmographyandcontributions (real vendored values). may be NULL.
+bigcartoondatabaseid,bigcartoondatabaseid of filmographyandcontributions (real vendored values). may be NULL.
+defafilmdatabaseiddeprecated,defafilmdatabaseiddeprecated of filmographyandcontributions (real vendored values). may be NULL.
+filmduration,filmduration of filmographyandcontributions (real vendored values). may be NULL.
+cinematographer,cinematographer of filmographyandcontributions (real vendored values). may be NULL.
+googleknowledgegraphid,googleknowledgegraphid of filmographyandcontributions (real vendored values). may be NULL.

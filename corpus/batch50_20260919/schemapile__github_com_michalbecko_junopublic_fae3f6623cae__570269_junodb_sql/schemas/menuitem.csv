@@ -1,0 +1,8 @@
+column_name,column_description
+glyphicon,Column glyphicon of table menuitem. may be NULL.
+id,Column id of table menuitem.
+link,Column link of table menuitem. may be NULL.
+menuitem_id,Column menuitem_id of table menuitem. may be NULL.
+name,Column name of table menuitem. may be NULL.
+privilege_id,Column privilege_id of table menuitem.
+sort,Column sort of table menuitem.

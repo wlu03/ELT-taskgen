@@ -1,0 +1,40 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    snowflake_definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+    username: ''
+    workspace_id: ''
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - filmeditor
+flat_files:
+- format: csv
+  path: http://elt-files:8080/wikidbs__c40262__40262_erikwittrupwillumsenfilmography/danishfilmindustrypersonnel.csv
+  sync_mode: full_refresh_append
+  table: danishfilmindustrypersonnel
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: wikidbs__c40262__40262_erikwittrupwillumsenfilmography
+    sync_mode: full_refresh_append
+    tables:
+    - filmindustryprofessionals
+    - filmographycastdetails
+    - filmographydetails
+snowflake:
+  config:
+    account: ''
+    database: wikidbs__c40262__40262_erikwittrupwillumsenfilmography
+    password: ''
+    role: ''
+    schema: AIRBYTE_SCHEMA
+    username: ''
+    warehouse: ''

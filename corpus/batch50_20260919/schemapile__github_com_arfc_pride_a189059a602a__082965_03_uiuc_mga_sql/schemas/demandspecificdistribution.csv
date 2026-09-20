@@ -1,0 +1,6 @@
+column_name,column_description
+dds,Column dds of table DemandSpecificDistribution. may be NULL.
+dds_notes,Column dds_notes of table DemandSpecificDistribution. may be NULL.
+demand_name,Column demand_name of table DemandSpecificDistribution.
+season_name,Column season_name of table DemandSpecificDistribution.
+time_of_day_name,Column time_of_day_name of table DemandSpecificDistribution.

@@ -1,0 +1,4 @@
+column_name,column_description
+lengthseconds,Column lengthSeconds of table Video.
+thumbnailpictureid,Column thumbnailPictureID of table Video. may be NULL.
+videoid,Column videoID of table Video.

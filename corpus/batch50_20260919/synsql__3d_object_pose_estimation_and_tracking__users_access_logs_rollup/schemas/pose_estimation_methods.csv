@@ -1,0 +1,7 @@
+column_name,column_description
+method_id,Unique identifier for each method.
+method_name,Name of the pose estimation method. may be NULL.
+description,Description of the method. may be NULL.
+method_type,"Type of the method (e.g., neural network, traditional algorithm). always exactly one of 'neural network', 'traditional algorithm'. may be NULL."
+method_accuracy,Average accuracy of the method. may be NULL.
+method_complexity,"Complexity of the method (e.g., low, medium, high). always exactly one of 'low', 'medium', 'high'. may be NULL."

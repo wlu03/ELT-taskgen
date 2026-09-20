@@ -1,0 +1,10 @@
+column_name,column_description
+basename,Column basename of table files. may be NULL.
+created_at,Column created_at of table files. may be NULL.
+device_id,Column device_id of table files. may be NULL.
+error_info,Column error_info of table files. may be NULL.
+folder,Column folder of table files. may be NULL.
+hostview_version,Column hostview_version of table files. may be NULL.
+id,Column id of table files.
+status,Column status of table files. may be NULL.
+updated_at,Column updated_at of table files. may be NULL.

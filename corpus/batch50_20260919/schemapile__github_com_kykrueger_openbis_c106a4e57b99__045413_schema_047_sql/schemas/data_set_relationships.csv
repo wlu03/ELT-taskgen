@@ -1,0 +1,3 @@
+column_name,column_description
+data_id_child,Column DATA_ID_CHILD of table DATA_SET_RELATIONSHIPS.
+data_id_parent,Column DATA_ID_PARENT of table DATA_SET_RELATIONSHIPS.

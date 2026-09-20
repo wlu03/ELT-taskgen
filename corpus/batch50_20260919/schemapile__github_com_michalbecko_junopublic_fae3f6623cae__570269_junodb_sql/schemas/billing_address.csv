@@ -1,0 +1,10 @@
+column_name,column_description
+city,Column city of table billing_address. may be NULL.
+company_name,Column company_name of table billing_address. may be NULL.
+dic,Column dic of table billing_address. may be NULL.
+icdph,Column icdph of table billing_address. may be NULL.
+ico,Column ico of table billing_address. may be NULL.
+id,Column id of table billing_address.
+psc,Column psc of table billing_address. may be NULL.
+state,Column state of table billing_address. may be NULL.
+street,Column street of table billing_address. may be NULL.

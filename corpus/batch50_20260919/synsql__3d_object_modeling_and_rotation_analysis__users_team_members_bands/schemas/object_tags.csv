@@ -1,0 +1,5 @@
+column_name,column_description
+tag_id,Unique identifier for each tag.
+object_id,ID of the object the tag is assigned to. may be NULL.
+tag_name,Name of the tag. may be NULL.
+created_at,Date and time the tag was created. may be NULL.

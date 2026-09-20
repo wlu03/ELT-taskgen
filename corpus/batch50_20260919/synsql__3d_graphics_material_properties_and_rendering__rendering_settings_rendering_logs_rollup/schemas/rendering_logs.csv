@@ -1,0 +1,12 @@
+column_name,column_description
+log_id,Unique identifier for each rendering log.
+rendering_id,ID of the rendering configuration used. may be NULL.
+scene_id,ID of the scene that was rendered. may be NULL.
+object_count,Number of objects in the scene. may be NULL.
+material_count,Number of materials used in the scene. may be NULL.
+lighting_count,Number of lighting configurations used in the scene. may be NULL.
+camera_used,ID of the camera used for rendering. may be NULL.
+start_time,Start time of the rendering process. may be NULL.
+end_time,End time of the rendering process. may be NULL.
+performance_data,"Performance data (e.g., rendering time, memory usage). always exactly one of 'rendering time', 'memory usage'. may be NULL."
+performance_metrics,"Detailed performance metrics (e.g., rendering time, memory usage, CPU/GPU usage). always exactly one of 'rendering time', 'memory usage', 'CPU/GPU usage'. may be NULL."

@@ -1,0 +1,10 @@
+column_name,column_description
+cvte_id,Column CVTE_ID of table EXPERIMENT_PROPERTIES. may be NULL.
+etpt_id,Column ETPT_ID of table EXPERIMENT_PROPERTIES.
+expe_id,Column EXPE_ID of table EXPERIMENT_PROPERTIES.
+id,Column ID of table EXPERIMENT_PROPERTIES.
+mate_prop_id,Column MATE_PROP_ID of table EXPERIMENT_PROPERTIES. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table EXPERIMENT_PROPERTIES. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table EXPERIMENT_PROPERTIES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table EXPERIMENT_PROPERTIES.
+value,Column VALUE of table EXPERIMENT_PROPERTIES. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+cdr_id,Column cdr_id of table call_detail_record_data.
+name,Column name of table call_detail_record_data.
+value,Column value of table call_detail_record_data. may be NULL.

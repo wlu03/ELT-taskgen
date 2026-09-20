@@ -1,0 +1,8 @@
+column_name,column_description
+causale,Column causale of table bando_borsa. may be NULL.
+data_emissione,Column data_emissione of table bando_borsa.
+numero_bando_borsa,Column numero_bando_borsa of table bando_borsa.
+numero_borse,Column numero_borse of table bando_borsa.
+scadenza,Column scadenza of table bando_borsa.
+tipo,Column tipo of table bando_borsa. may be NULL.
+valore,Column valore of table bando_borsa.

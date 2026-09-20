@@ -1,0 +1,60 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://dbt--twitter-ads--twitter-ads--account-report-10fe7453-bucket/campaign_history.jsonl
+    sync_mode: full_refresh_append
+    table: campaign_history
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - line_item_keywords_report
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: dbt__twitter_ads__twitter_ads__account_report_10fe7453
+    sync_mode: full_refresh_append
+    tables:
+    - account_history
+    - promoted_tweet_history
+    - promoted_tweet_report
+    - tweet
+postgres:
+  config:
+    database: dbt__twitter_ads__twitter_ads__account_report_10fe7453
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - line_item_history
+    user: postgres
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: dbt__twitter_ads__twitter_ads__account_report_10fe7453
+    secret_access_key: ''
+    username: ''

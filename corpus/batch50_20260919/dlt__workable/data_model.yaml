@@ -1,0 +1,335 @@
+models:
+- columns:
+  - description: Identifier of the jobs row. One row per value.
+    name: parent_key
+    type: bigint
+  - description: job_shortcode of the jobs row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest stage_position itself; 0 when the parent has no jobs_stages rows, and 0 when none of its rows carries a stage_position value.
+    name: top_measure
+    type: integer
+  - description: 'How many jobs_stages rows are tied at that largest stage_position. 1 when exactly one row carries that largest stage_position; 0 when there are no rows or when none of the rows carries a stage_position value; a row with no stage_position value never ties: only a row whose stage_position value equals the largest value among the parent''s rows holds the maximum, so the winning row of a parent whose rows all lack a value — the row the tie-break alone selects — is not counted here.'
+    name: tied_count
+    type: bigint
+  - description: 'Number of jobs_stages rows for this jobs row; 0 when there are none. Every linked jobs_stages row counts, whether or not it carries a stage_position value. A jobs row kept with no jobs_stages row reports 0 here, never 1: its placeholder holds no jobs_stages row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of stage_position over all of them; 0 when the parent has no jobs_stages rows, and 0 when none of its rows carries a stage_position value (rows with no stage_position value add nothing).
+    name: total_measure
+    type: integer
+  - description: The stage_slug of the jobs_stages row with the LARGEST stage_position for this jobs row. Ties in stage_position are broken by taking the SMALLEST stage_slug under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) — a row with no stage_slug value sorts after every labelled row. A row with no stage_position value still ranks, after every row that has one, so a parent holding at least one jobs_stages row always has a winning row — when NONE of its rows carries a stage_position value the winner is the one the tie-break alone selects, not the no-rows default. The literal '(none)' when the parent has no jobs_stages rows at all, and '(none)' when the winning row has no stage_slug value.
+    name: top_label
+    type: text
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no jobs_stages rows, or none of its rows carries a stage_position value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a stage_position value equal to the largest stage_position value among the parent''s rows; a row with no stage_position value never holds the maximum. So a parent whose jobs_stages rows all lack a stage_position value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label names.'
+    name: tie_state
+    type: text
+  description: 'Per-jobs extremes over extracted jobs_stages records: WHICH record is largest, not how large it is.'
+  grain: One row per jobs (_jobs_surrogate_id), INCLUDING jobs rows with no linked jobs_stages rows.
+  key_columns:
+  - parent_key
+  name: jobs_stages_top
+  source_relationships:
+  - child_columns:
+    - _candidates_id
+    child_table: candidates_activities
+    parent_columns:
+    - id
+    parent_table: candidates
+    required: true
+  - child_columns:
+    - _candidates_id
+    child_table: candidates_offer
+    parent_columns:
+    - id
+    parent_table: candidates
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_activities
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_application_form
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_custom_attributes
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_members
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_questions
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_recruiters
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_stages
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  transformation:
+    steps:
+    - description: Read source table jobs.
+      operation: source
+      order: 1
+      source_inputs:
+      - jobs
+    - description: Read source table jobs_stages.
+      operation: source
+      order: 2
+      source_inputs:
+      - jobs_stages
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per jobs row, keyed by _jobs_surrogate_id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - jobs
+    - carried_fields:
+      - _jobs_id
+      - _jobs_surrogate_id
+      condition:
+        public_identifiers:
+        - jobs_stages
+        - _jobs_id
+        - parent_key
+      description: 'Bring in jobs_stages: a jobs row with no jobs_stages rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - jobs_stages
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest stage_slug under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) (a row with no stage_slug value sorts after every row that has one), and take top_label from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows. For top_measure, total_measure, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no jobs_stages rows, or none of its rows carries a stage_position value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a stage_position value equal to the largest stage_position value among the parent''s rows; a row with no stage_position value never holds the maximum. So a parent whose jobs_stages rows all lack a stage_position value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label names.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12
+- columns:
+  - description: jobs primary key column '_jobs_surrogate_id'
+    name: _jobs_surrogate_id
+    type: bigint
+  - description: number of 'jobs_activities' records extracted for this 'jobs' (0 when none)
+    name: jobs_activities_count
+    type: bigint
+  description: one row per 'jobs' record extracted from the API
+  grain: one row per jobs (_jobs_surrogate_id)
+  key_columns:
+  - _jobs_surrogate_id
+  name: dim_jobs
+  source_relationships:
+  - child_columns:
+    - _candidates_id
+    child_table: candidates_activities
+    parent_columns:
+    - id
+    parent_table: candidates
+    required: true
+  - child_columns:
+    - _candidates_id
+    child_table: candidates_offer
+    parent_columns:
+    - id
+    parent_table: candidates
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_activities
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_application_form
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_custom_attributes
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_members
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_questions
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_recruiters
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - _jobs_id
+    child_table: jobs_stages
+    parent_columns:
+    - _jobs_surrogate_id
+    parent_table: jobs
+    required: true
+  transformation:
+    steps:
+    - description: Read source table jobs.
+      operation: source
+      order: 1
+      source_inputs:
+      - jobs
+    - description: Read source table jobs_activities.
+      operation: source
+      order: 2
+      source_inputs:
+      - jobs_activities
+    - carried_fields:
+      - _jobs_surrogate_id
+      description: Form the mart key columns _jobs_surrogate_id from source table jobs.
+      operation: derive
+      order: 3
+      source_inputs:
+      - jobs
+    - carried_fields:
+      - _jobs_surrogate_id
+      - _jobs_id
+      condition:
+        public_identifiers:
+        - jobs_activities
+        - _jobs_id
+        - _jobs_surrogate_id
+      description: 'Bring in jobs_activities: every jobs record appears whether or not it has matching jobs_activities records.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - jobs_activities
+    - carried_fields:
+      - _jobs_surrogate_id
+      - jobs_activities_count
+      description: One output row per _jobs_surrogate_id, reporting jobs_activities_count for that row's matching rows.
+      operation: aggregate
+      order: 5
+    - carried_fields:
+      - _jobs_surrogate_id
+      - jobs_activities_count
+      description: Name the mart columns.
+      operation: derive
+      order: 6
+    - carried_fields:
+      - _jobs_surrogate_id
+      description: 'Deterministic output order: sort by _jobs_surrogate_id.'
+      operation: tie_break
+      order: 7

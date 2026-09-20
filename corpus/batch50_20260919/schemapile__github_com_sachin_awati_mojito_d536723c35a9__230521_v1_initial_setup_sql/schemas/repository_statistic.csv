@@ -1,0 +1,10 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table repository_statistic. may be NULL.
+created_date,Column created_date of table repository_statistic. may be NULL.
+id,Column id of table repository_statistic.
+last_modified_date,Column last_modified_date of table repository_statistic. may be NULL.
+uncommented_text_unit_count,Column uncommented_text_unit_count of table repository_statistic. may be NULL.
+unused_text_unit_count,Column unused_text_unit_count of table repository_statistic. may be NULL.
+unused_text_unit_word_count,Column unused_text_unit_word_count of table repository_statistic. may be NULL.
+used_text_unit_count,Column used_text_unit_count of table repository_statistic. may be NULL.
+used_text_unit_word_count,Column used_text_unit_word_count of table repository_statistic. may be NULL.

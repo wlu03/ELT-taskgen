@@ -1,0 +1,6 @@
+column_name,column_description
+type_id,Unique identifier for each type.
+type_name,Name of the type. may be NULL.
+created_at,Date and time when the type was created. may be NULL.
+updated_at,Date and time when the type was last updated. may be NULL.
+description,Detailed description of the type. may be NULL.

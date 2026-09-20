@@ -1,0 +1,11 @@
+column_name,column_description
+asset_id,Column asset_id of table tm_text_unit.
+comment,Column comment of table tm_text_unit. may be NULL.
+content,Column content of table tm_text_unit. may be NULL.
+content_md5,Column content_md5 of table tm_text_unit. may be NULL.
+created_by_user_id,Column created_by_user_id of table tm_text_unit. may be NULL.
+created_date,Column created_date of table tm_text_unit. may be NULL.
+id,Column id of table tm_text_unit.
+md5,Column md5 of table tm_text_unit. may be NULL.
+name,Column name of table tm_text_unit. may be NULL.
+tm_id,Column tm_id of table tm_text_unit. may be NULL.

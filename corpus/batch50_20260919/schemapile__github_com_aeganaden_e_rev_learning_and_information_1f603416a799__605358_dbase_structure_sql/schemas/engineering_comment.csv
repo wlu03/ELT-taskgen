@@ -1,0 +1,5 @@
+column_name,column_description
+comment_content,Column comment_content of table engineering.comment.
+comment_id,Column comment_id of table engineering.comment.
+comment_user_id,Column comment_user_id of table engineering.comment.
+courseware_question_id,Column courseware_question_id of table engineering.comment.

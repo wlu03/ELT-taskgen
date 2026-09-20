@@ -1,0 +1,7 @@
+column_name,column_description
+article_id,Column article_id of table content_vote.
+content_id,Column content_id of table content_vote.
+date_created,Column date_created of table content_vote.
+id,Column id of table content_vote.
+point,Column point of table content_vote.
+voter_id,Column voter_id of table content_vote.

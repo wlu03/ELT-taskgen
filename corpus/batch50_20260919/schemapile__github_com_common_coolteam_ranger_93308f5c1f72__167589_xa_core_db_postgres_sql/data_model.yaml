@@ -1,0 +1,2717 @@
+models:
+- columns:
+  - description: Identifier of the x_user row. One row per value.
+    name: parent_key
+    type: bigint
+  - description: descr of the x_user row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: 'Number of x_policy_item_user_perm rows for this x_user row; 0 when there are none. Every linked x_policy_item_user_perm row counts, whether or not it carries a sort_order value. A x_user row kept with no x_policy_item_user_perm row reports 0 here, never 1: its placeholder holds no x_policy_item_user_perm row to count.'
+    name: event_count
+    type: bigint
+  - description: Sum of sort_order over all matching x_policy_item_user_perm rows; 0 when there are no rows and when none of those rows carries an sort_order value; a row with no sort_order value adds nothing, so a group with some values sums the values it has.
+    name: lifetime_amount
+    type: integer
+  - description: 'id of the row with the latest create_time; ties take the smallest id. It is 0 when there are no rows. Every x_policy_item_user_perm row of the x_user row ranks, whether or not it carries a sort_order value: the latest create_time wins even when that row''s sort_order is missing.'
+    name: latest_row_id
+    type: bigint
+  - description: sort_order from that same latest row; 0 when there are no rows or when the winning value is missing.
+    name: latest_amount
+    type: integer
+  - description: guid from that same latest row; '(none)' when there are no rows or when the winning value is missing.
+    name: latest_label
+    type: text
+  - description: latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0. The division uses latest_amount as this mart reports it, after its default of 0 for a winning row whose sort_order is missing, so such a row gives 0.0.
+    name: latest_amount_share
+    type: float
+  description: Per-x_user latest-row snapshot over linked x_policy_item_user_perm activity in the 167589_xa_core_db_postgres.sql schema.
+  grain: One row per x_user (id), INCLUDING x_user rows with no linked x_policy_item_user_perm rows.
+  key_columns:
+  - parent_key
+  name: x_user_x_policy_item_user_perm_snapshot
+  source_relationships:
+  - child_columns:
+    - added_by_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - atd_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_access_type_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_asset
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_asset
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - res_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_resource
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_cred_store
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_cred_store
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_db_base
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_db_base
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - enum_def_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_enum_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - cred_store_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_cred_store
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - p_group_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_group_module_perm
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - module_id
+    child_table: x_group_module_perm
+    parent_columns:
+    - id
+    parent_table: x_modules_master
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - p_group_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - res_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_resource
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - service
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_service
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_export_audit
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_export_audit
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_policy
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - type
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_access_type_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - type
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_policy_condition_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_policy
+    required: true
+  - child_columns:
+    - res_def_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_resource_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - resource_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_policy_resource
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: true
+  - child_columns:
+    - added_by_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_asset
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - type
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - service
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_service
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_trx_log
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_trx_log
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - cred_store_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_cred_store
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - module_id
+    child_table: x_user_module_perm
+    parent_columns:
+    - id
+    parent_table: x_modules_master
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_user_module_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  transformation:
+    steps:
+    - description: Read source table x_user.
+      operation: source
+      order: 1
+      source_inputs:
+      - x_user
+    - description: Read source table x_policy_item_user_perm.
+      operation: source
+      order: 2
+      source_inputs:
+      - x_policy_item_user_perm
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per x_user row, keyed by id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - x_user
+    - carried_fields:
+      - user_id
+      - id
+      condition:
+        public_identifiers:
+        - x_policy_item_user_perm
+        - user_id
+        - parent_key
+      description: Bring in x_policy_item_user_perm; a x_user row with no matching x_policy_item_user_perm row is retained and receives the stated empty snapshot values.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - x_policy_item_user_perm
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting event_count, lifetime_amount for that row''s matching rows.'
+      operation: aggregate
+      order: 5
+    - carried_fields:
+      - parent_key
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest id, and take latest_row_id, latest_amount, latest_label from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 6
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 7
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Name the mart columns; lifetime_amount reports its declared default — never NULL — for a group with no matching rows. For lifetime_amount, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      - latest_amount_share
+      description: 'Guarded ratios: latest_amount_share — latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0. The division uses latest_amount as this mart reports it, after its default of 0 for a winning row whose sort_order is missing, so such a row gives 0.0.'
+      operation: ratio
+      order: 9
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 10
+- columns:
+  - description: Identifier of the x_service_def row.
+    name: entity_key
+    type: bigint
+  - description: '''present'' for a linked x_service_config_def row; ''absent'' only for a x_service_def row with no linked x_service_config_def row. item_id is required on every real x_service_config_def row.'
+    name: measure_state
+    type: text
+  - description: description of the x_service_def row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked x_service_config_def rows in this entity/state cell; 0 for a no-activity absent cell.
+    name: row_count
+    type: bigint
+  - description: Number of unique item_id values in this cell; each unique value is counted once, however many rows repeat it; 0 for a no-activity absent cell.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of item_id in this cell; 0 for a no-activity absent cell.
+    name: total_amount
+    type: bigint
+  - description: Largest item_id in this cell; 0 for a no-activity absent cell.
+    name: max_amount
+    type: bigint
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(x_service_def, measure state) distribution of linked x_service_config_def activity in the 167589_xa_core_db_postgres.sql schema.
+  grain: One row per (id, measure state) pair represented by linked x_service_config_def rows, plus one absent no-activity row for a x_service_def row with no links. Because item_id is required, no linked x_service_config_def row belongs to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: x_service_def_x_service_config_def_distribution
+  source_relationships:
+  - child_columns:
+    - added_by_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - atd_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_access_type_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_asset
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_asset
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - res_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_resource
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_cred_store
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_cred_store
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_db_base
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_db_base
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - enum_def_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_enum_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - cred_store_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_cred_store
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - p_group_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_group_module_perm
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - module_id
+    child_table: x_group_module_perm
+    parent_columns:
+    - id
+    parent_table: x_modules_master
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - p_group_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - res_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_resource
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - service
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_service
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_export_audit
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_export_audit
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_policy
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - type
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_access_type_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - type
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_policy_condition_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_policy
+    required: true
+  - child_columns:
+    - res_def_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_resource_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - resource_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_policy_resource
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: true
+  - child_columns:
+    - added_by_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_asset
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - type
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - service
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_service
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_trx_log
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_trx_log
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - cred_store_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_cred_store
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - module_id
+    child_table: x_user_module_perm
+    parent_columns:
+    - id
+    parent_table: x_modules_master
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_user_module_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  transformation:
+    steps:
+    - description: Read source table x_service_def.
+      operation: source
+      order: 1
+      source_inputs:
+      - x_service_def
+    - description: Read source table x_service_config_def.
+      operation: source
+      order: 2
+      source_inputs:
+      - x_service_config_def
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each id and its description into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - x_service_def
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - id
+      - def_id
+      condition:
+        public_identifiers:
+        - x_service_config_def
+        - def_id
+        - entity_key
+      description: Bring the linked x_service_config_def rows into each x_service_def entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - x_service_config_def
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real x_service_config_def row; item_id is required on every such row.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per x_service_def entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different item_id values occur (each different value counted once, however many rows repeat it), total item_id, and largest item_id.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: the retained placeholder for a x_service_def row with no x_service_config_def rows; no real row can enter this state because item_id is required.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per x_service_def entity with no linked x_service_config_def row at all, whose retained placeholder is its one row in the absent measure state, and no row here for an entity that has a linked x_service_config_def row, reporting a row count of 0, 0 different item_id values, a total item_id of 0 and a largest item_id of 0.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the x_service row. One row per value.
+    name: parent_key
+    type: bigint
+  - description: description of the x_service row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest policy_type itself; 0 when the parent has no x_policy rows, and 0 when none of its rows carries a policy_type value.
+    name: top_measure
+    type: integer
+  - description: 'How many x_policy rows are tied at that largest policy_type. 1 when exactly one row carries that largest policy_type; 0 when there are no rows or when none of the rows carries a policy_type value; a row with no policy_type value never ties: only a row whose policy_type value equals the largest value among the parent''s rows holds the maximum, so the winning row of a parent whose rows all lack a value — the row the tie-break alone selects — is not counted here.'
+    name: tied_count
+    type: bigint
+  - description: 'Number of x_policy rows for this x_service row; 0 when there are none. Every linked x_policy row counts, whether or not it carries a policy_type value. A x_service row kept with no x_policy row reports 0 here, never 1: its placeholder holds no x_policy row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of policy_type over all of them; 0 when the parent has no x_policy rows, and 0 when none of its rows carries a policy_type value (rows with no policy_type value add nothing).
+    name: total_measure
+    type: integer
+  - description: The description of the x_policy row with the LARGEST policy_type for this x_service row. Ties in policy_type are broken by taking the SMALLEST description under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) — a row with no description value sorts after every labelled row; rows tied on both are resolved by the smallest id. A row with no policy_type value still ranks, after every row that has one, so a parent holding at least one x_policy row always has a winning row — when NONE of its rows carries a policy_type value the winner is the one the tie-break alone selects, not the no-rows default. The literal '(none)' when the parent has no x_policy rows at all, and '(none)' when the winning row has no description value.
+    name: top_label
+    type: text
+  - description: The id of that same extremal row — the winner under the SAME total order, so it is the identifier of a real x_policy row whenever the parent has any. This includes when none of them carries a policy_type value. It is 0 when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: bigint
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no x_policy rows, or none of its rows carries a policy_type value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a policy_type value equal to the largest policy_type value among the parent''s rows; a row with no policy_type value never holds the maximum. So a parent whose x_policy rows all lack a policy_type value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label and top_row_id name.'
+    name: tie_state
+    type: text
+  description: 'Per-x_service extremes over linked x_policy rows in the 167589_xa_core_db_postgres.sql schema: WHICH row is largest, not how large it is.'
+  grain: One row per x_service (id), INCLUDING x_service rows with no linked x_policy rows.
+  key_columns:
+  - parent_key
+  name: x_service_x_policy_top
+  source_relationships:
+  - child_columns:
+    - added_by_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_access_type_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - atd_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_access_type_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_access_type_def_grants
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_asset
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_asset
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - res_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_resource
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_audit_map
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_auth_sess
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_context_enricher_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_cred_store
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_cred_store
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_db_base
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_db_base
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_enum_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - enum_def_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_enum_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_enum_element_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - cred_store_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_cred_store
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - p_group_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group_groups
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_group_module_perm
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - module_id
+    child_table: x_group_module_perm
+    parent_columns:
+    - id
+    parent_table: x_modules_master
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - p_group_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_group_users
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - res_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_resource
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_perm_map
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - service
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_service
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_condition_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_export_audit
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_export_audit
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_policy
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - type
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_access_type_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_access
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - type
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_policy_condition_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_condition
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - group_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_group
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_group_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_item_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_policy_item
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_policy_item_user_perm
+    parent_columns:
+    - id
+    parent_table: x_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - policy_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_policy
+    required: true
+  - child_columns:
+    - res_def_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_resource_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - resource_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_policy_resource
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_policy_resource_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_portal_user_role
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: true
+  - child_columns:
+    - added_by_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_asset
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_resource
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_resource_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - type
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_service
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - def_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_service_def
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_config_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - service
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_service
+    required: true
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_config_map
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_service_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_service_def
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_trx_log
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_trx_log
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - added_by_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - cred_store_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_cred_store
+    required: false
+  - child_columns:
+    - upd_by_id
+    child_table: x_user
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  - child_columns:
+    - module_id
+    child_table: x_user_module_perm
+    parent_columns:
+    - id
+    parent_table: x_modules_master
+    required: false
+  - child_columns:
+    - user_id
+    child_table: x_user_module_perm
+    parent_columns:
+    - id
+    parent_table: x_portal_user
+    required: false
+  transformation:
+    steps:
+    - description: Read source table x_service.
+      operation: source
+      order: 1
+      source_inputs:
+      - x_service
+    - description: Read source table x_policy.
+      operation: source
+      order: 2
+      source_inputs:
+      - x_policy
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per x_service row, keyed by id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - x_service
+    - carried_fields:
+      - service
+      - id
+      condition:
+        public_identifiers:
+        - x_policy
+        - service
+        - parent_key
+      description: 'Bring in x_policy: a x_service row with no x_policy rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - x_policy
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest description under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) (a row with no description value sorts after every row that has one), then the smallest id, and take top_label, top_row_id from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows. For top_measure, total_measure, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no x_policy rows, or none of its rows carries a policy_type value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a policy_type value equal to the largest policy_type value among the parent''s rows; a row with no policy_type value never holds the maximum. So a parent whose x_policy rows all lack a policy_type value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label and top_row_id name.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12

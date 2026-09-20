@@ -1,0 +1,10 @@
+column_name,column_description
+object_id,Unique identifier for each object.
+x,X-coordinate of the object. may be NULL.
+y,Y-coordinate of the object. may be NULL.
+z,Z-coordinate of the object. may be NULL.
+rotations,Rotation angle of the object. may be NULL.
+copies,Number of copies of the object. may be NULL.
+type_id,ID of the object type. may be NULL.
+created_at,Date and time the object was created. may be NULL.
+updated_at,Date and time the object was last updated. may be NULL.

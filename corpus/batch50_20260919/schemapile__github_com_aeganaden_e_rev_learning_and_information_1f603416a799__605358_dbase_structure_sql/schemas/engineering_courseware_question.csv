@@ -1,0 +1,5 @@
+column_name,column_description
+courseware_id,Column courseware_id of table engineering.courseware_question.
+courseware_question_id,Column courseware_question_id of table engineering.courseware_question.
+courseware_question_question,Column courseware_question_question of table engineering.courseware_question.
+courseware_question_status,Column courseware_question_status of table engineering.courseware_question.

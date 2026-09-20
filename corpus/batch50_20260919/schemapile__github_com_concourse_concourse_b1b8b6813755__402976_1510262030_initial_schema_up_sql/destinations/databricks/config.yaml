@@ -1,0 +1,103 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/build_events.jsonl
+    sync_mode: full_refresh_append
+    table: build_events
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/builds.jsonl
+    sync_mode: full_refresh_append
+    table: builds
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/resource_cache_uses.jsonl
+    sync_mode: full_refresh_append
+    table: resource_cache_uses
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/resource_configs.jsonl
+    sync_mode: full_refresh_append
+    table: resource_configs
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/versioned_resources.jsonl
+    sync_mode: full_refresh_append
+    table: versioned_resources
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/volumes.jsonl
+    sync_mode: full_refresh_append
+    table: volumes
+  - path: s3://schemapile--github-com-concourse-concourse-2e3ed00292c1-bucket/worker_resource_caches.jsonl
+    sync_mode: full_refresh_append
+    table: worker_resource_caches
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - build_inputs
+    - build_outputs
+    - cache_invalidator
+    - next_build_inputs
+    - pipelines
+    - resource_types
+    - worker_resource_config_check_sessions
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: schemapile__github_com_concourse_concourse_2e3ed00292c1
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_concourse_concourse_2e3ed00292c1/base_resource_types.csv
+  sync_mode: full_refresh_append
+  table: base_resource_types
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_concourse_concourse_2e3ed00292c1/containers.csv
+  sync_mode: full_refresh_append
+  table: containers
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_concourse_concourse_2e3ed00292c1/teams.csv
+  sync_mode: full_refresh_append
+  table: teams
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_concourse_concourse_2e3ed00292c1/workers.csv
+  sync_mode: full_refresh_append
+  table: workers
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_concourse_concourse_2e3ed00292c1
+    sync_mode: full_refresh_append
+    tables:
+    - jobs
+    - resource_caches
+    - resources
+    - worker_base_resource_types
+postgres:
+  config:
+    database: schemapile__github_com_concourse_concourse_2e3ed00292c1
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - build_image_resource_caches
+    - independent_build_inputs
+    - jobs_serial_groups
+    - pipes
+    - resource_config_check_sessions
+    - worker_task_caches
+    user: postgres

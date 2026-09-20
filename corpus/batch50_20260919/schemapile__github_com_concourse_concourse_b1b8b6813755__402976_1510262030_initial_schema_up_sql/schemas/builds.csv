@@ -1,0 +1,18 @@
+column_name,column_description
+completed,Column completed of table builds.
+end_time,Column end_time of table builds. may be NULL.
+engine,Column engine of table builds. may be NULL.
+engine_metadata,Column engine_metadata of table builds. may be NULL.
+id,Column id of table builds.
+interceptible,Column interceptible of table builds. may be NULL.
+job_id,Column job_id of table builds. may be NULL.
+manually_triggered,Column manually_triggered of table builds. may be NULL.
+name,Column name of table builds.
+nonce,Column nonce of table builds. may be NULL.
+pipeline_id,Column pipeline_id of table builds. may be NULL.
+public_plan,Column public_plan of table builds. may be NULL.
+reap_time,Column reap_time of table builds. may be NULL.
+scheduled,Column scheduled of table builds.
+start_time,Column start_time of table builds. may be NULL.
+status,Column status of table builds.
+team_id,Column team_id of table builds.

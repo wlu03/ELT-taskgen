@@ -1,0 +1,11 @@
+column_name,column_description
+description,Column description of table activities. may be NULL.
+finished_at,Column finished_at of table activities. may be NULL.
+fullscreen,Column fullscreen of table activities. may be NULL.
+id,Column id of table activities.
+idle,Column idle of table activities. may be NULL.
+logged_at,Column logged_at of table activities. may be NULL.
+name,Column name of table activities. may be NULL.
+pid,Column pid of table activities. may be NULL.
+session_id,Column session_id of table activities.
+user_name,Column user_name of table activities. may be NULL.

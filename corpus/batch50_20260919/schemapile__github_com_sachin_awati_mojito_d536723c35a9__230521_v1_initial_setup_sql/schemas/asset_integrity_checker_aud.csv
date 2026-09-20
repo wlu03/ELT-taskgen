@@ -1,0 +1,8 @@
+column_name,column_description
+asset_extension,Column asset_extension of table asset_integrity_checker_aud. may be NULL.
+id,Column id of table asset_integrity_checker_aud.
+integrity_checker_type,Column integrity_checker_type of table asset_integrity_checker_aud. may be NULL.
+repository_id,Column repository_id of table asset_integrity_checker_aud. may be NULL.
+rev,Column rev of table asset_integrity_checker_aud.
+revend,Column revend of table asset_integrity_checker_aud. may be NULL.
+revtype,Column revtype of table asset_integrity_checker_aud. may be NULL.

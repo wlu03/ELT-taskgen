@@ -1,0 +1,31 @@
+column_name,column_description
+film_title,film title of filmography details (real vendored values).
+film_description,film description of filmography details (real vendored values).
+film_type,film type of filmography details (real vendored values).
+film_director,film director of filmography details (real vendored values).
+film_screenwriter,film screenwriter of filmography details (real vendored values).
+director_of_photography,director of photography of filmography details (real vendored values).
+lead_actor,lead actor of filmography details (real vendored values). may be NULL.
+im_db_id,im db id of filmography details (real vendored values).
+country_of_origin,country of origin of filmography details (real vendored values).
+original_language,original language of filmography details (real vendored values).
+release_date,release date of filmography details (real vendored values).
+original_title,original title of filmography details (real vendored values). may be NULL.
+norwegian_filmography_id,norwegian filmography id of filmography details (real vendored values). may be NULL.
+swedish_film_database_film_id,swedish film database film id of filmography details (real vendored values). may be NULL.
+film_duration,film duration of filmography details (real vendored values). may be NULL.
+production_company,production company of filmography details (real vendored values). may be NULL.
+film_composer,film composer of filmography details (real vendored values). may be NULL.
+film_genre,film genre of filmography details (real vendored values). may be NULL.
+film_color,film color of filmography details (real vendored values). may be NULL.
+el_film_film_id,el film film id of filmography details (real vendored values). may be NULL.
+kinopoisk_film_id,kinopoisk film id of filmography details (real vendored values). may be NULL.
+eidr_content_id,eidr content id of filmography details (real vendored values). may be NULL.
+letterboxd_film_id,letterboxd film id of filmography details (real vendored values).
+filmfront_film_id_archived,filmfront film id archived of filmography details (real vendored values).
+google_knowledge_graph_id,google knowledge graph id of filmography details (real vendored values). may be NULL.
+tmdb_movie_id,tmdb movie id of filmography details (real vendored values).
+lumiere_film_id,lumiere film id of filmography details (real vendored values). may be NULL.
+trakttv_id,trakttv id of filmography details (real vendored values). may be NULL.
+kinobox_film_id,kinobox film id of filmography details (real vendored values). may be NULL.
+film_editor,film editor of filmography details (real vendored values). may be NULL.

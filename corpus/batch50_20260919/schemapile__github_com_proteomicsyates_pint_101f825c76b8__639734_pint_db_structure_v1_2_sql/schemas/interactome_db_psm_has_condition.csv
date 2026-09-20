@@ -1,0 +1,3 @@
+column_name,column_description
+condition_id,Column Condition_id of table interactome_db.PSM_has_Condition.
+psm_id,Column PSM_id of table interactome_db.PSM_has_Condition.

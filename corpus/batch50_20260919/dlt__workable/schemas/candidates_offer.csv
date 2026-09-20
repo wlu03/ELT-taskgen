@@ -1,0 +1,3 @@
+column_name,column_description
+_candidates_id,parent link to 'candidates' (dlt include_from_parent convention; synthesized from the dlt manifest (no observed schema)).
+payload,raw endpoint record body (synthesized schema). may be NULL.

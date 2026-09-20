@@ -1,0 +1,6 @@
+column_name,column_description
+accession,Column accession of table interactome_db.Protein_Accession.
+accessiontype,Column accessionType of table interactome_db.Protein_Accession.
+alternativenames,separated by special character ´***´. may be NULL.
+description,Column description of table interactome_db.Protein_Accession. may be NULL.
+isprimary,Column isPrimary of table interactome_db.Protein_Accession.

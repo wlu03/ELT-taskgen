@@ -1,0 +1,5 @@
+column_name,column_description
+download_id,Unique identifier for each download.
+object_id,ID of the object being downloaded. may be NULL.
+user_id,ID of the user who downloaded the object. may be NULL.
+download_date,Date when the object was downloaded. may be NULL.

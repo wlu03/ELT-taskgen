@@ -1,0 +1,5 @@
+column_name,column_description
+area_city_code_id,Column area_city_code_id of table area_district_code.
+id,Column id of table area_district_code.
+name,Column name of table area_district_code.
+version,Column version of table area_district_code.

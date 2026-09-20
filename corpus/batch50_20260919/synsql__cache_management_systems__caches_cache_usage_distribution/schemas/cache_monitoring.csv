@@ -1,0 +1,9 @@
+column_name,column_description
+monitoring_id,Unique identifier for each monitoring event.
+cache_id,Reference to the cache type. may be NULL.
+metric,Name of the metric being monitored. may be NULL.
+value,Value of the metric. may be NULL.
+data_type,Data type of the metric. may be NULL.
+unit,Unit of the metric. may be NULL.
+source,Source of the metric. may be NULL.
+timestamp,Timestamp when the metric was recorded. may be NULL.

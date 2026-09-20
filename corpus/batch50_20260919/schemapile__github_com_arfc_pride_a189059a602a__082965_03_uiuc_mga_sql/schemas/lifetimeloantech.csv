@@ -1,0 +1,4 @@
+column_name,column_description
+loan,Column loan of table LifetimeLoanTech. may be NULL.
+loan_notes,Column loan_notes of table LifetimeLoanTech. may be NULL.
+tech,Column tech of table LifetimeLoanTech.

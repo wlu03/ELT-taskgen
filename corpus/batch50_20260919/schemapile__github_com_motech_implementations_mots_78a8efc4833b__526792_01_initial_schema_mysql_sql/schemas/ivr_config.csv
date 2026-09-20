@@ -1,0 +1,20 @@
+column_name,column_description
+base_url,Column base_url of table ivr_config.
+call_log_id_field,Column call_log_id_field of table ivr_config.
+call_status_field,Column call_status_field of table ivr_config.
+chw_ivr_id_field,Column chw_ivr_id_field of table ivr_config.
+created_date,Column created_date of table ivr_config. may be NULL.
+default_users_group_id,Column default_users_group_id of table ivr_config.
+detect_voicemail_action,Column detect_voicemail_action of table ivr_config.
+id,Column id of table ivr_config.
+incoming_call_id_field,Column incoming_call_id_field of table ivr_config.
+main_menu_tree_id,Column main_menu_tree_id of table ivr_config. may be NULL.
+module_assigned_message_id,Column module_assigned_message_id of table ivr_config.
+name,Column name of table ivr_config.
+outgoing_call_id_field,Column outgoing_call_id_field of table ivr_config.
+retry_attempts_long,Column retry_attempts_long of table ivr_config.
+retry_attempts_short,Column retry_attempts_short of table ivr_config.
+retry_delay_long,Column retry_delay_long of table ivr_config.
+retry_delay_short,Column retry_delay_short of table ivr_config.
+send_sms_if_voice_fails,Column send_sms_if_voice_fails of table ivr_config.
+updated_date,Column updated_date of table ivr_config. may be NULL.

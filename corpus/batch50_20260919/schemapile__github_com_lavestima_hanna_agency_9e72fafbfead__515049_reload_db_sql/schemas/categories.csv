@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column ID of table Categories.
+id_parent,Column ID_PARENT of table Categories. may be NULL.
+name,Column Name of table Categories.
+note,Column Note of table Categories. may be NULL.

@@ -1,0 +1,518 @@
+models:
+- columns:
+  - description: Identifier of the picture row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked video row; ''absent'' only for a picture row with no linked video row. lengthseconds is required on every real video row.'
+    name: measure_state
+    type: text
+  - description: format of the picture row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked video rows in this entity/state cell; 0 for a no-activity absent cell.
+    name: row_count
+    type: bigint
+  - description: Number of unique lengthseconds values in this cell; each unique value is counted once, however many rows repeat it; 0 for a no-activity absent cell.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of lengthseconds in this cell; 0 for a no-activity absent cell.
+    name: total_amount
+    type: integer
+  - description: Largest lengthseconds in this cell; 0 for a no-activity absent cell.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(picture, measure state) distribution of linked video activity in the 079208_leavideo.ddl schema.
+  grain: One row per (pictureid, measure state) pair represented by linked video rows, plus one absent no-activity row for a picture row with no links. Because lengthseconds is required, no linked video row belongs to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: picture_video_distribution
+  source_relationships:
+  - child_columns:
+    - celebrityid
+    child_table: actor
+    parent_columns:
+    - celebrityid
+    parent_table: celebrity
+    required: true
+  - child_columns:
+    - videoid
+    child_table: actor
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - celebrityid
+    child_table: artist
+    parent_columns:
+    - celebrityid
+    parent_table: celebrity
+    required: true
+  - child_columns:
+    - videoid
+    child_table: artist
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - avatarpictureid
+    child_table: celebrity
+    parent_columns:
+    - pictureid
+    parent_table: picture
+    required: false
+  - child_columns:
+    - celebrityid
+    child_table: celebrity_picture
+    parent_columns:
+    - celebrityid
+    parent_table: celebrity
+    required: true
+  - child_columns:
+    - pictureid
+    child_table: celebrity_picture
+    parent_columns:
+    - pictureid
+    parent_table: picture
+    required: true
+  - child_columns:
+    - celebrityid
+    child_table: celebrity_tag
+    parent_columns:
+    - celebrityid
+    parent_table: celebrity
+    required: true
+  - child_columns:
+    - tagid
+    child_table: celebrity_tag
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - galerieid
+    child_table: galerie_name
+    parent_columns:
+    - galerieid
+    parent_table: galerie
+    required: true
+  - child_columns:
+    - nameid
+    child_table: galerie_name
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - galerieid
+    child_table: galerie_picture
+    parent_columns:
+    - galerieid
+    parent_table: galerie
+    required: true
+  - child_columns:
+    - pictureid
+    child_table: galerie_picture
+    parent_columns:
+    - pictureid
+    parent_table: picture
+    required: true
+  - child_columns:
+    - videovideoid
+    child_table: media
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - videoid
+    child_table: movie
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: false
+  - child_columns:
+    - celebrityid
+    child_table: name_celebrity
+    parent_columns:
+    - celebrityid
+    parent_table: celebrity
+    required: true
+  - child_columns:
+    - nameid
+    child_table: name_celebrity
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - nameid
+    child_table: picture_name
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - pictureid
+    child_table: picture_name
+    parent_columns:
+    - pictureid
+    parent_table: picture
+    required: true
+  - child_columns:
+    - nameid
+    child_table: playlist_name
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - playlistid
+    child_table: playlist_name
+    parent_columns:
+    - playlistid
+    parent_table: playlist
+    required: true
+  - child_columns:
+    - galerieid
+    child_table: playlistitem
+    parent_columns:
+    - galerieid
+    parent_table: galerie
+    required: false
+  - child_columns:
+    - playlistid
+    child_table: playlistitem
+    parent_columns:
+    - playlistid
+    parent_table: playlist
+    required: true
+  - child_columns:
+    - videoid
+    child_table: playlistitem
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: false
+  - child_columns:
+    - celebrityid
+    child_table: regisseur
+    parent_columns:
+    - celebrityid
+    parent_table: celebrity
+    required: true
+  - child_columns:
+    - videoid
+    child_table: regisseur
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - sourcevideoid
+    child_table: snippet
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - videoid
+    child_table: snippet
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - galerieid
+    child_table: tag_galerie
+    parent_columns:
+    - galerieid
+    parent_table: galerie
+    required: true
+  - child_columns:
+    - tagid
+    child_table: tag_galerie
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - groupid
+    child_table: tag_group
+    parent_columns:
+    - groupid
+    parent_table: group
+    required: true
+  - child_columns:
+    - tagid
+    child_table: tag_group
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - nameid
+    child_table: tag_name
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - tagid
+    child_table: tag_name
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - pictureid
+    child_table: tag_picture
+    parent_columns:
+    - pictureid
+    parent_table: picture
+    required: true
+  - child_columns:
+    - tagid
+    child_table: tag_picture
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - playlistid
+    child_table: tag_playlist
+    parent_columns:
+    - playlistid
+    parent_table: playlist
+    required: true
+  - child_columns:
+    - tagid
+    child_table: tag_playlist
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - tagid
+    child_table: tag_video
+    parent_columns:
+    - tagid
+    parent_table: tag
+    required: true
+  - child_columns:
+    - videoid
+    child_table: tag_video
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - groupid
+    child_table: user_group
+    parent_columns:
+    - groupid
+    parent_table: group
+    required: true
+  - child_columns:
+    - userid
+    child_table: user_group
+    parent_columns:
+    - userid
+    parent_table: user
+    required: true
+  - child_columns:
+    - nameid
+    child_table: variation_name
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - variationid
+    child_table: variation_name
+    parent_columns:
+    - variationid
+    parent_table: variation
+    required: true
+  - child_columns:
+    - thumbnailpictureid
+    child_table: video
+    parent_columns:
+    - pictureid
+    parent_table: picture
+    required: false
+  - child_columns:
+    - nameid
+    child_table: video_name
+    parent_columns:
+    - nameid
+    parent_table: name
+    required: true
+  - child_columns:
+    - videoid
+    child_table: video_name
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  - child_columns:
+    - variationid
+    child_table: video_variation
+    parent_columns:
+    - variationid
+    parent_table: variation
+    required: true
+  - child_columns:
+    - videoid
+    child_table: video_variation
+    parent_columns:
+    - videoid
+    parent_table: video
+    required: true
+  transformation:
+    steps:
+    - description: Read source table picture.
+      operation: source
+      order: 1
+      source_inputs:
+      - picture
+    - description: Read source table video.
+      operation: source
+      order: 2
+      source_inputs:
+      - video
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each pictureid and its format into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - picture
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - pictureid
+      - thumbnailpictureid
+      condition:
+        public_identifiers:
+        - video
+        - thumbnailpictureid
+        - entity_key
+      description: Bring the linked video rows into each picture entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - video
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real video row; lengthseconds is required on every such row.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per picture entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different lengthseconds values occur (each different value counted once, however many rows repeat it), total lengthseconds, and largest lengthseconds.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: the retained placeholder for a picture row with no video rows; no real row can enter this state because lengthseconds is required.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per picture entity with no linked video row at all, whose retained placeholder is its one row in the absent measure state, and no row here for an entity that has a linked video row, reporting a row count of 0, 0 different lengthseconds values, a total lengthseconds of 0 and a largest lengthseconds of 0.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14

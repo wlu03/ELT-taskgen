@@ -1,0 +1,3 @@
+column_name,column_description
+build_id,Column build_id of table build_image_resource_caches.
+resource_cache_id,Column resource_cache_id of table build_image_resource_caches. may be NULL.

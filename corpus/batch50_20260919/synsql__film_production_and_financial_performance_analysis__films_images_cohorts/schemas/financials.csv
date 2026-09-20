@@ -1,0 +1,10 @@
+column_name,column_description
+financial_id,Unique identifier for each financial record.
+film_id,Reference to the film. may be NULL.
+budget,Budget for the film. may be NULL.
+box_office,Box office earnings. may be NULL.
+domestic_box_office,Domestic box office earnings. may be NULL.
+international_box_office,International box office earnings. may be NULL.
+marketing_budget,Budget allocated for marketing. may be NULL.
+profit,Calculated profit (box office - budget - marketing budget). may be NULL.
+return_on_investment,Return on investment (profit / budget). may be NULL.

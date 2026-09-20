@@ -1,0 +1,8 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., engineer, operator, admin). always exactly one of 'engineer', 'operator', 'admin'. may be NULL."
+department,Department the user belongs to. may be NULL.
+password,Password for the user account. may be NULL.
+last_login_date,Date of the last login. may be NULL.

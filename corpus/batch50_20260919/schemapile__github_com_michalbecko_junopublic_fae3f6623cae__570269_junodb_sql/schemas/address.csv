@@ -1,0 +1,7 @@
+column_name,column_description
+city,Column city of table address. may be NULL.
+id,Column id of table address.
+psc,Column psc of table address. may be NULL.
+state,Column state of table address. may be NULL.
+street,Column street of table address. may be NULL.
+type,Column type of table address. may be NULL.

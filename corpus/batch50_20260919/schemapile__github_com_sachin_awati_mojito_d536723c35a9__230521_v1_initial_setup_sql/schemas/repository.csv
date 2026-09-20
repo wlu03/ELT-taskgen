@@ -1,0 +1,10 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table repository. may be NULL.
+created_date,Column created_date of table repository. may be NULL.
+description,Column description of table repository. may be NULL.
+drop_exporter_type,Column drop_exporter_type of table repository. may be NULL.
+id,Column id of table repository.
+last_modified_date,Column last_modified_date of table repository. may be NULL.
+name,Column name of table repository.
+repository_statistic_id,Column repository_statistic_id of table repository. may be NULL.
+tm_id,Column tm_id of table repository. may be NULL.

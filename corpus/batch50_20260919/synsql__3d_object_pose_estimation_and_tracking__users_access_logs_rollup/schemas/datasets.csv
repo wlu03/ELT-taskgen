@@ -1,0 +1,8 @@
+column_name,column_description
+dataset_id,Unique identifier for each dataset.
+dataset_name,Name of the dataset. may be NULL.
+description,Description of the dataset. may be NULL.
+dataset_type,"Type of the dataset (e.g., training, testing, validation). always exactly one of 'training', 'testing', 'validation'. may be NULL."
+dataset_size,Size of the dataset (number of pose estimations). may be NULL.
+dataset_creation_date,Date when the dataset was created. may be NULL.
+dataset_description,Detailed description of the dataset. may be NULL.

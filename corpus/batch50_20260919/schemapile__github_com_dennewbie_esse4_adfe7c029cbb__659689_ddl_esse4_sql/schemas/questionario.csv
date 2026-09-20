@@ -1,0 +1,11 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table questionario.
+codice_insegnamento,Column codice_insegnamento of table questionario.
+data_compilazione,Column data_compilazione of table questionario.
+disponibilita_docente,Column disponibilita_docente of table questionario.
+gradimento,Column gradimento of table questionario.
+materiale_didattico,Column materiale_didattico of table questionario.
+matricola_studente,Column matricola_studente of table questionario.
+numero_questionario,Column numero_questionario of table questionario.
+precisione_orario,Column precisione_orario of table questionario.
+tesserino_docente,Column tesserino_docente of table questionario.

@@ -1,0 +1,7 @@
+column_name,column_description
+code,Column code of table rucksack. may be NULL.
+created_at,Column created_at of table rucksack. may be NULL.
+id,Column id of table rucksack.
+updated_at,Column updated_at of table rucksack. may be NULL.
+web_access_at,Column web_access_at of table rucksack. may be NULL.
+wnf_access_at,Column wnf_access_at of table rucksack. may be NULL.

@@ -1,0 +1,10 @@
+column_name,column_description
+asn_name,Column asn_name of table locations. may be NULL.
+asn_number,Column asn_number of table locations. may be NULL.
+city,Column city of table locations. may be NULL.
+country_code,Column country_code of table locations. may be NULL.
+id,Column id of table locations.
+latitude,Column latitude of table locations. may be NULL.
+longitude,Column longitude of table locations. may be NULL.
+public_ip,Column public_ip of table locations. may be NULL.
+reverse_dns,Column reverse_dns of table locations. may be NULL.

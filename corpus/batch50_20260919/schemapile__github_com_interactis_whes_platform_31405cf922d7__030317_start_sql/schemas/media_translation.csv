@@ -1,0 +1,10 @@
+column_name,column_description
+author,Column author of table media_translation. may be NULL.
+copyright,Column copyright of table media_translation. may be NULL.
+created_at,Column created_at of table media_translation. may be NULL.
+description,Column description of table media_translation. may be NULL.
+id,Column id of table media_translation.
+language_id,Column language_id of table media_translation. may be NULL.
+media_id,Column media_id of table media_translation. may be NULL.
+title,Column title of table media_translation. may be NULL.
+updated_at,Column updated_at of table media_translation. may be NULL.

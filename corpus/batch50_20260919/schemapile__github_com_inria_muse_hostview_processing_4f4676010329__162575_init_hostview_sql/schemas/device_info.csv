@@ -1,0 +1,15 @@
+column_name,column_description
+cpu,Column cpu of table device_info. may be NULL.
+hdd_capacity,Column hdd_capacity of table device_info. may be NULL.
+hostview_version,Column hostview_version of table device_info. may be NULL.
+id,Column id of table device_info.
+logged_at,Column logged_at of table device_info. may be NULL.
+manufacturer,Column manufacturer of table device_info. may be NULL.
+memory_installed,Column memory_installed of table device_info. may be NULL.
+operating_system,Column operating_system of table device_info. may be NULL.
+product,Column product of table device_info. may be NULL.
+serial_number,Column serial_number of table device_info. may be NULL.
+session_id,Column session_id of table device_info.
+settings_version,Column settings_version of table device_info. may be NULL.
+timezone,Column timezone of table device_info. may be NULL.
+timezone_offset,Column timezone_offset of table device_info. may be NULL.

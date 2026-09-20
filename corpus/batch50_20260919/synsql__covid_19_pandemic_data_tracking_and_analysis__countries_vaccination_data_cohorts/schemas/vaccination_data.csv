@@ -1,0 +1,10 @@
+column_name,column_description
+vaccination_id,Unique identifier for each vaccination data entry.
+country_id,Reference to the country. may be NULL.
+date,Date for which the vaccination data is recorded. may be NULL.
+people_fully_vaccinated_per_hundred,Percentage of population fully vaccinated. may be NULL.
+new_vaccinations_smoothed_per_million,Smoothed rate of new vaccinations per million population. may be NULL.
+total_vaccinations,Total number of vaccinations administered up to the recorded date. may be NULL.
+vaccines_used,Types of vaccines used in the country. may be NULL.
+vaccination_completion_date,Date when a significant percentage of the population is fully vaccinated. may be NULL.
+source,"Source of the data (e.g., WHO, CDC, local health authorities). always exactly one of 'WHO', 'CDC', 'local health authorities'. may be NULL."

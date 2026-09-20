@@ -1,0 +1,32 @@
+column_name,column_description
+film_title,film title of film appearances (real vendored values).
+film_description,film description of film appearances (real vendored values).
+im_db_id,im db id of film appearances (real vendored values). may be NULL.
+film_type,film type of film appearances (real vendored values).
+director_name,director name of film appearances (real vendored values). may be NULL.
+co_star,co star of film appearances (real vendored values).
+commons_category,commons category of film appearances (real vendored values). may be NULL.
+screenwriter_name,screenwriter name of film appearances (real vendored values). may be NULL.
+producer_name,producer name of film appearances (real vendored values). may be NULL.
+production_company,production company of film appearances (real vendored values). may be NULL.
+cinematographer,cinematographer of film appearances (real vendored values). may be NULL.
+freebase_id,freebase id of film appearances (real vendored values). may be NULL.
+release_date,release date of film appearances (real vendored values).
+country_of_origin,country of origin of film appearances (real vendored values).
+all_movie_title_id,all movie title id of film appearances (real vendored values). may be NULL.
+film_genre,film genre of film appearances (real vendored values). may be NULL.
+title,title of film appearances (real vendored values). may be NULL.
+film_color,film color of film appearances (real vendored values). may be NULL.
+film_duration,film duration of film appearances (real vendored values). may be NULL.
+distributor,distributor of film appearances (real vendored values). may be NULL.
+of_db_film_id,of db film id of film appearances (real vendored values). may be NULL.
+kinopoisk_film_id,kinopoisk film id of film appearances (real vendored values).
+afi_catalog_of_feature_films_id,afi catalog of feature films id of film appearances (real vendored values). may be NULL.
+eidr_content_id,eidr content id of film appearances (real vendored values). may be NULL.
+cinematheque_quebecoise_work_id,cinematheque quebecoise work id of film appearances (real vendored values). may be NULL.
+tmdb_movie_id,tmdb movie id of film appearances (real vendored values). may be NULL.
+letterboxd_film_id,letterboxd film id of film appearances (real vendored values). may be NULL.
+kinobox_film_id,kinobox film id of film appearances (real vendored values). may be NULL.
+aspect_ratio,aspect ratio of film appearances (real vendored values). may be NULL.
+silent_eracom_film_id,silent eracom film id of film appearances (real vendored values). may be NULL.
+copyright_status,copyright status of film appearances (real vendored values). may be NULL.

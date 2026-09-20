@@ -1,0 +1,17 @@
+column_name,column_description
+lenght,Column Lenght of table erp.product. may be NULL.
+active,Column active of table erp.product.
+categ_id,Column categ_id of table erp.product.
+default_code,Column default_code of table erp.product. may be NULL.
+description,Column description of table erp.product. may be NULL.
+id,Column id of table erp.product.
+image,Column image of table erp.product. may be NULL.
+image_medium,Column image_medium of table erp.product. may be NULL.
+name,Column name of table erp.product.
+purchase_ok,Column purchase_ok of table erp.product. may be NULL.
+purchase_price,Column purchase_price of table erp.product. may be NULL.
+sale_ok,Column sale_ok of table erp.product. may be NULL.
+sale_price,Column sale_price of table erp.product. may be NULL.
+uom_id,Column uom_id of table erp.product.
+volume,Column volume of table erp.product. may be NULL.
+weight,Column weight of table erp.product. may be NULL.

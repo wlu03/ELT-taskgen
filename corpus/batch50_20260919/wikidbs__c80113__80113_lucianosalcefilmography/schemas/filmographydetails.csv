@@ -1,0 +1,39 @@
+column_name,column_description
+filmtitle,filmtitle of filmographydetails (real vendored values).
+filmdescription,filmdescription of filmographydetails (real vendored values).
+imdbid,imdbid of filmographydetails (real vendored values).
+originallanguage,originallanguage of filmographydetails (real vendored values). may be NULL.
+mediatype,mediatype of filmographydetails (real vendored values).
+directorname,directorname of filmographydetails (real vendored values).
+castmembers,castmembers of filmographydetails (real vendored values). may be NULL.
+screenwriters,screenwriters of filmographydetails (real vendored values). may be NULL.
+directorofphotography,directorofphotography of filmographydetails (real vendored values). may be NULL.
+producers,producers of filmographydetails (real vendored values). may be NULL.
+narrativelocation,narrativelocation of filmographydetails (real vendored values). may be NULL.
+freebaseid,freebaseid of filmographydetails (real vendored values). may be NULL.
+releasedate,releasedate of filmographydetails (real vendored values).
+moviemeterfilmid,moviemeterfilmid of filmographydetails (real vendored values). may be NULL.
+countryoforigin,countryoforigin of filmographydetails (real vendored values).
+originaltitle,originaltitle of filmographydetails (real vendored values). may be NULL.
+musiccomposer,musiccomposer of filmographydetails (real vendored values). may be NULL.
+filmduration,filmduration of filmographydetails (real vendored values).
+productiondesigner,productiondesigner of filmographydetails (real vendored values). may be NULL.
+ofdbfilmid,ofdbfilmid of filmographydetails (real vendored values). may be NULL.
+filmcolor,filmcolor of filmographydetails (real vendored values).
+elfilmfilmid,elfilmfilmid of filmographydetails (real vendored values). may be NULL.
+kinopoiskfilmid,kinopoiskfilmid of filmographydetails (real vendored values).
+csfdfilmid,csfdfilmid of filmographydetails (real vendored values).
+allmovietitleid,allmovietitleid of filmographydetails (real vendored values). may be NULL.
+portfilmid,portfilmid of filmographydetails (real vendored values). may be NULL.
+eidrcontentid,eidrcontentid of filmographydetails (real vendored values). may be NULL.
+filmaffinityfilmid,filmaffinityfilmid of filmographydetails (real vendored values). may be NULL.
+filmeditor,filmeditor of filmographydetails (real vendored values). may be NULL.
+filmgenre,filmgenre of filmographydetails (real vendored values).
+letterboxdfilmid,letterboxdfilmid of filmographydetails (real vendored values).
+doubanfilmid,doubanfilmid of filmographydetails (real vendored values). may be NULL.
+tmdbmovieid,tmdbmovieid of filmographydetails (real vendored values).
+lumierefilmid,lumierefilmid of filmographydetails (real vendored values). may be NULL.
+trakttvid,trakttvid of filmographydetails (real vendored values). may be NULL.
+kinoboxfilmid,kinoboxfilmid of filmographydetails (real vendored values).
+plexmediakey,plexmediakey of filmographydetails (real vendored values). may be NULL.
+filmvandaagid,filmvandaagid of filmographydetails (real vendored values). may be NULL.

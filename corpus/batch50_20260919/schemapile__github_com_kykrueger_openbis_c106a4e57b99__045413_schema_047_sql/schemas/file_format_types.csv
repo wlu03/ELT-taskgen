@@ -1,0 +1,5 @@
+column_name,column_description
+code,Column CODE of table FILE_FORMAT_TYPES.
+dbin_id,Column DBIN_ID of table FILE_FORMAT_TYPES.
+description,Column DESCRIPTION of table FILE_FORMAT_TYPES. may be NULL.
+id,Column ID of table FILE_FORMAT_TYPES.

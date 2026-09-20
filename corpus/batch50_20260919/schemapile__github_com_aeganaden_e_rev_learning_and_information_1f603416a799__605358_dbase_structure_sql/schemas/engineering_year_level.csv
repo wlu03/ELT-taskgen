@@ -1,0 +1,3 @@
+column_name,column_description
+year_level_id,Column year_level_id of table engineering.year_level.
+year_level_name,Column year_level_name of table engineering.year_level.

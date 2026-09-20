@@ -1,0 +1,8 @@
+column_name,column_description
+datein,Column datein of table multimedia.
+id,Column id of table multimedia.
+multimedia_folder_id,Column multimedia_folder_id of table multimedia. may be NULL.
+name,Column name of table multimedia. may be NULL.
+path,Column path of table multimedia. may be NULL.
+size,Column size of table multimedia. may be NULL.
+type,Column type of table multimedia. may be NULL.

@@ -1,0 +1,8 @@
+column_name,column_description
+discount,Column Discount of table Orders_Products.
+id,Column ID of table Orders_Products.
+id_orders,Column ID_ORDERS of table Orders_Products.
+id_products_sizes,Column ID_PRODUCTS_SIZES of table Orders_Products.
+id_statuses,Column ID_STATUSES of table Orders_Products.
+note,Column Note of table Orders_Products. may be NULL.
+quantity,Column Quantity of table Orders_Products.

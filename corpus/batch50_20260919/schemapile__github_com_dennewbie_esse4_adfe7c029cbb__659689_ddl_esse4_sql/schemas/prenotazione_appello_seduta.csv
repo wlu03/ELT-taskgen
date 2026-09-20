@@ -1,0 +1,6 @@
+column_name,column_description
+codice_corso,Column codice_corso of table prenotazione_appello_seduta.
+data_appello,Column data_appello of table prenotazione_appello_seduta.
+data_prenotazione,Column data_prenotazione of table prenotazione_appello_seduta.
+matricola_studente,Column matricola_studente of table prenotazione_appello_seduta.
+numero,Column numero of table prenotazione_appello_seduta.

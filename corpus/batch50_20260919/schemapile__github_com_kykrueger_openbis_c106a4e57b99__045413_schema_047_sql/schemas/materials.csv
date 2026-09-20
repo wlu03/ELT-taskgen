@@ -1,0 +1,8 @@
+column_name,column_description
+code,Column CODE of table MATERIALS.
+dbin_id,Column DBIN_ID of table MATERIALS.
+id,Column ID of table MATERIALS.
+maty_id,Column MATY_ID of table MATERIALS.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table MATERIALS. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table MATERIALS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table MATERIALS.

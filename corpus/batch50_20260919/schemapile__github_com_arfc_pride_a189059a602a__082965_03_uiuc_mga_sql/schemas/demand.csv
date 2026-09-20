@@ -1,0 +1,6 @@
+column_name,column_description
+demand,Column demand of table Demand. may be NULL.
+demand_comm,Column demand_comm of table Demand.
+demand_notes,Column demand_notes of table Demand. may be NULL.
+demand_units,Column demand_units of table Demand. may be NULL.
+periods,Column periods of table Demand.

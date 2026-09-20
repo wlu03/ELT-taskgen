@@ -1,0 +1,3 @@
+column_name,column_description
+nombre,Column nombre of table cventa.rol. may be NULL.
+rol,Column rol of table cventa.rol.

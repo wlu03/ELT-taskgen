@@ -1,0 +1,4 @@
+column_name,column_description
+profile_id,Column profile_id of table profile_roles.
+profile_role_id,Column profile_role_id of table profile_roles.
+role_id,Column role_id of table profile_roles.

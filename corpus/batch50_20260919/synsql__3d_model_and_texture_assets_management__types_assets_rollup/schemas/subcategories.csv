@@ -1,0 +1,7 @@
+column_name,column_description
+subcategory_id,Unique identifier for each subcategory.
+subcategory_name,Name of the subcategory. may be NULL.
+category_id,ID of the category of asset. may be NULL.
+created_at,Date and time when the subcategory was created. may be NULL.
+updated_at,Date and time when the subcategory was last updated. may be NULL.
+description,Detailed description of the subcategory. may be NULL.

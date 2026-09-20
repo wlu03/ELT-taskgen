@@ -1,0 +1,3 @@
+column_name,column_description
+galerieid,Column galerieID of table Galerie_Picture.
+pictureid,Column pictureID of table Galerie_Picture.

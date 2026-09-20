@@ -1,0 +1,4 @@
+column_name,column_description
+comm_desc,Column comm_desc of table commodities. may be NULL.
+comm_name,Column comm_name of table commodities.
+flag,Column flag of table commodities. may be NULL.

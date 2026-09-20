@@ -1,0 +1,21 @@
+column_name,column_description
+material_id,Unique identifier for each material.
+name,Name of the material (if available). may be NULL.
+color_diffuse,Diffuse color of the material (RGB values). may be NULL.
+color_specular,Specular color of the material (RGB values). may be NULL.
+color_ambient,Ambient color of the material (RGB values). may be NULL.
+color_emissive,Emissive color of the material (RGB values). may be NULL.
+transparency,Transparency level of the material (0.0 to 1.0). may be NULL.
+reflectivity,Reflectivity level of the material (0.0 to 1.0). may be NULL.
+bump_map,Path to the bump map texture file. may be NULL.
+normal_map,Path to the normal map texture file. may be NULL.
+displacement_map,Path to the displacement map texture file. may be NULL.
+roughness,Roughness level of the material (0.0 to 1.0). may be NULL.
+metallic,Metallic level of the material (0.0 to 1.0). may be NULL.
+anisotropy,Anisotropy level of the material (0.0 to 1.0). may be NULL.
+ior,Index of refraction (IOR) of the material. may be NULL.
+version,Version of the material. may be NULL.
+created_at,Creation date and time of the material. may be NULL.
+updated_at,Last update date and time of the material. may be NULL.
+created_by,ID of the user who created the material. may be NULL.
+updated_by,ID of the user who last updated the material. may be NULL.

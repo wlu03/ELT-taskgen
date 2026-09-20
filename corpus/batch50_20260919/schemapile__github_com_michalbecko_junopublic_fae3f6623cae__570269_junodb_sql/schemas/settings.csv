@@ -1,0 +1,5 @@
+column_name,column_description
+date_update,Column date_update of table settings.
+description,Column description of table settings. may be NULL.
+id,Column id of table settings.
+option,Column option of table settings. may be NULL.

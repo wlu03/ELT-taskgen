@@ -1,0 +1,13 @@
+column_name,column_description
+active,Column Active of table Products.
+date_created,Column Date_Created of table Products.
+date_deleted,Column Date_Deleted of table Products. may be NULL.
+id,Column ID of table Products.
+id_categories,Column ID_CATEGORIES of table Products.
+id_producers,Column ID_PRODUCERS of table Products.
+name,Column Name of table Products.
+path_slug,Column Path_Slug of table Products.
+price_customer,Column Price_Customer of table Products.
+price_producer,Column Price_Producer of table Products.
+user_created,Column User_Created of table Products.
+user_deleted,Column User_Deleted of table Products. may be NULL.

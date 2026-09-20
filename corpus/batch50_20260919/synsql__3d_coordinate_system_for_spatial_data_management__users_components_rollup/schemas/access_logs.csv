@@ -1,0 +1,8 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+component_id,ID of the component being accessed. may be NULL.
+user_id,ID of the user accessing the component. may be NULL.
+access_date,Date when the component was accessed. may be NULL.
+access_type,"Type of access (e.g., view, edit). always exactly one of 'view', 'edit'. may be NULL."
+ip_address,IP address from which the access was made. may be NULL.
+user_agent,User agent string of the device used for access. may be NULL.

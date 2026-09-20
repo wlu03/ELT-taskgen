@@ -1,0 +1,13 @@
+column_name,column_description
+cliente,Column cliente of table cventa.venta.
+concepto,Column concepto of table cventa.venta.
+fecha_sis,Column fecha_sis of table cventa.venta.
+iva,Column iva of table cventa.venta.
+moneda,Column moneda of table cventa.venta.
+monto,Column monto of table cventa.venta.
+saldo,Column saldo of table cventa.venta.
+tipo_pago,Column tipo_pago of table cventa.venta.
+usuario,Column usuario of table cventa.venta.
+valor_base,Column valor_base of table cventa.venta.
+venta,Column venta of table cventa.venta.
+venta_estatus,Column venta_estatus of table cventa.venta.

@@ -1,0 +1,8 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+user_id,ID of the user accessing the system. may be NULL.
+access_date,Date and time of the access. may be NULL.
+access_type,"Type of access (e.g., view, edit, delete). always exactly one of 'view', 'edit', 'delete'. may be NULL."
+robot_id,ID of the robot being accessed. may be NULL.
+path_id,ID of the motion path being accessed. may be NULL.
+access_result,"Result of the access (e.g., success, failure). always exactly one of 'success', 'failure'. may be NULL."

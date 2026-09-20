@@ -1,0 +1,58 @@
+column_name,column_description
+director_name,director name of film directors (real vendored values).
+biography,biography of film directors (real vendored values).
+primary_occupation,primary occupation of film directors (real vendored values).
+viaf_id,viaf id of film directors (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of film directors (real vendored values). may be NULL.
+gnd_id,gnd id of film directors (real vendored values). may be NULL.
+isni_identifier,isni identifier of film directors (real vendored values). may be NULL.
+commons_category,commons category of film directors (real vendored values). may be NULL.
+birthplace,birthplace of film directors (real vendored values).
+deathplace,deathplace of film directors (real vendored values). may be NULL.
+profile_image,profile image of film directors (real vendored values). may be NULL.
+im_db_id,im db id of film directors (real vendored values).
+id_ref_id,id ref id of film directors (real vendored values). may be NULL.
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of film directors (real vendored values). may be NULL.
+birth_date,birth date of film directors (real vendored values).
+death_date,death date of film directors (real vendored values).
+nl_cr_aut_id,nl cr aut id of film directors (real vendored values). may be NULL.
+entity_type,entity type of film directors (real vendored values).
+nationality,nationality of film directors (real vendored values).
+freebase_id,freebase id of film directors (real vendored values).
+national_library_of_spain_id,national library of spain id of film directors (real vendored values). may be NULL.
+nationale_thesaurus_voor_auteursnamen_id,nationale thesaurus voor auteursnamen id of film directors (real vendored values). may be NULL.
+first_name,first name of film directors (real vendored values).
+nndb_people_id,nndb people id of film directors (real vendored values). may be NULL.
+allo_cine_person_id,allo cine person id of film directors (real vendored values). may be NULL.
+all_movie_person_id,all movie person id of film directors (real vendored values). may be NULL.
+burial_site,burial site of film directors (real vendored values). may be NULL.
+language,language of film directors (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of film directors (real vendored values). may be NULL.
+fast_id,fast id of film directors (real vendored values). may be NULL.
+port_person_id,port person id of film directors (real vendored values). may be NULL.
+elonet_person_id,elonet person id of film directors (real vendored values). may be NULL.
+csfd_person_id,csfd person id of film directors (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of film directors (real vendored values). may be NULL.
+filmportal_id,filmportal id of film directors (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of film directors (real vendored values). may be NULL.
+find_a_grave_memorial_id,find a grave memorial id of film directors (real vendored values). may be NULL.
+snac_ark_id,snac ark id of film directors (real vendored values). may be NULL.
+career_start_year,career start year of film directors (real vendored values). may be NULL.
+last_name,last name of film directors (real vendored values). may be NULL.
+death_cause,death cause of film directors (real vendored values). may be NULL.
+gender,gender of film directors (real vendored values).
+related_category,related category of film directors (real vendored values). may be NULL.
+spoken_languages,spoken languages of film directors (real vendored values). may be NULL.
+deutsche_biographie_gnd_id,deutsche biographie gnd id of film directors (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of film directors (real vendored values). may be NULL.
+plwabn_id,plwabn id of film directors (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of film directors (real vendored values). may be NULL.
+american_film_institute_person_id,american film institute person id of film directors (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of film directors (real vendored values). may be NULL.
+movie_meter_person_id,movie meter person id of film directors (real vendored values). may be NULL.
+george_eastman_museum_people_id,george eastman museum people id of film directors (real vendored values). may be NULL.
+prabook_id,prabook id of film directors (real vendored values). may be NULL.
+ivi_person_id,ivi person id of film directors (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of film directors (real vendored values).
+filmru_person_id,filmru person id of film directors (real vendored values). may be NULL.
+writing_languages,writing languages of film directors (real vendored values). may be NULL.

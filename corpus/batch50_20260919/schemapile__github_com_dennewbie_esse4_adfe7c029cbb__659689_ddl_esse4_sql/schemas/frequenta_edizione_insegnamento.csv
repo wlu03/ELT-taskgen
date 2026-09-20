@@ -1,0 +1,5 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table frequenta_edizione_insegnamento.
+codice_insegnamento,Column codice_insegnamento of table frequenta_edizione_insegnamento.
+data_ins,Column data_ins of table frequenta_edizione_insegnamento.
+matricola_studente,Column matricola_studente of table frequenta_edizione_insegnamento.

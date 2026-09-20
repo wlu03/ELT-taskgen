@@ -1,0 +1,8 @@
+column_name,column_description
+discount,Column Discount of table Invoices_Products.
+id,Column ID of table Invoices_Products.
+id_invoices,Column ID_INVOICES of table Invoices_Products.
+id_products_sizes,Column ID_PRODUCTS_SIZES of table Invoices_Products.
+note,Column Note of table Invoices_Products. may be NULL.
+price_final,Column Price_Final of table Invoices_Products.
+quantity,Column Quantity of table Invoices_Products.

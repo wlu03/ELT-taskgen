@@ -1,0 +1,11 @@
+column_name,column_description
+scene_id,Unique identifier for each scene.
+name,Name of the scene. may be NULL.
+camera_id,ID of the camera used in the scene. may be NULL.
+lighting_id,ID of the lighting configuration used in the scene. may be NULL.
+description,Detailed description of the scene. may be NULL.
+version,Version of the scene. may be NULL.
+created_at,Creation date and time of the scene. may be NULL.
+updated_at,Last update date and time of the scene. may be NULL.
+created_by,ID of the user who created the scene. may be NULL.
+updated_by,ID of the user who last updated the scene. may be NULL.

@@ -1,0 +1,10 @@
+column_name,column_description
+archive,Column archive of table user. may be NULL.
+date,Column date of table user.
+e_mail,Column e_mail of table user. may be NULL.
+id,Column id of table user.
+name,Column name of table user. may be NULL.
+password,Column password of table user. may be NULL.
+phone_number,Column phone_number of table user. may be NULL.
+super_admin,Column super_admin of table user. may be NULL.
+surname,Column surname of table user. may be NULL.

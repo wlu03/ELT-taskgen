@@ -1,0 +1,4 @@
+column_name,column_description
+artist_follow_id,Column artist_follow_id of table follow_artist.
+artist_id,Column artist_id of table follow_artist.
+profile_id,Column profile_id of table follow_artist.

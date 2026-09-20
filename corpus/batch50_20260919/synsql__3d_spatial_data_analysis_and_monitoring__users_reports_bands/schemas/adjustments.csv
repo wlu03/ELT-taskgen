@@ -1,0 +1,9 @@
+column_name,column_description
+adjustment_id,Unique identifier for each adjustment record.
+cell_id,Reference to the associated measurement cell. may be NULL.
+ch2_adj,Adjusted value for channel 2. may be NULL.
+ch3_adj,Adjusted value for channel 3. may be NULL.
+ch4_adj,Adjusted value for channel 4. may be NULL.
+adjustment_date,Date when the adjustment was made. may be NULL.
+created_at,Timestamp when the adjustment was created. may be NULL.
+updated_at,Timestamp when the adjustment was last updated. may be NULL.

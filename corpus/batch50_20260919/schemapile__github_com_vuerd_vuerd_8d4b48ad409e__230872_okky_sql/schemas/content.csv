@@ -1,0 +1,16 @@
+column_name,column_description
+a_nick_name,Column a_nick_name of table content. may be NULL.
+anonymity,Column anonymity of table content.
+article_id,Column article_id of table content. may be NULL.
+author_id,Column author_id of table content. may be NULL.
+create_ip,Column create_ip of table content. may be NULL.
+date_created,Column date_created of table content.
+id,Column id of table content.
+last_editor_id,Column last_editor_id of table content. may be NULL.
+last_updated,Column last_updated of table content.
+selected,Column selected of table content.
+text,Column text of table content.
+text_type,Column text_type of table content.
+type,Column type of table content.
+version,Column version of table content.
+vote_count,Column vote_count of table content.

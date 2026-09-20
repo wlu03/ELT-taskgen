@@ -1,0 +1,7 @@
+column_name,column_description
+report_id,primary key of dlt resource 'custom_reports' (synthesized from the dlt manifest (no observed schema)).
+item_id,primary key of dlt resource 'custom_reports' (synthesized from the dlt manifest (no observed schema)).
+_custom_reports_list_id,parent link to 'custom_reports_list' (dlt include_from_parent convention; synthesized from the dlt manifest (no observed schema)).
+report_figure,curator-authored column of dlt transformer 'custom_reports' (source: curator-invented). may be NULL.
+report_caption,curator-authored column of dlt transformer 'custom_reports' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

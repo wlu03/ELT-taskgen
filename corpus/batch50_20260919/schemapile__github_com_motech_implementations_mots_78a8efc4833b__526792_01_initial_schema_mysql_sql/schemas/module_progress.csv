@@ -1,0 +1,11 @@
+column_name,column_description
+chw_id,Column chw_id of table module_progress.
+course_module_id,Column course_module_id of table module_progress.
+created_date,Column created_date of table module_progress. may be NULL.
+current_unit_number,Column current_unit_number of table module_progress.
+end_date,Column end_date of table module_progress. may be NULL.
+id,Column id of table module_progress.
+interrupted,Column interrupted of table module_progress.
+start_date,Column start_date of table module_progress. may be NULL.
+status,Column status of table module_progress.
+updated_date,Column updated_date of table module_progress. may be NULL.

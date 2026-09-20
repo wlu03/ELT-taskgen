@@ -1,0 +1,4 @@
+column_name,column_description
+objective_name,Column objective_name of table Output_Objective. may be NULL.
+scenario,Column scenario of table Output_Objective. may be NULL.
+total_system_cost,Column total_system_cost of table Output_Objective. may be NULL.

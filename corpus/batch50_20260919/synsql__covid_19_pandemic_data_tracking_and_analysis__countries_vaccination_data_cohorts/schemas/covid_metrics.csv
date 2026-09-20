@@ -1,0 +1,19 @@
+column_name,column_description
+metric_id,Unique identifier for each metric entry.
+country_id,Reference to the country. may be NULL.
+date,Date for which the metrics are recorded. may be NULL.
+new_deaths_smoothed_per_million,Smoothed rate of new deaths per million population. may be NULL.
+reproduction_rate,Estimated reproduction rate of the virus. may be NULL.
+new_tests_smoothed_per_thousand,Smoothed rate of new tests per thousand population. may be NULL.
+positive_rate,Percentage of positive test results. may be NULL.
+tests_per_case,Average number of tests per confirmed case. may be NULL.
+people_fully_vaccinated_per_hundred,Percentage of population fully vaccinated. may be NULL.
+new_vaccinations_smoothed_per_million,Smoothed rate of new vaccinations per million population. may be NULL.
+stringency_index,Index representing the stringency of public health measures. may be NULL.
+people_fully_vaccinated_per_hundred_2,Alternative representation of percentage of population fully vaccinated. may be NULL.
+total_deaths,Total number of deaths up to the recorded date. may be NULL.
+total_cases,Total number of confirmed cases up to the recorded date. may be NULL.
+total_tests,Total number of tests conducted up to the recorded date. may be NULL.
+total_vaccinations,Total number of vaccinations administered up to the recorded date. may be NULL.
+vaccination_completion_date,Date when a significant percentage of the population is fully vaccinated. may be NULL.
+source,"Source of the data (e.g., WHO, CDC, local health authorities). always exactly one of 'WHO', 'CDC', 'local health authorities'. may be NULL."

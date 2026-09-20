@@ -1,0 +1,6 @@
+column_name,column_description
+id,Column id of table worker_task_caches.
+job_id,Column job_id of table worker_task_caches. may be NULL.
+path,Column path of table worker_task_caches.
+step_name,Column step_name of table worker_task_caches.
+worker_name,Column worker_name of table worker_task_caches. may be NULL.

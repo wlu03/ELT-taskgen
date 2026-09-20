@@ -1,0 +1,23 @@
+column_name,column_description
+full_name,full name of norwegian filmmakers (real vendored values).
+biography,biography of norwegian filmmakers (real vendored values).
+im_db_id,im db id of norwegian filmmakers (real vendored values).
+kinopoisk_person_id,kinopoisk person id of norwegian filmmakers (real vendored values).
+entity_type,entity type of norwegian filmmakers (real vendored values).
+nationality,nationality of norwegian filmmakers (real vendored values).
+viaf_id,viaf id of norwegian filmmakers (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of norwegian filmmakers (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of norwegian filmmakers (real vendored values). may be NULL.
+gender,gender of norwegian filmmakers (real vendored values).
+elonet_person_id,elonet person id of norwegian filmmakers (real vendored values). may be NULL.
+surname,surname of norwegian filmmakers (real vendored values).
+birth_date,birth date of norwegian filmmakers (real vendored values). may be NULL.
+awards,awards of norwegian filmmakers (real vendored values). may be NULL.
+birth_place,birth place of norwegian filmmakers (real vendored values). may be NULL.
+profession,profession of norwegian filmmakers (real vendored values).
+first_name,first name of norwegian filmmakers (real vendored values).
+port_person_id,port person id of norwegian filmmakers (real vendored values). may be NULL.
+death_date,death date of norwegian filmmakers (real vendored values). may be NULL.
+freebase_id,freebase id of norwegian filmmakers (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of norwegian filmmakers (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of norwegian filmmakers (real vendored values). may be NULL.

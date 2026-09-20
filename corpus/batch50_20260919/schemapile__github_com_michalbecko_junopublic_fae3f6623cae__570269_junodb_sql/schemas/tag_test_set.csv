@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table tag_test_set.
+name,Column name of table tag_test_set. may be NULL.
+test_set_id,Column test_set_id of table tag_test_set. may be NULL.

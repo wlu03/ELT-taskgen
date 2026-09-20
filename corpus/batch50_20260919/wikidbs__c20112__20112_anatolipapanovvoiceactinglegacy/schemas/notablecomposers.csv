@@ -1,0 +1,40 @@
+column_name,column_description
+composername,composername of notablecomposers (real vendored values).
+composerdescription,composerdescription of notablecomposers (real vendored values).
+composeroccupation,composeroccupation of notablecomposers (real vendored values).
+musicbrainzartistid,musicbrainzartistid of notablecomposers (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of notablecomposers (real vendored values). may be NULL.
+viafid,viafid of notablecomposers (real vendored values).
+gndid,gndid of notablecomposers (real vendored values). may be NULL.
+nlcrautid,nlcrautid of notablecomposers (real vendored values). may be NULL.
+composereducation,composereducation of notablecomposers (real vendored values). may be NULL.
+composerawards,composerawards of notablecomposers (real vendored values). may be NULL.
+entitytype,entitytype of notablecomposers (real vendored values).
+birthdate,birthdate of notablecomposers (real vendored values).
+birthplace,birthplace of notablecomposers (real vendored values). may be NULL.
+freebaseid,freebaseid of notablecomposers (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of notablecomposers (real vendored values). may be NULL.
+citizenship,citizenship of notablecomposers (real vendored values).
+firstname,firstname of notablecomposers (real vendored values). may be NULL.
+imdbid,imdbid of notablecomposers (real vendored values).
+discogsartistid,discogsartistid of notablecomposers (real vendored values). may be NULL.
+nukatid,nukatid of notablecomposers (real vendored values). may be NULL.
+isniidentifier,isniidentifier of notablecomposers (real vendored values). may be NULL.
+idrefid,idrefid of notablecomposers (real vendored values). may be NULL.
+languages,languages of notablecomposers (real vendored values). may be NULL.
+europeanaentity,europeanaentity of notablecomposers (real vendored values). may be NULL.
+musicalgenre,musicalgenre of notablecomposers (real vendored values). may be NULL.
+gender,gender of notablecomposers (real vendored values).
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of notablecomposers (real vendored values). may be NULL.
+plwabnid,plwabnid of notablecomposers (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of notablecomposers (real vendored values). may be NULL.
+musicalinstrument,musicalinstrument of notablecomposers (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of notablecomposers (real vendored values). may be NULL.
+lastname,lastname of notablecomposers (real vendored values). may be NULL.
+deathdate,deathdate of notablecomposers (real vendored values). may be NULL.
+deathplace,deathplace of notablecomposers (real vendored values). may be NULL.
+burialplace,burialplace of notablecomposers (real vendored values). may be NULL.
+animatorrupersonid,animatorrupersonid of notablecomposers (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of notablecomposers (real vendored values). may be NULL.
+biografijaruid,biografijaruid of notablecomposers (real vendored values). may be NULL.
+prabookid,prabookid of notablecomposers (real vendored values). may be NULL.

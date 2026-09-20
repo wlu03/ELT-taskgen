@@ -1,0 +1,6 @@
+column_name,column_description
+neighborhood_id,Unique identifier for the neighborhood record.
+cell_id,Reference to the main cell. may be NULL.
+nbr_cell_ids,List of neighboring cell IDs. may be NULL.
+created_at,Timestamp when the neighborhood was created. may be NULL.
+updated_at,Timestamp when the neighborhood was last updated. may be NULL.

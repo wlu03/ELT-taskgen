@@ -1,0 +1,8 @@
+column_name,column_description
+activity_point,Column activity_point of table avatar.
+id,Column id of table avatar.
+nickname,Column nickname of table avatar.
+official,Column official of table avatar. may be NULL.
+picture,Column picture of table avatar.
+picture_type,Column picture_type of table avatar.
+version,Column version of table avatar.

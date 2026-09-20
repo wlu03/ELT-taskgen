@@ -1,0 +1,11 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_policy_resource. may be NULL.
+create_time,Column create_time of table x_policy_resource. may be NULL.
+guid,Column guid of table x_policy_resource. may be NULL.
+id,Column id of table x_policy_resource.
+is_excludes,Column is_excludes of table x_policy_resource.
+is_recursive,Column is_recursive of table x_policy_resource.
+policy_id,Column policy_id of table x_policy_resource.
+res_def_id,Column res_def_id of table x_policy_resource.
+upd_by_id,Column upd_by_id of table x_policy_resource. may be NULL.
+update_time,Column update_time of table x_policy_resource. may be NULL.

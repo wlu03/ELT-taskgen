@@ -1,0 +1,7 @@
+column_name,column_description
+employee_id,primary key of dlt resource 'employees_absences_balance' (synthesized from the dlt manifest (no observed schema)).
+id,primary key of dlt resource 'employees_absences_balance' (synthesized from the dlt manifest (no observed schema)).
+_employees_id,parent link to 'employees' (dlt include_from_parent convention; synthesized from the dlt manifest (no observed schema)).
+absence_balance_days,curator-authored column of dlt transformer 'employees_absences_balance' (source: curator-invented). may be NULL.
+absence_policy_headline,curator-authored column of dlt transformer 'employees_absences_balance' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

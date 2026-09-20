@@ -1,0 +1,14 @@
+column_name,column_description
+abreviatura,Column abreviatura of table cventa.empresa.
+activo,Column activo of table cventa.empresa.
+aplica_iva,Monto de iva que aplica la empresa.
+direccion,Column direccion of table cventa.empresa.
+empresa,Column empresa of table cventa.empresa.
+fecha_sis,Column fecha_sis of table cventa.empresa.
+logo,Column logo of table cventa.empresa. may be NULL.
+moneda,Column moneda of table cventa.empresa.
+nit,Column nit of table cventa.empresa. may be NULL.
+nombre,Column nombre of table cventa.empresa.
+pais_empresa,Column pais_empresa of table cventa.empresa.
+representante,Encargado de la empresa. may be NULL.
+telefono,Column telefono of table cventa.empresa.

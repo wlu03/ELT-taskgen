@@ -1,0 +1,6 @@
+column_name,column_description
+result_id,Unique identifier for each optimization result.
+path_id,ID of the motion path. may be NULL.
+optimization_date,Date the optimization was performed. may be NULL.
+optimization_type,"Type of optimization (e.g., speed, efficiency). always exactly one of 'speed', 'efficiency'. may be NULL."
+result,Result of the optimization. may be NULL.

@@ -1,0 +1,48 @@
+column_name,column_description
+artistname,artistname of notableartistsandaffiliates (real vendored values).
+biography,biography of notableartistsandaffiliates (real vendored values).
+gender,gender of notableartistsandaffiliates (real vendored values).
+wikimediacategory,wikimediacategory of notableartistsandaffiliates (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of notableartistsandaffiliates (real vendored values). may be NULL.
+viafid,viafid of notableartistsandaffiliates (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of notableartistsandaffiliates (real vendored values). may be NULL.
+birthplace,birthplace of notableartistsandaffiliates (real vendored values). may be NULL.
+profileimage,profileimage of notableartistsandaffiliates (real vendored values). may be NULL.
+awards,awards of notableartistsandaffiliates (real vendored values). may be NULL.
+profession,profession of notableartistsandaffiliates (real vendored values).
+musicbrainzartistid,musicbrainzartistid of notableartistsandaffiliates (real vendored values). may be NULL.
+gndid,gndid of notableartistsandaffiliates (real vendored values). may be NULL.
+imdbid,imdbid of notableartistsandaffiliates (real vendored values). may be NULL.
+idrefid,idrefid of notableartistsandaffiliates (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of notableartistsandaffiliates (real vendored values). may be NULL.
+birthdate,birthdate of notableartistsandaffiliates (real vendored values).
+entitytype,entitytype of notableartistsandaffiliates (real vendored values).
+freebaseid,freebaseid of notableartistsandaffiliates (real vendored values). may be NULL.
+nationality,nationality of notableartistsandaffiliates (real vendored values).
+allocinepersonid,allocinepersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+firstname,firstname of notableartistsandaffiliates (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+portpersonid,portpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of notableartistsandaffiliates (real vendored values). may be NULL.
+nlcrautid,nlcrautid of notableartistsandaffiliates (real vendored values). may be NULL.
+nationalethesaurusvoorauteursnamenid,nationalethesaurusvoorauteursnamenid of notableartistsandaffiliates (real vendored values). may be NULL.
+lastname,lastname of notableartistsandaffiliates (real vendored values). may be NULL.
+almamater,almamater of notableartistsandaffiliates (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+openmediadatabasepersonid,openmediadatabasepersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+careerstartyear,careerstartyear of notableartistsandaffiliates (real vendored values). may be NULL.
+languages,languages of notableartistsandaffiliates (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+prabookid,prabookid of notableartistsandaffiliates (real vendored values). may be NULL.
+cinemagiapersonid,cinemagiapersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+ivipersonid,ivipersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of notableartistsandaffiliates (real vendored values). may be NULL.
+doubanmoviecelebrityid,doubanmoviecelebrityid of notableartistsandaffiliates (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of notableartistsandaffiliates (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of notableartistsandaffiliates (real vendored values). may be NULL.

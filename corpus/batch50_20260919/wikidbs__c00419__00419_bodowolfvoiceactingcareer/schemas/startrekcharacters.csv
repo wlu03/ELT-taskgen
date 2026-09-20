@@ -1,0 +1,25 @@
+column_name,column_description
+charactername,charactername of startrekcharacters (real vendored values).
+characterdescription,characterdescription of startrekcharacters (real vendored values).
+gender,gender of startrekcharacters (real vendored values).
+imdbid,imdbid of startrekcharacters (real vendored values). may be NULL.
+freebaseid,freebaseid of startrekcharacters (real vendored values). may be NULL.
+charactertype,charactertype of startrekcharacters (real vendored values).
+narrativeuniverse,narrativeuniverse of startrekcharacters (real vendored values).
+appearanceinwork,appearanceinwork of startrekcharacters (real vendored values).
+roleinnarrative,roleinnarrative of startrekcharacters (real vendored values). may be NULL.
+militaryrank,militaryrank of startrekcharacters (real vendored values). may be NULL.
+characteroccupation,characteroccupation of startrekcharacters (real vendored values). may be NULL.
+fandomarticleid,fandomarticleid of startrekcharacters (real vendored values).
+comicvineid,comicvineid of startrekcharacters (real vendored values). may be NULL.
+goodreadscharacterid,goodreadscharacterid of startrekcharacters (real vendored values). may be NULL.
+sourcedescription,sourcedescription of startrekcharacters (real vendored values). may be NULL.
+archenemy,archenemy of startrekcharacters (real vendored values). may be NULL.
+actorname,actorname of startrekcharacters (real vendored values). may be NULL.
+franchise,franchise of startrekcharacters (real vendored values).
+startrekcomdatabaseid,startrekcomdatabaseid of startrekcharacters (real vendored values). may be NULL.
+personalitydatabaseprofileid,personalitydatabaseprofileid of startrekcharacters (real vendored values). may be NULL.
+tradingcarddatabasepersonid,tradingcarddatabasepersonid of startrekcharacters (real vendored values). may be NULL.
+firstname,firstname of startrekcharacters (real vendored values). may be NULL.
+characterresidence,characterresidence of startrekcharacters (real vendored values). may be NULL.
+gamingwikinetworkarticleid,gamingwikinetworkarticleid of startrekcharacters (real vendored values). may be NULL.

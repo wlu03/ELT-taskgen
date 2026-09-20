@@ -1,0 +1,14 @@
+column_name,column_description
+cache_id,Unique identifier for each cache type.
+cache_name,Name of the cache. may be NULL.
+cache_type,"Type of the cache (e.g., in-memory, distributed, file-based). always exactly one of 'in-memory', 'distributed', 'file-based'. may be NULL."
+description,Description of the cache. may be NULL.
+read_only,Indicates if the cache supports read-only access. may be NULL.
+nonstrict_read_write,Indicates if the cache supports nonstrict-read-write access. may be NULL.
+read_write,Indicates if the cache supports read-write access. may be NULL.
+transactional,Indicates if the cache supports transactional access. may be NULL.
+max_size,Maximum size of the cache in bytes. may be NULL.
+eviction_policy,"Policy for evicting items from the cache (e.g., LRU, FIFO). always exactly one of 'LRU', 'FIFO'. may be NULL."
+time_to_live_seconds,Time-to-live for cache entries in seconds. may be NULL.
+distributed,Indicates if the cache is distributed. may be NULL.
+version,Version of the cache implementation. may be NULL.

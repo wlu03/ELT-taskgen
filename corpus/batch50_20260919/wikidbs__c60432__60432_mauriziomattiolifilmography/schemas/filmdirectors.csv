@@ -1,0 +1,36 @@
+column_name,column_description
+directorname,directorname of filmdirectors (real vendored values).
+biography,biography of filmdirectors (real vendored values). may be NULL.
+profession,profession of filmdirectors (real vendored values).
+viafid,viafid of filmdirectors (real vendored values). may be NULL.
+isniidentifier,isniidentifier of filmdirectors (real vendored values). may be NULL.
+nationality,nationality of filmdirectors (real vendored values). may be NULL.
+commonscategory,commonscategory of filmdirectors (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmdirectors (real vendored values). may be NULL.
+gndid,gndid of filmdirectors (real vendored values). may be NULL.
+imdbid,imdbid of filmdirectors (real vendored values). may be NULL.
+birthdate,birthdate of filmdirectors (real vendored values). may be NULL.
+entitytype,entitytype of filmdirectors (real vendored values).
+sbnauthorid,sbnauthorid of filmdirectors (real vendored values). may be NULL.
+freebaseid,freebaseid of filmdirectors (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of filmdirectors (real vendored values). may be NULL.
+firstname,firstname of filmdirectors (real vendored values).
+nationallibraryofspainid,nationallibraryofspainid of filmdirectors (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of filmdirectors (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of filmdirectors (real vendored values). may be NULL.
+portpersonid,portpersonid of filmdirectors (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmdirectors (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of filmdirectors (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of filmdirectors (real vendored values). may be NULL.
+openmlolauthorid,openmlolauthorid of filmdirectors (real vendored values). may be NULL.
+languages,languages of filmdirectors (real vendored values). may be NULL.
+gender,gender of filmdirectors (real vendored values).
+relatedcategory,relatedcategory of filmdirectors (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of filmdirectors (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of filmdirectors (real vendored values). may be NULL.
+surname,surname of filmdirectors (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmdirectors (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of filmdirectors (real vendored values). may be NULL.
+moviemeterpersonid,moviemeterpersonid of filmdirectors (real vendored values). may be NULL.
+birthplace,birthplace of filmdirectors (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmdirectors (real vendored values). may be NULL.

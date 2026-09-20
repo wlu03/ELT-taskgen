@@ -1,0 +1,9 @@
+column_name,column_description
+choice_id,Column choice_id of table choice.
+created_date,Column created_date of table choice. may be NULL.
+description,Column description of table choice. may be NULL.
+id,Column id of table choice.
+ivr_name,Column ivr_name of table choice. may be NULL.
+question_id,Column question_id of table choice. may be NULL.
+type,Column type of table choice.
+updated_date,Column updated_date of table choice. may be NULL.

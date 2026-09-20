@@ -1,0 +1,8 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table appello.
+codice_insegnamento,Column codice_insegnamento of table appello.
+data_appello,Column data_appello of table appello.
+data_fine,Column data_fine of table appello.
+data_inizio,Column data_inizio of table appello.
+max_studenti,Column max_studenti of table appello.
+tipo,"Column tipo of table appello. always exactly one of 'Orale', 'ORALE', 'orale', 'scritto', 'Scritto', 'SCRITTO', 'Non previsto', 'NON PREVISTO', 'non previsto'. may be NULL."

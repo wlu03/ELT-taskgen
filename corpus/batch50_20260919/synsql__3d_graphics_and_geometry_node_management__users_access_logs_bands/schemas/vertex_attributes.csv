@@ -1,0 +1,10 @@
+column_name,column_description
+vertex_attribute_id,Unique identifier for each vertex attribute.
+node_id,Reference to the node that the vertex attribute belongs to. may be NULL.
+attrib,"Vertex attribute information (e.g., X3DVertexAttributeNode). may be NULL."
+ccw,Clockwise (ccw) value for the vertex attribute. may be NULL.
+color,Color information for the vertex attribute. may be NULL.
+created_at,Timestamp for when the vertex attribute was created. may be NULL.
+updated_at,Timestamp for the last update to the vertex attribute. may be NULL.
+version,Version of the vertex attribute. may be NULL.
+metadata,"Additional metadata for the vertex attribute (e.g., JSON format). may be NULL."

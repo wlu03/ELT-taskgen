@@ -1,0 +1,6 @@
+column_name,column_description
+code,Column CODE of table EXPERIMENT_TYPES.
+dbin_id,Column DBIN_ID of table EXPERIMENT_TYPES.
+description,Column DESCRIPTION of table EXPERIMENT_TYPES. may be NULL.
+id,Column ID of table EXPERIMENT_TYPES.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table EXPERIMENT_TYPES. may be NULL.

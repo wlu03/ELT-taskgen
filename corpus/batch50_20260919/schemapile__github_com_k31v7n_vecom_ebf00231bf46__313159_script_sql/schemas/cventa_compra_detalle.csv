@@ -1,0 +1,8 @@
+column_name,column_description
+anulado,Column anulado of table cventa.compra_detalle.
+cantidad,Column cantidad of table cventa.compra_detalle.
+compra,Column compra of table cventa.compra_detalle.
+compra_detalle,Column compra_detalle of table cventa.compra_detalle.
+precio,Column precio of table cventa.compra_detalle.
+producto,Column producto of table cventa.compra_detalle.
+total,Column total of table cventa.compra_detalle.

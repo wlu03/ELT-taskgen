@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column id of table worker_resource_config_check_sessions.
+resource_config_check_session_id,Column resource_config_check_session_id of table worker_resource_config_check_sessions. may be NULL.
+team_id,Column team_id of table worker_resource_config_check_sessions. may be NULL.
+worker_base_resource_type_id,Column worker_base_resource_type_id of table worker_resource_config_check_sessions. may be NULL.

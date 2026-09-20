@@ -1,0 +1,5 @@
+column_name,column_description
+recommendation_id,Unique identifier for each recommendation.
+user_id,ID of the user. may be NULL.
+plan_id,ID of the recommended plan. may be NULL.
+recommendation_date,Date when the recommendation was made. may be NULL.

@@ -1,0 +1,14 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_service. may be NULL.
+create_time,Column create_time of table x_service. may be NULL.
+description,Column description of table x_service. may be NULL.
+guid,Column guid of table x_service. may be NULL.
+id,Column id of table x_service.
+is_enabled,Column is_enabled of table x_service.
+name,Column name of table x_service. may be NULL.
+policy_update_time,Column policy_update_time of table x_service. may be NULL.
+policy_version,Column policy_version of table x_service. may be NULL.
+type,Column type of table x_service. may be NULL.
+upd_by_id,Column upd_by_id of table x_service. may be NULL.
+update_time,Column update_time of table x_service. may be NULL.
+version,Column version of table x_service. may be NULL.

@@ -1,0 +1,8 @@
+column_name,column_description
+factura,Column factura of table cventa.factura.
+factura_estatus,Column factura_estatus of table cventa.factura.
+factura_serie,Column factura_serie of table cventa.factura.
+fecha,Column fecha of table cventa.factura. may be NULL.
+monto,Column monto of table cventa.factura.
+numero,Column numero of table cventa.factura. may be NULL.
+usuario,Column usuario of table cventa.factura.

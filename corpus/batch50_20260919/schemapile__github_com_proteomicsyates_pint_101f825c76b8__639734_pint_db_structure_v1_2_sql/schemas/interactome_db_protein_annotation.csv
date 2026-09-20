@@ -1,0 +1,7 @@
+column_name,column_description
+annotation_type_name,Column Annotation_Type_name of table interactome_db.Protein_Annotation.
+protein_id,Column Protein_id of table interactome_db.Protein_Annotation.
+id,Column id of table interactome_db.Protein_Annotation.
+name,Column name of table interactome_db.Protein_Annotation.
+source,"description of the source of the annotation, i.e. GO , genemania...manual annotation. may be NULL."
+value,Column value of table interactome_db.Protein_Annotation. may be NULL.

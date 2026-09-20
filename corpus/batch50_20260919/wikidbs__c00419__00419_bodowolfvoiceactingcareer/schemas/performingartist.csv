@@ -1,0 +1,74 @@
+column_name,column_description
+fullname,fullname of performingartist (real vendored values).
+biography,biography of performingartist (real vendored values).
+gender,gender of performingartist (real vendored values).
+commonscategory,commonscategory of performingartist (real vendored values).
+primaryoccupation,primaryoccupation of performingartist (real vendored values).
+nationality,nationality of performingartist (real vendored values).
+birthplace,birthplace of performingartist (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of performingartist (real vendored values). may be NULL.
+viafid,viafid of performingartist (real vendored values).
+gndid,gndid of performingartist (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of performingartist (real vendored values). may be NULL.
+musicbrainzartistid,musicbrainzartistid of performingartist (real vendored values). may be NULL.
+imdbid,imdbid of performingartist (real vendored values).
+profileimage,profileimage of performingartist (real vendored values).
+birthdate,birthdate of performingartist (real vendored values).
+entitytype,entitytype of performingartist (real vendored values).
+freebaseid,freebaseid of performingartist (real vendored values).
+surname,surname of performingartist (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of performingartist (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of performingartist (real vendored values). may be NULL.
+internetbroadwaydatabasepersonid,internetbroadwaydatabasepersonid of performingartist (real vendored values). may be NULL.
+twitterusername,twitterusername of performingartist (real vendored values). may be NULL.
+commonsgallery,commonsgallery of performingartist (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of performingartist (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of performingartist (real vendored values).
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of performingartist (real vendored values). may be NULL.
+portpersonid,portpersonid of performingartist (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of performingartist (real vendored values). may be NULL.
+nndbpeopleid,nndbpeopleid of performingartist (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of performingartist (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of performingartist (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of performingartist (real vendored values). may be NULL.
+wikitreepersonid,wikitreepersonid of performingartist (real vendored values). may be NULL.
+firstname,firstname of performingartist (real vendored values). may be NULL.
+snacarkid,snacarkid of performingartist (real vendored values). may be NULL.
+careerstartyear,careerstartyear of performingartist (real vendored values). may be NULL.
+birthname,birthname of performingartist (real vendored values). may be NULL.
+discogsartistid,discogsartistid of performingartist (real vendored values). may be NULL.
+cinemagiapersonid,cinemagiapersonid of performingartist (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of performingartist (real vendored values).
+almamater,almamater of performingartist (real vendored values). may be NULL.
+maincategory,maincategory of performingartist (real vendored values). may be NULL.
+openmediadatabasepersonid,openmediadatabasepersonid of performingartist (real vendored values). may be NULL.
+languagesspoken,languagesspoken of performingartist (real vendored values). may be NULL.
+norafid,norafid of performingartist (real vendored values). may be NULL.
+nukatid,nukatid of performingartist (real vendored values). may be NULL.
+internetspeculativefictiondatabaseauthorid,internetspeculativefictiondatabaseauthorid of performingartist (real vendored values). may be NULL.
+rottentomatoesid,rottentomatoesid of performingartist (real vendored values). may be NULL.
+fandomarticleid,fandomarticleid of performingartist (real vendored values).
+tradingcarddatabasepersonid,tradingcarddatabasepersonid of performingartist (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of performingartist (real vendored values). may be NULL.
+fandangopersonid,fandangopersonid of performingartist (real vendored values). may be NULL.
+socialmediafollowers,socialmediafollowers of performingartist (real vendored values). may be NULL.
+behindthevoiceactorspersonid,behindthevoiceactorspersonid of performingartist (real vendored values). may be NULL.
+startrekcomdatabaseid,startrekcomdatabaseid of performingartist (real vendored values). may be NULL.
+movieplayerpersonid,movieplayerpersonid of performingartist (real vendored values). may be NULL.
+filmtvitpersonid,filmtvitpersonid of performingartist (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of performingartist (real vendored values). may be NULL.
+nationallibraryofkoreaid,nationallibraryofkoreaid of performingartist (real vendored values). may be NULL.
+plwabnid,plwabnid of performingartist (real vendored values). may be NULL.
+prabookid,prabookid of performingartist (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of performingartist (real vendored values).
+doubanmoviecelebrityid,doubanmoviecelebrityid of performingartist (real vendored values). may be NULL.
+ivipersonid,ivipersonid of performingartist (real vendored values). may be NULL.
+filmwebplpersonid,filmwebplpersonid of performingartist (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of performingartist (real vendored values).
+listalid,listalid of performingartist (real vendored values). may be NULL.
+deutschesynchronkarteiactorid,deutschesynchronkarteiactorid of performingartist (real vendored values). may be NULL.
+animeconscomguestid,animeconscomguestid of performingartist (real vendored values). may be NULL.
+nativelanguage,nativelanguage of performingartist (real vendored values). may be NULL.
+writinglanguage,writinglanguage of performingartist (real vendored values). may be NULL.
+deutschesynchronkarteipersonid,deutschesynchronkarteipersonid of performingartist (real vendored values). may be NULL.
+gamingwikinetworkarticleid,gamingwikinetworkarticleid of performingartist (real vendored values). may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table user_web_role.
+role_id,Column role_id of table user_web_role. may be NULL.
+user_id,Column user_id of table user_web_role. may be NULL.

@@ -1,0 +1,7 @@
+column_name,column_description
+codice_corso,Column codice_corso of table seduta_laurea. may be NULL.
+data_seduta,Column data_seduta of table seduta_laurea. may be NULL.
+lode,"Column lode of table seduta_laurea. always exactly one of 'N', 'n'. may be NULL."
+matricola_studente,Column matricola_studente of table seduta_laurea.
+numero_verbale,Column numero_verbale of table seduta_laurea.
+voto,Column voto of table seduta_laurea.

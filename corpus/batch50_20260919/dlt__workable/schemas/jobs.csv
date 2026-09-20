@@ -1,0 +1,4 @@
+column_name,column_description
+_jobs_surrogate_id,"deterministic surrogate primary key of dlt resource 'jobs', synthesized because the connector declares none (synthesized from the dlt manifest (no observed schema))."
+job_shortcode,curator-authored column of dlt resource 'jobs' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

@@ -1,0 +1,7 @@
+column_name,column_description
+category_id,Unique identifier for each category.
+category_name,Name of the category. may be NULL.
+type_id,ID of the type of asset. may be NULL.
+created_at,Date and time when the category was created. may be NULL.
+updated_at,Date and time when the category was last updated. may be NULL.
+description,Detailed description of the category. may be NULL.

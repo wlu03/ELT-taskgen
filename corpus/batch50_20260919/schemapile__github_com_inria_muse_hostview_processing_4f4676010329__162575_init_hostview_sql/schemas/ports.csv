@@ -1,0 +1,12 @@
+column_name,column_description
+destination_ip,Column destination_ip of table ports. may be NULL.
+destination_port,Column destination_port of table ports. may be NULL.
+id,Column id of table ports.
+logged_at,Column logged_at of table ports. may be NULL.
+name,Column name of table ports. may be NULL.
+pid,Column pid of table ports. may be NULL.
+protocol,Column protocol of table ports. may be NULL.
+session_id,Column session_id of table ports.
+source_ip,Column source_ip of table ports. may be NULL.
+source_port,Column source_port of table ports. may be NULL.
+state,Column state of table ports. may be NULL.

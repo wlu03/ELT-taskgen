@@ -1,0 +1,4 @@
+column_name,column_description
+permission_id,Unique identifier for each permission.
+permission_name,Name of the permission. may be NULL.
+description,Description of the permission. may be NULL.

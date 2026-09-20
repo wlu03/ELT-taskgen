@@ -1,0 +1,11 @@
+column_name,column_description
+step_id,Unique identifier for each step.
+path_id,ID of the motion path the step belongs to. may be NULL.
+step_number,Number of the step in the path. may be NULL.
+step_name,"Name of the step (e.g., start, end, intermediate points). always exactly one of 'start', 'end', 'intermediate points'. may be NULL."
+x_coordinate,X coordinate of the step. may be NULL.
+y_coordinate,Y coordinate of the step. may be NULL.
+z_coordinate,Z coordinate of the step. may be NULL.
+timestamp,Timestamp when the step was recorded. may be NULL.
+velocity,Velocity of the robot at the step. may be NULL.
+acceleration,Acceleration of the robot at the step. may be NULL.

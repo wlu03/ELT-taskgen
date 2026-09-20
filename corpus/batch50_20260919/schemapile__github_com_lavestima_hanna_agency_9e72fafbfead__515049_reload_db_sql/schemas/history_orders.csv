@@ -1,0 +1,6 @@
+column_name,column_description
+date_edited,Column Date_Edited of table History_Orders.
+id,Column ID of table History_Orders.
+id_customers,Column ID_CUSTOMERS of table History_Orders. may be NULL.
+id_orders,Column ID_ORDERS of table History_Orders.
+user_edited,Column User_Edited of table History_Orders.

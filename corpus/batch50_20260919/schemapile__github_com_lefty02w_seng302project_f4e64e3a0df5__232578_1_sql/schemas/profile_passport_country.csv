@@ -1,0 +1,4 @@
+column_name,column_description
+passport_country,Column passport_country of table profile_passport_country.
+profile,Column profile of table profile_passport_country.
+profile_passport_country_id,Column profile_passport_country_id of table profile_passport_country.

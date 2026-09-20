@@ -1,0 +1,6 @@
+column_name,column_description
+courseware_id,Column courseware_id of table engineering.grade_assessment.
+grade_assessment_id,Column grade_assessment_id of table engineering.grade_assessment.
+grade_assessment_score,Column grade_assessment_score of table engineering.grade_assessment.
+grade_assessment_total,Column grade_assessment_total of table engineering.grade_assessment.
+student_id,Column student_id of table engineering.grade_assessment.

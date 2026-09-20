@@ -1,0 +1,37 @@
+column_name,column_description
+full_name,full name of film industry professionals (real vendored values).
+biography,biography of film industry professionals (real vendored values).
+im_db_id,im db id of film industry professionals (real vendored values).
+kinopoisk_person_id,kinopoisk person id of film industry professionals (real vendored values).
+entity_type,entity type of film industry professionals (real vendored values).
+nationality,nationality of film industry professionals (real vendored values).
+viaf_id,viaf id of film industry professionals (real vendored values).
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of film industry professionals (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of film industry professionals (real vendored values). may be NULL.
+international_standard_name_identifier,international standard name identifier of film industry professionals (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of film industry professionals (real vendored values). may be NULL.
+gender,gender of film industry professionals (real vendored values).
+languages,languages of film industry professionals (real vendored values). may be NULL.
+elonet_person_id,elonet person id of film industry professionals (real vendored values). may be NULL.
+surname,surname of film industry professionals (real vendored values).
+birth_date,birth date of film industry professionals (real vendored values).
+awards,awards of film industry professionals (real vendored values). may be NULL.
+birth_place,birth place of film industry professionals (real vendored values).
+profession,profession of film industry professionals (real vendored values).
+first_name,first name of film industry professionals (real vendored values).
+store_norske_leksikon_id,store norske leksikon id of film industry professionals (real vendored values). may be NULL.
+norsk_biografisk_leksikon_id,norsk biografisk leksikon id of film industry professionals (real vendored values). may be NULL.
+filmography_category,filmography category of film industry professionals (real vendored values). may be NULL.
+death_date,death date of film industry professionals (real vendored values). may be NULL.
+death_place,death place of film industry professionals (real vendored values). may be NULL.
+freebase_id,freebase id of film industry professionals (real vendored values).
+tmdb_person_id,tmdb person id of film industry professionals (real vendored values). may be NULL.
+movie_meter_person_id,movie meter person id of film industry professionals (real vendored values). may be NULL.
+prabook_id,prabook id of film industry professionals (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of film industry professionals (real vendored values).
+all_movie_person_id,all movie person id of film industry professionals (real vendored values). may be NULL.
+allo_cine_person_id,allo cine person id of film industry professionals (real vendored values). may be NULL.
+csfd_person_id,csfd person id of film industry professionals (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of film industry professionals (real vendored values). may be NULL.
+partner,partner of film industry professionals (real vendored values). may be NULL.
+filmru_person_id,filmru person id of film industry professionals (real vendored values). may be NULL.

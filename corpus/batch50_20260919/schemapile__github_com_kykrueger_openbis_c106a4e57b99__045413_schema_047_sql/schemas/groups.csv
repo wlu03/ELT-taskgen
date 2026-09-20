@@ -1,0 +1,7 @@
+column_name,column_description
+code,Column CODE of table GROUPS.
+dbin_id,Column DBIN_ID of table GROUPS.
+description,Column DESCRIPTION of table GROUPS. may be NULL.
+id,Column ID of table GROUPS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table GROUPS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table GROUPS.

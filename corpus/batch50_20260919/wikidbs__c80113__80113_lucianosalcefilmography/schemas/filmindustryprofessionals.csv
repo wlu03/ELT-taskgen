@@ -1,0 +1,53 @@
+column_name,column_description
+fullname,fullname of filmindustryprofessionals (real vendored values).
+biography,biography of filmindustryprofessionals (real vendored values).
+primaryoccupation,primaryoccupation of filmindustryprofessionals (real vendored values). may be NULL.
+viafid,viafid of filmindustryprofessionals (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of filmindustryprofessionals (real vendored values). may be NULL.
+nationality,nationality of filmindustryprofessionals (real vendored values). may be NULL.
+commonscategory,commonscategory of filmindustryprofessionals (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmindustryprofessionals (real vendored values). may be NULL.
+gndid,gndid of filmindustryprofessionals (real vendored values). may be NULL.
+imdbid,imdbid of filmindustryprofessionals (real vendored values). may be NULL.
+profileimage,profileimage of filmindustryprofessionals (real vendored values). may be NULL.
+birthdate,birthdate of filmindustryprofessionals (real vendored values). may be NULL.
+deathdate,deathdate of filmindustryprofessionals (real vendored values). may be NULL.
+deathplace,deathplace of filmindustryprofessionals (real vendored values). may be NULL.
+entitytype,entitytype of filmindustryprofessionals (real vendored values).
+freebaseid,freebaseid of filmindustryprofessionals (real vendored values).
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of filmindustryprofessionals (real vendored values). may be NULL.
+idrefid,idrefid of filmindustryprofessionals (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of filmindustryprofessionals (real vendored values). may be NULL.
+firstname,firstname of filmindustryprofessionals (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of filmindustryprofessionals (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of filmindustryprofessionals (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmindustryprofessionals (real vendored values). may be NULL.
+portpersonid,portpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+fastid,fastid of filmindustryprofessionals (real vendored values). may be NULL.
+filmportalid,filmportalid of filmindustryprofessionals (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmindustryprofessionals (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+languages,languages of filmindustryprofessionals (real vendored values). may be NULL.
+cinematografoitnameorcompanyid,cinematografoitnameorcompanyid of filmindustryprofessionals (real vendored values). may be NULL.
+nationalethesaurusvoorauteursnamenid,nationalethesaurusvoorauteursnamenid of filmindustryprofessionals (real vendored values). may be NULL.
+lastname,lastname of filmindustryprofessionals (real vendored values). may be NULL.
+gender,gender of filmindustryprofessionals (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of filmindustryprofessionals (real vendored values). may be NULL.
+careerstartyear,careerstartyear of filmindustryprofessionals (real vendored values). may be NULL.
+relatedfilmcategory,relatedfilmcategory of filmindustryprofessionals (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of filmindustryprofessionals (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of filmindustryprofessionals (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of filmindustryprofessionals (real vendored values). may be NULL.
+plwabnid,plwabnid of filmindustryprofessionals (real vendored values). may be NULL.
+cinemathequequebecoisepersonid,cinemathequequebecoisepersonid of filmindustryprofessionals (real vendored values). may be NULL.
+sharecatalogueauthorid,sharecatalogueauthorid of filmindustryprofessionals (real vendored values). may be NULL.
+moviemeterpersonid,moviemeterpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+cinematografoitnameorcompanyidnew,cinematografoitnameorcompanyidnew of filmindustryprofessionals (real vendored values). may be NULL.
+birthplace,birthplace of filmindustryprofessionals (real vendored values). may be NULL.
+ivipersonid,ivipersonid of filmindustryprofessionals (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of filmindustryprofessionals (real vendored values). may be NULL.
+kinenotepersonid,kinenotepersonid of filmindustryprofessionals (real vendored values). may be NULL.

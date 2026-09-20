@@ -1,0 +1,10 @@
+column_name,column_description
+attach_type,Column attach_type of table file.
+byte_size,Column byte_size of table file.
+height,Column height of table file.
+id,Column id of table file.
+name,Column name of table file.
+org_name,Column org_name of table file.
+type,Column type of table file.
+version,Column version of table file.
+width,Column width of table file.

@@ -1,0 +1,11 @@
+column_name,column_description
+scene_id,Unique identifier for each scene.
+scene_name,Name of the scene. may be NULL.
+description,Description of the scene. may be NULL.
+created_at,Date and time the scene was created. may be NULL.
+updated_at,Date and time the scene was last updated. may be NULL.
+scene_type,"Type of the scene (e.g., indoor, outdoor, action). always exactly one of 'indoor', 'outdoor', 'action'. may be NULL."
+status,"Status of the scene (e.g., draft, in progress, completed). always exactly one of 'draft', 'in progress', 'completed'. may be NULL."
+created_by,ID of the user who created the scene. may be NULL.
+updated_by,ID of the user who last updated the scene. may be NULL.
+is_active,Flag to indicate if the scene is active. may be NULL.

@@ -1,0 +1,9 @@
+column_name,column_description
+surname,surname of voiceactorfamilynames (real vendored values).
+description,description of voiceactorfamilynames (real vendored values).
+category,category of voiceactorfamilynames (real vendored values).
+script,script of voiceactorfamilynames (real vendored values).
+nativesurname,nativesurname of voiceactorfamilynames (real vendored values).
+commonscategory,commonscategory of voiceactorfamilynames (real vendored values). may be NULL.
+distinctfrom,distinctfrom of voiceactorfamilynames (real vendored values). may be NULL.
+language,language of voiceactorfamilynames (real vendored values). may be NULL.

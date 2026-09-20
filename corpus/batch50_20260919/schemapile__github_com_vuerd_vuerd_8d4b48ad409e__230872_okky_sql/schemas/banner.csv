@@ -1,0 +1,11 @@
+column_name,column_description
+date_created,Column date_created of table banner.
+id,Column id of table banner.
+image,Column image of table banner. may be NULL.
+last_updated,Column last_updated of table banner.
+name,Column name of table banner.
+target,Column target of table banner. may be NULL.
+type,Column type of table banner.
+url,Column url of table banner.
+version,Column version of table banner.
+visible,Column visible of table banner.

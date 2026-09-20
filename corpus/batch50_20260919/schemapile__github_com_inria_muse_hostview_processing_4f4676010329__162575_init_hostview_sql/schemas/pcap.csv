@@ -1,0 +1,9 @@
+column_name,column_description
+basename,Column basename of table pcap. may be NULL.
+connection_id,Column connection_id of table pcap.
+created_at,Column created_at of table pcap. may be NULL.
+error_info,Column error_info of table pcap. may be NULL.
+folder,Column folder of table pcap. may be NULL.
+id,Column id of table pcap.
+status,Column status of table pcap. may be NULL.
+updated_at,Column updated_at of table pcap. may be NULL.

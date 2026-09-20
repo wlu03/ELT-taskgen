@@ -1,0 +1,5 @@
+column_name,column_description
+protein_id,Column Protein_id of table interactome_db.Protein_Threshold.
+threshold_id,Column Threshold_id of table interactome_db.Protein_Threshold.
+id,Column id of table interactome_db.Protein_Threshold.
+pass_threshold,Column pass_threshold of table interactome_db.Protein_Threshold.

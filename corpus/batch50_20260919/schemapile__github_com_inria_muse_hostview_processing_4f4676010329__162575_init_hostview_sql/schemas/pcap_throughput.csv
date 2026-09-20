@@ -1,0 +1,7 @@
+column_name,column_description
+direction,Column direction of table pcap_throughput. may be NULL.
+flow_id,Column flow_id of table pcap_throughput. may be NULL.
+id,Column id of table pcap_throughput.
+pcap_id,Column pcap_id of table pcap_throughput.
+time,Column time of table pcap_throughput. may be NULL.
+value,Column value of table pcap_throughput. may be NULL.

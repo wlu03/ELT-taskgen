@@ -1,0 +1,11 @@
+column_name,column_description
+birth_date,Column birth_date of table profile.
+email,Column email of table profile.
+first_name,Column first_name of table profile.
+gender,Column gender of table profile.
+last_name,Column last_name of table profile.
+middle_name,Column middle_name of table profile. may be NULL.
+password,Column password of table profile.
+profile_id,Column profile_id of table profile.
+soft_delete,Column soft_delete of table profile.
+time_created,Column time_created of table profile.

@@ -1,0 +1,124 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-k31v7n-vecom-ebf0023-a28aad9e81d5-bucket/cventa_bodega_tipo.jsonl
+    sync_mode: full_refresh_append
+    table: cventa_bodega_tipo
+  - path: s3://schemapile--github-com-k31v7n-vecom-ebf0023-a28aad9e81d5-bucket/cventa_cliente_tipo.jsonl
+    sync_mode: full_refresh_append
+    table: cventa_cliente_tipo
+  - path: s3://schemapile--github-com-k31v7n-vecom-ebf0023-a28aad9e81d5-bucket/cventa_compra_detalle.jsonl
+    sync_mode: full_refresh_append
+    table: cventa_compra_detalle
+  - path: s3://schemapile--github-com-k31v7n-vecom-ebf0023-a28aad9e81d5-bucket/cventa_modulo.jsonl
+    sync_mode: full_refresh_append
+    table: cventa_modulo
+  - path: s3://schemapile--github-com-k31v7n-vecom-ebf0023-a28aad9e81d5-bucket/cventa_producto_tipo.jsonl
+    sync_mode: full_refresh_append
+    table: cventa_producto_tipo
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - cventa_bodega_producto
+    - cventa_proveedor_clasificacion
+    - cventa_rol
+    - cventa_tipo_pago
+    - cventa_unidad_medida
+    - cventa_usuario_menu
+    - cventa_vendedor
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_bitacora_password.csv
+  sync_mode: full_refresh_append
+  table: cventa_bitacora_password
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_bodega_movimiento_tipo.csv
+  sync_mode: full_refresh_append
+  table: cventa_bodega_movimiento_tipo
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_empresa.csv
+  sync_mode: full_refresh_append
+  table: cventa_empresa
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_menu.csv
+  sync_mode: full_refresh_append
+  table: cventa_menu
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_pais_empresa.csv
+  sync_mode: full_refresh_append
+  table: cventa_pais_empresa
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_producto.csv
+  sync_mode: full_refresh_append
+  table: cventa_producto
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_submenu.csv
+  sync_mode: full_refresh_append
+  table: cventa_submenu
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_vendedor_cliente.csv
+  sync_mode: full_refresh_append
+  table: cventa_vendedor_cliente
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5/cventa_venta_estatus.csv
+  sync_mode: full_refresh_append
+  table: cventa_venta_estatus
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5
+    sync_mode: full_refresh_append
+    tables:
+    - cventa_bodega_movimiento
+    - cventa_compra
+    - cventa_compra_estatus
+    - cventa_proveedor
+    - cventa_proveedor_tipo
+    - cventa_usuario_genero
+    - cventa_venta
+postgres:
+  config:
+    database: schemapile__github_com_k31v7n_vecom_ebf0023_a28aad9e81d5
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - cventa_bodega
+    - cventa_cliente
+    - cventa_factura
+    - cventa_factura_estatus
+    - cventa_factura_serie
+    - cventa_factura_venta
+    - cventa_moneda
+    - cventa_usuario
+    - cventa_usuario_empresa
+    - cventa_venta_detalle
+    user: postgres

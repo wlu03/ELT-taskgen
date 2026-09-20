@@ -1,0 +1,8 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., administrator, artist, developer). always exactly one of 'administrator', 'artist', 'developer'. may be NULL."
+password_hash,Hashed password of the user. may be NULL.
+last_login,Date and time of the user's last login. may be NULL.
+status,"Status of the user (e.g., active, inactive, suspended). always exactly one of 'active', 'inactive', 'suspended'. may be NULL."

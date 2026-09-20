@@ -1,0 +1,12 @@
+column_name,column_description
+act_status,Column act_status of table x_asset.
+added_by_id,Column added_by_id of table x_asset. may be NULL.
+asset_name,Column asset_name of table x_asset.
+asset_type,Column asset_type of table x_asset.
+config,Column config of table x_asset. may be NULL.
+create_time,Column create_time of table x_asset. may be NULL.
+descr,Column descr of table x_asset. may be NULL.
+id,Column id of table x_asset.
+sup_native,Column sup_native of table x_asset.
+upd_by_id,Column upd_by_id of table x_asset. may be NULL.
+update_time,Column update_time of table x_asset. may be NULL.

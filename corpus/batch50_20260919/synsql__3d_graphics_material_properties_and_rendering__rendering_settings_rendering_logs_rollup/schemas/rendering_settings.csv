@@ -1,0 +1,14 @@
+column_name,column_description
+rendering_id,Unique identifier for each rendering configuration.
+name,Name of the rendering configuration. may be NULL.
+technique,"Rendering technique used (e.g., raytracing, rasterization). always exactly one of 'raytracing', 'rasterization'. may be NULL."
+quality,"Quality of the rendering (e.g., low, medium, high). always exactly one of 'low', 'medium', 'high'. may be NULL."
+resolution,"Resolution of the rendered image (width, height). may be NULL."
+samples_per_pixel,Number of samples per pixel for anti-aliasing. may be NULL.
+max_bounces,Maximum number of light bounces for global illumination. may be NULL.
+denoiser,"Denoiser used (e.g., no denoiser, OpenImageDenoise). always exactly one of 'no denoiser', 'OpenImageDenoise'. may be NULL."
+version,Version of the rendering settings. may be NULL.
+created_at,Creation date and time of the rendering settings. may be NULL.
+updated_at,Last update date and time of the rendering settings. may be NULL.
+created_by,ID of the user who created the rendering settings. may be NULL.
+updated_by,ID of the user who last updated the rendering settings. may be NULL.

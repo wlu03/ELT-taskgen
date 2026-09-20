@@ -1,0 +1,8 @@
+column_name,column_description
+model_id,Unique identifier for each machine learning model.
+model_name,Name of the machine learning model. may be NULL.
+model_type,"Type of the machine learning model (e.g., regression, classification). always exactly one of 'regression', 'classification'. may be NULL."
+algorithm,Algorithm used for training the model. may be NULL.
+training_date,Date the model was trained. may be NULL.
+accuracy,Accuracy of the model. may be NULL.
+description,Description of the model. may be NULL.

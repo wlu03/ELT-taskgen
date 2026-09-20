@@ -1,0 +1,6 @@
+column_name,column_description
+id,Column id of table survey_activity_tags.
+process_desc,Column process_desc of table survey_activity_tags. may be NULL.
+process_name,Column process_name of table survey_activity_tags. may be NULL.
+survey_id,Column survey_id of table survey_activity_tags.
+tags,Column tags of table survey_activity_tags. may be NULL.

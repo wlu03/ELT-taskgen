@@ -1,0 +1,522 @@
+models:
+- columns:
+  - description: Identifier of the drones row.
+    name: entity_key
+    type: integer
+  - description: '''passing'' for status values [''completed'']; ''failing'' for values [''aborted'']; ''no_activity'' when the drones row has no linked flight_logs row. A linked flight_logs row whose status has no value belongs to no cohort: it is not counted in any cell, and it does not make the drones row ''no_activity''.'
+    name: cohort
+    type: text
+  - description: drone_model of the drones row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of flight_logs rows in this entity/cohort cell.
+    name: link_count
+    type: bigint
+  - description: Number of distinct status values represented in this cell.
+    name: distinct_status_count
+    type: bigint
+  - description: Sum of route_id in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an route_id value.
+    name: total_amount
+    type: integer
+  - description: Largest route_id in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an route_id value.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(drones, status cohort) summary of linked flight_logs rows in the 3d_spatial_data_monitoring_and_analysis scenario, with passing and failing cohorts kept separate.
+  grain: One row per (drone_id, status cohort) pair represented among linked flight_logs rows, plus one no-activity row for a drones row with no linked flight_logs row at all. A drones row whose linked flight_logs rows all lack a status value is in no cohort and gets no no-activity row, so it has no row in this mart.
+  key_columns:
+  - entity_key
+  - cohort
+  name: drones_flight_logs_cohorts
+  source_relationships:
+  - child_columns:
+    - drone_id
+    child_table: alerts
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: drone_positions
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: drone_speeds
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: drone_velocities
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: flight_logs
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: maintenance_records
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - technician_id
+    child_table: maintenance_records
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - user_id
+    child_table: user_access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  transformation:
+    steps:
+    - description: Read source table drones.
+      operation: source
+      order: 1
+      source_inputs:
+      - drones
+    - description: Read source table flight_logs.
+      operation: source
+      order: 2
+      source_inputs:
+      - flight_logs
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each drone_id and its drone_model into the cohort calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - drones
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - drone_id
+      condition:
+        public_identifiers:
+        - flight_logs
+        - drone_id
+        - entity_key
+      description: Bring the linked flight_logs rows into each drones entity before assigning status cohorts.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - flight_logs
+    - carried_fields:
+      - entity_key
+      - entity_name
+      condition:
+        literal_values:
+        - completed
+      description: Keep rows whose status belongs to the passing cohort values ['completed'].
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per drones entity that has at least one linked flight_logs row in the passing cohort, reporting the number of those rows, how many different status values occur among them, the total of their route_id, and their largest route_id. The total and the largest value read only the rows that carry a route_id value; a cohort whose rows all lack one reports 0 for both, never empty.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the passing cohort.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      condition:
+        literal_values:
+        - aborted
+      description: Keep rows whose status belongs to the failing cohort values ['aborted'].
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per drones entity that has at least one linked flight_logs row in the failing cohort, reporting the number of those rows, how many different status values occur among them, the total of their route_id, and their largest route_id. The total and the largest value read only the rows that carry a route_id value; a cohort whose rows all lack one reports 0 for both, never empty.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the failing cohort.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Keep the placeholder row for a drones entity with no linked flight_logs row at all; a drones entity that has linked flight_logs rows gets no placeholder, even when every one of those rows lacks a status value.
+      operation: filter
+      order: 13
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per drones entity with no linked flight_logs row at all, reporting 0 rows, 0 different status values, a route_id total of 0 and a largest route_id of 0.
+      operation: distinct
+      order: 14
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 15
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the no_activity cohort.
+      operation: derive
+      order: 16
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Combine the disjoint passing and failing cohort summaries.
+      operation: union
+      order: 17
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Add the no-activity summaries, so an entity with no linked rows is retained as one explicit cohort row.
+      operation: union
+      order: 18
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - cohort
+      description: 'Deterministic output order: entity, then cohort.'
+      operation: tie_break
+      order: 19
+- columns:
+  - description: Identifier of the drones row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked flight_logs row whose route_id has a value; ''absent'' when route_id is missing, including a drones row with no linked flight_logs row. A linked flight_logs row whose route_id has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: drone_model of the drones row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked flight_logs rows in this entity/state cell; a absent cell holding real flight_logs rows whose route_id is missing COUNTS those rows, and only the placeholder cell of a drones row with no linked flight_logs row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing route_id values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no route_id value at all — both for a drones row with no linked flight_logs row and for an absent cell whose rows all have a missing route_id.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of route_id in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an route_id value.
+    name: total_amount
+    type: integer
+  - description: Largest route_id in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an route_id value.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(drones, measure state) distribution of linked flight_logs rows in the 3d_spatial_data_monitoring_and_analysis scenario.
+  grain: One row per (drone_id, measure state) pair represented among linked flight_logs rows; the absent state includes missing route_id values and a no-activity row for a drones row with no links. A linked flight_logs row whose route_id has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: drones_flight_logs_distribution
+  source_relationships:
+  - child_columns:
+    - drone_id
+    child_table: alerts
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: drone_positions
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: drone_speeds
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: drone_velocities
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: flight_logs
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - drone_id
+    child_table: maintenance_records
+    parent_columns:
+    - drone_id
+    parent_table: drones
+    required: false
+  - child_columns:
+    - technician_id
+    child_table: maintenance_records
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - user_id
+    child_table: user_access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  transformation:
+    steps:
+    - description: Read source table drones.
+      operation: source
+      order: 1
+      source_inputs:
+      - drones
+    - description: Read source table flight_logs.
+      operation: source
+      order: 2
+      source_inputs:
+      - flight_logs
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each drone_id and its drone_model into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - drones
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - drone_id
+      condition:
+        public_identifiers:
+        - flight_logs
+        - drone_id
+        - entity_key
+      description: Bring the linked flight_logs rows into each drones entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - flight_logs
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real flight_logs row whose route_id has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per drones entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing route_id values occur (each different value counted once, however many rows repeat it), total route_id, and largest route_id.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: route_id is missing, including the retained placeholder for a drones row with no flight_logs rows. A real flight_logs row whose route_id has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per drones entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing route_id values occur (each different value counted once, however many rows repeat it), total route_id, and largest route_id.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14

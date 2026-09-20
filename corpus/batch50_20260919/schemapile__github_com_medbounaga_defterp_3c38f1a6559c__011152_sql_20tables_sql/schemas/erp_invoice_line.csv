@@ -1,0 +1,15 @@
+column_name,column_description
+account_id,Column account_id of table erp.invoice_line. may be NULL.
+active,Column active of table erp.invoice_line.
+date,Column date of table erp.invoice_line. may be NULL.
+discount,Column discount of table erp.invoice_line.
+id,Column id of table erp.invoice_line.
+invoice_id,Column invoice_id of table erp.invoice_line.
+name,Column name of table erp.invoice_line. may be NULL.
+partner_id,Column partner_id of table erp.invoice_line.
+price,Column price of table erp.invoice_line.
+price_subtotal,Column price_subtotal of table erp.invoice_line.
+product_id,Column product_id of table erp.invoice_line. may be NULL.
+quantity,Column quantity of table erp.invoice_line.
+tax_id,Column tax_id of table erp.invoice_line. may be NULL.
+uom,Column uom of table erp.invoice_line.

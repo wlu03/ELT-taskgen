@@ -1,0 +1,9 @@
+column_name,column_description
+address_id,Column address_id of table client. may be NULL.
+billing_address_id,Column billing_address_id of table client. may be NULL.
+e_mail,Column e_mail of table client. may be NULL.
+favicon_id,Column favicon_id of table client. may be NULL.
+id,Column id of table client.
+multimedia_id,Column multimedia_id of table client. may be NULL.
+name,Column name of table client. may be NULL.
+telephone_number,Column telephone_number of table client. may be NULL.

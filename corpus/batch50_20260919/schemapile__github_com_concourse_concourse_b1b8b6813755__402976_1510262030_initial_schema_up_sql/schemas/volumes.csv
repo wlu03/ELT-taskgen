@@ -1,0 +1,19 @@
+column_name,column_description
+container_id,Column container_id of table volumes. may be NULL.
+handle,Column handle of table volumes.
+host_path_version,Column host_path_version of table volumes. may be NULL.
+id,Column id of table volumes.
+original_volume_handle,Column original_volume_handle of table volumes. may be NULL.
+output_name,Column output_name of table volumes. may be NULL.
+parent_id,Column parent_id of table volumes. may be NULL.
+parent_state,Column parent_state of table volumes. may be NULL.
+path,Column path of table volumes. may be NULL.
+replicated_from,Column replicated_from of table volumes. may be NULL.
+resource_hash,Column resource_hash of table volumes. may be NULL.
+resource_version,Column resource_version of table volumes. may be NULL.
+state,Column state of table volumes.
+team_id,Column team_id of table volumes. may be NULL.
+worker_base_resource_type_id,Column worker_base_resource_type_id of table volumes. may be NULL.
+worker_name,Column worker_name of table volumes.
+worker_resource_cache_id,Column worker_resource_cache_id of table volumes. may be NULL.
+worker_task_cache_id,Column worker_task_cache_id of table volumes. may be NULL.

@@ -1,0 +1,5 @@
+column_name,column_description
+student_id,Column student_id of table engineering.total_grade.
+subject_id,Column subject_id of table engineering.total_grade.
+total_grade_id,Column total_grade_id of table engineering.total_grade.
+total_grade_total,Column total_grade_total of table engineering.total_grade.

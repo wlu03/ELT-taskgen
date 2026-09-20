@@ -1,0 +1,22 @@
+column_name,column_description
+company_name,Column Company_Name of table Customers. may be NULL.
+date_created,Column Date_Created of table Customers.
+date_deleted,Column Date_Deleted of table Customers. may be NULL.
+default_discount,Column Default_Discount of table Customers. may be NULL.
+email,Column Email of table Customers.
+first_name,Column First_Name of table Customers.
+gender,Column Gender of table Customers.
+id,Column ID of table Customers.
+id_cities,Column ID_CITIES of table Customers.
+id_countries,Column ID_COUNTRIES of table Customers.
+id_currencies,Column ID_CURRENCIES of table Customers.
+id_users,Column ID_USERS of table Customers. may be NULL.
+identification_number,Column Identification_Number of table Customers.
+last_name,Column Last_Name of table Customers.
+path_slug,Column Path_Slug of table Customers.
+phone,Column Phone of table Customers.
+postal_code,Column Postal_Code of table Customers.
+street,Column Street of table Customers.
+user_created,Column User_Created of table Customers.
+user_deleted,Column User_Deleted of table Customers. may be NULL.
+vat,Column VAT of table Customers. may be NULL.

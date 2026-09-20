@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column id of table tag_similar_text.
+tag_id,Column tag_id of table tag_similar_text.
+text,Column text of table tag_similar_text.
+version,Column version of table tag_similar_text.

@@ -1,0 +1,11 @@
+column_name,column_description
+active,Column active of table resource_types.
+config,Column config of table resource_types.
+id,Column id of table resource_types.
+last_checked,Column last_checked of table resource_types.
+name,Column name of table resource_types.
+nonce,Column nonce of table resource_types. may be NULL.
+pipeline_id,Column pipeline_id of table resource_types. may be NULL.
+resource_config_id,Column resource_config_id of table resource_types. may be NULL.
+type,Column type of table resource_types.
+version,Column version of table resource_types. may be NULL.

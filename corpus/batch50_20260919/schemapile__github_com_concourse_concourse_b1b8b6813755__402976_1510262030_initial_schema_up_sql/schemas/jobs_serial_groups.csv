@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table jobs_serial_groups.
+job_id,Column job_id of table jobs_serial_groups. may be NULL.
+serial_group,Column serial_group of table jobs_serial_groups.

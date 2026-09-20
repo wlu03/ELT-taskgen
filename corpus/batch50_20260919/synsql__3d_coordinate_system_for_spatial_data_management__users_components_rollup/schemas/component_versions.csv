@@ -1,0 +1,12 @@
+column_name,column_description
+version_id,Unique identifier for each version of the component.
+component_id,ID of the component. may be NULL.
+version_number,Version number of the component. may be NULL.
+coordinate_x,X-coordinate of the component in meters. may be NULL.
+coordinate_y,Y-coordinate of the component in meters. may be NULL.
+coordinate_z,Z-coordinate of the component in meters. may be NULL.
+change_date,Date the component version was created. may be NULL.
+change_description,Description of the changes made in this version. may be NULL.
+changed_by,Reference to the user who made the changes. may be NULL.
+approved_by,Reference to the user who approved the changes (if applicable). may be NULL.
+approval_date,Date when the changes were approved (if applicable). may be NULL.

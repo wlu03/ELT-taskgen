@@ -1,0 +1,8 @@
+column_name,column_description
+upload_id,Unique identifier for each data upload.
+user_id,ID of the user who uploaded the data. may be NULL.
+material_id,ID of the material used. may be NULL.
+setting_id,ID of the printing setting used. may be NULL.
+property_id,ID of the mechanical property measured. may be NULL.
+upload_date,Date the data was uploaded. may be NULL.
+upload_time,Time the data was uploaded. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+login_sessions_id,Column login_sessions_id of table engineering.login_sessions.
+login_sessions_identifier,Column login_sessions_identifier of table engineering.login_sessions.
+login_sessions_status,Column login_sessions_status of table engineering.login_sessions.

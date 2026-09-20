@@ -1,0 +1,7 @@
+column_name,column_description
+link_id,Unique identifier for each link.
+object_id,ID of the object. may be NULL.
+pose_id,ID of the pose estimation. may be NULL.
+dataset_id,ID of the dataset. may be NULL.
+environment_id,ID of the environment. may be NULL.
+sensor_id,ID of the sensor. may be NULL.

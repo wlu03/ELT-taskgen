@@ -1,0 +1,10 @@
+column_name,column_description
+created_date,Column created_date of table facility. may be NULL.
+id,Column id of table facility.
+incharge_email,Column incharge_email of table facility. may be NULL.
+incharge_full_name,Column incharge_full_name of table facility. may be NULL.
+incharge_phone,Column incharge_phone of table facility. may be NULL.
+name,Column name of table facility.
+owner_id,Column owner_id of table facility.
+sector_id,Column sector_id of table facility.
+updated_date,Column updated_date of table facility. may be NULL.

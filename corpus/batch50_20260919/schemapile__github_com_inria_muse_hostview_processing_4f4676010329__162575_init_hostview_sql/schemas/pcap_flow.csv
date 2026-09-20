@@ -1,0 +1,18 @@
+column_name,column_description
+bytes_ab,Column bytes_ab of table pcap_flow. may be NULL.
+bytes_ba,Column bytes_ba of table pcap_flow. may be NULL.
+destination_ip,Column destination_ip of table pcap_flow. may be NULL.
+destination_port,Column destination_port of table pcap_flow. may be NULL.
+first_packet,Column first_packet of table pcap_flow. may be NULL.
+flow_code,Column flow_code of table pcap_flow. may be NULL.
+id,Column id of table pcap_flow.
+idle_time_ab,Column idle_time_ab of table pcap_flow. may be NULL.
+idle_time_ba,Column idle_time_ba of table pcap_flow. may be NULL.
+last_packet,Column last_packet of table pcap_flow. may be NULL.
+pcap_id,Column pcap_id of table pcap_flow.
+protocol,Column protocol of table pcap_flow. may be NULL.
+source_ip,Column source_ip of table pcap_flow. may be NULL.
+source_port,Column source_port of table pcap_flow. may be NULL.
+status,Column status of table pcap_flow. may be NULL.
+total_packets,Column total_packets of table pcap_flow. may be NULL.
+total_time,Column total_time of table pcap_flow. may be NULL.

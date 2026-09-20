@@ -1,0 +1,4 @@
+column_name,column_description
+type_id,Unique identifier for each object type.
+type_name,Name of the object type. may be NULL.
+description,Description of the object type. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+call_flow_element_log_id,Column call_flow_element_log_id of table multiple_choice_question_log.
+number_of_attempts,Column number_of_attempts of table multiple_choice_question_log.
+response_id,Column response_id of table multiple_choice_question_log. may be NULL.

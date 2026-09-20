@@ -1,0 +1,39 @@
+column_name,column_description
+composer_name,composer name of film composers (real vendored values).
+composer_description,composer description of film composers (real vendored values).
+viaf_id,viaf id of film composers (real vendored values). may be NULL.
+composer_isni,composer isni of film composers (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of film composers (real vendored values). may be NULL.
+gnd_id,gnd id of film composers (real vendored values). may be NULL.
+music_brainz_artist_id,music brainz artist id of film composers (real vendored values). may be NULL.
+im_db_id,im db id of film composers (real vendored values). may be NULL.
+id_ref_id,id ref id of film composers (real vendored values). may be NULL.
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of film composers (real vendored values). may be NULL.
+composer_birth_date,composer birth date of film composers (real vendored values). may be NULL.
+entity_type,entity type of film composers (real vendored values).
+composer_website,composer website of film composers (real vendored values). may be NULL.
+birth_place,birth place of film composers (real vendored values). may be NULL.
+freebase_id,freebase id of film composers (real vendored values).
+citizenship_country,citizenship country of film composers (real vendored values). may be NULL.
+composer_occupation,composer occupation of film composers (real vendored values). may be NULL.
+education_institution,education institution of film composers (real vendored values). may be NULL.
+first_name,first name of film composers (real vendored values). may be NULL.
+all_music_artist_id,all music artist id of film composers (real vendored values). may be NULL.
+discogs_artist_id,discogs artist id of film composers (real vendored values). may be NULL.
+nl_cr_aut_id,nl cr aut id of film composers (real vendored values). may be NULL.
+national_library_of_spain_id,national library of spain id of film composers (real vendored values). may be NULL.
+nukat_id,nukat id of film composers (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of film composers (real vendored values). may be NULL.
+snac_ark_id,snac ark id of film composers (real vendored values). may be NULL.
+gender,gender of film composers (real vendored values). may be NULL.
+languages,languages of film composers (real vendored values). may be NULL.
+career_start_year,career start year of film composers (real vendored values). may be NULL.
+europeana_entity_id,europeana entity id of film composers (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of film composers (real vendored values). may be NULL.
+last_name,last name of film composers (real vendored values). may be NULL.
+plwabn_id,plwabn id of film composers (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of film composers (real vendored values). may be NULL.
+muziekweb_performer_id,muziekweb performer id of film composers (real vendored values). may be NULL.
+prabook_id,prabook id of film composers (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of film composers (real vendored values). may be NULL.
+filmru_person_id,filmru person id of film composers (real vendored values). may be NULL.

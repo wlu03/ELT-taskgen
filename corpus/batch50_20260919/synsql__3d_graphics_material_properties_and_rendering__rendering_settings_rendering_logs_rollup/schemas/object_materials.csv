@@ -1,0 +1,8 @@
+column_name,column_description
+object_id,ID of the object.
+material_id,ID of the material assigned to the object. may be NULL.
+version,Version of the object-material relationship. may be NULL.
+created_at,Creation date and time of the relationship. may be NULL.
+updated_at,Last update date and time of the relationship. may be NULL.
+created_by,ID of the user who created the relationship. may be NULL.
+updated_by,ID of the user who last updated the relationship. may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+maxcap,Column maxcap of table MaxCapacity. may be NULL.
+maxcap_notes,Column maxcap_notes of table MaxCapacity. may be NULL.
+maxcap_units,Column maxcap_units of table MaxCapacity. may be NULL.
+periods,Column periods of table MaxCapacity.
+tech,Column tech of table MaxCapacity.

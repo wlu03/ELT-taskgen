@@ -1,0 +1,7 @@
+column_name,column_description
+authority,Column authority of table group_authorities.
+created_by_user_id,Column created_by_user_id of table group_authorities. may be NULL.
+created_date,Column created_date of table group_authorities. may be NULL.
+group_id,Column group_id of table group_authorities.
+id,Column id of table group_authorities.
+last_modified_date,Column last_modified_date of table group_authorities. may be NULL.

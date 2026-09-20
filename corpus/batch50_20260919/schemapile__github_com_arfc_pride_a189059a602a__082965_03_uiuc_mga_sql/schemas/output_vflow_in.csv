@@ -1,0 +1,11 @@
+column_name,column_description
+input_comm,Column input_comm of table Output_VFlow_In.
+output_comm,Column output_comm of table Output_VFlow_In.
+scenario,Column scenario of table Output_VFlow_In.
+sector,Column sector of table Output_VFlow_In. may be NULL.
+t_day,Column t_day of table Output_VFlow_In.
+t_periods,Column t_periods of table Output_VFlow_In.
+t_season,Column t_season of table Output_VFlow_In.
+tech,Column tech of table Output_VFlow_In.
+vflow_in,Column vflow_in of table Output_VFlow_In. may be NULL.
+vintage,Column vintage of table Output_VFlow_In.

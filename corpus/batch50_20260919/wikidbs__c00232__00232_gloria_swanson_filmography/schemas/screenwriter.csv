@@ -1,0 +1,46 @@
+column_name,column_description
+full_name,full name of screenwriter (real vendored values).
+biography,biography of screenwriter (real vendored values).
+role,role of screenwriter (real vendored values).
+viaf_id,viaf id of screenwriter (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of screenwriter (real vendored values). may be NULL.
+gnd_id,gnd id of screenwriter (real vendored values). may be NULL.
+isni_identifier,isni identifier of screenwriter (real vendored values). may be NULL.
+commons_category,commons category of screenwriter (real vendored values). may be NULL.
+birthplace,birthplace of screenwriter (real vendored values).
+deathplace,deathplace of screenwriter (real vendored values).
+profile_image,profile image of screenwriter (real vendored values). may be NULL.
+im_db_id,im db id of screenwriter (real vendored values).
+id_ref_id,id ref id of screenwriter (real vendored values). may be NULL.
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of screenwriter (real vendored values). may be NULL.
+birth_date,birth date of screenwriter (real vendored values).
+death_date,death date of screenwriter (real vendored values).
+nl_cr_aut_id,nl cr aut id of screenwriter (real vendored values). may be NULL.
+entity_type,entity type of screenwriter (real vendored values).
+nationality,nationality of screenwriter (real vendored values). may be NULL.
+freebase_id,freebase id of screenwriter (real vendored values).
+national_library_of_spain_id,national library of spain id of screenwriter (real vendored values). may be NULL.
+nationale_thesaurus_voor_auteursnamen_id,nationale thesaurus voor auteursnamen id of screenwriter (real vendored values). may be NULL.
+nukat_id,nukat id of screenwriter (real vendored values). may be NULL.
+first_name,first name of screenwriter (real vendored values). may be NULL.
+allo_cine_person_id,allo cine person id of screenwriter (real vendored values). may be NULL.
+all_movie_person_id,all movie person id of screenwriter (real vendored values). may be NULL.
+open_library_id,open library id of screenwriter (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of screenwriter (real vendored values). may be NULL.
+fast_id,fast id of screenwriter (real vendored values). may be NULL.
+port_person_id,port person id of screenwriter (real vendored values). may be NULL.
+elonet_person_id,elonet person id of screenwriter (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of screenwriter (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of screenwriter (real vendored values). may be NULL.
+find_a_grave_memorial_id,find a grave memorial id of screenwriter (real vendored values). may be NULL.
+snac_ark_id,snac ark id of screenwriter (real vendored values). may be NULL.
+last_name,last name of screenwriter (real vendored values). may be NULL.
+gender,gender of screenwriter (real vendored values).
+languages,languages of screenwriter (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of screenwriter (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of screenwriter (real vendored values). may be NULL.
+american_film_institute_person_id,american film institute person id of screenwriter (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of screenwriter (real vendored values). may be NULL.
+prabook_id,prabook id of screenwriter (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of screenwriter (real vendored values). may be NULL.
+filmru_person_id,filmru person id of screenwriter (real vendored values). may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+creator_id,Column creator_id of table test_case_run.
+endtime,Column endtime of table test_case_run. may be NULL.
+id,Column id of table test_case_run.
+starttime,Column starttime of table test_case_run.
+test_plan_sprint_case_id,Column test_plan_sprint_case_id of table test_case_run.

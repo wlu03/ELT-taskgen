@@ -1,0 +1,7 @@
+column_name,column_description
+eff_notes,Column eff_notes of table Efficiency. may be NULL.
+efficiency,Column efficiency of table Efficiency. may be NULL.
+input_comm,Column input_comm of table Efficiency.
+output_comm,Column output_comm of table Efficiency.
+tech,Column tech of table Efficiency.
+vintage,Column vintage of table Efficiency.

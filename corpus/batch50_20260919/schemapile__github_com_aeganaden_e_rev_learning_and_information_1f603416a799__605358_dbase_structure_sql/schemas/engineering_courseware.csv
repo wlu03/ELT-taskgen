@@ -1,0 +1,8 @@
+column_name,column_description
+courseware_date_added,Column courseware_date_added of table engineering.courseware.
+courseware_date_edited,Column courseware_date_edited of table engineering.courseware.
+courseware_description,Column courseware_description of table engineering.courseware. may be NULL.
+courseware_id,Column courseware_id of table engineering.courseware.
+courseware_name,Column courseware_name of table engineering.courseware.
+courseware_status,Column courseware_status of table engineering.courseware. may be NULL.
+topic_id,Column topic_id of table engineering.courseware.

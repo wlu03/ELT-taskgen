@@ -1,0 +1,6 @@
+column_name,column_description
+cost_invest,Column cost_invest of table CostInvest. may be NULL.
+cost_invest_notes,Column cost_invest_notes of table CostInvest. may be NULL.
+cost_invest_units,Column cost_invest_units of table CostInvest. may be NULL.
+tech,Column tech of table CostInvest.
+vintage,Column vintage of table CostInvest.

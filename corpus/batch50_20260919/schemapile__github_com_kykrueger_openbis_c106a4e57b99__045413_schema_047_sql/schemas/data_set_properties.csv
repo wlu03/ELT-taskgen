@@ -1,0 +1,10 @@
+column_name,column_description
+cvte_id,Column CVTE_ID of table DATA_SET_PROPERTIES. may be NULL.
+dstpt_id,Column DSTPT_ID of table DATA_SET_PROPERTIES.
+ds_id,Column DS_ID of table DATA_SET_PROPERTIES.
+id,Column ID of table DATA_SET_PROPERTIES.
+mate_prop_id,Column MATE_PROP_ID of table DATA_SET_PROPERTIES. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table DATA_SET_PROPERTIES. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table DATA_SET_PROPERTIES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table DATA_SET_PROPERTIES.
+value,Column VALUE of table DATA_SET_PROPERTIES. may be NULL.

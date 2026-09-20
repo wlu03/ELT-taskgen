@@ -1,0 +1,3 @@
+column_name,column_description
+t_period_labels,Column t_period_labels of table time_period_labels.
+t_period_labels_desc,Column t_period_labels_desc of table time_period_labels. may be NULL.

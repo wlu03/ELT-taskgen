@@ -1,0 +1,6 @@
+column_name,column_description
+output_comm,Column output_comm of table TechOutputSplit.
+periods,Column periods of table TechOutputSplit.
+tech,Column tech of table TechOutputSplit.
+to_split,Column to_split of table TechOutputSplit. may be NULL.
+to_split_notes,Column to_split_notes of table TechOutputSplit. may be NULL.

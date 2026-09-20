@@ -1,0 +1,13 @@
+column_name,column_description
+added_by_id,Column ADDED_BY_ID of table x_group. may be NULL.
+create_time,Column CREATE_TIME of table x_group. may be NULL.
+cred_store_id,Column CRED_STORE_ID of table x_group. may be NULL.
+descr,Column DESCR of table x_group. may be NULL.
+group_name,Column GROUP_NAME of table x_group.
+group_src,Column GROUP_SRC of table x_group.
+group_type,Column GROUP_TYPE of table x_group.
+is_visible,Column IS_VISIBLE of table x_group.
+status,Column STATUS of table x_group.
+update_time,Column UPDATE_TIME of table x_group. may be NULL.
+upd_by_id,Column UPD_BY_ID of table x_group. may be NULL.
+id,Column id of table x_group.

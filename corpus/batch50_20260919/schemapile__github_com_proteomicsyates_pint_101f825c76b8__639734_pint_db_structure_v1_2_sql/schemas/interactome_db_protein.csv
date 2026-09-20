@@ -1,0 +1,7 @@
+column_name,column_description
+organism_taxonomyid,Column Organism_taxonomyID of table interactome_db.Protein.
+acc,Column acc of table interactome_db.Protein.
+id,Column id of table interactome_db.Protein.
+length,Column length of table interactome_db.Protein. may be NULL.
+mw,Column mw of table interactome_db.Protein. may be NULL.
+pi,Column pi of table interactome_db.Protein. may be NULL.

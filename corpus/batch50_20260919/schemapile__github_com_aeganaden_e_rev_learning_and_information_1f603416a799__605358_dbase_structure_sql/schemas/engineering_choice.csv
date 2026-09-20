@@ -1,0 +1,5 @@
+column_name,column_description
+choice_choice,Column choice_choice of table engineering.choice.
+choice_id,Column choice_id of table engineering.choice.
+choice_is_answer,Column choice_is_answer of table engineering.choice.
+courseware_question_id,Column courseware_question_id of table engineering.choice.

@@ -1,0 +1,7 @@
+column_name,column_description
+producer_id,Unique identifier for each producer.
+producer_name,Full name of the producer. may be NULL.
+email,Email address of the producer. may be NULL.
+nationality,Producer's nationality. may be NULL.
+date_of_birth,Producer's date of birth. may be NULL.
+biography,Brief biography of the producer. may be NULL.

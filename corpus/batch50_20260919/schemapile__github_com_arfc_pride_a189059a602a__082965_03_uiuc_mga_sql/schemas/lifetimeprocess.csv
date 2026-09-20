@@ -1,0 +1,5 @@
+column_name,column_description
+life_process,Column life_process of table LifetimeProcess. may be NULL.
+life_process_notes,Column life_process_notes of table LifetimeProcess. may be NULL.
+tech,Column tech of table LifetimeProcess.
+vintage,Column vintage of table LifetimeProcess.

@@ -1,0 +1,28 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_resource_def. may be NULL.
+create_time,Column create_time of table x_resource_def. may be NULL.
+def_id,Column def_id of table x_resource_def.
+description,Column description of table x_resource_def. may be NULL.
+excludes_supported,Column excludes_supported of table x_resource_def.
+guid,Column guid of table x_resource_def. may be NULL.
+id,Column id of table x_resource_def.
+item_id,Column item_id of table x_resource_def.
+label,Column label of table x_resource_def. may be NULL.
+look_up_supported,Column look_up_supported of table x_resource_def.
+mandatory,Column mandatory of table x_resource_def.
+matcher,Column matcher of table x_resource_def. may be NULL.
+matcher_options,Column matcher_options of table x_resource_def. may be NULL.
+name,Column name of table x_resource_def. may be NULL.
+parent,Column parent of table x_resource_def. may be NULL.
+rb_key_description,Column rb_key_description of table x_resource_def. may be NULL.
+rb_key_label,Column rb_key_label of table x_resource_def. may be NULL.
+rb_key_validation_message,Column rb_key_validation_message of table x_resource_def. may be NULL.
+recursive_supported,Column recursive_supported of table x_resource_def.
+res_level,Column res_level of table x_resource_def. may be NULL.
+sort_order,Column sort_order of table x_resource_def. may be NULL.
+type,Column type of table x_resource_def. may be NULL.
+ui_hint,Column ui_hint of table x_resource_def. may be NULL.
+upd_by_id,Column upd_by_id of table x_resource_def. may be NULL.
+update_time,Column update_time of table x_resource_def. may be NULL.
+validation_message,Column validation_message of table x_resource_def. may be NULL.
+validation_reg_ex,Column validation_reg_ex of table x_resource_def. may be NULL.

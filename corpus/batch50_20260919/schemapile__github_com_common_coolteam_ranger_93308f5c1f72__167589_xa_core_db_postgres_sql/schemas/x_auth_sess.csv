@@ -1,0 +1,16 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_auth_sess. may be NULL.
+auth_provider,Column auth_provider of table x_auth_sess.
+auth_status,Column auth_status of table x_auth_sess.
+auth_time,Column auth_time of table x_auth_sess.
+auth_type,Column auth_type of table x_auth_sess.
+create_time,Column create_time of table x_auth_sess. may be NULL.
+device_type,Column device_type of table x_auth_sess.
+ext_sess_id,Column ext_sess_id of table x_auth_sess. may be NULL.
+id,Column id of table x_auth_sess.
+login_id,Column login_id of table x_auth_sess.
+req_ip,Column req_ip of table x_auth_sess.
+req_ua,Column req_ua of table x_auth_sess. may be NULL.
+upd_by_id,Column upd_by_id of table x_auth_sess. may be NULL.
+update_time,Column update_time of table x_auth_sess. may be NULL.
+user_id,Column user_id of table x_auth_sess. may be NULL.

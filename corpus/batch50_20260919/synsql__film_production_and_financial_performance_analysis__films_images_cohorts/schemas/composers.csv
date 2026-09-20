@@ -1,0 +1,7 @@
+column_name,column_description
+composer_id,Unique identifier for each composer.
+composer_name,Full name of the composer. may be NULL.
+email,Email address of the composer. may be NULL.
+nationality,Composer's nationality. may be NULL.
+date_of_birth,Composer's date of birth. may be NULL.
+biography,Brief biography of the composer. may be NULL.

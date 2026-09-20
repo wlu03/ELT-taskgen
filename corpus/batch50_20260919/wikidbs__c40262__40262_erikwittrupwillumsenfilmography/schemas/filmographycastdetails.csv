@@ -1,0 +1,31 @@
+column_name,column_description
+actorname,actorname of filmographycastdetails (real vendored values).
+biography,biography of filmographycastdetails (real vendored values).
+gender,gender of filmographycastdetails (real vendored values).
+roletype,roletype of filmographycastdetails (real vendored values).
+viafid,viafid of filmographycastdetails (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of filmographycastdetails (real vendored values). may be NULL.
+imdbid,imdbid of filmographycastdetails (real vendored values).
+birthplace,birthplace of filmographycastdetails (real vendored values). may be NULL.
+nationality,nationality of filmographycastdetails (real vendored values).
+birthdate,birthdate of filmographycastdetails (real vendored values).
+entitytype,entitytype of filmographycastdetails (real vendored values).
+freebaseid,freebaseid of filmographycastdetails (real vendored values). may be NULL.
+firstname,firstname of filmographycastdetails (real vendored values). may be NULL.
+languages,languages of filmographycastdetails (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmographycastdetails (real vendored values).
+allmoviepersonid,allmoviepersonid of filmographycastdetails (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of filmographycastdetails (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of filmographycastdetails (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmographycastdetails (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmographycastdetails (real vendored values).
+kinopoiskpersonid,kinopoiskpersonid of filmographycastdetails (real vendored values). may be NULL.
+surname,surname of filmographycastdetails (real vendored values). may be NULL.
+danskefilmpersonid,danskefilmpersonid of filmographycastdetails (real vendored values).
+danskfilmogtvpersonid,danskfilmogtvpersonid of filmographycastdetails (real vendored values).
+tmdbpersonid,tmdbpersonid of filmographycastdetails (real vendored values).
+deathdate,deathdate of filmographycastdetails (real vendored values). may be NULL.
+gyldendalsteaterleksikonid,gyldendalsteaterleksikonid of filmographycastdetails (real vendored values). may be NULL.
+gravsteddkid,gravsteddkid of filmographycastdetails (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmographycastdetails (real vendored values).
+filmrupersonid,filmrupersonid of filmographycastdetails (real vendored values). may be NULL.

@@ -1,0 +1,5 @@
+column_name,column_description
+season_name,Column season_name of table SegFrac.
+segfrac,Column segfrac of table SegFrac. may be NULL.
+segfrac_notes,Column segfrac_notes of table SegFrac. may be NULL.
+time_of_day_name,Column time_of_day_name of table SegFrac.

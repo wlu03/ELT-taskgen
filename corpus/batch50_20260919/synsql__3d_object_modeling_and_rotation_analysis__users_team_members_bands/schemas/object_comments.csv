@@ -1,0 +1,6 @@
+column_name,column_description
+comment_id,Unique identifier for each comment.
+object_id,ID of the object the comment is made on. may be NULL.
+user_id,ID of the user who made the comment. may be NULL.
+comment,Text of the comment. may be NULL.
+created_at,Date and time the comment was made. may be NULL.

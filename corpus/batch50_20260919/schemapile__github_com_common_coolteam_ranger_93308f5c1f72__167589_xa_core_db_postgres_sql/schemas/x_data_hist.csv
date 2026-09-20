@@ -1,0 +1,13 @@
+column_name,column_description
+action,Column action of table x_data_hist.
+content,Column content of table x_data_hist.
+create_time,Column create_time of table x_data_hist. may be NULL.
+from_time,Column from_time of table x_data_hist.
+id,Column id of table x_data_hist.
+obj_class_type,Column obj_class_type of table x_data_hist.
+obj_guid,Column obj_guid of table x_data_hist.
+obj_id,Column obj_id of table x_data_hist.
+obj_name,Column obj_name of table x_data_hist.
+to_time,Column to_time of table x_data_hist. may be NULL.
+update_time,Column update_time of table x_data_hist. may be NULL.
+version,Column version of table x_data_hist. may be NULL.

@@ -1,0 +1,7 @@
+column_name,column_description
+admin,Column admin of table teams. may be NULL.
+auth,Column auth of table teams. may be NULL.
+basic_auth,Column basic_auth of table teams. may be NULL.
+id,Column id of table teams.
+name,Column name of table teams.
+nonce,Column nonce of table teams. may be NULL.

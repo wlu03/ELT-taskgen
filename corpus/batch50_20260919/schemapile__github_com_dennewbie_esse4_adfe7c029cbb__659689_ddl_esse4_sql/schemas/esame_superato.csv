@@ -1,0 +1,8 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table esame_superato. may be NULL.
+codice_insegnamento,Column codice_insegnamento of table esame_superato. may be NULL.
+data_esame,Column data_esame of table esame_superato. may be NULL.
+lode,"Column lode of table esame_superato. always exactly one of 'N', 'n'."
+matricola_studente,Column matricola_studente of table esame_superato.
+numero_verbale,Column numero_verbale of table esame_superato.
+voto,Column voto of table esame_superato.

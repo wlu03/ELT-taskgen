@@ -1,0 +1,5 @@
+column_name,column_description
+file_path,Column File_Path of table Product_Images.
+id,Column ID of table Product_Images.
+id_products,Column ID_PRODUCTS of table Product_Images.
+sequence_position,Column Sequence_Position of table Product_Images.

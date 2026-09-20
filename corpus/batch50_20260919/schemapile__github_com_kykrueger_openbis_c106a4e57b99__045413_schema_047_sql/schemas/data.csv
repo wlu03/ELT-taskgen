@@ -1,0 +1,14 @@
+column_name,column_description
+code,Column CODE of table DATA. may be NULL.
+dast_id,Column DAST_ID of table DATA.
+data_producer_code,Column DATA_PRODUCER_CODE of table DATA. may be NULL.
+dsty_id,Column DSTY_ID of table DATA.
+expe_id,Column EXPE_ID of table DATA.
+id,Column ID of table DATA.
+is_derived,Column IS_DERIVED of table DATA.
+is_placeholder,Column IS_PLACEHOLDER of table DATA. may be NULL.
+is_valid,Column IS_VALID of table DATA. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table DATA. may be NULL.
+production_timestamp,Column PRODUCTION_TIMESTAMP of table DATA. may be NULL.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table DATA.
+samp_id,Column SAMP_ID of table DATA. may be NULL.

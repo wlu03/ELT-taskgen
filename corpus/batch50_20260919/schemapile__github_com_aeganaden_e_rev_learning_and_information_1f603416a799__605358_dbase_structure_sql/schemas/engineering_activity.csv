@@ -1,0 +1,9 @@
+column_name,column_description
+activity_description,Column activity_description of table engineering.activity.
+activity_details_id,Column activity_details_id of table engineering.activity.
+activity_id,Column activity_id of table engineering.activity.
+activity_schedule_id,Column activity_schedule_id of table engineering.activity.
+activity_status,Column activity_status of table engineering.activity.
+activity_venue,Column activity_venue of table engineering.activity.
+lecturer_id,Column lecturer_id of table engineering.activity. may be NULL.
+offering_id,Column offering_id of table engineering.activity.

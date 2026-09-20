@@ -1,0 +1,8 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_modules_master. may be NULL.
+create_time,Column create_time of table x_modules_master. may be NULL.
+id,Column id of table x_modules_master.
+module,Column module of table x_modules_master.
+upd_by_id,Column upd_by_id of table x_modules_master. may be NULL.
+update_time,Column update_time of table x_modules_master. may be NULL.
+url,Column url of table x_modules_master. may be NULL.

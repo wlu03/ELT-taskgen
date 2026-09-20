@@ -1,0 +1,47 @@
+column_name,column_description
+actorname,actorname of filmographycastmembers (real vendored values).
+biography,biography of filmographycastmembers (real vendored values).
+gender,gender of filmographycastmembers (real vendored values).
+profession,profession of filmographycastmembers (real vendored values).
+imdbid,imdbid of filmographycastmembers (real vendored values).
+gndid,gndid of filmographycastmembers (real vendored values). may be NULL.
+birthdate,birthdate of filmographycastmembers (real vendored values).
+entitytype,entitytype of filmographycastmembers (real vendored values).
+birthplace,birthplace of filmographycastmembers (real vendored values).
+firstname,firstname of filmographycastmembers (real vendored values).
+nationality,nationality of filmographycastmembers (real vendored values).
+commonscategory,commonscategory of filmographycastmembers (real vendored values). may be NULL.
+discogsartistid,discogsartistid of filmographycastmembers (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of filmographycastmembers (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of filmographycastmembers (real vendored values). may be NULL.
+portpersonid,portpersonid of filmographycastmembers (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of filmographycastmembers (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of filmographycastmembers (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmographycastmembers (real vendored values). may be NULL.
+languages,languages of filmographycastmembers (real vendored values).
+profileimage,profileimage of filmographycastmembers (real vendored values). may be NULL.
+isnicode,isnicode of filmographycastmembers (real vendored values). may be NULL.
+viafid,viafid of filmographycastmembers (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of filmographycastmembers (real vendored values). may be NULL.
+careerstart,careerstart of filmographycastmembers (real vendored values). may be NULL.
+freebaseid,freebaseid of filmographycastmembers (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmographycastmembers (real vendored values). may be NULL.
+cinematografoitnameorcompanyid,cinematografoitnameorcompanyid of filmographycastmembers (real vendored values). may be NULL.
+filmtvitpersonid,filmtvitpersonid of filmographycastmembers (real vendored values). may be NULL.
+movieplayerpersonid,movieplayerpersonid of filmographycastmembers (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of filmographycastmembers (real vendored values). may be NULL.
+prabookid,prabookid of filmographycastmembers (real vendored values). may be NULL.
+cinemagiapersonid,cinemagiapersonid of filmographycastmembers (real vendored values). may be NULL.
+cinematografoitnameorcompanyidnew,cinematografoitnameorcompanyidnew of filmographycastmembers (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of filmographycastmembers (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of filmographycastmembers (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmographycastmembers (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of filmographycastmembers (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmographycastmembers (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmographycastmembers (real vendored values). may be NULL.
+nativename,nativename of filmographycastmembers (real vendored values). may be NULL.
+mymoviesactoridformerscheme,mymoviesactoridformerscheme of filmographycastmembers (real vendored values). may be NULL.
+surname,surname of filmographycastmembers (real vendored values). may be NULL.
+idrefid,idrefid of filmographycastmembers (real vendored values). may be NULL.
+rottentomatoesid,rottentomatoesid of filmographycastmembers (real vendored values). may be NULL.
+ivipersonid,ivipersonid of filmographycastmembers (real vendored values). may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+flag,Column flag of table technologies. may be NULL.
+sector,Column sector of table technologies. may be NULL.
+tech,Column tech of table technologies.
+tech_category,Column tech_category of table technologies. may be NULL.
+tech_desc,Column tech_desc of table technologies. may be NULL.

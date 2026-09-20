@@ -1,0 +1,9 @@
+column_name,column_description
+property_id,Unique identifier for each mechanical property.
+material_id,ID of the material used. may be NULL.
+setting_id,ID of the printing setting used. may be NULL.
+tension_strength,Tension strength of the printed object. may be NULL.
+elongation,Elongation of the printed object. may be NULL.
+youngs_modulus,Young's modulus of the printed object. may be NULL.
+yield_strength,Yield strength of the printed object. may be NULL.
+impact_resistance,Impact resistance of the printed object. may be NULL.

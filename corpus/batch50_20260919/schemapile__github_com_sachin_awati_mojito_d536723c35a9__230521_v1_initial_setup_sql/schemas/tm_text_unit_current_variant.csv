@@ -1,0 +1,9 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table tm_text_unit_current_variant. may be NULL.
+created_date,Column created_date of table tm_text_unit_current_variant. may be NULL.
+id,Column id of table tm_text_unit_current_variant.
+last_modified_date,Column last_modified_date of table tm_text_unit_current_variant. may be NULL.
+locale_id,Column locale_id of table tm_text_unit_current_variant. may be NULL.
+tm_id,Column tm_id of table tm_text_unit_current_variant. may be NULL.
+tm_text_unit_id,Column tm_text_unit_id of table tm_text_unit_current_variant. may be NULL.
+tm_text_unit_variant_id,Column tm_text_unit_variant_id of table tm_text_unit_current_variant. may be NULL.

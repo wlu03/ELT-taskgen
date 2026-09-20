@@ -1,0 +1,2591 @@
+models:
+- columns:
+  - description: Identifier of the samples row. One row per value.
+    name: parent_key
+    type: text
+  - description: code of the samples row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: 'Number of attachments rows for this samples row; 0 when there are none. A samples row kept with no attachments row reports 0 here, never 1: its placeholder holds no attachments row to count.'
+    name: event_count
+    type: bigint
+  - description: Sum of version over all matching attachments rows; 0 when there are no rows.
+    name: lifetime_amount
+    type: integer
+  - description: id of the row with the latest registration_timestamp; ties take the smallest id under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one). It is the literal '(none)' when there are no rows.
+    name: latest_row_id
+    type: text
+  - description: version from that same latest row; 0 when there are no rows.
+    name: latest_amount
+    type: integer
+  - description: file_name from that same latest row; '(none)' when there are no rows.
+    name: latest_label
+    type: text
+  - description: latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0.
+    name: latest_amount_share
+    type: float
+  description: Per-samples latest-row snapshot over linked attachments activity in the 045413_schema-047.sql schema.
+  grain: One row per samples (id), INCLUDING samples rows with no linked attachments rows.
+  key_columns:
+  - parent_key
+  name: samples_attachments_snapshot
+  source_relationships:
+  - child_columns:
+    - exac_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: attachment_contents
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - proj_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: projects
+    required: false
+  - child_columns:
+    - samp_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: samples
+    required: false
+  - child_columns:
+    - ag_id
+    child_table: authorization_group_persons
+    parent_columns:
+    - id
+    parent_table: authorization_groups
+    required: true
+  - child_columns:
+    - pers_id
+    child_table: authorization_group_persons
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: authorization_groups
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: authorization_groups
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: controlled_vocabularies
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: controlled_vocabularies
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - covo_id
+    child_table: controlled_vocabulary_terms
+    parent_columns:
+    - id
+    parent_table: controlled_vocabularies
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: controlled_vocabulary_terms
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dast_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: data_stores
+    required: true
+  - child_columns:
+    - dsty_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: true
+  - child_columns:
+    - samp_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: samples
+    required: false
+  - child_columns:
+    - cvte_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - ds_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - dstpt_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: data_set_type_property_types
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - data_id_child
+    child_table: data_set_relationships
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - data_id_parent
+    child_table: data_set_relationships
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - dsty_id
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: data_set_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - data_set_type_id
+    child_table: data_store_service_data_set_types
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - data_store_service_id
+    child_table: data_store_service_data_set_types
+    parent_columns:
+    - id
+    parent_table: data_store_services
+    required: true
+  - child_columns:
+    - data_store_id
+    child_table: data_store_services
+    parent_columns:
+    - id
+    parent_table: data_stores
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: data_stores
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: events
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - etpt_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: experiment_type_property_types
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - exty_id
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: experiment_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: experiment_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - exty_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: experiment_types
+    required: true
+  - child_columns:
+    - inva_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: invalidations
+    required: false
+  - child_columns:
+    - mate_id_study_object
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - proj_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: projects
+    required: true
+  - child_columns:
+    - cvte_id_stor_fmt
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: true
+  - child_columns:
+    - cvte_id_store
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - data_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - ffty_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: file_format_types
+    required: true
+  - child_columns:
+    - loty_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: locator_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: file_format_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: filters
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: filters
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: grid_custom_columns
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: grid_custom_columns
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: groups
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: groups
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: invalidations
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - mate_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - mtpt_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: material_type_property_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - maty_id
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: material_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - maty_id
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: persons
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - grou_id
+    child_table: persons
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: groups
+    required: true
+  - child_columns:
+    - pers_id_leader
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: persons
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - covo_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: controlled_vocabularies
+    required: false
+  - child_columns:
+    - daty_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: data_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - maty_prop_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - ag_id_grantee
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: authorization_groups
+    required: false
+  - child_columns:
+    - dbin_id
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - pers_id_grantee
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - mate_prop_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - samp_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: samples
+    required: true
+  - child_columns:
+    - stpt_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: sample_type_property_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - saty_id
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: sample_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: sample_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: false
+  - child_columns:
+    - expe_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - inva_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: invalidations
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - saty_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: sample_types
+    required: true
+  transformation:
+    steps:
+    - description: Read source table samples.
+      operation: source
+      order: 1
+      source_inputs:
+      - samples
+    - description: Read source table attachments.
+      operation: source
+      order: 2
+      source_inputs:
+      - attachments
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per samples row, keyed by id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - samples
+    - carried_fields:
+      - samp_id
+      - id
+      condition:
+        public_identifiers:
+        - attachments
+        - samp_id
+        - parent_key
+      description: Bring in attachments; a samples row with no matching attachments row is retained and receives the stated empty snapshot values.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - attachments
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting event_count, lifetime_amount for that row''s matching rows.'
+      operation: aggregate
+      order: 5
+    - carried_fields:
+      - parent_key
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest id under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one), and take latest_row_id, latest_amount, latest_label from that winning row. The ordering measure is required on every real input row, so a non-empty group always has a winning row; the declared defaults belong only to a group with NO rows.
+      operation: extrema
+      order: 6
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 7
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Name the mart columns; lifetime_amount reports its declared default — never NULL — for a group with no matching rows.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      - latest_amount_share
+      description: 'Guarded ratios: latest_amount_share — latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0.'
+      operation: ratio
+      order: 9
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 10
+- columns:
+  - description: Identifier of the sample_types row.
+    name: entity_key
+    type: text
+  - description: '''present'' for a linked sample_type_property_types row; ''absent'' only for a sample_types row with no linked sample_type_property_types row. ordinal is required on every real sample_type_property_types row.'
+    name: measure_state
+    type: text
+  - description: code of the sample_types row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked sample_type_property_types rows in this entity/state cell; 0 for a no-activity absent cell.
+    name: row_count
+    type: bigint
+  - description: Number of unique ordinal values in this cell; each unique value is counted once, however many rows repeat it; 0 for a no-activity absent cell.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of ordinal in this cell; 0 for a no-activity absent cell.
+    name: total_amount
+    type: integer
+  - description: Largest ordinal in this cell; 0 for a no-activity absent cell.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(sample_types, measure state) distribution of linked sample_type_property_types activity in the 045413_schema-047.sql schema.
+  grain: One row per (id, measure state) pair represented by linked sample_type_property_types rows, plus one absent no-activity row for a sample_types row with no links. Because ordinal is required, no linked sample_type_property_types row belongs to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: sample_types_sample_type_property_types_distribution
+  source_relationships:
+  - child_columns:
+    - exac_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: attachment_contents
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - proj_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: projects
+    required: false
+  - child_columns:
+    - samp_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: samples
+    required: false
+  - child_columns:
+    - ag_id
+    child_table: authorization_group_persons
+    parent_columns:
+    - id
+    parent_table: authorization_groups
+    required: true
+  - child_columns:
+    - pers_id
+    child_table: authorization_group_persons
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: authorization_groups
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: authorization_groups
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: controlled_vocabularies
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: controlled_vocabularies
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - covo_id
+    child_table: controlled_vocabulary_terms
+    parent_columns:
+    - id
+    parent_table: controlled_vocabularies
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: controlled_vocabulary_terms
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dast_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: data_stores
+    required: true
+  - child_columns:
+    - dsty_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: true
+  - child_columns:
+    - samp_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: samples
+    required: false
+  - child_columns:
+    - cvte_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - ds_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - dstpt_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: data_set_type_property_types
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - data_id_child
+    child_table: data_set_relationships
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - data_id_parent
+    child_table: data_set_relationships
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - dsty_id
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: data_set_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - data_set_type_id
+    child_table: data_store_service_data_set_types
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - data_store_service_id
+    child_table: data_store_service_data_set_types
+    parent_columns:
+    - id
+    parent_table: data_store_services
+    required: true
+  - child_columns:
+    - data_store_id
+    child_table: data_store_services
+    parent_columns:
+    - id
+    parent_table: data_stores
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: data_stores
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: events
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - etpt_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: experiment_type_property_types
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - exty_id
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: experiment_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: experiment_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - exty_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: experiment_types
+    required: true
+  - child_columns:
+    - inva_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: invalidations
+    required: false
+  - child_columns:
+    - mate_id_study_object
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - proj_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: projects
+    required: true
+  - child_columns:
+    - cvte_id_stor_fmt
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: true
+  - child_columns:
+    - cvte_id_store
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - data_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - ffty_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: file_format_types
+    required: true
+  - child_columns:
+    - loty_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: locator_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: file_format_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: filters
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: filters
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: grid_custom_columns
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: grid_custom_columns
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: groups
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: groups
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: invalidations
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - mate_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - mtpt_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: material_type_property_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - maty_id
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: material_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - maty_id
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: persons
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - grou_id
+    child_table: persons
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: groups
+    required: true
+  - child_columns:
+    - pers_id_leader
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: persons
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - covo_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: controlled_vocabularies
+    required: false
+  - child_columns:
+    - daty_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: data_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - maty_prop_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - ag_id_grantee
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: authorization_groups
+    required: false
+  - child_columns:
+    - dbin_id
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - pers_id_grantee
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - mate_prop_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - samp_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: samples
+    required: true
+  - child_columns:
+    - stpt_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: sample_type_property_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - saty_id
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: sample_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: sample_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: false
+  - child_columns:
+    - expe_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - inva_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: invalidations
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - saty_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: sample_types
+    required: true
+  transformation:
+    steps:
+    - description: Read source table sample_types.
+      operation: source
+      order: 1
+      source_inputs:
+      - sample_types
+    - description: Read source table sample_type_property_types.
+      operation: source
+      order: 2
+      source_inputs:
+      - sample_type_property_types
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each id and its code into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - sample_types
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - id
+      - saty_id
+      condition:
+        public_identifiers:
+        - sample_type_property_types
+        - saty_id
+        - entity_key
+      description: Bring the linked sample_type_property_types rows into each sample_types entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - sample_type_property_types
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real sample_type_property_types row; ordinal is required on every such row.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per sample_types entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different ordinal values occur (each different value counted once, however many rows repeat it), total ordinal, and largest ordinal.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: the retained placeholder for a sample_types row with no sample_type_property_types rows; no real row can enter this state because ordinal is required.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per sample_types entity with no linked sample_type_property_types row at all, whose retained placeholder is its one row in the absent measure state, and no row here for an entity that has a linked sample_type_property_types row, reporting a row count of 0, 0 different ordinal values, a total ordinal of 0 and a largest ordinal of 0.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the property_types row. One row per value.
+    name: parent_key
+    type: text
+  - description: code of the property_types row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest ordinal itself; 0 when the parent has no sample_type_property_types rows.
+    name: top_measure
+    type: integer
+  - description: How many sample_type_property_types rows are tied at that largest ordinal. 1 when exactly one row carries that largest ordinal; 0 when there are no rows.
+    name: tied_count
+    type: bigint
+  - description: 'Number of sample_type_property_types rows for this property_types row; 0 when there are none. A property_types row kept with no sample_type_property_types row reports 0 here, never 1: its placeholder holds no sample_type_property_types row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of ordinal over all of them; 0 when the parent has no sample_type_property_types rows.
+    name: total_measure
+    type: integer
+  - description: The section of the sample_type_property_types row with the LARGEST ordinal for this property_types row. Ties in ordinal are broken by taking the SMALLEST section under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) — a row with no section value sorts after every labelled row; rows tied on both are resolved by the smallest id under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one). The literal '(none)' when the parent has no sample_type_property_types rows at all, and '(none)' when the winning row has no section value.
+    name: top_label
+    type: text
+  - description: The id of that same extremal row — the winner under the SAME total order, so it is the identifier of a real sample_type_property_types row whenever the parent has any. It is the literal '(none)' when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: text
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no sample_type_property_types rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+    name: tie_state
+    type: text
+  description: 'Per-property_types extremes over linked sample_type_property_types rows in the 045413_schema-047.sql schema: WHICH row is largest, not how large it is.'
+  grain: One row per property_types (id), INCLUDING property_types rows with no linked sample_type_property_types rows.
+  key_columns:
+  - parent_key
+  name: property_types_sample_type_property_types_top
+  source_relationships:
+  - child_columns:
+    - exac_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: attachment_contents
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - proj_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: projects
+    required: false
+  - child_columns:
+    - samp_id
+    child_table: attachments
+    parent_columns:
+    - id
+    parent_table: samples
+    required: false
+  - child_columns:
+    - ag_id
+    child_table: authorization_group_persons
+    parent_columns:
+    - id
+    parent_table: authorization_groups
+    required: true
+  - child_columns:
+    - pers_id
+    child_table: authorization_group_persons
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: authorization_groups
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: authorization_groups
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: controlled_vocabularies
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: controlled_vocabularies
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - covo_id
+    child_table: controlled_vocabulary_terms
+    parent_columns:
+    - id
+    parent_table: controlled_vocabularies
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: controlled_vocabulary_terms
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dast_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: data_stores
+    required: true
+  - child_columns:
+    - dsty_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: true
+  - child_columns:
+    - samp_id
+    child_table: data
+    parent_columns:
+    - id
+    parent_table: samples
+    required: false
+  - child_columns:
+    - cvte_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - ds_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - dstpt_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: data_set_type_property_types
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: data_set_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - data_id_child
+    child_table: data_set_relationships
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - data_id_parent
+    child_table: data_set_relationships
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - dsty_id
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: data_set_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: data_set_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - data_set_type_id
+    child_table: data_store_service_data_set_types
+    parent_columns:
+    - id
+    parent_table: data_set_types
+    required: true
+  - child_columns:
+    - data_store_service_id
+    child_table: data_store_service_data_set_types
+    parent_columns:
+    - id
+    parent_table: data_store_services
+    required: true
+  - child_columns:
+    - data_store_id
+    child_table: data_store_services
+    parent_columns:
+    - id
+    parent_table: data_stores
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: data_stores
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: events
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - etpt_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: experiment_type_property_types
+    required: true
+  - child_columns:
+    - expe_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiment_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - exty_id
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: experiment_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: experiment_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: experiment_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - exty_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: experiment_types
+    required: true
+  - child_columns:
+    - inva_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: invalidations
+    required: false
+  - child_columns:
+    - mate_id_study_object
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - proj_id
+    child_table: experiments
+    parent_columns:
+    - id
+    parent_table: projects
+    required: true
+  - child_columns:
+    - cvte_id_stor_fmt
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: true
+  - child_columns:
+    - cvte_id_store
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - data_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: data
+    required: true
+  - child_columns:
+    - ffty_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: file_format_types
+    required: true
+  - child_columns:
+    - loty_id
+    child_table: external_data
+    parent_columns:
+    - id
+    parent_table: locator_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: file_format_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: filters
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: filters
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: grid_custom_columns
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: grid_custom_columns
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: groups
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: groups
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: invalidations
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - mate_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: true
+  - child_columns:
+    - mate_prop_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - mtpt_id
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: material_type_property_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: material_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - maty_id
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: material_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: material_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - maty_id
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: materials
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: persons
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - grou_id
+    child_table: persons
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: groups
+    required: true
+  - child_columns:
+    - pers_id_leader
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: persons
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: projects
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - covo_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: controlled_vocabularies
+    required: false
+  - child_columns:
+    - daty_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: data_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - maty_prop_id
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: material_types
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - ag_id_grantee
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: authorization_groups
+    required: false
+  - child_columns:
+    - dbin_id
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - pers_id_grantee
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: role_assignments
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - cvte_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: controlled_vocabulary_terms
+    required: false
+  - child_columns:
+    - mate_prop_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: materials
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - samp_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: samples
+    required: true
+  - child_columns:
+    - stpt_id
+    child_table: sample_properties
+    parent_columns:
+    - id
+    parent_table: sample_type_property_types
+    required: true
+  - child_columns:
+    - pers_id_registerer
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - prty_id
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: property_types
+    required: true
+  - child_columns:
+    - saty_id
+    child_table: sample_type_property_types
+    parent_columns:
+    - id
+    parent_table: sample_types
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: sample_types
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: true
+  - child_columns:
+    - dbin_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: database_instances
+    required: false
+  - child_columns:
+    - expe_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: experiments
+    required: false
+  - child_columns:
+    - grou_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: groups
+    required: false
+  - child_columns:
+    - inva_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: invalidations
+    required: false
+  - child_columns:
+    - pers_id_registerer
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: persons
+    required: true
+  - child_columns:
+    - saty_id
+    child_table: samples
+    parent_columns:
+    - id
+    parent_table: sample_types
+    required: true
+  transformation:
+    steps:
+    - description: Read source table property_types.
+      operation: source
+      order: 1
+      source_inputs:
+      - property_types
+    - description: Read source table sample_type_property_types.
+      operation: source
+      order: 2
+      source_inputs:
+      - sample_type_property_types
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per property_types row, keyed by id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - property_types
+    - carried_fields:
+      - prty_id
+      - id
+      condition:
+        public_identifiers:
+        - sample_type_property_types
+        - prty_id
+        - parent_key
+      description: 'Bring in sample_type_property_types: a property_types row with no sample_type_property_types rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - sample_type_property_types
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest section under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) (a row with no section value sorts after every row that has one), then the smallest id under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one), and take top_label, top_row_id from that winning row. The ordering measure is required on every real input row, so a non-empty group always has a winning row; the declared defaults belong only to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no sample_type_property_types rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12

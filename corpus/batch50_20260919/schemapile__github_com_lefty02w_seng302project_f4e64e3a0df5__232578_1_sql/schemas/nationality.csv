@@ -1,0 +1,3 @@
+column_name,column_description
+nationality_id,Column nationality_id of table nationality.
+nationality_name,Column nationality_name of table nationality.

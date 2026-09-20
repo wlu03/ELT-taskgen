@@ -1,0 +1,11 @@
+column_name,column_description
+article_id,Column article_id of table article_translation. may be NULL.
+created_at,Column created_at of table article_translation. may be NULL.
+description,Column description of table article_translation. may be NULL.
+excerpt,Column excerpt of table article_translation. may be NULL.
+id,Column id of table article_translation.
+language_id,Column language_id of table article_translation. may be NULL.
+slug,Column slug of table article_translation. may be NULL.
+title,Column title of table article_translation. may be NULL.
+updated_at,Column updated_at of table article_translation. may be NULL.
+youtube_id,Column youtube_id of table article_translation. may be NULL.

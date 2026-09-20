@@ -1,0 +1,10 @@
+column_name,column_description
+created_at,Column created_at of table content. may be NULL.
+featured,Column featured of table content. may be NULL.
+heritage_id,Column heritage_id of table content. may be NULL.
+hidden,Column hidden of table content. may be NULL.
+id,Column id of table content.
+priority,Column priority of table content. may be NULL.
+published,Column published of table content. may be NULL.
+type,Column type of table content. may be NULL.
+updated_at,Column updated_at of table content. may be NULL.

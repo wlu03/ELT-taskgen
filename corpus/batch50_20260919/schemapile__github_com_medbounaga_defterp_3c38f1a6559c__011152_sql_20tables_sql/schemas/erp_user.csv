@@ -1,0 +1,8 @@
+column_name,column_description
+active,Column active of table erp.user.
+id,Column id of table erp.user.
+image,Column image of table erp.user. may be NULL.
+login,Column login of table erp.user.
+name,Column name of table erp.user.
+password,Column password of table erp.user.
+user_type,Column user_type of table erp.user. may be NULL.

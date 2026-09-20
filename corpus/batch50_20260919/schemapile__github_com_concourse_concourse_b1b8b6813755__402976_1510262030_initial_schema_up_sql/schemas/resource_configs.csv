@@ -1,0 +1,5 @@
+column_name,column_description
+base_resource_type_id,Column base_resource_type_id of table resource_configs. may be NULL.
+id,Column id of table resource_configs.
+resource_cache_id,Column resource_cache_id of table resource_configs. may be NULL.
+source_hash,Column source_hash of table resource_configs.

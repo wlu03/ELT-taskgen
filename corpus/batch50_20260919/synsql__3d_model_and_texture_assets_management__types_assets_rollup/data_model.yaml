@@ -1,0 +1,519 @@
+models:
+- columns:
+  - description: Identifier of the types row. One row per value.
+    name: parent_key
+    type: integer
+  - description: type_name of the types row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: Number of assets rows linked to this types row. 0 when there are none.
+    name: link_count
+    type: bigint
+  - description: Number of DISTINCT categories rows reached through those links. Two links pointing at the same child count ONCE. 0 when there are no links. A link whose categories row is missing reaches no categories row and adds nothing to this count.
+    name: distinct_child_count
+    type: bigint
+  - description: Number of linked assets rows whose tags is one of ['cyber']. A parent whose links ALL fail that test reports 0, not a missing row.
+    name: active_link_count
+    type: bigint
+  - description: Sum of class over every linked row; 0 when there are no links, and 0 when none of the linked rows carries a class value.
+    name: total_amount
+    type: integer
+  - description: Sum of class over links whose tags is one of ['cyber']; 0 when none qualify, and 0 when every qualifying row lacks a class value.
+    name: active_amount
+    type: integer
+  - description: Largest class among the linked rows; 0 when there are no links, and 0 when none of the linked rows carries a class value.
+    name: max_amount
+    type: integer
+  - description: active_amount divided by total_amount, expressed as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimal places, and reported as 0.0 when total_amount is 0.
+    name: active_amount_ratio
+    type: float
+  - description: 'Size band of link_count: ''none'' at exactly 0, ''small'' for 1-2 INCLUSIVE of 2, ''medium'' for 3-5 INCLUSIVE of 5, ''large'' above 5. Every value falls in exactly one band.'
+    name: size_band
+    type: text
+  - description: '''yes'' when this parent has at least one link, ''no'' otherwise. Never NULL.'
+    name: has_links
+    type: text
+  description: Per-types roll-up of linked assets activity in the 3d_model_and_texture_assets_management scenario, including the fan-out onto categories.
+  grain: One row per types (type_id), INCLUDING types rows with no linked assets rows.
+  key_columns:
+  - parent_key
+  name: types_assets_rollup
+  source_relationships:
+  - child_columns:
+    - asset_id
+    child_table: access_logs
+    parent_columns:
+    - asset_id
+    parent_table: assets
+    required: false
+  - child_columns:
+    - user_id
+    child_table: access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - category_id
+    child_table: assets
+    parent_columns:
+    - category_id
+    parent_table: categories
+    required: false
+  - child_columns:
+    - subcategory_id
+    child_table: assets
+    parent_columns:
+    - subcategory_id
+    parent_table: subcategories
+    required: false
+  - child_columns:
+    - type_id
+    child_table: assets
+    parent_columns:
+    - type_id
+    parent_table: types
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: uploads
+    parent_columns:
+    - asset_id
+    parent_table: assets
+    required: false
+  - child_columns:
+    - user_id
+    child_table: uploads
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: versions
+    parent_columns:
+    - asset_id
+    parent_table: assets
+    required: false
+  transformation:
+    steps:
+    - description: Read source table types.
+      operation: source
+      order: 1
+      source_inputs:
+      - types
+    - description: Read source table assets.
+      operation: source
+      order: 2
+      source_inputs:
+      - assets
+    - description: Read source table categories.
+      operation: source
+      order: 3
+      source_inputs:
+      - categories
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per types row, keyed by type_id.
+      operation: derive
+      order: 4
+      source_inputs:
+      - types
+    - carried_fields:
+      - type_id
+      condition:
+        public_identifiers:
+        - assets
+        - type_id
+        - parent_key
+      description: 'Hop 1: bring in assets against the grain. One types row may have many assets rows, and a types row with no assets rows at all is RETAINED.'
+      join_preservation: left
+      operation: join
+      order: 5
+      source_inputs:
+      - assets
+    - carried_fields:
+      - category_id
+      condition:
+        public_identifiers:
+        - categories
+        - category_id
+      description: 'Hop 2: bring in categories, matching each linked assets row''s category_id to the category_id of a categories row. A assets row whose categories row is missing still counts as a link and is RETAINED.'
+      join_preservation: left
+      operation: join
+      order: 6
+      source_inputs:
+      - categories
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting link_count, distinct_child_count, active_link_count, total_amount, active_amount, max_amount for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 7
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      description: Name the mart columns; total_amount, active_amount, max_amount report their declared defaults — never NULL — for a group with no matching rows. For total_amount, active_amount, max_amount, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      - active_amount_ratio
+      description: 'Guarded ratios: active_amount_ratio — active_amount divided by total_amount, expressed as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimal places, and reported as 0.0 when total_amount is 0.'
+      operation: ratio
+      order: 9
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      - active_amount_ratio
+      - size_band
+      description: 'size_band — Size band of link_count: ''none'' at exactly 0, ''small'' for 1-2 INCLUSIVE of 2, ''medium'' for 3-5 INCLUSIVE of 5, ''large'' above 5. Every value falls in exactly one band.'
+      operation: conditional
+      order: 10
+      semantic_parameters:
+        boundary: a value exactly at 2 is 'small'; a value exactly at 5 is 'medium'
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      - active_amount_ratio
+      - size_band
+      - has_links
+      description: has_links — 'yes' when this parent has at least one link, 'no' otherwise. Never NULL.
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: a value exactly at 0 is 'no'
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12
+- columns:
+  - description: Identifier of the types row.
+    name: entity_key
+    type: integer
+  - description: '''passing'' for tags values [''cyber'']; ''failing'' for values [''neon'', ''pixel'']; ''no_activity'' when the types row has no linked assets row. A linked assets row whose tags has no value belongs to no cohort: it is not counted in any cell, and it does not make the types row ''no_activity''.'
+    name: cohort
+    type: text
+  - description: type_name of the types row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of assets rows in this entity/cohort cell.
+    name: link_count
+    type: bigint
+  - description: Number of distinct tags values represented in this cell.
+    name: distinct_status_count
+    type: bigint
+  - description: Sum of class in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an class value.
+    name: total_amount
+    type: integer
+  - description: Largest class in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an class value.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(types, status cohort) summary of linked assets rows in the 3d_model_and_texture_assets_management scenario, with passing and failing cohorts kept separate.
+  grain: One row per (type_id, status cohort) pair represented among linked assets rows, plus one no-activity row for a types row with no linked assets row at all. A types row whose linked assets rows all lack a tags value is in no cohort and gets no no-activity row, so it has no row in this mart.
+  key_columns:
+  - entity_key
+  - cohort
+  name: types_assets_cohorts
+  source_relationships:
+  - child_columns:
+    - asset_id
+    child_table: access_logs
+    parent_columns:
+    - asset_id
+    parent_table: assets
+    required: false
+  - child_columns:
+    - user_id
+    child_table: access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - category_id
+    child_table: assets
+    parent_columns:
+    - category_id
+    parent_table: categories
+    required: false
+  - child_columns:
+    - subcategory_id
+    child_table: assets
+    parent_columns:
+    - subcategory_id
+    parent_table: subcategories
+    required: false
+  - child_columns:
+    - type_id
+    child_table: assets
+    parent_columns:
+    - type_id
+    parent_table: types
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: uploads
+    parent_columns:
+    - asset_id
+    parent_table: assets
+    required: false
+  - child_columns:
+    - user_id
+    child_table: uploads
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - asset_id
+    child_table: versions
+    parent_columns:
+    - asset_id
+    parent_table: assets
+    required: false
+  transformation:
+    steps:
+    - description: Read source table types.
+      operation: source
+      order: 1
+      source_inputs:
+      - types
+    - description: Read source table assets.
+      operation: source
+      order: 2
+      source_inputs:
+      - assets
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each type_id and its type_name into the cohort calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - types
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - type_id
+      condition:
+        public_identifiers:
+        - assets
+        - type_id
+        - entity_key
+      description: Bring the linked assets rows into each types entity before assigning status cohorts.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - assets
+    - carried_fields:
+      - entity_key
+      - entity_name
+      condition:
+        literal_values:
+        - cyber
+      description: Keep rows whose tags belongs to the passing cohort values ['cyber'].
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per types entity that has at least one linked assets row in the passing cohort, reporting the number of those rows, how many different tags values occur among them, the total of their class, and their largest class. The total and the largest value read only the rows that carry a class value; a cohort whose rows all lack one reports 0 for both, never empty.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the passing cohort.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      condition:
+        literal_values:
+        - neon
+        - pixel
+      description: Keep rows whose tags belongs to the failing cohort values ['neon', 'pixel'].
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per types entity that has at least one linked assets row in the failing cohort, reporting the number of those rows, how many different tags values occur among them, the total of their class, and their largest class. The total and the largest value read only the rows that carry a class value; a cohort whose rows all lack one reports 0 for both, never empty.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the failing cohort.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Keep the placeholder row for a types entity with no linked assets row at all; a types entity that has linked assets rows gets no placeholder, even when every one of those rows lacks a tags value.
+      operation: filter
+      order: 13
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per types entity with no linked assets row at all, reporting 0 rows, 0 different tags values, a class total of 0 and a largest class of 0.
+      operation: distinct
+      order: 14
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 15
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the no_activity cohort.
+      operation: derive
+      order: 16
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Combine the disjoint passing and failing cohort summaries.
+      operation: union
+      order: 17
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Add the no-activity summaries, so an entity with no linked rows is retained as one explicit cohort row.
+      operation: union
+      order: 18
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - cohort
+      description: 'Deterministic output order: entity, then cohort.'
+      operation: tie_break
+      order: 19

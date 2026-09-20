@@ -1,0 +1,7 @@
+column_name,column_description
+course_id,Column course_id of table engineering.subject.
+lecturer_id,Column lecturer_id of table engineering.subject. may be NULL.
+subject_description,Column subject_description of table engineering.subject. may be NULL.
+subject_id,Column subject_id of table engineering.subject.
+subject_list_id,Column subject_list_id of table engineering.subject. may be NULL.
+subject_name,Column subject_name of table engineering.subject.

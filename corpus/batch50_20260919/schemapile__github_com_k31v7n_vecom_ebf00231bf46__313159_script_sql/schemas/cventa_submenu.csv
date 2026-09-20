@@ -1,0 +1,5 @@
+column_name,column_description
+activo,Column activo of table cventa.submenu.
+fecha_sis,Column fecha_sis of table cventa.submenu.
+nombre,Column nombre of table cventa.submenu.
+submenu,Column submenu of table cventa.submenu.

@@ -1,0 +1,24 @@
+column_name,column_description
+access_result,Column access_result of table xa_access_audit. may be NULL.
+access_type,Column access_type of table xa_access_audit. may be NULL.
+acl_enforcer,Column acl_enforcer of table xa_access_audit. may be NULL.
+action,Column action of table xa_access_audit. may be NULL.
+added_by_id,Column added_by_id of table xa_access_audit. may be NULL.
+agent_id,Column agent_id of table xa_access_audit. may be NULL.
+audit_type,Column audit_type of table xa_access_audit.
+client_ip,Column client_ip of table xa_access_audit. may be NULL.
+client_type,Column client_type of table xa_access_audit. may be NULL.
+create_time,Column create_time of table xa_access_audit. may be NULL.
+event_time,Column event_time of table xa_access_audit. may be NULL.
+id,Column id of table xa_access_audit.
+policy_id,Column policy_id of table xa_access_audit. may be NULL.
+repo_name,Column repo_name of table xa_access_audit. may be NULL.
+repo_type,Column repo_type of table xa_access_audit. may be NULL.
+request_data,Column request_data of table xa_access_audit. may be NULL.
+request_user,Column request_user of table xa_access_audit. may be NULL.
+resource_path,Column resource_path of table xa_access_audit. may be NULL.
+resource_type,Column resource_type of table xa_access_audit. may be NULL.
+result_reason,Column result_reason of table xa_access_audit. may be NULL.
+session_id,Column session_id of table xa_access_audit. may be NULL.
+upd_by_id,Column upd_by_id of table xa_access_audit. may be NULL.
+update_time,Column update_time of table xa_access_audit. may be NULL.

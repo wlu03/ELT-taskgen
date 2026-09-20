@@ -1,0 +1,6 @@
+column_name,column_description
+statistic_id,Unique identifier for each printing statistic.
+setting_id,ID of the printing setting. may be NULL.
+statistic_name,"Name of the statistic (e.g., print time, print volume). always exactly one of 'print time', 'print volume'. may be NULL."
+statistic_value,Value of the statistic. may be NULL.
+unit,Unit of the statistic value. may be NULL.

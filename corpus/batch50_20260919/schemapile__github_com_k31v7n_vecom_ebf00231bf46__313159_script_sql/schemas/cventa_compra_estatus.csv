@@ -1,0 +1,3 @@
+column_name,column_description
+compra_estatus,Column compra_estatus of table cventa.compra_estatus.
+nombre,Column nombre of table cventa.compra_estatus.

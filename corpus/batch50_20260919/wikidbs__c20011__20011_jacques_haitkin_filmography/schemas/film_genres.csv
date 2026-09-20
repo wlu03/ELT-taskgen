@@ -1,0 +1,20 @@
+column_name,column_description
+genre_name,genre name of film genres (real vendored values).
+genre_description,genre description of film genres (real vendored values).
+genre_subclass,genre subclass of film genres (real vendored values).
+genre_instance,genre instance of film genres (real vendored values).
+commons_category,commons category of film genres (real vendored values). may be NULL.
+main_category,main category of film genres (real vendored values).
+freebase_id,freebase id of film genres (real vendored values). may be NULL.
+representative_image,representative image of film genres (real vendored values). may be NULL.
+related_list,related list of film genres (real vendored values). may be NULL.
+babel_net_id,babel net id of film genres (real vendored values). may be NULL.
+k_bpedia_id,k bpedia id of film genres (real vendored values). may be NULL.
+yso_id,yso id of film genres (real vendored values). may be NULL.
+all_movie_genre_id,all movie genre id of film genres (real vendored values). may be NULL.
+rate_your_music_film_genre_id,rate your music film genre id of film genres (real vendored values). may be NULL.
+gnd_id,gnd id of film genres (real vendored values). may be NULL.
+library_of_congress_genre_form_terms_id,library of congress genre form terms id of film genres (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of film genres (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of film genres (real vendored values). may be NULL.
+nl_cr_aut_id,nl cr aut id of film genres (real vendored values). may be NULL.

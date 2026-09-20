@@ -1,0 +1,7 @@
+column_name,column_description
+output_cost,Column output_cost of table Output_Costs. may be NULL.
+output_name,Column output_name of table Output_Costs.
+scenario,Column scenario of table Output_Costs.
+sector,Column sector of table Output_Costs. may be NULL.
+tech,Column tech of table Output_Costs.
+vintage,Column vintage of table Output_Costs.

@@ -1,0 +1,6 @@
+column_name,column_description
+code_count,Column code_count of table exhibition_code_series. may be NULL.
+created_at,Column created_at of table exhibition_code_series. may be NULL.
+heritage_id,Column heritage_id of table exhibition_code_series. may be NULL.
+id,Column id of table exhibition_code_series.
+updated_at,Column updated_at of table exhibition_code_series. may be NULL.

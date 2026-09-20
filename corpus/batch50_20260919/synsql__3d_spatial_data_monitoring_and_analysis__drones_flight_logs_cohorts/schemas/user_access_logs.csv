@@ -1,0 +1,7 @@
+column_name,column_description
+access_id,Unique identifier for each access record.
+user_id,Reference to the user accessing the system. may be NULL.
+access_time,Time when the user accessed the system. may be NULL.
+access_type,"Type of access (e.g., view, edit). always exactly one of 'view', 'edit'. may be NULL."
+ip_address,IP address of the user accessing the system. may be NULL.
+user_agent,User agent string of the device used to access the system. may be NULL.

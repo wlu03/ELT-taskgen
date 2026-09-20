@@ -1,0 +1,14 @@
+column_name,column_description
+city,Column city of table ambassador_translation. may be NULL.
+created_at,Column created_at of table ambassador_translation. may be NULL.
+favorite_place,Column favorite_place of table ambassador_translation. may be NULL.
+firstname,Column firstname of table ambassador_translation. may be NULL.
+heritage_id,Column heritage_id of table ambassador_translation. may be NULL.
+id,Column id of table ambassador_translation.
+image_name,Column image_name of table ambassador_translation. may be NULL.
+lastname,Column lastname of table ambassador_translation. may be NULL.
+poi_id,Column poi_id of table ambassador_translation. may be NULL.
+quote,Column quote of table ambassador_translation. may be NULL.
+type,Column type of table ambassador_translation. may be NULL.
+updated_at,Column updated_at of table ambassador_translation. may be NULL.
+zip,Column zip of table ambassador_translation. may be NULL.

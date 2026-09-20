@@ -1,0 +1,1551 @@
+models:
+- columns:
+  - description: Identifier of the interactome_db_ratio_descriptor row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked interactome_db_psm_ratio_value row whose confidence_score_value has a value; ''absent'' when confidence_score_value is missing, including a interactome_db_ratio_descriptor row with no linked interactome_db_psm_ratio_value row. A linked interactome_db_psm_ratio_value row whose confidence_score_value has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: description of the interactome_db_ratio_descriptor row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked interactome_db_psm_ratio_value rows in this entity/state cell; an absent cell holding real interactome_db_psm_ratio_value rows whose confidence_score_value is missing COUNTS those rows, and only the placeholder cell of an interactome_db_ratio_descriptor row with no linked interactome_db_psm_ratio_value row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing confidence_score_value values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no confidence_score_value value at all — both for an interactome_db_ratio_descriptor row with no linked interactome_db_psm_ratio_value row and for an absent cell whose rows all have a missing confidence_score_value.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of confidence_score_value in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an confidence_score_value value.
+    name: total_amount
+    type: float
+  - description: Largest confidence_score_value in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an confidence_score_value value.
+    name: max_amount
+    type: float
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(interactome_db_ratio_descriptor, measure state) distribution of linked interactome_db_psm_ratio_value activity in the 639734_pint_DB_structure_v1.2.sql schema.
+  grain: One row per (id, measure state) pair represented among linked interactome_db_psm_ratio_value rows; the absent state includes missing confidence_score_value values and a no-activity row for a interactome_db_ratio_descriptor row with no links. A linked interactome_db_psm_ratio_value row whose confidence_score_value has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: interactome_db_ratio_descriptor_interactome_db_psm_ratio_value_distribution
+  source_relationships:
+  - child_columns:
+    - project_id
+    child_table: interactome_db_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_project
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_peptide_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_peptide_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_peptide_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - organism_taxonomyid
+    child_table: interactome_db_protein
+    parent_columns:
+    - taxonomyid
+    parent_table: interactome_db_organism
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_protein_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - annotation_type_name
+    child_table: interactome_db_protein_annotation
+    parent_columns:
+    - name
+    parent_table: interactome_db_annotation_type
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_annotation
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_protein_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_protein_has_peptide
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_peptide
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_accession_accession
+    child_table: interactome_db_protein_has_protein_accession
+    parent_columns:
+    - accession
+    parent_table: interactome_db_protein_accession
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_protein_accession
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_protein_has_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_protein_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_threshold
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - threshold_id
+    child_table: interactome_db_protein_threshold
+    parent_columns:
+    - id
+    parent_table: interactome_db_threshold
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_psm_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_psm_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_ptm
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_ptm
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_ptm_site
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - ptm_id
+    child_table: interactome_db_ptm_site
+    parent_columns:
+    - id
+    parent_table: interactome_db_ptm
+    required: true
+  - child_columns:
+    - organism_taxonomyid
+    child_table: interactome_db_sample_has_organism
+    parent_columns:
+    - taxonomyid
+    parent_table: interactome_db_organism
+    required: true
+  transformation:
+    steps:
+    - description: Read source table interactome_db_ratio_descriptor.
+      operation: source
+      order: 1
+      source_inputs:
+      - interactome_db_ratio_descriptor
+    - description: Read source table interactome_db_psm_ratio_value.
+      operation: source
+      order: 2
+      source_inputs:
+      - interactome_db_psm_ratio_value
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each id and its description into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - interactome_db_ratio_descriptor
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - id
+      - ratio_descriptor_id
+      condition:
+        public_identifiers:
+        - interactome_db_psm_ratio_value
+        - ratio_descriptor_id
+        - entity_key
+      description: Bring the linked interactome_db_psm_ratio_value rows into each interactome_db_ratio_descriptor entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - interactome_db_psm_ratio_value
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real interactome_db_psm_ratio_value row whose confidence_score_value has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per interactome_db_ratio_descriptor entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing confidence_score_value values occur (each different value counted once, however many rows repeat it), total confidence_score_value, and largest confidence_score_value.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: confidence_score_value is missing, including the retained placeholder for a interactome_db_ratio_descriptor row with no interactome_db_psm_ratio_value rows. A real interactome_db_psm_ratio_value row whose confidence_score_value has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per interactome_db_ratio_descriptor entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing confidence_score_value values occur (each different value counted once, however many rows repeat it), total confidence_score_value, and largest confidence_score_value.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the interactome_db_ptm row. One row per value.
+    name: parent_key
+    type: integer
+  - description: cv_id of the interactome_db_ptm row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest position itself; 0 when the parent has no interactome_db_ptm_site rows.
+    name: top_measure
+    type: integer
+  - description: How many interactome_db_ptm_site rows are tied at that largest position. 1 when exactly one row carries that largest position; 0 when there are no rows.
+    name: tied_count
+    type: bigint
+  - description: 'Number of interactome_db_ptm_site rows for this interactome_db_ptm row; 0 when there are none. An interactome_db_ptm row kept with no interactome_db_ptm_site row reports 0 here, never 1: its placeholder holds no interactome_db_ptm_site row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of position over all of them; 0 when the parent has no interactome_db_ptm_site rows.
+    name: total_measure
+    type: integer
+  - description: The aa of the interactome_db_ptm_site row with the LARGEST position for this interactome_db_ptm row. Ties in position are broken by taking the SMALLEST aa under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one); rows tied on both are resolved by the smallest id. The literal '(none)' when the parent has no interactome_db_ptm_site rows at all.
+    name: top_label
+    type: text
+  - description: The id of that same extremal row — the winner under the SAME total order, so it is the identifier of a real interactome_db_ptm_site row whenever the parent has any. It is 0 when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: integer
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no interactome_db_ptm_site rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+    name: tie_state
+    type: text
+  description: 'Per-interactome_db_ptm extremes over linked interactome_db_ptm_site rows in the 639734_pint_DB_structure_v1.2.sql schema: WHICH row is largest, not how large it is.'
+  grain: One row per interactome_db_ptm (id), INCLUDING interactome_db_ptm rows with no linked interactome_db_ptm_site rows.
+  key_columns:
+  - parent_key
+  name: interactome_db_ptm_interactome_db_ptm_site_top
+  source_relationships:
+  - child_columns:
+    - project_id
+    child_table: interactome_db_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_project
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_peptide_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_peptide_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_peptide_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - organism_taxonomyid
+    child_table: interactome_db_protein
+    parent_columns:
+    - taxonomyid
+    parent_table: interactome_db_organism
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_protein_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - annotation_type_name
+    child_table: interactome_db_protein_annotation
+    parent_columns:
+    - name
+    parent_table: interactome_db_annotation_type
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_annotation
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_protein_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_protein_has_peptide
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_peptide
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_accession_accession
+    child_table: interactome_db_protein_has_protein_accession
+    parent_columns:
+    - accession
+    parent_table: interactome_db_protein_accession
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_protein_accession
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_protein_has_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_protein_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_threshold
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - threshold_id
+    child_table: interactome_db_protein_threshold
+    parent_columns:
+    - id
+    parent_table: interactome_db_threshold
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_psm_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_psm_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_ptm
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_ptm
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_ptm_site
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - ptm_id
+    child_table: interactome_db_ptm_site
+    parent_columns:
+    - id
+    parent_table: interactome_db_ptm
+    required: true
+  - child_columns:
+    - organism_taxonomyid
+    child_table: interactome_db_sample_has_organism
+    parent_columns:
+    - taxonomyid
+    parent_table: interactome_db_organism
+    required: true
+  transformation:
+    steps:
+    - description: Read source table interactome_db_ptm.
+      operation: source
+      order: 1
+      source_inputs:
+      - interactome_db_ptm
+    - description: Read source table interactome_db_ptm_site.
+      operation: source
+      order: 2
+      source_inputs:
+      - interactome_db_ptm_site
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per interactome_db_ptm row, keyed by id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - interactome_db_ptm
+    - carried_fields:
+      - ptm_id
+      - id
+      condition:
+        public_identifiers:
+        - interactome_db_ptm_site
+        - ptm_id
+        - parent_key
+      description: 'Bring in interactome_db_ptm_site: a interactome_db_ptm row with no interactome_db_ptm_site rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - interactome_db_ptm_site
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest aa under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one), then the smallest id, and take top_label, top_row_id from that winning row. The ordering measure is required on every real input row, so a non-empty group always has a winning row; the declared defaults belong only to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no interactome_db_ptm_site rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12
+- columns:
+  - description: Identifier of the interactome_db_psm row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked interactome_db_ptm row; ''absent'' only for a interactome_db_psm row with no linked interactome_db_ptm row. mass_shift is required on every real interactome_db_ptm row.'
+    name: measure_state
+    type: text
+  - description: afterseq of the interactome_db_psm row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked interactome_db_ptm rows in this entity/state cell; 0 for a no-activity absent cell.
+    name: row_count
+    type: bigint
+  - description: Number of unique mass_shift values in this cell; each unique value is counted once, however many rows repeat it; 0 for a no-activity absent cell.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of mass_shift in this cell; 0 for a no-activity absent cell.
+    name: total_amount
+    type: float
+  - description: Largest mass_shift in this cell; 0 for a no-activity absent cell.
+    name: max_amount
+    type: float
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(interactome_db_psm, measure state) distribution of linked interactome_db_ptm activity in the 639734_pint_DB_structure_v1.2.sql schema.
+  grain: One row per (id, measure state) pair represented by linked interactome_db_ptm rows, plus one absent no-activity row for a interactome_db_psm row with no links. Because mass_shift is required, no linked interactome_db_ptm row belongs to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: interactome_db_psm_interactome_db_ptm_distribution
+  source_relationships:
+  - child_columns:
+    - project_id
+    child_table: interactome_db_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_project
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_peptide_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_peptide_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_peptide_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_peptide_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_peptide_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - organism_taxonomyid
+    child_table: interactome_db_protein
+    parent_columns:
+    - taxonomyid
+    parent_table: interactome_db_organism
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_protein_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - annotation_type_name
+    child_table: interactome_db_protein_annotation
+    parent_columns:
+    - name
+    parent_table: interactome_db_annotation_type
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_annotation
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_protein_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_ms_run
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_protein_has_peptide
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_peptide
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_accession_accession
+    child_table: interactome_db_protein_has_protein_accession
+    parent_columns:
+    - accession
+    parent_table: interactome_db_protein_accession
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_protein_accession
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_has_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_protein_has_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_protein_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_protein_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - protein_id
+    child_table: interactome_db_protein_threshold
+    parent_columns:
+    - id
+    parent_table: interactome_db_protein
+    required: true
+  - child_columns:
+    - threshold_id
+    child_table: interactome_db_protein_threshold
+    parent_columns:
+    - id
+    parent_table: interactome_db_threshold
+    required: true
+  - child_columns:
+    - ms_run_id
+    child_table: interactome_db_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_ms_run
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_psm
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_psm_amount
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_amount
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_has_condition
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - combination_type_name
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_combination_type
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - ratio_descriptor_id
+    child_table: interactome_db_psm_ratio_value
+    parent_columns:
+    - id
+    parent_table: interactome_db_ratio_descriptor
+    required: true
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_psm_score
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: true
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_psm_score
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: true
+  - child_columns:
+    - peptide_id
+    child_table: interactome_db_ptm
+    parent_columns:
+    - id
+    parent_table: interactome_db_peptide
+    required: false
+  - child_columns:
+    - psm_id
+    child_table: interactome_db_ptm
+    parent_columns:
+    - id
+    parent_table: interactome_db_psm
+    required: false
+  - child_columns:
+    - confidence_score_type_name
+    child_table: interactome_db_ptm_site
+    parent_columns:
+    - name
+    parent_table: interactome_db_confidence_score_type
+    required: false
+  - child_columns:
+    - ptm_id
+    child_table: interactome_db_ptm_site
+    parent_columns:
+    - id
+    parent_table: interactome_db_ptm
+    required: true
+  - child_columns:
+    - organism_taxonomyid
+    child_table: interactome_db_sample_has_organism
+    parent_columns:
+    - taxonomyid
+    parent_table: interactome_db_organism
+    required: true
+  transformation:
+    steps:
+    - description: Read source table interactome_db_psm.
+      operation: source
+      order: 1
+      source_inputs:
+      - interactome_db_psm
+    - description: Read source table interactome_db_ptm.
+      operation: source
+      order: 2
+      source_inputs:
+      - interactome_db_ptm
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each id and its afterseq into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - interactome_db_psm
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - id
+      - psm_id
+      condition:
+        public_identifiers:
+        - interactome_db_ptm
+        - psm_id
+        - entity_key
+      description: Bring the linked interactome_db_ptm rows into each interactome_db_psm entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - interactome_db_ptm
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real interactome_db_ptm row; mass_shift is required on every such row.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per interactome_db_psm entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different mass_shift values occur (each different value counted once, however many rows repeat it), total mass_shift, and largest mass_shift.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: the retained placeholder for a interactome_db_psm row with no interactome_db_ptm rows; no real row can enter this state because mass_shift is required.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per interactome_db_psm entity with no linked interactome_db_ptm row at all, whose retained placeholder is its one row in the absent measure state, and no row here for an entity that has a linked interactome_db_ptm row, reporting a row count of 0, 0 different mass_shift values, a total mass_shift of 0 and a largest mass_shift of 0.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14

@@ -1,0 +1,6 @@
+column_name,column_description
+cfu,Column CFU of table seminario.
+data_seminario,Column data_seminario of table seminario.
+max_persone,Column max_persone of table seminario.
+nome,Column nome of table seminario. may be NULL.
+tesserino_docente,Column tesserino_docente of table seminario.

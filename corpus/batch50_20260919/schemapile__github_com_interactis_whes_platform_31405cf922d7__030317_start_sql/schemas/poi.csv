@@ -1,0 +1,8 @@
+column_name,column_description
+arrival_station,Column arrival_station of table poi. may be NULL.
+arrival_url,Column arrival_url of table poi. may be NULL.
+content_id,Column content_id of table poi. may be NULL.
+created_at,Column created_at of table poi. may be NULL.
+geom,Column geom of table poi. may be NULL.
+id,Column id of table poi.
+updated_at,Column updated_at of table poi. may be NULL.

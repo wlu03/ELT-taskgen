@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table test_plan_sprint_case_user.
+test_plan_sprint_case_id,Column test_plan_sprint_case_id of table test_plan_sprint_case_user. may be NULL.
+user_id,Column user_id of table test_plan_sprint_case_user. may be NULL.

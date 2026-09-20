@@ -1,0 +1,24 @@
+column_name,column_description
+fullname,fullname of filmindustryprofessionals (real vendored values).
+biography,biography of filmindustryprofessionals (real vendored values). may be NULL.
+birthdate,birthdate of filmindustryprofessionals (real vendored values). may be NULL.
+deathdate,deathdate of filmindustryprofessionals (real vendored values). may be NULL.
+entitytype,entitytype of filmindustryprofessionals (real vendored values).
+birthplace,birthplace of filmindustryprofessionals (real vendored values). may be NULL.
+profession,profession of filmindustryprofessionals (real vendored values). may be NULL.
+gender,gender of filmindustryprofessionals (real vendored values).
+imdbid,imdbid of filmindustryprofessionals (real vendored values). may be NULL.
+nationality,nationality of filmindustryprofessionals (real vendored values). may be NULL.
+firstname,firstname of filmindustryprofessionals (real vendored values). may be NULL.
+viafid,viafid of filmindustryprofessionals (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmindustryprofessionals (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmindustryprofessionals (real vendored values).
+kinopoiskpersonid,kinopoiskpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+danskefilmpersonid,danskefilmpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+lastname,lastname of filmindustryprofessionals (real vendored values).
+gravsteddkid,gravsteddkid of filmindustryprofessionals (real vendored values). may be NULL.
+danskfilmogtvpersonid,danskfilmogtvpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmindustryprofessionals (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmindustryprofessionals (real vendored values). may be NULL.

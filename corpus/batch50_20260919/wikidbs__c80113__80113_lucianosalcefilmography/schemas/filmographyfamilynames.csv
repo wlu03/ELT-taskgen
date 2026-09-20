@@ -1,0 +1,15 @@
+column_name,column_description
+surname,surname of filmographyfamilynames (real vendored values).
+description,description of filmographyfamilynames (real vendored values).
+typeofname,typeofname of filmographyfamilynames (real vendored values).
+distinctfrom,distinctfrom of filmographyfamilynames (real vendored values). may be NULL.
+nativesurname,nativesurname of filmographyfamilynames (real vendored values).
+language,language of filmographyfamilynames (real vendored values). may be NULL.
+script,script of filmographyfamilynames (real vendored values).
+commonscategory,commonscategory of filmographyfamilynames (real vendored values). may be NULL.
+soundexcode,soundexcode of filmographyfamilynames (real vendored values). may be NULL.
+geopatronymeid,geopatronymeid of filmographyfamilynames (real vendored values). may be NULL.
+geneanetfamilynameid,geneanetfamilynameid of filmographyfamilynames (real vendored values). may be NULL.
+colognephoneticscode,colognephoneticscode of filmographyfamilynames (real vendored values). may be NULL.
+caverphonecode,caverphonecode of filmographyfamilynames (real vendored values). may be NULL.
+wolframentitycode,wolframentitycode of filmographyfamilynames (real vendored values). may be NULL.

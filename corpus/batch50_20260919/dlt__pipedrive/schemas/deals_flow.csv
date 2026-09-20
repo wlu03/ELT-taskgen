@@ -1,0 +1,6 @@
+column_name,column_description
+id,primary key of dlt resource 'deals_flow' (synthesized from the dlt manifest (no observed schema)).
+_deals_id,parent link to 'deals' (dlt include_from_parent convention; synthesized from the dlt manifest (no observed schema)).
+flow_value,curator-authored column of dlt transformer 'deals_flow' (source: curator-invented). may be NULL.
+flow_object_kind,curator-authored column of dlt transformer 'deals_flow' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

@@ -1,0 +1,8 @@
+column_name,column_description
+actor_id,Unique identifier for each actor.
+actor_name,Full name of the actor. may be NULL.
+email,Email address of the actor. may be NULL.
+nationality,Actor's nationality. may be NULL.
+date_of_birth,Actor's date of birth. may be NULL.
+biography,Brief biography of the actor. may be NULL.
+character_name,Name of the character played by the actor in the film. may be NULL.

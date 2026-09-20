@@ -1,0 +1,5 @@
+column_name,column_description
+user_id,ID of the user being assigned the role.
+role_id,ID of the role being assigned. may be NULL.
+created_at,Timestamp when the role was assigned. may be NULL.
+updated_at,Timestamp when the role was last updated. may be NULL.

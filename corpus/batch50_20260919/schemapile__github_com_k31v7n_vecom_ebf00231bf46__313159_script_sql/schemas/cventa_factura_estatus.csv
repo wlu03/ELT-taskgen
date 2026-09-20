@@ -1,0 +1,3 @@
+column_name,column_description
+factura_estatus,Column factura_estatus of table cventa.factura_estatus.
+nombre,Column nombre of table cventa.factura_estatus.

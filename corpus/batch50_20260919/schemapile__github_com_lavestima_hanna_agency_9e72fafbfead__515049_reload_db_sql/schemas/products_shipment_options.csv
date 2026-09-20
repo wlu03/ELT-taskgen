@@ -1,0 +1,5 @@
+column_name,column_description
+cost,Column Cost of table Products_Shipment_Options.
+id,Column ID of table Products_Shipment_Options.
+id_products,Column ID_PRODUCTS of table Products_Shipment_Options.
+id_shipment_options,Column ID_SHIPMENT_OPTIONS of table Products_Shipment_Options.

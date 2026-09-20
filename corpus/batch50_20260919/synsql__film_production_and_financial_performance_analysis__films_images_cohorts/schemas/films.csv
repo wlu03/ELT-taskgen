@@ -1,0 +1,22 @@
+column_name,column_description
+film_id,Unique identifier for each film.
+title,Title of the film. may be NULL.
+year,Year of release. may be NULL.
+director_id,Reference to the director. may be NULL.
+producer_id,Reference to the producer(s). may be NULL.
+writer_id,Reference to the writer(s). may be NULL.
+composer_id,Reference to the composer. may be NULL.
+bond_actor_id,Reference to the actor who played Bond. may be NULL.
+budget,Budget for the film. may be NULL.
+box_office,Box office earnings. may be NULL.
+image_file,File path to the film's promotional image. may be NULL.
+runtime,Duration of the film in minutes. may be NULL.
+genre,Genre of the film. may be NULL.
+country,Country of production. may be NULL.
+language,Primary language of the film. may be NULL.
+rating,MPAA rating. may be NULL.
+release_date,Exact release date of the film. may be NULL.
+tagline,Tagline or slogan of the film. may be NULL.
+production_company,Name of the production company. may be NULL.
+distributor,Name of the distributor. may be NULL.
+trailer_url,URL to the film's trailer. may be NULL.

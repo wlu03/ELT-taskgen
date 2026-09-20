@@ -1,0 +1,381 @@
+models:
+- columns:
+  - description: Identifier of the caches row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked cache_usage row whose hits has a value; ''absent'' when hits is missing, including a caches row with no linked cache_usage row. A linked cache_usage row whose hits has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: cache_name of the caches row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked cache_usage rows in this entity/state cell; a absent cell holding real cache_usage rows whose hits is missing COUNTS those rows, and only the placeholder cell of a caches row with no linked cache_usage row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing hits values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no hits value at all — both for a caches row with no linked cache_usage row and for an absent cell whose rows all have a missing hits.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of hits in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an hits value.
+    name: total_amount
+    type: integer
+  - description: Largest hits in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an hits value.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(caches, measure state) distribution of linked cache_usage rows in the __cache_management_systems__ scenario.
+  grain: One row per (cache_id, measure state) pair represented among linked cache_usage rows; the absent state includes missing hits values and a no-activity row for a caches row with no links. A linked cache_usage row whose hits has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: caches_cache_usage_distribution
+  source_relationships:
+  - child_columns:
+    - cache_id
+    child_table: cache_configurations
+    parent_columns:
+    - cache_id
+    parent_table: caches
+    required: false
+  - child_columns:
+    - cache_id
+    child_table: cache_monitoring
+    parent_columns:
+    - cache_id
+    parent_table: caches
+    required: false
+  - child_columns:
+    - app_id
+    child_table: cache_usage
+    parent_columns:
+    - app_id
+    parent_table: applications
+    required: false
+  - child_columns:
+    - cache_id
+    child_table: cache_usage
+    parent_columns:
+    - cache_id
+    parent_table: caches
+    required: false
+  transformation:
+    steps:
+    - description: Read source table caches.
+      operation: source
+      order: 1
+      source_inputs:
+      - caches
+    - description: Read source table cache_usage.
+      operation: source
+      order: 2
+      source_inputs:
+      - cache_usage
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each cache_id and its cache_name into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - caches
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - cache_id
+      condition:
+        public_identifiers:
+        - cache_usage
+        - cache_id
+        - entity_key
+      description: Bring the linked cache_usage rows into each caches entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - cache_usage
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real cache_usage row whose hits has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per caches entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing hits values occur (each different value counted once, however many rows repeat it), total hits, and largest hits.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: hits is missing, including the retained placeholder for a caches row with no cache_usage rows. A real cache_usage row whose hits has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per caches entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing hits values occur (each different value counted once, however many rows repeat it), total hits, and largest hits.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the caches row. One row per value.
+    name: parent_key
+    type: integer
+  - description: cache_name of the caches row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest hits itself; 0 when the parent has no cache_usage rows, and 0 when none of its rows carries a hits value.
+    name: top_measure
+    type: integer
+  - description: 'How many cache_usage rows are tied at that largest hits. 1 when exactly one row carries that largest hits; 0 when there are no rows or when none of the rows carries a hits value; a row with no hits value never ties: only a row whose hits value equals the largest value among the parent''s rows holds the maximum, so the winning row of a parent whose rows all lack a value — the row the tie-break alone selects — is not counted here.'
+    name: tied_count
+    type: bigint
+  - description: 'Number of cache_usage rows for this caches row; 0 when there are none. Every linked cache_usage row counts, whether or not it carries a hits value. A caches row kept with no cache_usage row reports 0 here, never 1: its placeholder holds no cache_usage row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of hits over all of them; 0 when the parent has no cache_usage rows, and 0 when none of its rows carries a hits value (rows with no hits value add nothing).
+    name: total_measure
+    type: integer
+  - description: The usage_date of the cache_usage row with the LARGEST hits for this caches row. Ties in hits are broken by taking the SMALLEST usage_date under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) — a row with no usage_date value sorts after every labelled row; rows tied on both are resolved by the smallest usage_id. A row with no hits value still ranks, after every row that has one, so a parent holding at least one cache_usage row always has a winning row — when NONE of its rows carries a hits value the winner is the one the tie-break alone selects, not the no-rows default. The literal '(none)' when the parent has no cache_usage rows at all, and '(none)' when the winning row has no usage_date value.
+    name: top_label
+    type: text
+  - description: The usage_id of that same extremal row — the winner under the SAME total order, so it is the identifier of a real cache_usage row whenever the parent has any. This includes when none of them carries a hits value. It is 0 when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: integer
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no cache_usage rows, or none of its rows carries a hits value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a hits value equal to the largest hits value among the parent''s rows; a row with no hits value never holds the maximum. So a parent whose cache_usage rows all lack a hits value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label and top_row_id name.'
+    name: tie_state
+    type: text
+  description: 'Per-caches extremes of linked cache_usage rows in the __cache_management_systems__ scenario: WHICH row is largest, not how large it is.'
+  grain: One row per caches (cache_id), INCLUDING caches rows with no linked cache_usage rows.
+  key_columns:
+  - parent_key
+  name: caches_cache_usage_top
+  source_relationships:
+  - child_columns:
+    - cache_id
+    child_table: cache_configurations
+    parent_columns:
+    - cache_id
+    parent_table: caches
+    required: false
+  - child_columns:
+    - cache_id
+    child_table: cache_monitoring
+    parent_columns:
+    - cache_id
+    parent_table: caches
+    required: false
+  - child_columns:
+    - app_id
+    child_table: cache_usage
+    parent_columns:
+    - app_id
+    parent_table: applications
+    required: false
+  - child_columns:
+    - cache_id
+    child_table: cache_usage
+    parent_columns:
+    - cache_id
+    parent_table: caches
+    required: false
+  transformation:
+    steps:
+    - description: Read source table caches.
+      operation: source
+      order: 1
+      source_inputs:
+      - caches
+    - description: Read source table cache_usage.
+      operation: source
+      order: 2
+      source_inputs:
+      - cache_usage
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per caches row, keyed by cache_id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - caches
+    - carried_fields:
+      - cache_id
+      condition:
+        public_identifiers:
+        - cache_usage
+        - cache_id
+        - parent_key
+      description: 'Bring in cache_usage: a caches row with no cache_usage rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - cache_usage
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest usage_date under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) (a row with no usage_date value sorts after every row that has one), then the smallest usage_id, and take top_label, top_row_id from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows. For top_measure, total_measure, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no cache_usage rows, or none of its rows carries a hits value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a hits value equal to the largest hits value among the parent''s rows; a row with no hits value never holds the maximum. So a parent whose cache_usage rows all lack a hits value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label and top_row_id name.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12

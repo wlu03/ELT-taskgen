@@ -1,0 +1,11 @@
+column_name,column_description
+article_id,Column article_id of table change_log.
+avatar_id,Column avatar_id of table change_log. may be NULL.
+content_id,Column content_id of table change_log. may be NULL.
+date_created,Column date_created of table change_log.
+id,Column id of table change_log.
+md5,Column md5 of table change_log.
+patch,Column patch of table change_log.
+revision,Column revision of table change_log.
+type,Column type of table change_log.
+version,Column version of table change_log.

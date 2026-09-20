@@ -1,0 +1,16 @@
+column_name,column_description
+rolelabel,rolelabel of voiceactingroles (real vendored values).
+roledescription,roledescription of voiceactingroles (real vendored values).
+roletype,roletype of voiceactingroles (real vendored values).
+rolesubclass,rolesubclass of voiceactingroles (real vendored values). may be NULL.
+freebaseid,freebaseid of voiceactingroles (real vendored values). may be NULL.
+commonscategory,commonscategory of voiceactingroles (real vendored values). may be NULL.
+femaleformofrolelabel,femaleformofrolelabel of voiceactingroles (real vendored values). may be NULL.
+fieldofoccupation,fieldofoccupation of voiceactingroles (real vendored values). may be NULL.
+roleimage,roleimage of voiceactingroles (real vendored values). may be NULL.
+maincategory,maincategory of voiceactingroles (real vendored values). may be NULL.
+distinctfrom,distinctfrom of voiceactingroles (real vendored values). may be NULL.
+wordnet31synsetid,wordnet31synsetid of voiceactingroles (real vendored values). may be NULL.
+maleformofrolelabel,maleformofrolelabel of voiceactingroles (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of voiceactingroles (real vendored values). may be NULL.
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of voiceactingroles (real vendored values). may be NULL.

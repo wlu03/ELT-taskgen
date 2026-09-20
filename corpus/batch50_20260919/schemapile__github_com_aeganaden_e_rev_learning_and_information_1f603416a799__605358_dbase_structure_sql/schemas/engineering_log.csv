@@ -1,0 +1,6 @@
+column_name,column_description
+log_content_id,Column log_content_id of table engineering.log.
+log_id,Column log_id of table engineering.log.
+log_platform,Column log_platform of table engineering.log.
+log_timedate,Column log_timedate of table engineering.log.
+log_user_id,Column log_user_id of table engineering.log.

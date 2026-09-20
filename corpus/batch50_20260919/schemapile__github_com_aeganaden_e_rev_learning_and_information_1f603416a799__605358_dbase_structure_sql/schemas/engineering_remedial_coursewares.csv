@@ -1,0 +1,5 @@
+column_name,column_description
+courseware_id,Column courseware_id of table engineering.remedial_coursewares.
+is_done,Column is_done of table engineering.remedial_coursewares.
+remedial_coursewares_id,Column remedial_coursewares_id of table engineering.remedial_coursewares.
+student_scores_id,Column student_scores_id of table engineering.remedial_coursewares.

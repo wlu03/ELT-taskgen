@@ -1,0 +1,9 @@
+column_name,column_description
+created_at,Column created_at of table supplier_translation. may be NULL.
+id,Column id of table supplier_translation.
+language_id,Column language_id of table supplier_translation. may be NULL.
+name,Column name of table supplier_translation. may be NULL.
+name_affix,Column name_affix of table supplier_translation. may be NULL.
+remarks,Column remarks of table supplier_translation. may be NULL.
+supplier_id,Column supplier_id of table supplier_translation. may be NULL.
+updated_at,Column updated_at of table supplier_translation. may be NULL.

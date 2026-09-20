@@ -1,0 +1,12 @@
+column_name,column_description
+cap,Column CAP of table studente. may be NULL.
+citta,Column citta of table studente. may be NULL.
+codice_corso,Column codice_corso of table studente.
+cognome,Column cognome of table studente.
+data_iscrizione,Column data_iscrizione of table studente.
+data_nascita,Column data_nascita of table studente.
+matricola_studente,Column matricola_studente of table studente.
+nome,Column nome of table studente.
+numero_civico,Column numero_civico of table studente. may be NULL.
+sesso,"Column sesso of table studente. always exactly one of 'M', 'F', 'U', 'm', 'f', 'u'. may be NULL."
+via,Column via of table studente. may be NULL.

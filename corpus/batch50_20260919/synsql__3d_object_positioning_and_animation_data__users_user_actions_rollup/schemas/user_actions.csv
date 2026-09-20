@@ -1,0 +1,10 @@
+column_name,column_description
+action_id,Unique identifier for each user action.
+user_id,ID of the user performing the action. may be NULL.
+action_type,"Type of action (e.g., create, update, delete). always exactly one of 'create', 'update', 'delete'. may be NULL."
+action_details,Details of the action performed. may be NULL.
+action_time,Date and time the action was performed. may be NULL.
+scene_id,ID of the scene if the action is related to a scene. may be NULL.
+object_id,ID of the object if the action is related to an object. may be NULL.
+ip_address,IP address from which the action was performed. may be NULL.
+user_agent,User agent string of the device used to perform the action. may be NULL.

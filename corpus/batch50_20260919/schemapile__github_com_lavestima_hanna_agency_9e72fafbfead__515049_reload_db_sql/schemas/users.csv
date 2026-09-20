@@ -1,0 +1,9 @@
+column_name,column_description
+date_created,Column Date_Created of table Users.
+date_deleted,Column Date_Deleted of table Users. may be NULL.
+email,Column Email of table Users.
+id,Column ID of table Users.
+id_roles,Column ID_ROLES of table Users.
+login,Column Login of table Users.
+password_hash,Column Password_Hash of table Users.
+path_slug,Column Path_Slug of table Users.

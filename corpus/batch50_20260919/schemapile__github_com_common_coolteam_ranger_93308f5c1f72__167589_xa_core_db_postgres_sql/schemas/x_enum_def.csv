@@ -1,0 +1,11 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_enum_def. may be NULL.
+create_time,Column create_time of table x_enum_def. may be NULL.
+def_id,Column def_id of table x_enum_def.
+default_index,Column default_index of table x_enum_def. may be NULL.
+guid,Column guid of table x_enum_def. may be NULL.
+id,Column id of table x_enum_def.
+item_id,Column item_id of table x_enum_def.
+name,Column name of table x_enum_def. may be NULL.
+upd_by_id,Column upd_by_id of table x_enum_def. may be NULL.
+update_time,Column update_time of table x_enum_def. may be NULL.

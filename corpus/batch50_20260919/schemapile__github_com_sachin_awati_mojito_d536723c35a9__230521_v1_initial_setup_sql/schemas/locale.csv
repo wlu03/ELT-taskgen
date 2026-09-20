@@ -1,0 +1,3 @@
+column_name,column_description
+bcp47_tag,Column bcp47_tag of table locale.
+id,Column id of table locale.

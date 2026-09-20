@@ -1,0 +1,397 @@
+models:
+- columns:
+  - description: Identifier of the gloria_swanson_cinematographers row.
+    name: entity_key
+    type: text
+  - description: '''present'' for a linked film_appearances row whose film_duration has a value; ''absent'' when film_duration is missing, including a gloria_swanson_cinematographers row with no linked film_appearances row. A linked film_appearances row whose film_duration has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: biography of the gloria_swanson_cinematographers row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked film_appearances rows in this entity/state cell; a absent cell holding real film_appearances rows whose film_duration is missing COUNTS those rows, and only the placeholder cell of a gloria_swanson_cinematographers row with no linked film_appearances row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing film_duration values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no film_duration value at all — both for a gloria_swanson_cinematographers row with no linked film_appearances row and for an absent cell whose rows all have a missing film_duration.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of film_duration in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an film_duration value.
+    name: total_amount
+    type: integer
+  - description: Largest film_duration in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an film_duration value.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(gloria_swanson_cinematographers, measure state) distribution of linked film_appearances rows in the Gloria_Swanson_Filmography database.
+  grain: One row per (name, measure state) pair represented among linked film_appearances rows; the absent state includes missing film_duration values and a no-activity row for a gloria_swanson_cinematographers row with no links. A linked film_appearances row whose film_duration has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: gloria_swanson_cinematographers_film_appearances_distribution
+  source_relationships:
+  - child_columns:
+    - cinematographer
+    child_table: film_appearances
+    parent_columns:
+    - name
+    parent_table: gloria_swanson_cinematographers
+    required: false
+  - child_columns:
+    - co_star
+    child_table: film_appearances
+    parent_columns:
+    - full_name
+    parent_table: filmography_cast_members
+    required: true
+  - child_columns:
+    - director_name
+    child_table: film_appearances
+    parent_columns:
+    - director_name
+    parent_table: film_directors
+    required: false
+  - child_columns:
+    - producer_name
+    child_table: film_appearances
+    parent_columns:
+    - full_name
+    parent_table: film_industry_figures
+    required: false
+  - child_columns:
+    - production_company
+    child_table: film_appearances
+    parent_columns:
+    - studio_name
+    parent_table: film_studios
+    required: false
+  transformation:
+    steps:
+    - description: Read source table gloria_swanson_cinematographers.
+      operation: source
+      order: 1
+      source_inputs:
+      - gloria_swanson_cinematographers
+    - description: Read source table film_appearances.
+      operation: source
+      order: 2
+      source_inputs:
+      - film_appearances
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each name and its biography into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - gloria_swanson_cinematographers
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - name
+      - cinematographer
+      condition:
+        public_identifiers:
+        - film_appearances
+        - cinematographer
+        - entity_key
+      description: Bring the linked film_appearances rows into each gloria_swanson_cinematographers entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - film_appearances
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real film_appearances row whose film_duration has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per gloria_swanson_cinematographers entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing film_duration values occur (each different value counted once, however many rows repeat it), total film_duration, and largest film_duration.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: film_duration is missing, including the retained placeholder for a gloria_swanson_cinematographers row with no film_appearances rows. A real film_appearances row whose film_duration has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per gloria_swanson_cinematographers entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing film_duration values occur (each different value counted once, however many rows repeat it), total film_duration, and largest film_duration.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the gloria_swanson_cinematographers row. One row per value.
+    name: parent_key
+    type: text
+  - description: biography of the gloria_swanson_cinematographers row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest film_duration itself; 0 when the parent has no film_appearances rows, and 0 when none of its rows carries a film_duration value.
+    name: top_measure
+    type: integer
+  - description: 'How many film_appearances rows are tied at that largest film_duration. 1 when exactly one row carries that largest film_duration; 0 when there are no rows or when none of the rows carries a film_duration value; a row with no film_duration value never ties: only a row whose film_duration value equals the largest value among the parent''s rows holds the maximum, so the winning row of a parent whose rows all lack a value — the row the tie-break alone selects — is not counted here.'
+    name: tied_count
+    type: bigint
+  - description: 'Number of film_appearances rows for this gloria_swanson_cinematographers row; 0 when there are none. Every linked film_appearances row counts, whether or not it carries a film_duration value. A gloria_swanson_cinematographers row kept with no film_appearances row reports 0 here, never 1: its placeholder holds no film_appearances row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of film_duration over all of them; 0 when the parent has no film_appearances rows, and 0 when none of its rows carries a film_duration value (rows with no film_duration value add nothing).
+    name: total_measure
+    type: integer
+  - description: The film_title of the film_appearances row with the LARGEST film_duration for this gloria_swanson_cinematographers row. Ties in film_duration are broken by taking the SMALLEST film_title under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one); rows tied on both are resolved by the smallest kinopoisk_film_id. A row with no film_duration value still ranks, after every row that has one, so a parent holding at least one film_appearances row always has a winning row — when NONE of its rows carries a film_duration value the winner is the one the tie-break alone selects, not the no-rows default. The literal '(none)' when the parent has no film_appearances rows at all.
+    name: top_label
+    type: text
+  - description: The kinopoisk_film_id of that same extremal row — the winner under the SAME total order, so it is the identifier of a real film_appearances row whenever the parent has any. This includes when none of them carries a film_duration value. It is 0 when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: integer
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no film_appearances rows, or none of its rows carries a film_duration value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a film_duration value equal to the largest film_duration value among the parent''s rows; a row with no film_duration value never holds the maximum. So a parent whose film_appearances rows all lack a film_duration value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label and top_row_id name.'
+    name: tie_state
+    type: text
+  description: 'Per-gloria_swanson_cinematographers extremes over linked film_appearances rows in the Gloria_Swanson_Filmography database: WHICH row is largest, not how large it is.'
+  grain: One row per gloria_swanson_cinematographers (name), INCLUDING gloria_swanson_cinematographers rows with no linked film_appearances rows.
+  key_columns:
+  - parent_key
+  name: gloria_swanson_cinematographers_film_appearances_top
+  source_relationships:
+  - child_columns:
+    - cinematographer
+    child_table: film_appearances
+    parent_columns:
+    - name
+    parent_table: gloria_swanson_cinematographers
+    required: false
+  - child_columns:
+    - co_star
+    child_table: film_appearances
+    parent_columns:
+    - full_name
+    parent_table: filmography_cast_members
+    required: true
+  - child_columns:
+    - director_name
+    child_table: film_appearances
+    parent_columns:
+    - director_name
+    parent_table: film_directors
+    required: false
+  - child_columns:
+    - producer_name
+    child_table: film_appearances
+    parent_columns:
+    - full_name
+    parent_table: film_industry_figures
+    required: false
+  - child_columns:
+    - production_company
+    child_table: film_appearances
+    parent_columns:
+    - studio_name
+    parent_table: film_studios
+    required: false
+  transformation:
+    steps:
+    - description: Read source table gloria_swanson_cinematographers.
+      operation: source
+      order: 1
+      source_inputs:
+      - gloria_swanson_cinematographers
+    - description: Read source table film_appearances.
+      operation: source
+      order: 2
+      source_inputs:
+      - film_appearances
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per gloria_swanson_cinematographers row, keyed by name.
+      operation: derive
+      order: 3
+      source_inputs:
+      - gloria_swanson_cinematographers
+    - carried_fields:
+      - cinematographer
+      - name
+      condition:
+        public_identifiers:
+        - film_appearances
+        - cinematographer
+        - parent_key
+      description: 'Bring in film_appearances: a gloria_swanson_cinematographers row with no film_appearances rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - film_appearances
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest film_title under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one), then the smallest kinopoisk_film_id, and take top_label, top_row_id from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows. For top_measure, total_measure, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no film_appearances rows, or none of its rows carries a film_duration value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a film_duration value equal to the largest film_duration value among the parent''s rows; a row with no film_duration value never holds the maximum. So a parent whose film_appearances rows all lack a film_duration value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label and top_row_id name.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12

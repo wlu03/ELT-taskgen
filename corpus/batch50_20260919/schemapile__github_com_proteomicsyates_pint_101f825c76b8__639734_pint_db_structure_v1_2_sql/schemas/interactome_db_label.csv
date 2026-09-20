@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table interactome_db.Label.
+massdiff,Column massDiff of table interactome_db.Label. may be NULL.
+name,Column name of table interactome_db.Label.

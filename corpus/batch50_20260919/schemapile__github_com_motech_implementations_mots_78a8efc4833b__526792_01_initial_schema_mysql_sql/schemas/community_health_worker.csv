@@ -1,0 +1,16 @@
+column_name,column_description
+chw_id,Column chw_id of table community_health_worker.
+chw_name,Column chw_name of table community_health_worker.
+created_date,Column created_date of table community_health_worker. may be NULL.
+district_id,Column district_id of table community_health_worker.
+facility_id,Column facility_id of table community_health_worker. may be NULL.
+gender,Column gender of table community_health_worker. may be NULL.
+group_id,Column group_id of table community_health_worker. may be NULL.
+id,Column id of table community_health_worker.
+ivr_id,Column ivr_id of table community_health_worker. may be NULL.
+phone_number,Column phone_number of table community_health_worker. may be NULL.
+preferred_language,Column preferred_language of table community_health_worker.
+sector_id,Column sector_id of table community_health_worker. may be NULL.
+selected,Column selected of table community_health_worker.
+updated_date,Column updated_date of table community_health_worker. may be NULL.
+village_id,Column village_id of table community_health_worker. may be NULL.

@@ -1,0 +1,10 @@
+column_name,column_description
+article_id,Column article_id of table notification.
+content_id,Column content_id of table notification.
+date_created,Column date_created of table notification.
+id,Column id of table notification.
+last_updated,Column last_updated of table notification.
+receiver_id,Column receiver_id of table notification.
+sender_id,Column sender_id of table notification.
+type,Column type of table notification.
+version,Column version of table notification.

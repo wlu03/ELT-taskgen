@@ -1,0 +1,10 @@
+column_name,column_description
+usage_id,Unique identifier for each usage event.
+app_id,Reference to the application using the cache. may be NULL.
+cache_id,Reference to the cache type. may be NULL.
+usage_date,Date when the cache was used. may be NULL.
+hits,Number of cache hits. may be NULL.
+misses,Number of cache misses. may be NULL.
+evictions,Number of cache evictions. may be NULL.
+invalidations,Number of cache invalidations. may be NULL.
+hit_ratio,Hit ratio calculated as hits / (hits + misses). may be NULL.

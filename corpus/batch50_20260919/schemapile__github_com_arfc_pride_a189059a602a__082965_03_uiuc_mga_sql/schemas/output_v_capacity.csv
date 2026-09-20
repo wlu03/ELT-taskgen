@@ -1,0 +1,6 @@
+column_name,column_description
+capacity,Column capacity of table Output_V_Capacity. may be NULL.
+scenario,Column scenario of table Output_V_Capacity.
+sector,Column sector of table Output_V_Capacity. may be NULL.
+tech,Column tech of table Output_V_Capacity.
+vintage,Column vintage of table Output_V_Capacity.

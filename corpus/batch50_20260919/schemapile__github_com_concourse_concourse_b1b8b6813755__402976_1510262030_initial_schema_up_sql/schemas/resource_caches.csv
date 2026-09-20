@@ -1,0 +1,6 @@
+column_name,column_description
+id,Column id of table resource_caches.
+metadata,Column metadata of table resource_caches. may be NULL.
+params_hash,Column params_hash of table resource_caches.
+resource_config_id,Column resource_config_id of table resource_caches. may be NULL.
+version,Column version of table resource_caches.

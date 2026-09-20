@@ -1,0 +1,13 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table pollable_task. may be NULL.
+created_date,Column created_date of table pollable_task. may be NULL.
+error_message,Column error_message of table pollable_task. may be NULL.
+error_stacks,Column error_stacks of table pollable_task. may be NULL.
+expected_sub_task_number,Column expected_sub_task_number of table pollable_task.
+finished_date,Column finished_date of table pollable_task. may be NULL.
+id,Column id of table pollable_task.
+last_modified_date,Column last_modified_date of table pollable_task. may be NULL.
+message,Column message of table pollable_task. may be NULL.
+name,Column name of table pollable_task.
+parent_task_id,Column parent_task_id of table pollable_task. may be NULL.
+timeout,Column timeout of table pollable_task. may be NULL.

@@ -1,0 +1,8 @@
+column_name,column_description
+course_id,Column course_id of table engineering.student_scores.
+data_scores_id,Column data_scores_id of table engineering.student_scores.
+student_scores_id,Column student_scores_id of table engineering.student_scores.
+student_scores_is_failed,Column student_scores_is_failed of table engineering.student_scores.
+student_scores_score,Column student_scores_score of table engineering.student_scores.
+student_scores_stud_num,Column student_scores_stud_num of table engineering.student_scores.
+student_scores_topic_id,Column student_scores_topic_id of table engineering.student_scores.

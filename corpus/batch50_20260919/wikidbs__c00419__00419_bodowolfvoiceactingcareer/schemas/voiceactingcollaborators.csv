@@ -1,0 +1,56 @@
+column_name,column_description
+charactername,charactername of voiceactingcollaborators (real vendored values).
+characterdescription,characterdescription of voiceactingcollaborators (real vendored values).
+characterplaceofbirth,characterplaceofbirth of voiceactingcollaborators (real vendored values). may be NULL.
+characterspouse,characterspouse of voiceactingcollaborators (real vendored values). may be NULL.
+commonscategory,commonscategory of voiceactingcollaborators (real vendored values). may be NULL.
+characteroccupation,characteroccupation of voiceactingcollaborators (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of voiceactingcollaborators (real vendored values). may be NULL.
+viafid,viafid of voiceactingcollaborators (real vendored values). may be NULL.
+gndid,gndid of voiceactingcollaborators (real vendored values). may be NULL.
+isnicode,isnicode of voiceactingcollaborators (real vendored values). may be NULL.
+imdbid,imdbid of voiceactingcollaborators (real vendored values).
+characterdateofbirth,characterdateofbirth of voiceactingcollaborators (real vendored values).
+entitytype,entitytype of voiceactingcollaborators (real vendored values).
+freebaseid,freebaseid of voiceactingcollaborators (real vendored values).
+charactercountryofcitizenship,charactercountryofcitizenship of voiceactingcollaborators (real vendored values).
+charactergivenname,charactergivenname of voiceactingcollaborators (real vendored values). may be NULL.
+nndbpeopleid,nndbpeopleid of voiceactingcollaborators (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of voiceactingcollaborators (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of voiceactingcollaborators (real vendored values). may be NULL.
+charactereducationalinstitution,charactereducationalinstitution of voiceactingcollaborators (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of voiceactingcollaborators (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of voiceactingcollaborators (real vendored values). may be NULL.
+portpersonid,portpersonid of voiceactingcollaborators (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of voiceactingcollaborators (real vendored values). may be NULL.
+characterfamilyname,characterfamilyname of voiceactingcollaborators (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of voiceactingcollaborators (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of voiceactingcollaborators (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of voiceactingcollaborators (real vendored values). may be NULL.
+wikitreepersonid,wikitreepersonid of voiceactingcollaborators (real vendored values). may be NULL.
+workperiodstart,workperiodstart of voiceactingcollaborators (real vendored values). may be NULL.
+cinemagiapersonid,cinemagiapersonid of voiceactingcollaborators (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of voiceactingcollaborators (real vendored values).
+languagesspokenwrittensigned,languagesspokenwrittensigned of voiceactingcollaborators (real vendored values). may be NULL.
+behindthevoiceactorspersonid,behindthevoiceactorspersonid of voiceactingcollaborators (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of voiceactingcollaborators (real vendored values). may be NULL.
+charactergender,charactergender of voiceactingcollaborators (real vendored values).
+tradingcarddatabasepersonid,tradingcarddatabasepersonid of voiceactingcollaborators (real vendored values). may be NULL.
+filmwebplpersonid,filmwebplpersonid of voiceactingcollaborators (real vendored values). may be NULL.
+characternativelanguage,characternativelanguage of voiceactingcollaborators (real vendored values). may be NULL.
+characterbirthname,characterbirthname of voiceactingcollaborators (real vendored values). may be NULL.
+plwabnid,plwabnid of voiceactingcollaborators (real vendored values). may be NULL.
+fandomarticleid,fandomarticleid of voiceactingcollaborators (real vendored values). may be NULL.
+startrekcomdatabaseid,startrekcomdatabaseid of voiceactingcollaborators (real vendored values). may be NULL.
+rottentomatoesid,rottentomatoesid of voiceactingcollaborators (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of voiceactingcollaborators (real vendored values). may be NULL.
+characterimage,characterimage of voiceactingcollaborators (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of voiceactingcollaborators (real vendored values). may be NULL.
+ivipersonid,ivipersonid of voiceactingcollaborators (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of voiceactingcollaborators (real vendored values).
+listalid,listalid of voiceactingcollaborators (real vendored values). may be NULL.
+deutschesynchronkarteiactorid,deutschesynchronkarteiactorid of voiceactingcollaborators (real vendored values). may be NULL.
+doubanmoviecelebrityid,doubanmoviecelebrityid of voiceactingcollaborators (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of voiceactingcollaborators (real vendored values). may be NULL.
+deutschesynchronkarteipersonid,deutschesynchronkarteipersonid of voiceactingcollaborators (real vendored values). may be NULL.
+characterwritinglanguage,characterwritinglanguage of voiceactingcollaborators (real vendored values). may be NULL.

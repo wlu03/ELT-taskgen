@@ -1,0 +1,114 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/activities.jsonl
+    sync_mode: full_refresh_append
+    table: activities
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/dns_logs.jsonl
+    sync_mode: full_refresh_append
+    table: dns_logs
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/io.jsonl
+    sync_mode: full_refresh_append
+    table: io
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/pcap_flow.jsonl
+    sync_mode: full_refresh_append
+    table: pcap_flow
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/pcap_rtt.jsonl
+    sync_mode: full_refresh_append
+    table: pcap_rtt
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/ports.jsonl
+    sync_mode: full_refresh_append
+    table: ports
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/processes.jsonl
+    sync_mode: full_refresh_append
+    table: processes
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/survey_problem_tags.jsonl
+    sync_mode: full_refresh_append
+    table: survey_problem_tags
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/video_playback_quality_sample.jsonl
+    sync_mode: full_refresh_append
+    table: video_playback_quality_sample
+  - path: s3://schemapile--github-com-inria-muse-hostview-82319cdf5663-bucket/video_player_size.jsonl
+    sync_mode: full_refresh_append
+    table: video_player_size
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - activity_io
+    - device_info
+    - devices
+    - http_logs
+    - processes_running
+    - sessions
+    - video_resolution
+    - video_seek_event
+    - wifi_stats
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: schemapile__github_com_inria_muse_hostview_82319cdf5663
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_inria_muse_hostview_82319cdf5663/locations.csv
+  sync_mode: full_refresh_append
+  table: locations
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_inria_muse_hostview_82319cdf5663/survey_activity_qoe.csv
+  sync_mode: full_refresh_append
+  table: survey_activity_qoe
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_inria_muse_hostview_82319cdf5663
+    sync_mode: full_refresh_append
+    tables:
+    - netlabels
+    - pcap
+    - pcap_events
+    - pcap_throughput
+    - users
+    - video_off_screen_event
+postgres:
+  config:
+    database: schemapile__github_com_inria_muse_hostview_82319cdf5663
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - browser_activity
+    - connections
+    - files
+    - pcap_file
+    - power_states
+    - survey_activity_importance
+    - survey_activity_tags
+    - surveys
+    - video_buffered_play_time_sample
+    - video_buffering_event
+    - video_pause_event
+    - video_session
+    user: postgres

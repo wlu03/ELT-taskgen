@@ -1,0 +1,6 @@
+column_name,column_description
+code,Column CODE of table MATERIAL_TYPES.
+dbin_id,Column DBIN_ID of table MATERIAL_TYPES.
+description,Column DESCRIPTION of table MATERIAL_TYPES. may be NULL.
+id,Column ID of table MATERIAL_TYPES.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table MATERIAL_TYPES. may be NULL.

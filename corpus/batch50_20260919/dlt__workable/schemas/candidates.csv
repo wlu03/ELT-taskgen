@@ -1,0 +1,5 @@
+column_name,column_description
+id,primary key of dlt resource 'candidates' (synthesized from the dlt manifest (no observed schema)).
+updated_at,incremental cursor of dlt resource 'candidates' (dlt cursor path 'updated_at').
+candidate_specialty,curator-authored column of dlt resource 'candidates' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

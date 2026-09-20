@@ -1,0 +1,6 @@
+column_name,column_description
+version_id,Unique identifier for each object version.
+object_id,ID of the object the version belongs to. may be NULL.
+version_name,Name of the version. may be NULL.
+description,Description of the version. may be NULL.
+created_at,Date and time the version was created. may be NULL.

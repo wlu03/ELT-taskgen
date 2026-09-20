@@ -1,0 +1,26 @@
+column_name,column_description
+producername,producername of italianfilmproducers (real vendored values).
+biography,biography of italianfilmproducers (real vendored values). may be NULL.
+gender,gender of italianfilmproducers (real vendored values).
+nationality,nationality of italianfilmproducers (real vendored values). may be NULL.
+birthplace,birthplace of italianfilmproducers (real vendored values).
+birthdate,birthdate of italianfilmproducers (real vendored values). may be NULL.
+entitytype,entitytype of italianfilmproducers (real vendored values).
+freebaseid,freebaseid of italianfilmproducers (real vendored values). may be NULL.
+profession,profession of italianfilmproducers (real vendored values).
+firstname,firstname of italianfilmproducers (real vendored values).
+languageproficiency,languageproficiency of italianfilmproducers (real vendored values). may be NULL.
+viafid,viafid of italianfilmproducers (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of italianfilmproducers (real vendored values). may be NULL.
+gndid,gndid of italianfilmproducers (real vendored values). may be NULL.
+imdbid,imdbid of italianfilmproducers (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of italianfilmproducers (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of italianfilmproducers (real vendored values). may be NULL.
+surname,surname of italianfilmproducers (real vendored values). may be NULL.
+plwabnid,plwabnid of italianfilmproducers (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of italianfilmproducers (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of italianfilmproducers (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of italianfilmproducers (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of italianfilmproducers (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of italianfilmproducers (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of italianfilmproducers (real vendored values). may be NULL.

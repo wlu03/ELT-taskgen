@@ -1,0 +1,4 @@
+column_name,column_description
+codice_corso,Column codice_corso of table offerta_insegnamento.
+codice_insegnamento,Column codice_insegnamento of table offerta_insegnamento.
+corso_principale,"Column corso_principale of table offerta_insegnamento. always exactly one of 'Y', 'y', 'N', 'n'."

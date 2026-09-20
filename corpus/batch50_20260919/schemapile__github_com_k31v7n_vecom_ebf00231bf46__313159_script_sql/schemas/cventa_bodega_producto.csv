@@ -1,0 +1,7 @@
+column_name,column_description
+activo,Column activo of table cventa.bodega_producto.
+bodega,Column bodega of table cventa.bodega_producto.
+bodega_producto,Column bodega_producto of table cventa.bodega_producto.
+fecha_ingreso,Column fecha_ingreso of table cventa.bodega_producto.
+producto,Column producto of table cventa.bodega_producto.
+usuario,Column usuario of table cventa.bodega_producto.

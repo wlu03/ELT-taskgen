@@ -1,0 +1,8 @@
+column_name,column_description
+date_edited,Column Date_Edited of table History_Invoices.
+date_issued,Column Date_Issued of table History_Invoices. may be NULL.
+id,Column ID of table History_Invoices.
+id_customers,Column ID_CUSTOMERS of table History_Invoices. may be NULL.
+id_invoices,Column ID_INVOICES of table History_Invoices.
+name,Column Name of table History_Invoices. may be NULL.
+user_edited,Column User_Edited of table History_Invoices.

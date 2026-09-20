@@ -1,0 +1,10 @@
+column_name,column_description
+created_date,Column created_date of table district_assignment_log. may be NULL.
+district_id,Column district_id of table district_assignment_log. may be NULL.
+facility_id,Column facility_id of table district_assignment_log. may be NULL.
+group_id,Column group_id of table district_assignment_log. may be NULL.
+id,Column id of table district_assignment_log.
+module_id,Column module_id of table district_assignment_log.
+owner_id,Column owner_id of table district_assignment_log.
+sector_id,Column sector_id of table district_assignment_log. may be NULL.
+updated_date,Column updated_date of table district_assignment_log. may be NULL.

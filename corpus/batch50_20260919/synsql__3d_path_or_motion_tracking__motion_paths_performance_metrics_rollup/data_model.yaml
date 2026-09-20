@@ -1,0 +1,560 @@
+models:
+- columns:
+  - description: Identifier of the motion_paths row. One row per value.
+    name: parent_key
+    type: integer
+  - description: path_name of the motion_paths row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: Number of performance_metrics rows linked to this motion_paths row. 0 when there are none.
+    name: link_count
+    type: bigint
+  - description: Number of DISTINCT robots rows reached through those links. Two links pointing at the same child count ONCE. 0 when there are no links. A link whose robots row is missing reaches no robots row and adds nothing to this count.
+    name: distinct_child_count
+    type: bigint
+  - description: Number of linked performance_metrics rows whose metric_name is one of ['cycle time']. A parent whose links ALL fail that test reports 0, not a missing row.
+    name: active_link_count
+    type: bigint
+  - description: Sum of metric_value over every linked row; 0 when there are no links, and 0 when none of the linked rows carries a metric_value value.
+    name: total_amount
+    type: float
+  - description: Sum of metric_value over links whose metric_name is one of ['cycle time']; 0 when none qualify, and 0 when every qualifying row lacks a metric_value value.
+    name: active_amount
+    type: float
+  - description: Largest metric_value among the linked rows; 0 when there are no links, and 0 when none of the linked rows carries a metric_value value.
+    name: max_amount
+    type: float
+  - description: active_amount divided by total_amount, expressed as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimal places, and reported as 0.0 when total_amount is 0.
+    name: active_amount_ratio
+    type: float
+  - description: 'Size band of link_count: ''none'' at exactly 0, ''small'' for 1-2 INCLUSIVE of 2, ''medium'' for 3-5 INCLUSIVE of 5, ''large'' above 5. Every value falls in exactly one band.'
+    name: size_band
+    type: text
+  - description: '''yes'' when this parent has at least one link, ''no'' otherwise. Never NULL.'
+    name: has_links
+    type: text
+  description: Per-motion_paths roll-up of linked performance_metrics activity in the 3d_path_or_motion_tracking scenario, including the fan-out onto robots.
+  grain: One row per motion_paths (path_id), INCLUDING motion_paths rows with no linked performance_metrics rows.
+  key_columns:
+  - parent_key
+  name: motion_paths_performance_metrics_rollup
+  source_relationships:
+  - child_columns:
+    - path_id
+    child_table: access_logs
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: access_logs
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - user_id
+    child_table: access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: maintenance_records
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: motion_paths
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: notifications
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - path_id
+    child_table: optimization_results
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - path_id
+    child_table: path_versions
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - path_id
+    child_table: performance_metrics
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: performance_metrics
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - path_id
+    child_table: steps
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  transformation:
+    steps:
+    - description: Read source table motion_paths.
+      operation: source
+      order: 1
+      source_inputs:
+      - motion_paths
+    - description: Read source table performance_metrics.
+      operation: source
+      order: 2
+      source_inputs:
+      - performance_metrics
+    - description: Read source table robots.
+      operation: source
+      order: 3
+      source_inputs:
+      - robots
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per motion_paths row, keyed by path_id.
+      operation: derive
+      order: 4
+      source_inputs:
+      - motion_paths
+    - carried_fields:
+      - path_id
+      condition:
+        public_identifiers:
+        - performance_metrics
+        - path_id
+        - parent_key
+      description: 'Hop 1: bring in performance_metrics against the grain. One motion_paths row may have many performance_metrics rows, and a motion_paths row with no performance_metrics rows at all is RETAINED.'
+      join_preservation: left
+      operation: join
+      order: 5
+      source_inputs:
+      - performance_metrics
+    - carried_fields:
+      - robot_id
+      condition:
+        public_identifiers:
+        - robots
+        - robot_id
+      description: 'Hop 2: bring in robots, matching each linked performance_metrics row''s robot_id to the robot_id of a robots row. A performance_metrics row whose robots row is missing still counts as a link and is RETAINED.'
+      join_preservation: left
+      operation: join
+      order: 6
+      source_inputs:
+      - robots
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting link_count, distinct_child_count, active_link_count, total_amount, active_amount, max_amount for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 7
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      description: Name the mart columns; total_amount, active_amount, max_amount report their declared defaults — never NULL — for a group with no matching rows. For total_amount, active_amount, max_amount, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      - active_amount_ratio
+      description: 'Guarded ratios: active_amount_ratio — active_amount divided by total_amount, expressed as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimal places, and reported as 0.0 when total_amount is 0.'
+      operation: ratio
+      order: 9
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      - active_amount_ratio
+      - size_band
+      description: 'size_band — Size band of link_count: ''none'' at exactly 0, ''small'' for 1-2 INCLUSIVE of 2, ''medium'' for 3-5 INCLUSIVE of 5, ''large'' above 5. Every value falls in exactly one band.'
+      operation: conditional
+      order: 10
+      semantic_parameters:
+        boundary: a value exactly at 2 is 'small'; a value exactly at 5 is 'medium'
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - link_count
+      - distinct_child_count
+      - active_link_count
+      - total_amount
+      - active_amount
+      - max_amount
+      - active_amount_ratio
+      - size_band
+      - has_links
+      description: has_links — 'yes' when this parent has at least one link, 'no' otherwise. Never NULL.
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: a value exactly at 0 is 'no'
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12
+- columns:
+  - description: Identifier of the motion_paths row.
+    name: entity_key
+    type: integer
+  - description: '''passing'' for metric_name values [''cycle time'']; ''failing'' for values [''efficiency'']; ''no_activity'' when the motion_paths row has no linked performance_metrics row. A linked performance_metrics row whose metric_name has no value belongs to no cohort: it is not counted in any cell, and it does not make the motion_paths row ''no_activity''.'
+    name: cohort
+    type: text
+  - description: path_name of the motion_paths row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of performance_metrics rows in this entity/cohort cell.
+    name: link_count
+    type: bigint
+  - description: Number of distinct metric_name values represented in this cell.
+    name: distinct_status_count
+    type: bigint
+  - description: Sum of metric_value in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an metric_value value.
+    name: total_amount
+    type: float
+  - description: Largest metric_value in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an metric_value value.
+    name: max_amount
+    type: float
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(motion_paths, status cohort) summary of linked performance_metrics rows in the 3d_path_or_motion_tracking scenario, with passing and failing cohorts kept separate.
+  grain: One row per (path_id, status cohort) pair represented among linked performance_metrics rows, plus one no-activity row for a motion_paths row with no linked performance_metrics row at all. A motion_paths row whose linked performance_metrics rows all lack a metric_name value is in no cohort and gets no no-activity row, so it has no row in this mart.
+  key_columns:
+  - entity_key
+  - cohort
+  name: motion_paths_performance_metrics_cohorts
+  source_relationships:
+  - child_columns:
+    - path_id
+    child_table: access_logs
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: access_logs
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - user_id
+    child_table: access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: maintenance_records
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: motion_paths
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: notifications
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - path_id
+    child_table: optimization_results
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - path_id
+    child_table: path_versions
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - path_id
+    child_table: performance_metrics
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  - child_columns:
+    - robot_id
+    child_table: performance_metrics
+    parent_columns:
+    - robot_id
+    parent_table: robots
+    required: false
+  - child_columns:
+    - path_id
+    child_table: steps
+    parent_columns:
+    - path_id
+    parent_table: motion_paths
+    required: false
+  transformation:
+    steps:
+    - description: Read source table motion_paths.
+      operation: source
+      order: 1
+      source_inputs:
+      - motion_paths
+    - description: Read source table performance_metrics.
+      operation: source
+      order: 2
+      source_inputs:
+      - performance_metrics
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each path_id and its path_name into the cohort calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - motion_paths
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - path_id
+      condition:
+        public_identifiers:
+        - performance_metrics
+        - path_id
+        - entity_key
+      description: Bring the linked performance_metrics rows into each motion_paths entity before assigning status cohorts.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - performance_metrics
+    - carried_fields:
+      - entity_key
+      - entity_name
+      condition:
+        literal_values:
+        - cycle time
+      description: Keep rows whose metric_name belongs to the passing cohort values ['cycle time'].
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per motion_paths entity that has at least one linked performance_metrics row in the passing cohort, reporting the number of those rows, how many different metric_name values occur among them, the total of their metric_value, and their largest metric_value. The total and the largest value read only the rows that carry a metric_value value; a cohort whose rows all lack one reports 0 for both, never empty.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the passing cohort.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      condition:
+        literal_values:
+        - efficiency
+      description: Keep rows whose metric_name belongs to the failing cohort values ['efficiency'].
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per motion_paths entity that has at least one linked performance_metrics row in the failing cohort, reporting the number of those rows, how many different metric_name values occur among them, the total of their metric_value, and their largest metric_value. The total and the largest value read only the rows that carry a metric_value value; a cohort whose rows all lack one reports 0 for both, never empty.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the failing cohort.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Keep the placeholder row for a motion_paths entity with no linked performance_metrics row at all; a motion_paths entity that has linked performance_metrics rows gets no placeholder, even when every one of those rows lacks a metric_name value.
+      operation: filter
+      order: 13
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      description: One row per motion_paths entity with no linked performance_metrics row at all, reporting 0 rows, 0 different metric_name values, a metric_value total of 0 and a largest metric_value of 0.
+      operation: distinct
+      order: 14
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 15
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the no_activity cohort.
+      operation: derive
+      order: 16
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Combine the disjoint passing and failing cohort summaries.
+      operation: union
+      order: 17
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - cohort
+      - entity_name
+      - link_count
+      - distinct_status_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Add the no-activity summaries, so an entity with no linked rows is retained as one explicit cohort row.
+      operation: union
+      order: 18
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - cohort
+      description: 'Deterministic output order: entity, then cohort.'
+      operation: tie_break
+      order: 19

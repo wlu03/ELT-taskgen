@@ -1,0 +1,61 @@
+column_name,column_description
+composername,composername of filmcomposers (real vendored values).
+biography,biography of filmcomposers (real vendored values).
+nationality,nationality of filmcomposers (real vendored values).
+viafid,viafid of filmcomposers (real vendored values).
+gndid,gndid of filmcomposers (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmcomposers (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of filmcomposers (real vendored values). may be NULL.
+commonscategory,commonscategory of filmcomposers (real vendored values). may be NULL.
+birthplace,birthplace of filmcomposers (real vendored values).
+musicbrainzartistid,musicbrainzartistid of filmcomposers (real vendored values).
+imdbid,imdbid of filmcomposers (real vendored values).
+idrefid,idrefid of filmcomposers (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of filmcomposers (real vendored values). may be NULL.
+birthdate,birthdate of filmcomposers (real vendored values).
+nlcrautid,nlcrautid of filmcomposers (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of filmcomposers (real vendored values). may be NULL.
+profileimage,profileimage of filmcomposers (real vendored values). may be NULL.
+entitytype,entitytype of filmcomposers (real vendored values).
+personalwebsite,personalwebsite of filmcomposers (real vendored values). may be NULL.
+freebaseid,freebaseid of filmcomposers (real vendored values).
+primaryoccupation,primaryoccupation of filmcomposers (real vendored values).
+firstname,firstname of filmcomposers (real vendored values).
+nationallibraryofspainid,nationallibraryofspainid of filmcomposers (real vendored values). may be NULL.
+allmusicartistid,allmusicartistid of filmcomposers (real vendored values). may be NULL.
+discogsartistid,discogsartistid of filmcomposers (real vendored values).
+languages,languages of filmcomposers (real vendored values).
+allocinepersonid,allocinepersonid of filmcomposers (real vendored values). may be NULL.
+filmportalid,filmportalid of filmcomposers (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmcomposers (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of filmcomposers (real vendored values). may be NULL.
+portpersonid,portpersonid of filmcomposers (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmcomposers (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmcomposers (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of filmcomposers (real vendored values). may be NULL.
+musicalinstrument,musicalinstrument of filmcomposers (real vendored values). may be NULL.
+carnegiehallagentid,carnegiehallagentid of filmcomposers (real vendored values). may be NULL.
+cinematografoitnameorcompanyid,cinematografoitnameorcompanyid of filmcomposers (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmcomposers (real vendored values).
+nationaldiscographyofitaliansongartistgroupid,nationaldiscographyofitaliansongartistgroupid of filmcomposers (real vendored values). may be NULL.
+gtaaid,gtaaid of filmcomposers (real vendored values). may be NULL.
+gender,gender of filmcomposers (real vendored values).
+lastname,lastname of filmcomposers (real vendored values). may be NULL.
+ipinumber,ipinumber of filmcomposers (real vendored values). may be NULL.
+europeanaentity,europeanaentity of filmcomposers (real vendored values). may be NULL.
+copyrightagency,copyrightagency of filmcomposers (real vendored values). may be NULL.
+cobisauthorid,cobisauthorid of filmcomposers (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of filmcomposers (real vendored values). may be NULL.
+deathdate,deathdate of filmcomposers (real vendored values). may be NULL.
+deathplace,deathplace of filmcomposers (real vendored values). may be NULL.
+plwabnid,plwabnid of filmcomposers (real vendored values). may be NULL.
+muziekwebperformerid,muziekwebperformerid of filmcomposers (real vendored values). may be NULL.
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of filmcomposers (real vendored values). may be NULL.
+kantoid,kantoid of filmcomposers (real vendored values). may be NULL.
+cinemathequequebecoisepersonid,cinemathequequebecoisepersonid of filmcomposers (real vendored values). may be NULL.
+universalmusicfranceartistid,universalmusicfranceartistid of filmcomposers (real vendored values). may be NULL.
+cinematografoitnameorcompanyidnew,cinematografoitnameorcompanyidnew of filmcomposers (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of filmcomposers (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmcomposers (real vendored values).
+rateyourmusicartistid,rateyourmusicartistid of filmcomposers (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of filmcomposers (real vendored values). may be NULL.

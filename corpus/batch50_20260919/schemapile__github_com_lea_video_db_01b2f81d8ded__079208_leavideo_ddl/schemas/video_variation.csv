@@ -1,0 +1,5 @@
+column_name,column_description
+isdefaultaudio,Column isDefaultAudio of table Video_Variation.
+isdefaultvideo,Column isDefaultVideo of table Video_Variation.
+variationid,Column variationID of table Video_Variation.
+videoid,Column videoID of table Video_Variation.

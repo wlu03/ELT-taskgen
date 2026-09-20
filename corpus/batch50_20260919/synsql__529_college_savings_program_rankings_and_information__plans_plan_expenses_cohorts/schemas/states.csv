@@ -1,0 +1,6 @@
+column_name,column_description
+state_id,Unique identifier for each state.
+state_name,Name of the state. may be NULL.
+abbreviation,Two-letter abbreviation of the state. may be NULL.
+state_tax_benefit,Description of state tax benefits for 529 plans. may be NULL.
+state_website,Link to the state's official website. may be NULL.

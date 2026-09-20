@@ -1,0 +1,3 @@
+column_name,column_description
+traveller_type_id,Column traveller_type_id of table traveller_type.
+traveller_type_name,Column traveller_type_name of table traveller_type.

@@ -1,0 +1,10 @@
+column_name,column_description
+description,Column description of table job_position.
+id,Column id of table job_position.
+job_pay_type,Column job_pay_type of table job_position.
+max_career,Column max_career of table job_position. may be NULL.
+min_career,Column min_career of table job_position.
+recruit_id,Column recruit_id of table job_position.
+tag_string,Column tag_string of table job_position. may be NULL.
+title,Column title of table job_position.
+version,Column version of table job_position.

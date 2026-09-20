@@ -1,0 +1,4 @@
+column_name,column_description
+id,primary key of dlt resource 'activity_types' (synthesized from the dlt manifest (no observed schema)).
+update_time,incremental cursor of dlt resource 'activity_types' (dlt cursor path 'update_time|modified').
+payload,raw endpoint record body (synthesized schema). may be NULL.

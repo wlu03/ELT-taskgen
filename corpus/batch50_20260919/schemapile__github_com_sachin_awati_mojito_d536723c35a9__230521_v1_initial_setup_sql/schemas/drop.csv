@@ -1,0 +1,13 @@
+column_name,column_description
+canceled,Column canceled of table drop. may be NULL.
+created_by_user_id,Column created_by_user_id of table drop. may be NULL.
+created_date,Column created_date of table drop. may be NULL.
+drop_exporter_config,Column drop_exporter_config of table drop. may be NULL.
+drop_exporter_type,Column drop_exporter_type of table drop. may be NULL.
+export_pollable_task_id,Column export_pollable_task_id of table drop. may be NULL.
+id,Column id of table drop.
+import_pollable_task_id,Column import_pollable_task_id of table drop. may be NULL.
+last_imported_date,Column last_imported_date of table drop. may be NULL.
+last_modified_date,Column last_modified_date of table drop. may be NULL.
+name,Column name of table drop. may be NULL.
+repository_id,Column repository_id of table drop. may be NULL.

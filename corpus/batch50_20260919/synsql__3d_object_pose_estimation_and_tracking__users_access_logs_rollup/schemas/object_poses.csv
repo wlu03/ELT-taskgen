@@ -1,0 +1,13 @@
+column_name,column_description
+pose_id,Unique identifier for each pose estimation.
+timestamp,Timestamp of the pose estimation. may be NULL.
+norm_posX,Normalized X position of the object. may be NULL.
+norm_posY,Normalized Y position of the object. may be NULL.
+confidence,Confidence level of the pose estimation. may be NULL.
+theta,Euler angle theta representing the object's orientation. may be NULL.
+phi,Euler angle phi representing the object's orientation. may be NULL.
+object_id,ID of the object. may be NULL.
+environment_id,ID of the environment. may be NULL.
+sensor_id,ID of the sensor. may be NULL.
+pose_quality,Quality of the pose estimation. may be NULL.
+pose_source,Source of the pose data. may be NULL.

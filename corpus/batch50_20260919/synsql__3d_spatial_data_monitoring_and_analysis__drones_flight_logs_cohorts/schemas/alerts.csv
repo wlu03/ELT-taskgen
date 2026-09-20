@@ -1,0 +1,9 @@
+column_name,column_description
+alert_id,Unique identifier for each alert.
+drone_id,Reference to the drone related to the alert. may be NULL.
+alert_message,Message detailing the alert. may be NULL.
+timestamp,Timestamp of when the alert was generated. may be NULL.
+alert_type,"Type of the alert (e.g., system, environmental, hardware). always exactly one of 'system', 'environmental', 'hardware'. may be NULL."
+severity,"Severity level of the alert (e.g., low, medium, high). always exactly one of 'low', 'medium', 'high'. may be NULL."
+resolved,Boolean indicating if the alert has been resolved. may be NULL.
+resolution_time,Time when the alert was resolved. may be NULL.

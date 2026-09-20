@@ -1,0 +1,8 @@
+column_name,column_description
+admin_id,Column admin_id of table engineering.admin.
+firstname,Column firstname of table engineering.admin.
+image_path,Column image_path of table engineering.admin.
+lastname,Column lastname of table engineering.admin.
+midname,Column midname of table engineering.admin.
+password,Column password of table engineering.admin.
+username,Column username of table engineering.admin.

@@ -1,0 +1,13 @@
+column_name,column_description
+name,name of russiangivennames (real vendored values).
+description,description of russiangivennames (real vendored values).
+nametype,nametype of russiangivennames (real vendored values).
+alternativename,alternativename of russiangivennames (real vendored values). may be NULL.
+distinctfrom,distinctfrom of russiangivennames (real vendored values). may be NULL.
+nativename,nativename of russiangivennames (real vendored values).
+script,script of russiangivennames (real vendored values).
+transliteration,transliteration of russiangivennames (real vendored values). may be NULL.
+language,language of russiangivennames (real vendored values). may be NULL.
+commonscategory,commonscategory of russiangivennames (real vendored values). may be NULL.
+sourcereference,sourcereference of russiangivennames (real vendored values). may be NULL.
+googleknowledgegraphid,googleknowledgegraphid of russiangivennames (real vendored values). may be NULL.

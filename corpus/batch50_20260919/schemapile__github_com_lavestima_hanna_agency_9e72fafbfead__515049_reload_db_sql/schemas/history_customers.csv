@@ -1,0 +1,20 @@
+column_name,column_description
+company_name,Column Company_Name of table History_Customers. may be NULL.
+date_edited,Column Date_Edited of table History_Customers.
+default_discount,Column Default_Discount of table History_Customers. may be NULL.
+email,Column Email of table History_Customers. may be NULL.
+first_name,Column First_Name of table History_Customers. may be NULL.
+gender,Column Gender of table History_Customers. may be NULL.
+id,Column ID of table History_Customers.
+id_cities,Column ID_CITIES of table History_Customers. may be NULL.
+id_countries,Column ID_COUNTRIES of table History_Customers. may be NULL.
+id_currencies,Column ID_CURRENCIES of table History_Customers. may be NULL.
+id_customers,Column ID_CUSTOMERS of table History_Customers.
+id_users,Column ID_USERS of table History_Customers. may be NULL.
+identification_number,Column Identification_Number of table History_Customers. may be NULL.
+last_name,Column Last_Name of table History_Customers. may be NULL.
+phone,Column Phone of table History_Customers. may be NULL.
+postal_code,Column Postal_Code of table History_Customers. may be NULL.
+street,Column Street of table History_Customers. may be NULL.
+user_edited,Column User_Edited of table History_Customers.
+vat,Column VAT of table History_Customers. may be NULL.

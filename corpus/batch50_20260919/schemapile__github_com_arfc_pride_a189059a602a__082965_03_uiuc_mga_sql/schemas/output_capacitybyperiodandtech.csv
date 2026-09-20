@@ -1,0 +1,6 @@
+column_name,column_description
+capacity,Column capacity of table Output_CapacityByPeriodAndTech. may be NULL.
+scenario,Column scenario of table Output_CapacityByPeriodAndTech.
+sector,Column sector of table Output_CapacityByPeriodAndTech. may be NULL.
+t_periods,Column t_periods of table Output_CapacityByPeriodAndTech.
+tech,Column tech of table Output_CapacityByPeriodAndTech.

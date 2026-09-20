@@ -1,0 +1,37 @@
+column_name,column_description
+artistname,artistname of italianartists (real vendored values).
+biography,biography of italianartists (real vendored values).
+imdbid,imdbid of italianartists (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of italianartists (real vendored values). may be NULL.
+profession,profession of italianartists (real vendored values).
+birthplace,birthplace of italianartists (real vendored values).
+gndid,gndid of italianartists (real vendored values). may be NULL.
+viafid,viafid of italianartists (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of italianartists (real vendored values). may be NULL.
+idrefid,idrefid of italianartists (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of italianartists (real vendored values). may be NULL.
+commonscategory,commonscategory of italianartists (real vendored values). may be NULL.
+musicbrainzartistid,musicbrainzartistid of italianartists (real vendored values). may be NULL.
+isniidentifier,isniidentifier of italianartists (real vendored values). may be NULL.
+birthdate,birthdate of italianartists (real vendored values).
+profileimage,profileimage of italianartists (real vendored values). may be NULL.
+entitytype,entitytype of italianartists (real vendored values).
+freebaseid,freebaseid of italianartists (real vendored values).
+nationallibraryofspainid,nationallibraryofspainid of italianartists (real vendored values). may be NULL.
+firstname,firstname of italianartists (real vendored values).
+discogsartistid,discogsartistid of italianartists (real vendored values). may be NULL.
+allmusicartistid,allmusicartistid of italianartists (real vendored values). may be NULL.
+filmportalid,filmportalid of italianartists (real vendored values). may be NULL.
+nationality,nationality of italianartists (real vendored values).
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of italianartists (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of italianartists (real vendored values). may be NULL.
+languages,languages of italianartists (real vendored values). may be NULL.
+muziekwebperformerid,muziekwebperformerid of italianartists (real vendored values). may be NULL.
+gender,gender of italianartists (real vendored values).
+lastname,lastname of italianartists (real vendored values). may be NULL.
+europeanaentity,europeanaentity of italianartists (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of italianartists (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of italianartists (real vendored values). may be NULL.
+officialwebsite,officialwebsite of italianartists (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of italianartists (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of italianartists (real vendored values). may be NULL.

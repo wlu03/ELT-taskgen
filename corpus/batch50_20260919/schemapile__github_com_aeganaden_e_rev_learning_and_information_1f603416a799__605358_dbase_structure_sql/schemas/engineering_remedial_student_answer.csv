@@ -1,0 +1,7 @@
+column_name,column_description
+choice_id,Column choice_id of table engineering.remedial_student_answer.
+choice_is_correct,Column choice_is_correct of table engineering.remedial_student_answer.
+courseware_id,Column courseware_id of table engineering.remedial_student_answer.
+courseware_question_id,Column courseware_question_id of table engineering.remedial_student_answer.
+remedial_student_answer_id,Column remedial_student_answer_id of table engineering.remedial_student_answer.
+student_id,Column student_id of table engineering.remedial_student_answer.

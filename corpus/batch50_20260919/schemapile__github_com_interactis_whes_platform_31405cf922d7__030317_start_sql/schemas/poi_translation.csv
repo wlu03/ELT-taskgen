@@ -1,0 +1,12 @@
+column_name,column_description
+created_at,Column created_at of table poi_translation. may be NULL.
+description,Column description of table poi_translation. may be NULL.
+directions,Column directions of table poi_translation. may be NULL.
+id,Column id of table poi_translation.
+language_id,Column language_id of table poi_translation. may be NULL.
+poi_id,Column poi_id of table poi_translation. may be NULL.
+remarks,Column remarks of table poi_translation. may be NULL.
+slug,Column slug of table poi_translation. may be NULL.
+title,Column title of table poi_translation. may be NULL.
+updated_at,Column updated_at of table poi_translation. may be NULL.
+youtube_id,Column youtube_id of table poi_translation. may be NULL.

@@ -1,0 +1,10 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table tm_text_unit_current_variant_aud. may be NULL.
+id,Column id of table tm_text_unit_current_variant_aud.
+locale_id,Column locale_id of table tm_text_unit_current_variant_aud. may be NULL.
+rev,Column rev of table tm_text_unit_current_variant_aud.
+revend,Column revend of table tm_text_unit_current_variant_aud. may be NULL.
+revtype,Column revtype of table tm_text_unit_current_variant_aud. may be NULL.
+tm_id,Column tm_id of table tm_text_unit_current_variant_aud. may be NULL.
+tm_text_unit_id,Column tm_text_unit_id of table tm_text_unit_current_variant_aud. may be NULL.
+tm_text_unit_variant_id,Column tm_text_unit_variant_id of table tm_text_unit_current_variant_aud. may be NULL.

@@ -1,0 +1,9 @@
+column_name,column_description
+activo,Column activo of table cventa.menu.
+icono,Column icono of table cventa.menu.
+menu,Column menu of table cventa.menu.
+modulo,Column modulo of table cventa.menu.
+nombre,Column nombre of table cventa.menu.
+orden,Column orden of table cventa.menu.
+submenu,Column submenu of table cventa.menu.
+url,Column url of table cventa.menu.

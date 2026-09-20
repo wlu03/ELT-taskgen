@@ -1,0 +1,6 @@
+column_name,column_description
+activo,Column activo of table cventa.usuario_menu.
+fecha_sis,Column fecha_sis of table cventa.usuario_menu.
+menu,Column menu of table cventa.usuario_menu.
+usuario,Column usuario of table cventa.usuario_menu.
+usuario_menu,Column usuario_menu of table cventa.usuario_menu.

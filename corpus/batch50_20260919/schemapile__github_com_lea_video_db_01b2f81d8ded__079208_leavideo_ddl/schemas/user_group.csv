@@ -1,0 +1,3 @@
+column_name,column_description
+groupid,Column groupID of table User_Group.
+userid,Column userID of table User_Group.

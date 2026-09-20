@@ -1,0 +1,11 @@
+column_name,column_description
+created_date,Column created_date of table jasper_templates. may be NULL.
+data,Column data of table jasper_templates. may be NULL.
+description,Column description of table jasper_templates. may be NULL.
+id,Column id of table jasper_templates.
+json_output,Column json_output of table jasper_templates. may be NULL.
+json_output_version,Column json_output_version of table jasper_templates. may be NULL.
+name,Column name of table jasper_templates.
+type,Column type of table jasper_templates. may be NULL.
+updated_date,Column updated_date of table jasper_templates. may be NULL.
+visible,Column visible of table jasper_templates. may be NULL.

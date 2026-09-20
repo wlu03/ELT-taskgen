@@ -1,0 +1,12 @@
+column_name,column_description
+exac_id,Column EXAC_ID of table ATTACHMENTS.
+expe_id,Column EXPE_ID of table ATTACHMENTS. may be NULL.
+file_name,Column FILE_NAME of table ATTACHMENTS.
+id,Column ID of table ATTACHMENTS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table ATTACHMENTS.
+proj_id,Column PROJ_ID of table ATTACHMENTS. may be NULL.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table ATTACHMENTS.
+samp_id,Column SAMP_ID of table ATTACHMENTS. may be NULL.
+version,Column VERSION of table ATTACHMENTS.
+description,Column description of table ATTACHMENTS. may be NULL.
+title,Column title of table ATTACHMENTS. may be NULL.

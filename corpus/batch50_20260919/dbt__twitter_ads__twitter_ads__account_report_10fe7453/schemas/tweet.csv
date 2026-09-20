@@ -1,0 +1,7 @@
+column_name,column_description
+_fivetran_synced,When the record was last synced by Fivetran. may be NULL.
+account_id,The ID of the related account. may be NULL.
+full_text,Full text of the tweet's content. may be NULL.
+id,Unique identifier of the tweet. may be NULL.
+lang,Two-letter language code of the tweet. may be NULL.
+name,"If provided, the non-public title of the tweet. may be NULL."

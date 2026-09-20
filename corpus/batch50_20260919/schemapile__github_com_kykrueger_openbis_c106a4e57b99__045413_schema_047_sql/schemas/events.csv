@@ -1,0 +1,9 @@
+column_name,column_description
+description,Column DESCRIPTION of table EVENTS. may be NULL.
+event_type,Column EVENT_TYPE of table EVENTS.
+id,Column ID of table EVENTS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table EVENTS.
+reason,Column REASON of table EVENTS. may be NULL.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table EVENTS.
+entity_type,"Column entity_type of table EVENTS. always exactly one of 'ATTACHMENT', 'DATASET', 'EXPERIMENT', 'GROUP', 'MATERIAL', 'PROJECT', 'PROPERTY_TYPE', 'SAMPLE', 'VOCABULARY', 'AUTHORIZATION_GROUP'."
+identifier,Column identifier of table EVENTS.

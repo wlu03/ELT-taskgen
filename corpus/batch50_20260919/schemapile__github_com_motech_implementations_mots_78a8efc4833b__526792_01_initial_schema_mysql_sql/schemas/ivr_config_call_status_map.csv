@@ -1,0 +1,4 @@
+column_name,column_description
+ivr_config_id,Column ivr_config_id of table ivr_config_call_status_map.
+ivr_status,Column ivr_status of table ivr_config_call_status_map.
+status,Column status of table ivr_config_call_status_map.

@@ -1,0 +1,4 @@
+column_name,column_description
+life,Column life of table LifetimeTech. may be NULL.
+life_notes,Column life_notes of table LifetimeTech. may be NULL.
+tech,Column tech of table LifetimeTech.

@@ -1,0 +1,14 @@
+column_name,column_description
+object_id,Unique identifier for each object.
+name,Name of the object. may be NULL.
+material_id,ID of the material assigned to the object. may be NULL.
+scene_id,ID of the scene the object belongs to. may be NULL.
+scale,"Scale factor of the object (x, y, z). may be NULL."
+rotation,"Rotation of the object (pitch, yaw, roll). may be NULL."
+position,"Position of the object (x, y, z). may be NULL."
+visible,Indicates whether the object is visible in the scene. may be NULL.
+version,Version of the object. may be NULL.
+created_at,Creation date and time of the object. may be NULL.
+updated_at,Last update date and time of the object. may be NULL.
+created_by,ID of the user who created the object. may be NULL.
+updated_by,ID of the user who last updated the object. may be NULL.

@@ -1,0 +1,3 @@
+column_name,column_description
+data_set_type_id,Column DATA_SET_TYPE_ID of table DATA_STORE_SERVICE_DATA_SET_TYPES.
+data_store_service_id,Column DATA_STORE_SERVICE_ID of table DATA_STORE_SERVICE_DATA_SET_TYPES.

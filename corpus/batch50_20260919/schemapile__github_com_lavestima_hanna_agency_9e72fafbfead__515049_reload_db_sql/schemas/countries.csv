@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column ID of table Countries.
+name,Column Name of table Countries.
+note,Column Note of table Countries. may be NULL.
+symbol,Column Symbol of table Countries.

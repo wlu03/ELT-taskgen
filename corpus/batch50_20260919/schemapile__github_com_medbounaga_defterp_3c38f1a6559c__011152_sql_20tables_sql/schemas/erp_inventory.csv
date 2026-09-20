@@ -1,0 +1,11 @@
+column_name,column_description
+active,Column active of table erp.inventory.
+id,Column id of table erp.inventory.
+incoming,Column incoming of table erp.inventory.
+max_qty,Column max_qty of table erp.inventory. may be NULL.
+min_qty,Column min_qty of table erp.inventory. may be NULL.
+product_id,Column product_id of table erp.inventory.
+quantity,Column quantity of table erp.inventory.
+reserved,Column reserved of table erp.inventory.
+total_cost,Column total_cost of table erp.inventory.
+unit_cost,Column unit_cost of table erp.inventory.

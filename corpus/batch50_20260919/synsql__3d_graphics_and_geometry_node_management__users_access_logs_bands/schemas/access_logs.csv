@@ -1,0 +1,9 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+node_id,Reference to the node being accessed. may be NULL.
+user_id,Reference to the user accessing the node. may be NULL.
+access_date,Date when the node was accessed. may be NULL.
+access_type,"Type of access (e.g., view, edit). always exactly one of 'view', 'edit'. may be NULL."
+created_at,Timestamp for when the access log entry was created. may be NULL.
+ip_address,IP address of the user accessing the node. may be NULL.
+user_agent,User agent string of the client accessing the node. may be NULL.

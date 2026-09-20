@@ -1,0 +1,5 @@
+column_name,column_description
+id,primary key of dlt resource 'employees' (synthesized from the dlt manifest (no observed schema)).
+last_modified_at,incremental cursor of dlt resource 'employees' (dlt cursor path 'last_modified_at').
+employee_division,curator-authored column of dlt resource 'employees' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

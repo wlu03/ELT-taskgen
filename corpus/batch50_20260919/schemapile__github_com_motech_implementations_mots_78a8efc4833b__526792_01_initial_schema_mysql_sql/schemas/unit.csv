@@ -1,0 +1,12 @@
+column_name,column_description
+allow_replay,Column allow_replay of table unit.
+continuation_question_ivr_id,Column continuation_question_ivr_id of table unit. may be NULL.
+created_date,Column created_date of table unit. may be NULL.
+description,Column description of table unit. may be NULL.
+id,Column id of table unit.
+ivr_id,Column ivr_id of table unit. may be NULL.
+ivr_name,Column ivr_name of table unit. may be NULL.
+list_order,Column list_order of table unit.
+module_id,Column module_id of table unit. may be NULL.
+name,Column name of table unit.
+updated_date,Column updated_date of table unit. may be NULL.

@@ -1,0 +1,11 @@
+column_name,column_description
+id,Column ID of table SAMPLE_TYPE_PROPERTY_TYPES.
+is_displayed,Column IS_DISPLAYED of table SAMPLE_TYPE_PROPERTY_TYPES.
+is_managed_internally,Column IS_MANAGED_INTERNALLY of table SAMPLE_TYPE_PROPERTY_TYPES.
+is_mandatory,Column IS_MANDATORY of table SAMPLE_TYPE_PROPERTY_TYPES.
+ordinal,Column ORDINAL of table SAMPLE_TYPE_PROPERTY_TYPES.
+pers_id_registerer,Column PERS_ID_REGISTERER of table SAMPLE_TYPE_PROPERTY_TYPES.
+prty_id,Column PRTY_ID of table SAMPLE_TYPE_PROPERTY_TYPES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table SAMPLE_TYPE_PROPERTY_TYPES.
+saty_id,Column SATY_ID of table SAMPLE_TYPE_PROPERTY_TYPES.
+section,Column SECTION of table SAMPLE_TYPE_PROPERTY_TYPES. may be NULL.

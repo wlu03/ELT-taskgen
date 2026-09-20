@@ -1,0 +1,6 @@
+column_name,column_description
+created_date,Column created_date of table user_role. may be NULL.
+id,Column id of table user_role.
+name,Column name of table user_role.
+readonly,Column readonly of table user_role.
+updated_date,Column updated_date of table user_role. may be NULL.

@@ -1,0 +1,5 @@
+column_name,column_description
+report_id,Unique identifier for each report.
+report_name,Name of the report. may be NULL.
+description,Description of the report. may be NULL.
+generated_at,Date and time the report was generated. may be NULL.

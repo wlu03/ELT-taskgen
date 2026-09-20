@@ -1,0 +1,35 @@
+column_name,column_description
+writername,writername of sovietwriters (real vendored values).
+writerdescription,writerdescription of sovietwriters (real vendored values). may be NULL.
+imdbid,imdbid of sovietwriters (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of sovietwriters (real vendored values). may be NULL.
+viafid,viafid of sovietwriters (real vendored values).
+gndid,gndid of sovietwriters (real vendored values). may be NULL.
+writerisni,writerisni of sovietwriters (real vendored values). may be NULL.
+birthplace,birthplace of sovietwriters (real vendored values). may be NULL.
+deathplace,deathplace of sovietwriters (real vendored values). may be NULL.
+citizenshipcountry,citizenshipcountry of sovietwriters (real vendored values).
+entitytype,entitytype of sovietwriters (real vendored values).
+birthdate,birthdate of sovietwriters (real vendored values).
+deathdate,deathdate of sovietwriters (real vendored values). may be NULL.
+freebaseid,freebaseid of sovietwriters (real vendored values). may be NULL.
+profession,profession of sovietwriters (real vendored values).
+firstname,firstname of sovietwriters (real vendored values).
+maincategory,maincategory of sovietwriters (real vendored values). may be NULL.
+languagesspokenwrittensigned,languagesspokenwrittensigned of sovietwriters (real vendored values).
+awardsreceived,awardsreceived of sovietwriters (real vendored values). may be NULL.
+burialplace,burialplace of sovietwriters (real vendored values). may be NULL.
+educationinstitution,educationinstitution of sovietwriters (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of sovietwriters (real vendored values). may be NULL.
+idrefid,idrefid of sovietwriters (real vendored values). may be NULL.
+animatorrupersonid,animatorrupersonid of sovietwriters (real vendored values). may be NULL.
+nlcrautid,nlcrautid of sovietwriters (real vendored values). may be NULL.
+writinglanguage,writinglanguage of sovietwriters (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of sovietwriters (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of sovietwriters (real vendored values). may be NULL.
+gender,gender of sovietwriters (real vendored values).
+nukatid,nukatid of sovietwriters (real vendored values). may be NULL.
+plwabnid,plwabnid of sovietwriters (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of sovietwriters (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of sovietwriters (real vendored values). may be NULL.
+nationallibraryoflatviaid,nationallibraryoflatviaid of sovietwriters (real vendored values). may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table role_privilege.
+privilege_id,Column privilege_id of table role_privilege.
+role_id,Column role_id of table role_privilege.

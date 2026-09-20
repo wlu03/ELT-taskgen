@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column ID of table Categories_Parameters.
+id_categories,Column ID_CATEGORIES of table Categories_Parameters.
+id_parameters,Column ID_PARAMETERS of table Categories_Parameters.

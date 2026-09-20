@@ -1,0 +1,5 @@
+column_name,column_description
+body,Column body of table mailer_default. may be NULL.
+id,Column id of table mailer_default.
+name,Column name of table mailer_default. may be NULL.
+subject,Column subject of table mailer_default. may be NULL.

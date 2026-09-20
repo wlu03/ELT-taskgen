@@ -1,0 +1,6 @@
+column_name,column_description
+content_type,Column content_type of table photo.
+name,Column name of table photo.
+path,Column path of table photo. may be NULL.
+photo_id,Column photo_id of table photo.
+visible,Column visible of table photo.

@@ -1,0 +1,29 @@
+column_name,column_description
+studio_name,studio name of film studios (real vendored values).
+studio_description,studio description of film studios (real vendored values).
+im_db_id,im db id of film studios (real vendored values). may be NULL.
+studio_type,studio type of film studios (real vendored values).
+freebase_id,freebase id of film studios (real vendored values). may be NULL.
+viaf_id,viaf id of film studios (real vendored values). may be NULL.
+country_of_origin,country of origin of film studios (real vendored values).
+commons_category,commons category of film studios (real vendored values). may be NULL.
+headquarters_location,headquarters location of film studios (real vendored values). may be NULL.
+logo_image,logo image of film studios (real vendored values). may be NULL.
+dissolution_date,dissolution date of film studios (real vendored values). may be NULL.
+founding_date,founding date of film studios (real vendored values).
+founder,founder of film studios (real vendored values). may be NULL.
+studio_image,studio image of film studios (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of film studios (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of film studios (real vendored values). may be NULL.
+main_category,main category of film studios (real vendored values). may be NULL.
+id_ref_id,id ref id of film studios (real vendored values). may be NULL.
+tmdb_company_id,tmdb company id of film studios (real vendored values). may be NULL.
+eidr_party_id,eidr party id of film studios (real vendored values). may be NULL.
+box_office_mojo_studio_id,box office mojo studio id of film studios (real vendored values). may be NULL.
+formation_location,formation location of film studios (real vendored values). may be NULL.
+industry_type,industry type of film studios (real vendored values). may be NULL.
+encyclopdia_britannica_online_id,encyclopdia britannica online id of film studios (real vendored values). may be NULL.
+isni_code,isni code of film studios (real vendored values). may be NULL.
+distinct_from,distinct from of film studios (real vendored values). may be NULL.
+legal_structure,legal structure of film studios (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of film studios (real vendored values). may be NULL.

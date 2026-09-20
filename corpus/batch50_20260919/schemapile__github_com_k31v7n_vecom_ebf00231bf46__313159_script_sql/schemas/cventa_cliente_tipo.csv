@@ -1,0 +1,3 @@
+column_name,column_description
+cliente_tipo,Column cliente_tipo of table cventa.cliente_tipo.
+nombre,Column nombre of table cventa.cliente_tipo. may be NULL.

@@ -1,0 +1,7 @@
+column_name,column_description
+cost_variable,Column cost_variable of table CostVariable. may be NULL.
+cost_variable_notes,Column cost_variable_notes of table CostVariable. may be NULL.
+cost_variable_units,Column cost_variable_units of table CostVariable. may be NULL.
+periods,Column periods of table CostVariable.
+tech,Column tech of table CostVariable.
+vintage,Column vintage of table CostVariable.

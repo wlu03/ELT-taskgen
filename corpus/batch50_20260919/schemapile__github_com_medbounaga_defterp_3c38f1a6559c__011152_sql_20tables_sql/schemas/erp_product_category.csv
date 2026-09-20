@@ -1,0 +1,4 @@
+column_name,column_description
+active,Column active of table erp.product_category.
+id,Column id of table erp.product_category.
+name,Column name of table erp.product_category.

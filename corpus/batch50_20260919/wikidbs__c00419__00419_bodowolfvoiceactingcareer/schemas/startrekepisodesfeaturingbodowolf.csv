@@ -1,0 +1,47 @@
+column_name,column_description
+episodetitle,episodetitle of startrekepisodesfeaturingbodowolf (real vendored values).
+episodedescription,episodedescription of startrekepisodesfeaturingbodowolf (real vendored values).
+episodetype,episodetype of startrekepisodesfeaturingbodowolf (real vendored values).
+imdbid,imdbid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+screenwriter,screenwriter of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+airdate,airdate of startrekepisodesfeaturingbodowolf (real vendored values).
+originallanguage,originallanguage of startrekepisodesfeaturingbodowolf (real vendored values).
+countryoforigin,countryoforigin of startrekepisodesfeaturingbodowolf (real vendored values).
+director,director of startrekepisodesfeaturingbodowolf (real vendored values).
+colorformat,colorformat of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+episodeduration,episodeduration of startrekepisodesfeaturingbodowolf (real vendored values).
+distributor,distributor of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+title,title of startrekepisodesfeaturingbodowolf (real vendored values).
+voiceactor,voiceactor of startrekepisodesfeaturingbodowolf (real vendored values).
+csfdfilmid,csfdfilmid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+eidrcontentid,eidrcontentid of startrekepisodesfeaturingbodowolf (real vendored values).
+isan,isan of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+openmediadatabasefilmid,openmediadatabasefilmid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+bfinationalarchiveworkid,bfinationalarchiveworkid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+freebaseid,freebaseid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+trakttvid,trakttvid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+seriesname,seriesname of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+tvcomid,tvcomid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+productioncode,productioncode of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+seasoninfo,seasoninfo of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+narrativelocation,narrativelocation of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+firstperformancedate,firstperformancedate of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+maincharacter,maincharacter of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+leadactor,leadactor of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+aspectratio,aspectratio of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+netflixid,netflixid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+fictionaluniverse,fictionaluniverse of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+rottentomatoesid,rottentomatoesid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+allmovietitleid,allmovietitleid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+cinemagiatitleid,cinemagiatitleid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+historicalsetting,historicalsetting of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+fandomarticleid,fandomarticleid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+sourcereference,sourcereference of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+wikitrekarticleid,wikitrekarticleid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+franchisename,franchisename of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+distributionformat,distributionformat of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+startrekcomdatabaseid,startrekcomdatabaseid of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+environmentsetting,environmentsetting of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+nextepisode,nextepisode of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+previousepisode,previousepisode of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.
+copyrightstatus,copyrightstatus of startrekepisodesfeaturingbodowolf (real vendored values). may be NULL.

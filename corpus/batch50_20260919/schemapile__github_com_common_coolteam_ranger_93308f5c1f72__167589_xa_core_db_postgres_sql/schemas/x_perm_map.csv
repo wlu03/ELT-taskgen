@@ -1,0 +1,16 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_perm_map. may be NULL.
+create_time,Column create_time of table x_perm_map. may be NULL.
+grant_revoke,Column grant_revoke of table x_perm_map.
+group_id,Column group_id of table x_perm_map. may be NULL.
+id,Column id of table x_perm_map.
+ip_address,Column ip_address of table x_perm_map. may be NULL.
+is_recursive,Column is_recursive of table x_perm_map.
+is_wild_card,Column is_wild_card of table x_perm_map.
+perm_for,Column perm_for of table x_perm_map.
+perm_group,Column perm_group of table x_perm_map. may be NULL.
+perm_type,Column perm_type of table x_perm_map.
+res_id,Column res_id of table x_perm_map. may be NULL.
+upd_by_id,Column upd_by_id of table x_perm_map. may be NULL.
+update_time,Column update_time of table x_perm_map. may be NULL.
+user_id,Column user_id of table x_perm_map. may be NULL.

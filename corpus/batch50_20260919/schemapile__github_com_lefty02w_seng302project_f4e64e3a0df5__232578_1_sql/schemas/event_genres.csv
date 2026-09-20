@@ -1,0 +1,3 @@
+column_name,column_description
+event_id,Column event_id of table event_genres.
+genre_id,Column genre_id of table event_genres.

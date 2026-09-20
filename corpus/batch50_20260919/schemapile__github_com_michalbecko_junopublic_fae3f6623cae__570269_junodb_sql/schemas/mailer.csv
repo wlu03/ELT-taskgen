@@ -1,0 +1,6 @@
+column_name,column_description
+body,Column body of table mailer. may be NULL.
+id,Column id of table mailer.
+recipient,Column recipient of table mailer. may be NULL.
+sent_date,Column sent_date of table mailer.
+subject,Column subject of table mailer. may be NULL.

@@ -1,0 +1,54 @@
+column_name,column_description
+directorname,directorname of filmdirectors (real vendored values).
+biography,biography of filmdirectors (real vendored values). may be NULL.
+gender,gender of filmdirectors (real vendored values).
+viafid,viafid of filmdirectors (real vendored values).
+internationalstandardnameidentifier,internationalstandardnameidentifier of filmdirectors (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmdirectors (real vendored values). may be NULL.
+gndid,gndid of filmdirectors (real vendored values). may be NULL.
+imdbid,imdbid of filmdirectors (real vendored values).
+profileimage,profileimage of filmdirectors (real vendored values). may be NULL.
+commonscategory,commonscategory of filmdirectors (real vendored values). may be NULL.
+birthdate,birthdate of filmdirectors (real vendored values).
+entitytype,entitytype of filmdirectors (real vendored values).
+birthplace,birthplace of filmdirectors (real vendored values).
+freebaseid,freebaseid of filmdirectors (real vendored values).
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of filmdirectors (real vendored values). may be NULL.
+nationality,nationality of filmdirectors (real vendored values).
+profession,profession of filmdirectors (real vendored values).
+firstname,firstname of filmdirectors (real vendored values).
+nationalethesaurusvoorauteursnamenid,nationalethesaurusvoorauteursnamenid of filmdirectors (real vendored values). may be NULL.
+nlcrautid,nlcrautid of filmdirectors (real vendored values). may be NULL.
+selibrid,selibrid of filmdirectors (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of filmdirectors (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of filmdirectors (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmdirectors (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of filmdirectors (real vendored values). may be NULL.
+portpersonid,portpersonid of filmdirectors (real vendored values). may be NULL.
+fastid,fastid of filmdirectors (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmdirectors (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of filmdirectors (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmdirectors (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of filmdirectors (real vendored values). may be NULL.
+lastname,lastname of filmdirectors (real vendored values). may be NULL.
+idrefid,idrefid of filmdirectors (real vendored values). may be NULL.
+languages,languages of filmdirectors (real vendored values). may be NULL.
+librisuri,librisuri of filmdirectors (real vendored values). may be NULL.
+relatedcategory,relatedcategory of filmdirectors (real vendored values). may be NULL.
+nationallibraryofkoreaid,nationallibraryofkoreaid of filmdirectors (real vendored values). may be NULL.
+storenorskeleksikonid,storenorskeleksikonid of filmdirectors (real vendored values). may be NULL.
+discogsartistid,discogsartistid of filmdirectors (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of filmdirectors (real vendored values). may be NULL.
+nukatid,nukatid of filmdirectors (real vendored values). may be NULL.
+norafid,norafid of filmdirectors (real vendored values). may be NULL.
+plwabnid,plwabnid of filmdirectors (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmdirectors (real vendored values).
+moviemeterpersonid,moviemeterpersonid of filmdirectors (real vendored values). may be NULL.
+neseid,neseid of filmdirectors (real vendored values). may be NULL.
+denstoredanskeid,denstoredanskeid of filmdirectors (real vendored values). may be NULL.
+awards,awards of filmdirectors (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmdirectors (real vendored values). may be NULL.
+danskefilmpersonid,danskefilmpersonid of filmdirectors (real vendored values). may be NULL.
+danskfilmogtvpersonid,danskfilmogtvpersonid of filmdirectors (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of filmdirectors (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of filmdirectors (real vendored values). may be NULL.

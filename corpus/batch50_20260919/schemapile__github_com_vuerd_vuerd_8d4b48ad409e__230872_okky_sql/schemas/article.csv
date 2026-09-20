@@ -1,0 +1,22 @@
+column_name,column_description
+a_nick_name,Column a_nick_name of table article. may be NULL.
+anonymity,Column anonymity of table article.
+author_id,Column author_id of table article. may be NULL.
+category_id,Column category_id of table article.
+choice,Column choice of table article.
+content_id,Column content_id of table article. may be NULL.
+create_ip,Column create_ip of table article. may be NULL.
+date_created,Column date_created of table article.
+enabled,Column enabled of table article.
+id,Column id of table article.
+is_recruit,Column is_recruit of table article.
+last_editor_id,Column last_editor_id of table article. may be NULL.
+last_updated,Column last_updated of table article.
+note_count,Column note_count of table article.
+scrap_count,Column scrap_count of table article.
+selected_note_id,Column selected_note_id of table article. may be NULL.
+tag_string,Column tag_string of table article. may be NULL.
+title,Column title of table article.
+version,Column version of table article.
+view_count,Column view_count of table article.
+vote_count,Column vote_count of table article.

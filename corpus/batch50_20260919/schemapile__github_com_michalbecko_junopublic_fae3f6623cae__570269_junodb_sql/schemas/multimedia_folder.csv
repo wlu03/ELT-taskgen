@@ -1,0 +1,4 @@
+column_name,column_description
+datein,Column datein of table multimedia_folder.
+id,Column id of table multimedia_folder.
+name,Column name of table multimedia_folder. may be NULL.

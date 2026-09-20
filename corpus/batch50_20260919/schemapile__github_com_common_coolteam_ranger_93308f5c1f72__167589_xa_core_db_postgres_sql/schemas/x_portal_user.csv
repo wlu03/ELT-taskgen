@@ -1,0 +1,15 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_portal_user. may be NULL.
+create_time,Column create_time of table x_portal_user. may be NULL.
+email,Column email of table x_portal_user. may be NULL.
+first_name,Column first_name of table x_portal_user. may be NULL.
+id,Column id of table x_portal_user.
+last_name,Column last_name of table x_portal_user. may be NULL.
+login_id,Column login_id of table x_portal_user. may be NULL.
+notes,Column notes of table x_portal_user. may be NULL.
+password,Column password of table x_portal_user.
+pub_scr_name,Column pub_scr_name of table x_portal_user. may be NULL.
+status,Column status of table x_portal_user.
+upd_by_id,Column upd_by_id of table x_portal_user. may be NULL.
+update_time,Column update_time of table x_portal_user. may be NULL.
+user_src,Column user_src of table x_portal_user.

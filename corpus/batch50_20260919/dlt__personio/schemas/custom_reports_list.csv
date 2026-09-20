@@ -1,0 +1,4 @@
+column_name,column_description
+id,primary key of dlt resource 'custom_reports_list' (synthesized from the dlt manifest (no observed schema)).
+report_headline,curator-authored column of dlt resource 'custom_reports_list' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

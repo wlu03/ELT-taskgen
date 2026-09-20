@@ -1,0 +1,8 @@
+column_name,column_description
+alert_id,Unique identifier for each alert.
+cell_id,ID of the cell that triggered the alert. may be NULL.
+alert_type,"Type of alert (e.g., high value, low value). always exactly one of 'high value', 'low value'. may be NULL."
+alert_date,Date when the alert was generated. may be NULL.
+message,Message providing details about the alert. may be NULL.
+created_at,Timestamp when the alert was created. may be NULL.
+updated_at,Timestamp when the alert was last updated. may be NULL.

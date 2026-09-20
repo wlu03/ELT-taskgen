@@ -1,0 +1,4 @@
+column_name,column_description
+data_ricevimento,Column data_ricevimento of table ricevimento.
+durata,Column durata of table ricevimento. may be NULL.
+tesserino_docente,Column tesserino_docente of table ricevimento.

@@ -1,0 +1,10 @@
+column_name,column_description
+account_id,Column account_id of table erp.invoice_tax. may be NULL.
+active,Column active of table erp.invoice_tax.
+base_amount,Column base_amount of table erp.invoice_tax. may be NULL.
+date,Column date of table erp.invoice_tax. may be NULL.
+id,Column id of table erp.invoice_tax.
+invoice_id,Column invoice_id of table erp.invoice_tax. may be NULL.
+name,Column name of table erp.invoice_tax. may be NULL.
+tax_amount,Column tax_amount of table erp.invoice_tax. may be NULL.
+tax_id,Column tax_id of table erp.invoice_tax. may be NULL.

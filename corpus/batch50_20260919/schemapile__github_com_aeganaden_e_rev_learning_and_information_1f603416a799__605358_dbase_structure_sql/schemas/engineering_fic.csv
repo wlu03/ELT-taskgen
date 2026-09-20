@@ -1,0 +1,11 @@
+column_name,column_description
+email,Column email of table engineering.fic.
+fic_department,Column fic_department of table engineering.fic.
+fic_id,Column fic_id of table engineering.fic.
+fic_status,Column fic_status of table engineering.fic.
+firstname,Column firstname of table engineering.fic.
+image_path,Column image_path of table engineering.fic.
+lastname,Column lastname of table engineering.fic.
+midname,Column midname of table engineering.fic.
+password,Column password of table engineering.fic.
+username,Column username of table engineering.fic.

@@ -1,0 +1,13 @@
+column_name,column_description
+corruptedvideoframes,Column corruptedvideoframes of table video_playback_quality_sample. may be NULL.
+droppedvideoframes,Column droppedvideoframes of table video_playback_quality_sample. may be NULL.
+id,Column id of table video_playback_quality_sample.
+logged_at,Column logged_at of table video_playback_quality_sample. may be NULL.
+mozdecodedframes,Column mozdecodedframes of table video_playback_quality_sample. may be NULL.
+mozframedelay,Column mozframedelay of table video_playback_quality_sample. may be NULL.
+mozpaintedframes,Column mozpaintedframes of table video_playback_quality_sample. may be NULL.
+mozparsedframes,Column mozparsedframes of table video_playback_quality_sample. may be NULL.
+mozpresentedframes,Column mozpresentedframes of table video_playback_quality_sample. may be NULL.
+totalframedelay,Column totalframedelay of table video_playback_quality_sample. may be NULL.
+totalvideoframes,Column totalvideoframes of table video_playback_quality_sample. may be NULL.
+video_session_id,Column video_session_id of table video_playback_quality_sample.

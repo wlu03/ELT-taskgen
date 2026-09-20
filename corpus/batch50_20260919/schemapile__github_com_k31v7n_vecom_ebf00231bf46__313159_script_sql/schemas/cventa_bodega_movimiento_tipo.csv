@@ -1,0 +1,3 @@
+column_name,column_description
+bodega_movimiento_tipo,Column bodega_movimiento_tipo of table cventa.bodega_movimiento_tipo.
+nombre,Column nombre of table cventa.bodega_movimiento_tipo.

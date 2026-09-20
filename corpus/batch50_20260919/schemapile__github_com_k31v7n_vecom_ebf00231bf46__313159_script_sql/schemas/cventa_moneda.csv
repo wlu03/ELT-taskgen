@@ -1,0 +1,4 @@
+column_name,column_description
+codigo,Column codigo of table cventa.moneda.
+moneda,Column moneda of table cventa.moneda.
+nombre,Column nombre of table cventa.moneda.

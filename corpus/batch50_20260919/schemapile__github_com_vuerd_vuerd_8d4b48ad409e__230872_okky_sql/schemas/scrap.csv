@@ -1,0 +1,5 @@
+column_name,column_description
+article_id,Column article_id of table scrap.
+avatar_id,Column avatar_id of table scrap.
+date_created,Column date_created of table scrap.
+version,Column version of table scrap.

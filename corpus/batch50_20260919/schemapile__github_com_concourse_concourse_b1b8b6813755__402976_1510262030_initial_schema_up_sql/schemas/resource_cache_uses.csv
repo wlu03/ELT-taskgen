@@ -1,0 +1,4 @@
+column_name,column_description
+build_id,Column build_id of table resource_cache_uses. may be NULL.
+container_id,Column container_id of table resource_cache_uses. may be NULL.
+resource_cache_id,Column resource_cache_id of table resource_cache_uses. may be NULL.

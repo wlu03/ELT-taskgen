@@ -1,0 +1,9 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_portal_user_role. may be NULL.
+create_time,Column create_time of table x_portal_user_role. may be NULL.
+id,Column id of table x_portal_user_role.
+status,Column status of table x_portal_user_role.
+upd_by_id,Column upd_by_id of table x_portal_user_role. may be NULL.
+update_time,Column update_time of table x_portal_user_role. may be NULL.
+user_id,Column user_id of table x_portal_user_role.
+user_role,Column user_role of table x_portal_user_role. may be NULL.

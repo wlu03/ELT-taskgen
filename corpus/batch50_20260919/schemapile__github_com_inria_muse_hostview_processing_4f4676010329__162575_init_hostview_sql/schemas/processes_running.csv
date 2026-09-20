@@ -1,0 +1,8 @@
+column_name,column_description
+device_id,Column device_id of table processes_running.
+ended_at,Column ended_at of table processes_running. may be NULL.
+process_name,Column process_name of table processes_running. may be NULL.
+process_running,Column process_running of table processes_running. may be NULL.
+session_id,Column session_id of table processes_running.
+session_running,Column session_running of table processes_running. may be NULL.
+started_at,Column started_at of table processes_running. may be NULL.

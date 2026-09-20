@@ -1,0 +1,10 @@
+column_name,column_description
+added_by_id,Column ADDED_BY_ID of table x_audit_map. may be NULL.
+audit_type,Column AUDIT_TYPE of table x_audit_map.
+create_time,Column CREATE_TIME of table x_audit_map. may be NULL.
+group_id,Column GROUP_ID of table x_audit_map. may be NULL.
+res_id,Column RES_ID of table x_audit_map. may be NULL.
+update_time,Column UPDATE_TIME of table x_audit_map. may be NULL.
+upd_by_id,Column UPD_BY_ID of table x_audit_map. may be NULL.
+user_id,Column USER_ID of table x_audit_map. may be NULL.
+id,Column id of table x_audit_map.

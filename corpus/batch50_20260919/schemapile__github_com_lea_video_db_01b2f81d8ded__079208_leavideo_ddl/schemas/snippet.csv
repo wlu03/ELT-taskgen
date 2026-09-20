@@ -1,0 +1,5 @@
+column_name,column_description
+endframe,Column endFrame of table Snippet.
+sourcevideoid,Column sourceVideoID of table Snippet.
+startframe,Column startFrame of table Snippet.
+videoid,Column videoID of table Snippet.

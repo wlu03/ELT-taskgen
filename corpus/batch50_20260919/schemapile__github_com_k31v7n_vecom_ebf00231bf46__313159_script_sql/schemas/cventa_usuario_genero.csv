@@ -1,0 +1,4 @@
+column_name,column_description
+codigo,Column codigo of table cventa.usuario_genero. may be NULL.
+nombre,Column nombre of table cventa.usuario_genero.
+usuario_genero,Column usuario_genero of table cventa.usuario_genero.

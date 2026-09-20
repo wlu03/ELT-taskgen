@@ -1,0 +1,6 @@
+column_name,column_description
+id,primary key of dlt resource 'deals_participants' (synthesized from the dlt manifest (no observed schema)).
+_deals_id,parent link to 'deals' (dlt include_from_parent convention; synthesized from the dlt manifest (no observed schema)).
+participant_share,curator-authored column of dlt transformer 'deals_participants' (source: curator-invented). may be NULL.
+participant_role,curator-authored column of dlt transformer 'deals_participants' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

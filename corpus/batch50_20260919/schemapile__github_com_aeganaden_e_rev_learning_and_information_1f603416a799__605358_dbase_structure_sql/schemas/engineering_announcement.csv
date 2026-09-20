@@ -1,0 +1,11 @@
+column_name,column_description
+announcement_announcer,Column announcement_announcer of table engineering.announcement.
+announcement_audience,Column announcement_audience of table engineering.announcement.
+announcement_content,Column announcement_content of table engineering.announcement.
+announcement_created_at,Column announcement_created_at of table engineering.announcement.
+announcement_edited_at,Column announcement_edited_at of table engineering.announcement.
+announcement_end_datetime,Column announcement_end_datetime of table engineering.announcement.
+announcement_id,Column announcement_id of table engineering.announcement.
+announcement_is_active,Column announcement_is_active of table engineering.announcement.
+announcement_start_datetime,Column announcement_start_datetime of table engineering.announcement.
+announcement_title,Column announcement_title of table engineering.announcement.

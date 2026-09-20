@@ -1,0 +1,15 @@
+column_name,column_description
+assigned_id,Column assigned_id of table issue. may be NULL.
+create_date,Column create_date of table issue.
+creator_id,Column creator_id of table issue. may be NULL.
+description,Column description of table issue. may be NULL.
+id,Column id of table issue.
+issue_type_id,Column issue_type_id of table issue. may be NULL.
+name,Column name of table issue. may be NULL.
+priority_id,Column priority_id of table issue. may be NULL.
+project_id,Column project_id of table issue. may be NULL.
+status,Column status of table issue. may be NULL.
+test_plan_sprint_case_id,Column test_plan_sprint_case_id of table issue. may be NULL.
+test_plan_sprint_id,Column test_plan_sprint_id of table issue. may be NULL.
+test_step_execution_id,Column test_step_execution_id of table issue. may be NULL.
+test_step_id,Column test_step_id of table issue. may be NULL.

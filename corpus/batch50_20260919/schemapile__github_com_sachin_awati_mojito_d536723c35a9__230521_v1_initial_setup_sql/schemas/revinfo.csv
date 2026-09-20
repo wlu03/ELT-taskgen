@@ -1,0 +1,3 @@
+column_name,column_description
+rev,Column rev of table revinfo.
+revtstmp,Column revtstmp of table revinfo. may be NULL.

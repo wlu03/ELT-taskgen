@@ -1,0 +1,8 @@
+column_name,column_description
+id,Column id of table repository_locale_statistic.
+include_in_file_count,Column include_in_file_count of table repository_locale_statistic. may be NULL.
+locale_id,Column locale_id of table repository_locale_statistic.
+repository_statistic_id,Column repository_statistic_id of table repository_locale_statistic. may be NULL.
+review_needed_count,Column review_needed_count of table repository_locale_statistic. may be NULL.
+translated_count,Column translated_count of table repository_locale_statistic. may be NULL.
+translation_needed_count,Column translation_needed_count of table repository_locale_statistic. may be NULL.

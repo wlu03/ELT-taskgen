@@ -1,0 +1,11 @@
+column_name,column_description
+country,Column country of table destination.
+destination_id,Column destination_id of table destination.
+district,Column district of table destination. may be NULL.
+latitude,Column latitude of table destination. may be NULL.
+longitude,Column longitude of table destination. may be NULL.
+name,Column name of table destination.
+profile_id,Column profile_id of table destination.
+soft_delete,Column soft_delete of table destination.
+type,Column type of table destination.
+visible,Column visible of table destination.

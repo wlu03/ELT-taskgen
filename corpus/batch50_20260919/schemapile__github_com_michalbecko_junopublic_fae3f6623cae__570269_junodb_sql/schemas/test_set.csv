@@ -1,0 +1,7 @@
+column_name,column_description
+create_date,Column create_date of table test_set.
+creator_id,Column creator_id of table test_set. may be NULL.
+description,Column description of table test_set. may be NULL.
+id,Column id of table test_set.
+name,Column name of table test_set. may be NULL.
+project_id,Column project_id of table test_set.

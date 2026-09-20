@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column ID of table Cities.
+id_countries,Column ID_COUNTRIES of table Cities.
+name,Column Name of table Cities.
+note,Column Note of table Cities. may be NULL.

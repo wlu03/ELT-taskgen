@@ -1,0 +1,6 @@
+column_name,column_description
+input_comm,Column input_comm of table TechInputSplit.
+periods,Column periods of table TechInputSplit.
+tech,Column tech of table TechInputSplit.
+ti_split,Column ti_split of table TechInputSplit. may be NULL.
+ti_split_notes,Column ti_split_notes of table TechInputSplit. may be NULL.

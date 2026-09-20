@@ -1,0 +1,12 @@
+column_name,column_description
+drone_id,Unique identifier for each drone.
+drone_model,Model type of the drone. may be NULL.
+drone_number,Identification number of the drone. may be NULL.
+status,"Current operational status of the drone (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."
+registration_number,Unique registration number for each drone. may be NULL.
+manufacture_date,Date the drone was manufactured. may be NULL.
+last_inspection_date,Date of the last inspection. may be NULL.
+next_inspection_date,Date of the next scheduled inspection. may be NULL.
+battery_capacity,Maximum battery capacity in mAh. may be NULL.
+maximum_payload,Maximum payload capacity in grams. may be NULL.
+flight_controller_firmware_version,Current firmware version of the flight controller. may be NULL.

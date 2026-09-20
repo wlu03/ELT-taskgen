@@ -1,0 +1,7 @@
+column_name,column_description
+writer_id,Unique identifier for each writer.
+writer_name,Full name of the writer. may be NULL.
+email,Email address of the writer. may be NULL.
+nationality,Writer's nationality. may be NULL.
+date_of_birth,Writer's date of birth. may be NULL.
+biography,Brief biography of the writer. may be NULL.

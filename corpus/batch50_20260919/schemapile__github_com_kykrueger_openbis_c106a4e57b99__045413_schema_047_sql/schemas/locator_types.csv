@@ -1,0 +1,4 @@
+column_name,column_description
+code,Column CODE of table LOCATOR_TYPES.
+description,Column DESCRIPTION of table LOCATOR_TYPES. may be NULL.
+id,Column ID of table LOCATOR_TYPES.

@@ -1,0 +1,6 @@
+column_name,column_description
+schl_year,Unique identifier for each school year.
+schl_year_desc,Description of the school year. may be NULL.
+start_date,Start date of the school year. may be NULL.
+end_date,End date of the school year. may be NULL.
+is_current,Indicates if the school year is the current one. may be NULL.

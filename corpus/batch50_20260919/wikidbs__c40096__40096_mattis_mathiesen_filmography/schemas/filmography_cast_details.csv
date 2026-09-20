@@ -1,0 +1,34 @@
+column_name,column_description
+actor_name,actor name of filmography cast details (real vendored values).
+biography,biography of filmography cast details (real vendored values).
+gender,gender of filmography cast details (real vendored values).
+viaf_id,viaf id of filmography cast details (real vendored values). may be NULL.
+international_standard_name_identifier,international standard name identifier of filmography cast details (real vendored values). may be NULL.
+profession,profession of filmography cast details (real vendored values).
+profile_image,profile image of filmography cast details (real vendored values). may be NULL.
+birthplace,birthplace of filmography cast details (real vendored values). may be NULL.
+nationality,nationality of filmography cast details (real vendored values).
+entity_type,entity type of filmography cast details (real vendored values).
+birth_date,birth date of filmography cast details (real vendored values).
+death_date,death date of filmography cast details (real vendored values). may be NULL.
+freebase_id,freebase id of filmography cast details (real vendored values). may be NULL.
+noraf_id,noraf id of filmography cast details (real vendored values). may be NULL.
+im_db_id,im db id of filmography cast details (real vendored values). may be NULL.
+awards,awards of filmography cast details (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of filmography cast details (real vendored values). may be NULL.
+commons_category,commons category of filmography cast details (real vendored values). may be NULL.
+store_norske_leksikon_id,store norske leksikon id of filmography cast details (real vendored values). may be NULL.
+norsk_biografisk_leksikon_id,norsk biografisk leksikon id of filmography cast details (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of filmography cast details (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of filmography cast details (real vendored values). may be NULL.
+prabook_id,prabook id of filmography cast details (real vendored values). may be NULL.
+sceneweb_artist_id,sceneweb artist id of filmography cast details (real vendored values).
+digitalt_museum_id,digitalt museum id of filmography cast details (real vendored values). may be NULL.
+first_name,first name of filmography cast details (real vendored values).
+last_name,last name of filmography cast details (real vendored values).
+filmru_person_id,filmru person id of filmography cast details (real vendored values). may be NULL.
+kultur_nav_id,kultur nav id of filmography cast details (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of filmography cast details (real vendored values). may be NULL.
+genicom_profile_id,genicom profile id of filmography cast details (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of filmography cast details (real vendored values). may be NULL.
+music_brainz_artist_id,music brainz artist id of filmography cast details (real vendored values). may be NULL.

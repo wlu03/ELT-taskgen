@@ -1,0 +1,14 @@
+column_name,column_description
+camera_id,Unique identifier for each camera.
+name,Name of the camera. may be NULL.
+position,"Position of the camera (x, y, z coordinates). may be NULL."
+orientation,"Orientation of the camera (pitch, yaw, roll values). may be NULL."
+field_of_view,Field of view (FOV) of the camera. may be NULL.
+aspect_ratio,Aspect ratio of the camera. may be NULL.
+near_plane,Near clipping plane of the camera. may be NULL.
+far_plane,Far clipping plane of the camera. may be NULL.
+version,Version of the camera. may be NULL.
+created_at,Creation date and time of the camera. may be NULL.
+updated_at,Last update date and time of the camera. may be NULL.
+created_by,ID of the user who created the camera. may be NULL.
+updated_by,ID of the user who last updated the camera. may be NULL.

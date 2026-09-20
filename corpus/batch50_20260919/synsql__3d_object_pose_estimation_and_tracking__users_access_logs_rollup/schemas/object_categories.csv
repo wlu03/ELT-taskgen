@@ -1,0 +1,6 @@
+column_name,column_description
+category_id,Unique identifier for each category.
+category_name,Name of the category. may be NULL.
+description,Description of the category. may be NULL.
+category_type,"Type of the category (e.g., indoor, outdoor). always exactly one of 'indoor', 'outdoor'. may be NULL."
+category_description,Detailed description of the category. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table mailer_attachment.
+mailer_id,Column mailer_id of table mailer_attachment. may be NULL.
+multimedia_id,Column multimedia_id of table mailer_attachment. may be NULL.

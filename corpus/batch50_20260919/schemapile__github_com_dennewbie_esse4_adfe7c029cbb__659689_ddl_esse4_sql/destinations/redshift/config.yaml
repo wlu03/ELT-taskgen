@@ -1,0 +1,131 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-dennewbie-esse4-adfe-a9952e4d4367-bucket/bando_borsa.jsonl
+    sync_mode: full_refresh_append
+    table: bando_borsa
+  - path: s3://schemapile--github-com-dennewbie-esse4-adfe-a9952e4d4367-bucket/bando_erasmus.jsonl
+    sync_mode: full_refresh_append
+    table: bando_erasmus
+  - path: s3://schemapile--github-com-dennewbie-esse4-adfe-a9952e4d4367-bucket/frequenta_edizione_insegnamento.jsonl
+    sync_mode: full_refresh_append
+    table: frequenta_edizione_insegnamento
+  - path: s3://schemapile--github-com-dennewbie-esse4-adfe-a9952e4d4367-bucket/presiede_appello.jsonl
+    sync_mode: full_refresh_append
+    table: presiede_appello
+  - path: s3://schemapile--github-com-dennewbie-esse4-adfe-a9952e4d4367-bucket/seminario.jsonl
+    sync_mode: full_refresh_append
+    table: seminario
+  - path: s3://schemapile--github-com-dennewbie-esse4-adfe-a9952e4d4367-bucket/tutor_aziendale.jsonl
+    sync_mode: full_refresh_append
+    table: tutor_aziendale
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - corso_laurea
+    - edizione_insegnamento
+    - email_docente
+    - offerta_insegnamento
+    - prenotazione_appello_seduta
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/appello.csv
+  sync_mode: full_refresh_append
+  table: appello
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/assegnazione_erasmus.csv
+  sync_mode: full_refresh_append
+  table: assegnazione_erasmus
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/docente.csv
+  sync_mode: full_refresh_append
+  table: docente
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/insegna_edizione.csv
+  sync_mode: full_refresh_append
+  table: insegna_edizione
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/orario_lezioni.csv
+  sync_mode: full_refresh_append
+  table: orario_lezioni
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/questionario.csv
+  sync_mode: full_refresh_append
+  table: questionario
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/studente.csv
+  sync_mode: full_refresh_append
+  table: studente
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/tassa.csv
+  sync_mode: full_refresh_append
+  table: tassa
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367/telefono_studente.csv
+  sync_mode: full_refresh_append
+  table: telefono_studente
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367
+    sync_mode: full_refresh_append
+    tables:
+    - assegnazione_borse
+    - azienda
+    - email_studente
+    - esame_superato
+    - insegnamento
+    - prenotazione_appello
+    - relatore
+    - ricevimento
+    - seduta_laurea
+    - tirocinio
+postgres:
+  config:
+    database: schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - appello_laurea
+    - email_tutor_aziendale
+    - partecipa_seduta
+    - partecipa_seminario
+    - partecipazione_bando_borsa
+    - partecipazione_bando_erasmus
+    - prenotazione_ricevimento
+    - telefono_docente
+    - telefono_tutor_aziendale
+    user: postgres
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: schemapile__github_com_dennewbie_esse4_adfe_a9952e4d4367
+    secret_access_key: ''
+    username: ''

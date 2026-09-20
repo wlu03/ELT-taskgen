@@ -1,0 +1,9 @@
+column_name,column_description
+date_created,Column Date_Created of table Orders.
+date_deleted,Column Date_Deleted of table Orders. may be NULL.
+id,Column ID of table Orders.
+id_customers,Column ID_CUSTOMERS of table Orders.
+identifier,Column Identifier of table Orders.
+path_slug,Column Path_Slug of table Orders.
+user_created,Column User_Created of table Orders.
+user_deleted,Column User_Deleted of table Orders. may be NULL.

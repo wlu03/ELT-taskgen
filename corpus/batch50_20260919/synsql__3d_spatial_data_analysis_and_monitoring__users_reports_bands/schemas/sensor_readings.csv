@@ -1,0 +1,8 @@
+column_name,column_description
+sensor_reading_id,Unique identifier for each sensor reading.
+cell_id,ID of the measurement cell. may be NULL.
+sensor_id,ID of the sensor that took the reading. may be NULL.
+reading_date,Date when the reading was taken. may be NULL.
+reading_value,Value of the reading. may be NULL.
+created_at,Timestamp when the reading was created. may be NULL.
+updated_at,Timestamp when the reading was last updated. may be NULL.

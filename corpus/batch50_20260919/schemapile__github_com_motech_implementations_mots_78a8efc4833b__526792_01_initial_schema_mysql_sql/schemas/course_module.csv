@@ -1,0 +1,11 @@
+column_name,column_description
+course_id,Column course_id of table course_module.
+created_date,Column created_date of table course_module. may be NULL.
+id,Column id of table course_module.
+ivr_id,Column ivr_id of table course_module. may be NULL.
+ivr_name,Column ivr_name of table course_module. may be NULL.
+list_order,Column list_order of table course_module.
+module_id,Column module_id of table course_module.
+previous_version_id,Column previous_version_id of table course_module. may be NULL.
+start_module_question_ivr_id,Column start_module_question_ivr_id of table course_module. may be NULL.
+updated_date,Column updated_date of table course_module. may be NULL.

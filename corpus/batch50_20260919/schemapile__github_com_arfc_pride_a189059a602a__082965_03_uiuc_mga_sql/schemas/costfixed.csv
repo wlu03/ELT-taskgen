@@ -1,0 +1,7 @@
+column_name,column_description
+cost_fixed,Column cost_fixed of table CostFixed. may be NULL.
+cost_fixed_notes,Column cost_fixed_notes of table CostFixed. may be NULL.
+cost_fixed_units,Column cost_fixed_units of table CostFixed. may be NULL.
+periods,Column periods of table CostFixed.
+tech,Column tech of table CostFixed.
+vintage,Column vintage of table CostFixed.

@@ -1,0 +1,12 @@
+column_name,column_description
+email,Column email of table engineering.professor.
+firstname,Column firstname of table engineering.professor.
+image_path,Column image_path of table engineering.professor.
+lastname,Column lastname of table engineering.professor.
+midname,Column midname of table engineering.professor.
+password,Column password of table engineering.professor.
+professor_department,Column professor_department of table engineering.professor.
+professor_feedback_active,Column professor_feedback_active of table engineering.professor.
+professor_id,Column professor_id of table engineering.professor.
+professor_status,Column professor_status of table engineering.professor.
+username,Column username of table engineering.professor.

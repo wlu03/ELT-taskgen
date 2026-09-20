@@ -1,0 +1,17 @@
+column_name,column_description
+activo,Column activo of table cventa.producto.
+cantidad,Column cantidad of table cventa.producto.
+codigo,Column codigo of table cventa.producto.
+fecha_ingreso,Column fecha_ingreso of table cventa.producto.
+fecha_sis,Column fecha_sis of table cventa.producto.
+fecha_vencimiento,Column fecha_vencimiento of table cventa.producto. may be NULL.
+incluye_iva,Column incluye_iva of table cventa.producto.
+nombre,Column nombre of table cventa.producto.
+precio_compra,Column precio_compra of table cventa.producto.
+precio_venta,Column precio_venta of table cventa.producto.
+producto,Column producto of table cventa.producto.
+producto_tipo,Column producto_tipo of table cventa.producto.
+proveedor,Column proveedor of table cventa.producto.
+unidad_medida,Column unidad_medida of table cventa.producto.
+usuario,Column usuario of table cventa.producto.
+valor_iva,Column valor_iva of table cventa.producto.

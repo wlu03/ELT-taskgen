@@ -1,0 +1,10 @@
+column_name,column_description
+created_at,Column created_at of table heritage. may be NULL.
+geom,Column geom of table heritage. may be NULL.
+hidden,Column hidden of table heritage. may be NULL.
+id,Column id of table heritage.
+map_position_x,Column map_position_x of table heritage. may be NULL.
+map_position_y,Column map_position_y of table heritage. may be NULL.
+priority,Column priority of table heritage. may be NULL.
+published,Column published of table heritage. may be NULL.
+updated_at,Column updated_at of table heritage. may be NULL.

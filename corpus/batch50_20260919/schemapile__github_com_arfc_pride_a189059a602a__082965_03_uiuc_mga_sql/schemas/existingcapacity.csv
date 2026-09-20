@@ -1,0 +1,6 @@
+column_name,column_description
+exist_cap,Column exist_cap of table ExistingCapacity. may be NULL.
+exist_cap_notes,Column exist_cap_notes of table ExistingCapacity. may be NULL.
+exist_cap_units,Column exist_cap_units of table ExistingCapacity. may be NULL.
+tech,Column tech of table ExistingCapacity.
+vintage,Column vintage of table ExistingCapacity.

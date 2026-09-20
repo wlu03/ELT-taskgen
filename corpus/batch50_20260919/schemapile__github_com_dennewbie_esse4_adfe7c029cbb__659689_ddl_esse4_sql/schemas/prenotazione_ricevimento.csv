@@ -1,0 +1,6 @@
+column_name,column_description
+data_prenotazione,Column data_prenotazione of table prenotazione_ricevimento.
+data_ricevimento,Column data_ricevimento of table prenotazione_ricevimento.
+matricola_studente,Column matricola_studente of table prenotazione_ricevimento.
+numero_prenotazione,Column numero_prenotazione of table prenotazione_ricevimento.
+tesserino_docente,Column tesserino_docente of table prenotazione_ricevimento.

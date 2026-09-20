@@ -1,0 +1,10 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., project manager, engineer, admin). always exactly one of 'project manager', 'engineer', 'admin'. may be NULL."
+password,Hashed password for the user. may be NULL.
+phone_number,Contact phone number for the user. may be NULL.
+address,Address of the user. may be NULL.
+department,Department the user belongs to. may be NULL.
+is_active,Indicates if the user account is active or not. may be NULL.

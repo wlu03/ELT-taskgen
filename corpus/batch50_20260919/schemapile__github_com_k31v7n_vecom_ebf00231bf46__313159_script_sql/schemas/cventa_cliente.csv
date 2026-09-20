@@ -1,0 +1,15 @@
+column_name,column_description
+activo,Column activo of table cventa.cliente.
+aplica_descuento,Column aplica_descuento of table cventa.cliente.
+aplica_iva,Column aplica_iva of table cventa.cliente.
+cliente,Column cliente of table cventa.cliente.
+cliente_tipo,Column cliente_tipo of table cventa.cliente.
+correo,Column correo of table cventa.cliente. may be NULL.
+direccion,Column direccion of table cventa.cliente. may be NULL.
+empresa,Column empresa of table cventa.cliente.
+fecha_sis,Column fecha_sis of table cventa.cliente.
+monto_descuento,Column monto_descuento of table cventa.cliente.
+nit,Column nit of table cventa.cliente. may be NULL.
+nombre,Column nombre of table cventa.cliente.
+telefono,Column telefono of table cventa.cliente. may be NULL.
+usuario,Column usuario of table cventa.cliente.

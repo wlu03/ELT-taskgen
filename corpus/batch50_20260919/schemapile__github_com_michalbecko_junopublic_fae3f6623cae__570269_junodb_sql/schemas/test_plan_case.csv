@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table test_plan_case.
+test_case_id,Column test_case_id of table test_plan_case.
+test_plan_id,Column test_plan_id of table test_plan_case.

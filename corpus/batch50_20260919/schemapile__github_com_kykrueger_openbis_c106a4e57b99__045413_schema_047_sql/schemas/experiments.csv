@@ -1,0 +1,12 @@
+column_name,column_description
+code,Column CODE of table EXPERIMENTS.
+exty_id,Column EXTY_ID of table EXPERIMENTS.
+id,Column ID of table EXPERIMENTS.
+inva_id,Column INVA_ID of table EXPERIMENTS. may be NULL.
+is_public,Column IS_PUBLIC of table EXPERIMENTS.
+mate_id_study_object,Column MATE_ID_STUDY_OBJECT of table EXPERIMENTS. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table EXPERIMENTS. may be NULL.
+perm_id,Column PERM_ID of table EXPERIMENTS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table EXPERIMENTS.
+proj_id,Column PROJ_ID of table EXPERIMENTS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table EXPERIMENTS.

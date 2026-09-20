@@ -1,0 +1,7 @@
+column_name,column_description
+create_date,Column create_date of table project.
+creator_id,Column creator_id of table project.
+description,Column description of table project. may be NULL.
+id,Column id of table project.
+name,Column name of table project.
+name_safe,Column name_safe of table project.

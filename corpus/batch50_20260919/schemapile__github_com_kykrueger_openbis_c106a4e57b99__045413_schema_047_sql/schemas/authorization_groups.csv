@@ -1,0 +1,8 @@
+column_name,column_description
+code,Column CODE of table AUTHORIZATION_GROUPS.
+dbin_id,Column DBIN_ID of table AUTHORIZATION_GROUPS.
+description,Column DESCRIPTION of table AUTHORIZATION_GROUPS. may be NULL.
+id,Column ID of table AUTHORIZATION_GROUPS.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table AUTHORIZATION_GROUPS. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table AUTHORIZATION_GROUPS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table AUTHORIZATION_GROUPS.

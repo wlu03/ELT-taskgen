@@ -1,0 +1,13 @@
+column_name,column_description
+surname,surname of composerfamilynames (real vendored values).
+surnamedescription,surnamedescription of composerfamilynames (real vendored values).
+category,category of composerfamilynames (real vendored values).
+language,language of composerfamilynames (real vendored values). may be NULL.
+nativesurname,nativesurname of composerfamilynames (real vendored values). may be NULL.
+script,script of composerfamilynames (real vendored values). may be NULL.
+soundexcode,soundexcode of composerfamilynames (real vendored values). may be NULL.
+colognephoneticscode,colognephoneticscode of composerfamilynames (real vendored values). may be NULL.
+caverphonecode,caverphonecode of composerfamilynames (real vendored values). may be NULL.
+geneanetfamilynameid,geneanetfamilynameid of composerfamilynames (real vendored values). may be NULL.
+commonscategory,commonscategory of composerfamilynames (real vendored values). may be NULL.
+distinctionnote,distinctionnote of composerfamilynames (real vendored values). may be NULL.

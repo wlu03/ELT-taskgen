@@ -1,0 +1,13 @@
+column_name,column_description
+measure_id,Unique identifier for each stringency measure entry.
+country_id,Reference to the country. may be NULL.
+date,Date for which the stringency index is recorded. may be NULL.
+stringency_index,Index representing the stringency of public health measures. may be NULL.
+lockdown_status,"Status of lockdown (e.g., partial, full). always exactly one of 'partial', 'full'. may be NULL."
+travel_restrictions,"Status of travel restrictions (e.g., domestic, international). always exactly one of 'domestic', 'international'. may be NULL."
+school_closures,"Status of school closures (e.g., open, closed). always exactly one of 'open', 'closed'. may be NULL."
+public_events,"Status of public events (e.g., allowed, restricted). always exactly one of 'allowed', 'restricted'. may be NULL."
+workplace_closures,"Status of workplace closures (e.g., essential only, closed). always exactly one of 'essential only', 'closed'. may be NULL."
+public_transport,"Status of public transport (e.g., reduced, normal). always exactly one of 'reduced', 'normal'. may be NULL."
+stay_home_requirements,"Status of stay-at-home requirements (e.g., recommended, mandated). always exactly one of 'recommended', 'mandated'. may be NULL."
+information_campaigns,"Status of information campaigns (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."

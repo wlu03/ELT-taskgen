@@ -1,0 +1,16 @@
+column_name,column_description
+code,Column CODE of table SAMPLES.
+dbin_id,Column DBIN_ID of table SAMPLES. may be NULL.
+expe_id,Column EXPE_ID of table SAMPLES. may be NULL.
+grou_id,Column GROU_ID of table SAMPLES. may be NULL.
+id,Column ID of table SAMPLES.
+inva_id,Column INVA_ID of table SAMPLES. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table SAMPLES. may be NULL.
+perm_id,Column PERM_ID of table SAMPLES.
+pers_id_registerer,Column PERS_ID_REGISTERER of table SAMPLES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table SAMPLES.
+samp_id_control_layout,Column SAMP_ID_CONTROL_LAYOUT of table SAMPLES. may be NULL.
+samp_id_generated_from,Column SAMP_ID_GENERATED_FROM of table SAMPLES. may be NULL.
+samp_id_part_of,Column SAMP_ID_PART_OF of table SAMPLES. may be NULL.
+samp_id_top,Column SAMP_ID_TOP of table SAMPLES. may be NULL.
+saty_id,Column SATY_ID of table SAMPLES.

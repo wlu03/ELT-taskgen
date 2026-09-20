@@ -1,0 +1,8 @@
+column_name,column_description
+bodega,Column bodega of table cventa.bodega_movimiento.
+bodega_movimiento,Column bodega_movimiento of table cventa.bodega_movimiento.
+bodega_movimiento_tipo,Column bodega_movimiento_tipo of table cventa.bodega_movimiento.
+cantidad,Column cantidad of table cventa.bodega_movimiento.
+fecha_accion,Column fecha_accion of table cventa.bodega_movimiento.
+producto,Column producto of table cventa.bodega_movimiento.
+usuario,Column usuario of table cventa.bodega_movimiento.

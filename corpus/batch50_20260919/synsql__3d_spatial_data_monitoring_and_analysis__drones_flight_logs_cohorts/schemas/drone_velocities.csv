@@ -1,0 +1,10 @@
+column_name,column_description
+velocity_id,Unique identifier for each velocity record.
+drone_id,Reference to the drone that the velocity data belongs to. may be NULL.
+vel_x,Velocity in the X direction. may be NULL.
+vel_y,Velocity in the Y direction. may be NULL.
+vel_z,Velocity in the Z direction. may be NULL.
+timestamp,Timestamp of when the velocity was recorded. may be NULL.
+acceleration_x,Acceleration in the X direction. may be NULL.
+acceleration_y,Acceleration in the Y direction. may be NULL.
+acceleration_z,Acceleration in the Z direction. may be NULL.

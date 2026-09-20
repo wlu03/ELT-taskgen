@@ -1,0 +1,5 @@
+column_name,column_description
+asset_extension,Column asset_extension of table asset_integrity_checker.
+id,Column id of table asset_integrity_checker.
+integrity_checker_type,Column integrity_checker_type of table asset_integrity_checker.
+repository_id,Column repository_id of table asset_integrity_checker.

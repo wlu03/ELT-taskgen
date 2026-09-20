@@ -1,0 +1,20 @@
+column_name,column_description
+cell_id,Unique identifier for each cell.
+x_coord,X-coordinate of the cell in 3D space. may be NULL.
+y_coord,Y-coordinate of the cell in 3D space. may be NULL.
+z_coord,Z-coordinate of the cell in 3D space. may be NULL.
+ch1,Sensor reading for channel 1. may be NULL.
+ch2,Sensor reading for channel 2. may be NULL.
+ch3,Sensor reading for channel 3. may be NULL.
+ch4,Sensor reading for channel 4. may be NULL.
+ch2_adj,Adjusted value for channel 2. may be NULL.
+ch3_adj,Adjusted value for channel 3. may be NULL.
+ch4_adj,Adjusted value for channel 4. may be NULL.
+outside,Indicator if the measurement is outside the target area. may be NULL.
+nbrs_old,Number of old neighbors. may be NULL.
+nbrs_new,Number of new neighbors. may be NULL.
+nbrs_that_are_outside,Number of neighbors outside the target area. may be NULL.
+median_dist_to_nbrs,Median distance to neighbors. may be NULL.
+nbr_id_list,List of neighboring cell IDs. may be NULL.
+created_at,Timestamp when the cell was created. may be NULL.
+updated_at,Timestamp when the cell was last updated. may be NULL.

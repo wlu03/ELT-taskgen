@@ -1,0 +1,56 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - role_permissions
+    - roles
+flat_files:
+- format: csv
+  path: http://elt-files:8080/synsql__3d_motion_tracking_and_analysis__se_3bdc054fcd47/sensors.csv
+  sync_mode: full_refresh_append
+  table: sensors
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: synsql__3d_motion_tracking_and_analysis__se_3bdc054fcd47
+    sync_mode: full_refresh_append
+    tables:
+    - permissions
+    - user_roles
+postgres:
+  config:
+    database: synsql__3d_motion_tracking_and_analysis__se_3bdc054fcd47
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - motion_data
+    - users
+    user: postgres
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: synsql__3d_motion_tracking_and_analysis__se_3bdc054fcd47
+    secret_access_key: ''
+    username: ''

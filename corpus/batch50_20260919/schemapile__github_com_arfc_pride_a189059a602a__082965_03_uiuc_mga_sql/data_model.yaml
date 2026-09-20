@@ -1,0 +1,2235 @@
+models:
+- columns:
+  - description: Identifier of the technologies row.
+    name: entity_key
+    type: text
+  - description: '''present'' for a linked techoutputsplit row whose to_split has a value; ''absent'' when to_split is missing, including a technologies row with no linked techoutputsplit row. A linked techoutputsplit row whose to_split has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: tech_category of the technologies row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked techoutputsplit rows in this entity/state cell; a absent cell holding real techoutputsplit rows whose to_split is missing COUNTS those rows, and only the placeholder cell of a technologies row with no linked techoutputsplit row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing to_split values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no to_split value at all — both for a technologies row with no linked techoutputsplit row and for an absent cell whose rows all have a missing to_split.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of to_split in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an to_split value.
+    name: total_amount
+    type: float
+  - description: Largest to_split in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an to_split value.
+    name: max_amount
+    type: float
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(technologies, measure state) distribution of linked techoutputsplit activity in the 082965_03_uiuc_mga.sql schema.
+  grain: One row per (tech, measure state) pair represented among linked techoutputsplit rows; the absent state includes missing to_split values and a no-activity row for a technologies row with no links. A linked techoutputsplit row whose to_split has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: technologies_techoutputsplit_distribution
+  source_relationships:
+  - child_columns:
+    - season_name
+    child_table: capacityfactorprocess
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - tech
+    child_table: capacityfactorprocess
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: capacityfactorprocess
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - season_name
+    child_table: capacityfactortech
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - tech
+    child_table: capacityfactortech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: capacityfactortech
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - flag
+    child_table: commodities
+    parent_columns:
+    - comm_labels
+    parent_table: commodity_labels
+    required: false
+  - child_columns:
+    - periods
+    child_table: costfixed
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costfixed
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costfixed
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costinvest
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costinvest
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - periods
+    child_table: costvariable
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costvariable
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costvariable
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - demand_comm
+    child_table: demand
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: demand
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - demand_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - season_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - tech
+    child_table: discountrate
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: discountrate
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: efficiency
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: efficiency
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - tech
+    child_table: efficiency
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: efficiency
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - emis_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - tech
+    child_table: emissionactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: emissionactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - emis_comm
+    child_table: emissionlimit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: emissionlimit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: existingcapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: existingcapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: growthratemax
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: false
+  - child_columns:
+    - tech
+    child_table: growthrateseed
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: false
+  - child_columns:
+    - tech
+    child_table: lifetimeloantech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - tech
+    child_table: lifetimeprocess
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: lifetimeprocess
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: lifetimetech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: maxactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: maxactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: maxcapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: maxcapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: minactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: minactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: mincapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: mincapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_periods
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_costs
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - tech
+    child_table: output_costs
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_costs
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_v_capacity
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - tech
+    child_table: output_v_capacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_v_capacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: output_vflow_in
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: output_vflow_in
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_vflow_in
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_day
+    child_table: output_vflow_in
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - t_periods
+    child_table: output_vflow_in
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_vflow_in
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_vflow_in
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: output_vflow_out
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: output_vflow_out
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_vflow_out
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_day
+    child_table: output_vflow_out
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - t_periods
+    child_table: output_vflow_out
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_vflow_out
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_vflow_out
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - season_name
+    child_table: segfrac
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: segfrac
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: techinputsplit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: techinputsplit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: techinputsplit
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - flag
+    child_table: technologies
+    parent_columns:
+    - tech_labels
+    parent_table: technology_labels
+    required: false
+  - child_columns:
+    - sector
+    child_table: technologies
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - output_comm
+    child_table: techoutputsplit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: techoutputsplit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: techoutputsplit
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - flag
+    child_table: time_periods
+    parent_columns:
+    - t_period_labels
+    parent_table: time_period_labels
+    required: false
+  transformation:
+    steps:
+    - description: Read source table technologies.
+      operation: source
+      order: 1
+      source_inputs:
+      - technologies
+    - description: Read source table techoutputsplit.
+      operation: source
+      order: 2
+      source_inputs:
+      - techoutputsplit
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each tech and its tech_category into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - technologies
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - tech
+      condition:
+        public_identifiers:
+        - techoutputsplit
+        - tech
+        - entity_key
+      description: Bring the linked techoutputsplit rows into each technologies entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - techoutputsplit
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real techoutputsplit row whose to_split has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per technologies entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing to_split values occur (each different value counted once, however many rows repeat it), total to_split, and largest to_split.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: to_split is missing, including the retained placeholder for a technologies row with no techoutputsplit rows. A real techoutputsplit row whose to_split has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per technologies entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing to_split values occur (each different value counted once, however many rows repeat it), total to_split, and largest to_split.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the commodities row. One row per value.
+    name: parent_key
+    type: text
+  - description: comm_desc of the commodities row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest to_split itself; 0 when the parent has no techoutputsplit rows, and 0 when none of its rows carries a to_split value.
+    name: top_measure
+    type: float
+  - description: 'How many techoutputsplit rows are tied at that largest to_split. 1 when exactly one row carries that largest to_split; 0 when there are no rows or when none of the rows carries a to_split value; a row with no to_split value never ties: only a row whose to_split value equals the largest value among the parent''s rows holds the maximum, so the winning row of a parent whose rows all lack a value — the row the tie-break alone selects — is not counted here.'
+    name: tied_count
+    type: bigint
+  - description: 'Number of techoutputsplit rows for this commodities row; 0 when there are none. Every linked techoutputsplit row counts, whether or not it carries a to_split value. A commodities row kept with no techoutputsplit row reports 0 here, never 1: its placeholder holds no techoutputsplit row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of to_split over all of them; 0 when the parent has no techoutputsplit rows, and 0 when none of its rows carries a to_split value (rows with no to_split value add nothing).
+    name: total_measure
+    type: float
+  - description: The to_split_notes of the techoutputsplit row with the LARGEST to_split for this commodities row. Ties in to_split are broken by taking the SMALLEST to_split_notes under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) — a row with no to_split_notes value sorts after every labelled row. A row with no to_split value still ranks, after every row that has one, so a parent holding at least one techoutputsplit row always has a winning row — when NONE of its rows carries a to_split value the winner is the one the tie-break alone selects, not the no-rows default. The literal '(none)' when the parent has no techoutputsplit rows at all, and '(none)' when the winning row has no to_split_notes value.
+    name: top_label
+    type: text
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no techoutputsplit rows, or none of its rows carries a to_split value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a to_split value equal to the largest to_split value among the parent''s rows; a row with no to_split value never holds the maximum. So a parent whose techoutputsplit rows all lack a to_split value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label names.'
+    name: tie_state
+    type: text
+  description: 'Per-commodities extremes over linked techoutputsplit rows in the 082965_03_uiuc_mga.sql schema: WHICH row is largest, not how large it is.'
+  grain: One row per commodities (comm_name), INCLUDING commodities rows with no linked techoutputsplit rows.
+  key_columns:
+  - parent_key
+  name: commodities_techoutputsplit_top
+  source_relationships:
+  - child_columns:
+    - season_name
+    child_table: capacityfactorprocess
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - tech
+    child_table: capacityfactorprocess
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: capacityfactorprocess
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - season_name
+    child_table: capacityfactortech
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - tech
+    child_table: capacityfactortech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: capacityfactortech
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - flag
+    child_table: commodities
+    parent_columns:
+    - comm_labels
+    parent_table: commodity_labels
+    required: false
+  - child_columns:
+    - periods
+    child_table: costfixed
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costfixed
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costfixed
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costinvest
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costinvest
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - periods
+    child_table: costvariable
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costvariable
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costvariable
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - demand_comm
+    child_table: demand
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: demand
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - demand_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - season_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - tech
+    child_table: discountrate
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: discountrate
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: efficiency
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: efficiency
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - tech
+    child_table: efficiency
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: efficiency
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - emis_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - tech
+    child_table: emissionactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: emissionactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - emis_comm
+    child_table: emissionlimit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: emissionlimit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: existingcapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: existingcapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: growthratemax
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: false
+  - child_columns:
+    - tech
+    child_table: growthrateseed
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: false
+  - child_columns:
+    - tech
+    child_table: lifetimeloantech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - tech
+    child_table: lifetimeprocess
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: lifetimeprocess
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: lifetimetech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: maxactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: maxactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: maxcapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: maxcapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: minactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: minactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: mincapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: mincapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_periods
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_costs
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - tech
+    child_table: output_costs
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_costs
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_v_capacity
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - tech
+    child_table: output_v_capacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_v_capacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: output_vflow_in
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: output_vflow_in
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_vflow_in
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_day
+    child_table: output_vflow_in
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - t_periods
+    child_table: output_vflow_in
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_vflow_in
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_vflow_in
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: output_vflow_out
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: output_vflow_out
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_vflow_out
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_day
+    child_table: output_vflow_out
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - t_periods
+    child_table: output_vflow_out
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_vflow_out
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_vflow_out
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - season_name
+    child_table: segfrac
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: segfrac
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: techinputsplit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: techinputsplit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: techinputsplit
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - flag
+    child_table: technologies
+    parent_columns:
+    - tech_labels
+    parent_table: technology_labels
+    required: false
+  - child_columns:
+    - sector
+    child_table: technologies
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - output_comm
+    child_table: techoutputsplit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: techoutputsplit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: techoutputsplit
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - flag
+    child_table: time_periods
+    parent_columns:
+    - t_period_labels
+    parent_table: time_period_labels
+    required: false
+  transformation:
+    steps:
+    - description: Read source table commodities.
+      operation: source
+      order: 1
+      source_inputs:
+      - commodities
+    - description: Read source table techoutputsplit.
+      operation: source
+      order: 2
+      source_inputs:
+      - techoutputsplit
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per commodities row, keyed by comm_name.
+      operation: derive
+      order: 3
+      source_inputs:
+      - commodities
+    - carried_fields:
+      - output_comm
+      - comm_name
+      condition:
+        public_identifiers:
+        - techoutputsplit
+        - output_comm
+        - parent_key
+      description: 'Bring in techoutputsplit: a commodities row with no techoutputsplit rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - techoutputsplit
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest to_split_notes under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one) (a row with no to_split_notes value sorts after every row that has one), and take top_label from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows. For top_measure, total_measure, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no techoutputsplit rows, or none of its rows carries a to_split value — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more. A row holds the maximum only when it carries a to_split value equal to the largest to_split value among the parent''s rows; a row with no to_split value never holds the maximum. So a parent whose techoutputsplit rows all lack a to_split value has no row holding the maximum and is ''empty'', with tied_count 0, even though the ranking still selects a winning row for it by the tie-break alone, which top_label names.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12
+- columns:
+  - description: Identifier of the technologies row.
+    name: entity_key
+    type: text
+  - description: '''present'' for a linked techinputsplit row whose ti_split has a value; ''absent'' when ti_split is missing, including a technologies row with no linked techinputsplit row. A linked techinputsplit row whose ti_split has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: tech_category of the technologies row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked techinputsplit rows in this entity/state cell; a absent cell holding real techinputsplit rows whose ti_split is missing COUNTS those rows, and only the placeholder cell of a technologies row with no linked techinputsplit row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing ti_split values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no ti_split value at all — both for a technologies row with no linked techinputsplit row and for an absent cell whose rows all have a missing ti_split.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of ti_split in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an ti_split value.
+    name: total_amount
+    type: float
+  - description: Largest ti_split in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an ti_split value.
+    name: max_amount
+    type: float
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(technologies, measure state) distribution of linked techinputsplit activity in the 082965_03_uiuc_mga.sql schema.
+  grain: One row per (tech, measure state) pair represented among linked techinputsplit rows; the absent state includes missing ti_split values and a no-activity row for a technologies row with no links. A linked techinputsplit row whose ti_split has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: technologies_techinputsplit_distribution
+  source_relationships:
+  - child_columns:
+    - season_name
+    child_table: capacityfactorprocess
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - tech
+    child_table: capacityfactorprocess
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: capacityfactorprocess
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - season_name
+    child_table: capacityfactortech
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - tech
+    child_table: capacityfactortech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: capacityfactortech
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - flag
+    child_table: commodities
+    parent_columns:
+    - comm_labels
+    parent_table: commodity_labels
+    required: false
+  - child_columns:
+    - periods
+    child_table: costfixed
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costfixed
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costfixed
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costinvest
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costinvest
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - periods
+    child_table: costvariable
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: costvariable
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: costvariable
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - demand_comm
+    child_table: demand
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: demand
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - demand_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - season_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: demandspecificdistribution
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - tech
+    child_table: discountrate
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: discountrate
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: efficiency
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: efficiency
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - tech
+    child_table: efficiency
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: efficiency
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - emis_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: emissionactivity
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - tech
+    child_table: emissionactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: emissionactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - emis_comm
+    child_table: emissionlimit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: emissionlimit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: existingcapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: existingcapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: growthratemax
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: false
+  - child_columns:
+    - tech
+    child_table: growthrateseed
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: false
+  - child_columns:
+    - tech
+    child_table: lifetimeloantech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - tech
+    child_table: lifetimeprocess
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: lifetimeprocess
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: lifetimetech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: maxactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: maxactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: maxcapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: maxcapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: minactivity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: minactivity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - periods
+    child_table: mincapacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: mincapacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_periods
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_capacitybyperiodandtech
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_costs
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - tech
+    child_table: output_costs
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_costs
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_v_capacity
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - tech
+    child_table: output_v_capacity
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_v_capacity
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: output_vflow_in
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: output_vflow_in
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_vflow_in
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_day
+    child_table: output_vflow_in
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - t_periods
+    child_table: output_vflow_in
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_vflow_in
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_vflow_in
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: output_vflow_out
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - output_comm
+    child_table: output_vflow_out
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - sector
+    child_table: output_vflow_out
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - t_day
+    child_table: output_vflow_out
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - t_periods
+    child_table: output_vflow_out
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: output_vflow_out
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - vintage
+    child_table: output_vflow_out
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - season_name
+    child_table: segfrac
+    parent_columns:
+    - t_season
+    parent_table: time_season
+    required: true
+  - child_columns:
+    - time_of_day_name
+    child_table: segfrac
+    parent_columns:
+    - t_day
+    parent_table: time_of_day
+    required: true
+  - child_columns:
+    - input_comm
+    child_table: techinputsplit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: techinputsplit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: techinputsplit
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - flag
+    child_table: technologies
+    parent_columns:
+    - tech_labels
+    parent_table: technology_labels
+    required: false
+  - child_columns:
+    - sector
+    child_table: technologies
+    parent_columns:
+    - sector
+    parent_table: sector_labels
+    required: false
+  - child_columns:
+    - output_comm
+    child_table: techoutputsplit
+    parent_columns:
+    - comm_name
+    parent_table: commodities
+    required: true
+  - child_columns:
+    - periods
+    child_table: techoutputsplit
+    parent_columns:
+    - t_periods
+    parent_table: time_periods
+    required: true
+  - child_columns:
+    - tech
+    child_table: techoutputsplit
+    parent_columns:
+    - tech
+    parent_table: technologies
+    required: true
+  - child_columns:
+    - flag
+    child_table: time_periods
+    parent_columns:
+    - t_period_labels
+    parent_table: time_period_labels
+    required: false
+  transformation:
+    steps:
+    - description: Read source table technologies.
+      operation: source
+      order: 1
+      source_inputs:
+      - technologies
+    - description: Read source table techinputsplit.
+      operation: source
+      order: 2
+      source_inputs:
+      - techinputsplit
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each tech and its tech_category into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - technologies
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - tech
+      condition:
+        public_identifiers:
+        - techinputsplit
+        - tech
+        - entity_key
+      description: Bring the linked techinputsplit rows into each technologies entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - techinputsplit
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real techinputsplit row whose ti_split has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per technologies entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing ti_split values occur (each different value counted once, however many rows repeat it), total ti_split, and largest ti_split.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: ti_split is missing, including the retained placeholder for a technologies row with no techinputsplit rows. A real techinputsplit row whose ti_split has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per technologies entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing ti_split values occur (each different value counted once, however many rows repeat it), total ti_split, and largest ti_split.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14

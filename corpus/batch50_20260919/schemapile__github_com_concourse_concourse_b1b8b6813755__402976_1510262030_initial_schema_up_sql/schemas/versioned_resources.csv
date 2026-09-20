@@ -1,0 +1,9 @@
+column_name,column_description
+check_order,Column check_order of table versioned_resources.
+enabled,Column enabled of table versioned_resources.
+id,Column id of table versioned_resources.
+metadata,Column metadata of table versioned_resources.
+modified_time,Column modified_time of table versioned_resources.
+resource_id,Column resource_id of table versioned_resources. may be NULL.
+type,Column type of table versioned_resources.
+version,Column version of table versioned_resources.

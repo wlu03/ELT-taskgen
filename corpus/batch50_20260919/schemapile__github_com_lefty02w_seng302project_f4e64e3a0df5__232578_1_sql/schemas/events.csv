@@ -1,0 +1,11 @@
+column_name,column_description
+age_restriction,Column age_restriction of table events. may be NULL.
+description,Column description of table events. may be NULL.
+destination_id,Column destination_id of table events.
+end_date,Column end_date of table events. may be NULL.
+event_id,Column event_id of table events.
+event_name,Column event_name of table events.
+soft_delete,Column soft_delete of table events. may be NULL.
+start_date,Column start_date of table events. may be NULL.
+ticket_link,Column ticket_link of table events. may be NULL.
+ticket_price,Column ticket_price of table events. may be NULL.

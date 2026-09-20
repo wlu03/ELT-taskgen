@@ -1,0 +1,10 @@
+column_name,column_description
+call_log_id,Column call_log_id of table call_detail_record.
+call_status,Column call_status of table call_detail_record.
+chw_ivr_id,Column chw_ivr_id of table call_detail_record.
+created_date,Column created_date of table call_detail_record. may be NULL.
+id,Column id of table call_detail_record.
+incoming_call_id,Column incoming_call_id of table call_detail_record. may be NULL.
+ivr_config_name,Column ivr_config_name of table call_detail_record.
+outgoing_call_id,Column outgoing_call_id of table call_detail_record. may be NULL.
+updated_date,Column updated_date of table call_detail_record. may be NULL.

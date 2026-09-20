@@ -1,0 +1,18 @@
+column_name,column_description
+account_expired,Column account_expired of table user.
+account_locked,Column account_locked of table user.
+avatar_id,Column avatar_id of table user.
+create_ip,Column create_ip of table user. may be NULL.
+date_created,Column date_created of table user.
+date_withdraw,Column date_withdraw of table user. may be NULL.
+enabled,Column enabled of table user.
+id,Column id of table user.
+last_password_changed,Column last_password_changed of table user.
+last_update_ip,Column last_update_ip of table user. may be NULL.
+last_updated,Column last_updated of table user.
+password,Column password of table user.
+password_expired,Column password_expired of table user.
+person_id,Column person_id of table user.
+username,Column username of table user.
+version,Column version of table user.
+withdraw,Column withdraw of table user.

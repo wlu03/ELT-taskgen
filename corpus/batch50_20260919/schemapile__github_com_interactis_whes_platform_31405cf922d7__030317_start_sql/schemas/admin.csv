@@ -1,0 +1,11 @@
+column_name,column_description
+auth_key,Column auth_key of table admin. may be NULL.
+created_at,Column created_at of table admin. may be NULL.
+email,Column email of table admin. may be NULL.
+heritage_id,Column heritage_id of table admin. may be NULL.
+id,Column id of table admin.
+password_hash,Column password_hash of table admin. may be NULL.
+password_reset_token,Column password_reset_token of table admin. may be NULL.
+role,Column role of table admin. may be NULL.
+status,Column status of table admin. may be NULL.
+updated_at,Column updated_at of table admin. may be NULL.

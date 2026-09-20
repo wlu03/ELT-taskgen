@@ -1,0 +1,3 @@
+column_name,column_description
+comm_labels,Column comm_labels of table commodity_labels.
+comm_labels_desc,Column comm_labels_desc of table commodity_labels. may be NULL.

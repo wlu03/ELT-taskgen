@@ -1,0 +1,4 @@
+column_name,column_description
+growthrate_max,Column growthrate_max of table GrowthRateMax. may be NULL.
+growthrate_max_notes,Column growthrate_max_notes of table GrowthRateMax. may be NULL.
+tech,Column tech of table GrowthRateMax. may be NULL.

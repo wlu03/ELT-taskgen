@@ -1,0 +1,6 @@
+column_name,column_description
+code,Column CODE of table DATABASE_INSTANCES.
+id,Column ID of table DATABASE_INSTANCES.
+is_original_source,Column IS_ORIGINAL_SOURCE of table DATABASE_INSTANCES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table DATABASE_INSTANCES.
+uuid,Column UUID of table DATABASE_INSTANCES.

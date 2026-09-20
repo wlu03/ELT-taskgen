@@ -1,0 +1,5 @@
+column_name,column_description
+roughness_id,Unique identifier for each roughness value.
+setting_id,ID of the printing setting. may be NULL.
+roughness_value,Roughness value. may be NULL.
+unit,Unit of the roughness value. may be NULL.

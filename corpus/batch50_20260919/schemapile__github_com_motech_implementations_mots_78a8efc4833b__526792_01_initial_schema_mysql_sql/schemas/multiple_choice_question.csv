@@ -1,0 +1,3 @@
+column_name,column_description
+call_flow_element_id,Column call_flow_element_id of table multiple_choice_question.
+question_type,Column question_type of table multiple_choice_question.

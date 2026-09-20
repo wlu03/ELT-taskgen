@@ -1,0 +1,13 @@
+column_name,column_description
+data_id,Unique identifier for each data point.
+timestamp,Timestamp of when the data point was recorded. may be NULL.
+x_position,X position in the 3D coordinate system. may be NULL.
+y_position,Y position in the 3D coordinate system. may be NULL.
+z_position,Z position in the 3D coordinate system. may be NULL.
+yaw,Yaw angle (rotation around the Z-axis). may be NULL.
+pitch,Pitch angle (rotation around the X-axis). may be NULL.
+roll,Roll angle (rotation around the Y-axis). may be NULL.
+sensor_id,ID of the sensor or device that recorded the data point. may be NULL.
+data_quality,"Quality of the data point (e.g., good, bad, uncertain). always exactly one of 'good', 'bad', 'uncertain'. may be NULL."
+sampling_rate,Sampling rate of the sensor or device. may be NULL.
+data_source,"Source of the data (e.g., sensor, simulation, external system). always exactly one of 'sensor', 'simulation', 'external system'. may be NULL."

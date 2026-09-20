@@ -1,0 +1,7 @@
+column_name,column_description
+gateway,Column gateway of table netlabels. may be NULL.
+guid,Column guid of table netlabels. may be NULL.
+id,Column id of table netlabels.
+label,Column label of table netlabels. may be NULL.
+logged_at,Column logged_at of table netlabels. may be NULL.
+session_id,Column session_id of table netlabels.

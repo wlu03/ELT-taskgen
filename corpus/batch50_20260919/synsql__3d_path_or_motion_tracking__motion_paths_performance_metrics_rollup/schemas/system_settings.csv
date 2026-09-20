@@ -1,0 +1,5 @@
+column_name,column_description
+setting_id,Unique identifier for each system setting.
+setting_name,Name of the system setting. may be NULL.
+setting_value,Value of the system setting. may be NULL.
+description,Description of the system setting. may be NULL.

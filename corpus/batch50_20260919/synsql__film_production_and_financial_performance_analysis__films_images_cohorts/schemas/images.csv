@@ -1,0 +1,9 @@
+column_name,column_description
+image_id,Unique identifier for each image.
+film_id,Reference to the film. may be NULL.
+file_path,File path to the image. may be NULL.
+file_size,Size of the image file in MB. may be NULL.
+upload_date,Date the file was uploaded. may be NULL.
+description,Description of the image. may be NULL.
+is_promotional,Boolean indicating if the image is promotional. may be NULL.
+image_type,"Type of image (e.g., poster, still, behind-the-scenes). always exactly one of 'poster', 'still', 'behind-the-scenes'. may be NULL."

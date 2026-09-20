@@ -1,0 +1,9 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+pose_id,ID of the pose estimation being accessed. may be NULL.
+user_id,ID of the user accessing the pose estimation. may be NULL.
+access_date,Date when the pose estimation was accessed. may be NULL.
+access_type,"Type of access (e.g., view, download). always exactly one of 'view', 'download'. may be NULL."
+ip_address,IP address of the user. may be NULL.
+user_agent,User agent of the user. may be NULL.
+access_duration,Duration of the access. may be NULL.

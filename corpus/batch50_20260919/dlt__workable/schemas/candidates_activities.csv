@@ -1,0 +1,5 @@
+column_name,column_description
+_candidates_id,parent link to 'candidates' (dlt include_from_parent convention; synthesized from the dlt manifest (no observed schema)).
+activity_rating,curator-authored column of dlt transformer 'candidates_activities' (source: curator-invented). may be NULL.
+activity_channel,curator-authored column of dlt transformer 'candidates_activities' (source: curator-invented). may be NULL.
+payload,raw endpoint record body (synthesized schema). may be NULL.

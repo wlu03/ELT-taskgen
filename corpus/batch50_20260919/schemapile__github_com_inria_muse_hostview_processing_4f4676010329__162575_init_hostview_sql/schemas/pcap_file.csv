@@ -1,0 +1,4 @@
+column_name,column_description
+file_id,Column file_id of table pcap_file.
+file_order,Column file_order of table pcap_file.
+pcap_id,Column pcap_id of table pcap_file.

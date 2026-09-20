@@ -1,0 +1,7 @@
+column_name,column_description
+version_id,Unique identifier for each data version.
+upload_id,ID of the data upload. may be NULL.
+version_number,Version number of the data. may be NULL.
+version_date,Date the data was versioned. may be NULL.
+version_time,Time the data was versioned. may be NULL.
+version_description,Description of the version. may be NULL.

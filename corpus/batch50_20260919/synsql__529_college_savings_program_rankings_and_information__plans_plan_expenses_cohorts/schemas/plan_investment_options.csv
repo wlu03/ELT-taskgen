@@ -1,0 +1,6 @@
+column_name,column_description
+option_id,Unique identifier for each investment option.
+plan_id,ID of the plan. may be NULL.
+option_name,Name of the investment option. may be NULL.
+option_type,"Type of investment option (e.g., stock, bond, ETF). always exactly one of 'stock', 'bond', 'ETF'. may be NULL."
+option_description,Description of the investment option. may be NULL.

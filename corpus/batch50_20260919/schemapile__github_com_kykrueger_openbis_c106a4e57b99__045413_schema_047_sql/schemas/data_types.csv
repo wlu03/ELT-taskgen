@@ -1,0 +1,4 @@
+column_name,column_description
+code,Column CODE of table DATA_TYPES.
+description,Column DESCRIPTION of table DATA_TYPES.
+id,Column ID of table DATA_TYPES.

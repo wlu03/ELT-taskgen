@@ -1,0 +1,7 @@
+column_name,column_description
+speed_id,Unique identifier for each speed record.
+drone_id,Reference to the drone that the speed data belongs to. may be NULL.
+speed,Calculated speed of the drone. may be NULL.
+timestamp,Timestamp of when the speed was recorded. may be NULL.
+ground_speed,Ground speed of the drone. may be NULL.
+air_speed,Air speed of the drone. may be NULL.

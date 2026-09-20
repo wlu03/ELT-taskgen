@@ -1,0 +1,6 @@
+column_name,column_description
+mincap,Column mincap of table MinCapacity. may be NULL.
+mincap_notes,Column mincap_notes of table MinCapacity. may be NULL.
+mincap_units,Column mincap_units of table MinCapacity. may be NULL.
+periods,Column periods of table MinCapacity.
+tech,Column tech of table MinCapacity.

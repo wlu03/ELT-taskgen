@@ -1,0 +1,4 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table orario_lezioni.
+codice_insegnamento,Column codice_insegnamento of table orario_lezioni.
+giorno_e_ora,Column giorno_e_ora of table orario_lezioni.

@@ -1,0 +1,11 @@
+column_name,column_description
+scene_object_id,Unique identifier for each scene-object relationship.
+scene_id,ID of the scene the object belongs to. may be NULL.
+object_id,ID of the object within the scene. may be NULL.
+object_role,"Role of the object within the scene (e.g., main character, background). always exactly one of 'main character', 'background'. may be NULL."
+start_time,Start time of the object's role in the scene. may be NULL.
+end_time,End time of the object's role in the scene. may be NULL.
+status,"Status of the object within the scene (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."
+created_by,ID of the user who added the object to the scene. may be NULL.
+updated_by,ID of the user who last updated the object's role in the scene. may be NULL.
+is_active,Flag to indicate if the object's role in the scene is active. may be NULL.

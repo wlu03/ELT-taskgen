@@ -1,0 +1,3 @@
+column_name,column_description
+codice_insegnamento,Column codice_insegnamento of table insegnamento.
+nome,Column nome of table insegnamento.

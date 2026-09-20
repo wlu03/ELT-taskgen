@@ -1,0 +1,14 @@
+column_name,column_description
+active,Column active of table erp.sale_order_line.
+date,Column date of table erp.sale_order_line. may be NULL.
+discount,Column discount of table erp.sale_order_line.
+id,Column id of table erp.sale_order_line.
+invoiced,Column invoiced of table erp.sale_order_line.
+name,Column name of table erp.sale_order_line. may be NULL.
+order_id,Column order_id of table erp.sale_order_line.
+price,Column price of table erp.sale_order_line.
+product_id,Column product_id of table erp.sale_order_line.
+quantity,Column quantity of table erp.sale_order_line.
+sub_total,Column sub_total of table erp.sale_order_line.
+tax_id,Column tax_id of table erp.sale_order_line. may be NULL.
+uom,Column uom of table erp.sale_order_line.

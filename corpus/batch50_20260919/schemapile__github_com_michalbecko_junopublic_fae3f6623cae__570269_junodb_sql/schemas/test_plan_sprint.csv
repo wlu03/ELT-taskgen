@@ -1,0 +1,8 @@
+column_name,column_description
+create_date,Column create_date of table test_plan_sprint.
+creator_id,Column creator_id of table test_plan_sprint.
+end_date,Column end_date of table test_plan_sprint.
+id,Column id of table test_plan_sprint.
+name,Column name of table test_plan_sprint.
+start_date,Column start_date of table test_plan_sprint.
+test_plan_id,Column test_plan_id of table test_plan_sprint.

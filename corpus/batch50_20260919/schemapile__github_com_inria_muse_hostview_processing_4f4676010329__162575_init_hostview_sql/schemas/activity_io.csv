@@ -1,0 +1,10 @@
+column_name,column_description
+description,Column description of table activity_io. may be NULL.
+finished_at,Column finished_at of table activity_io. may be NULL.
+id,Column id of table activity_io.
+idle,Column idle of table activity_io. may be NULL.
+io_activity,Column io_activity of table activity_io. may be NULL.
+logged_at,Column logged_at of table activity_io. may be NULL.
+name,Column name of table activity_io. may be NULL.
+pid,Column pid of table activity_io. may be NULL.
+session_id,Column session_id of table activity_io.

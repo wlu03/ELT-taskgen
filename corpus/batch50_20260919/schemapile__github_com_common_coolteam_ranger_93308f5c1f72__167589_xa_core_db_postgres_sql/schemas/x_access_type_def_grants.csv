@@ -1,0 +1,9 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_access_type_def_grants. may be NULL.
+atd_id,Column atd_id of table x_access_type_def_grants.
+create_time,Column create_time of table x_access_type_def_grants. may be NULL.
+guid,Column guid of table x_access_type_def_grants. may be NULL.
+id,Column id of table x_access_type_def_grants.
+implied_grant,Column implied_grant of table x_access_type_def_grants. may be NULL.
+upd_by_id,Column upd_by_id of table x_access_type_def_grants. may be NULL.
+update_time,Column update_time of table x_access_type_def_grants. may be NULL.

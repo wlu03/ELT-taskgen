@@ -1,0 +1,10 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., administrator, finance officer, policymaker). always exactly one of 'administrator', 'finance officer', 'policymaker'. may be NULL."
+phone_number,Phone number of the user. may be NULL.
+last_login,Timestamp of the last login. may be NULL.
+status,"Status of the user (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."
+created_at,Timestamp when the user account was created. may be NULL.
+updated_at,Timestamp when the user account was last updated. may be NULL.

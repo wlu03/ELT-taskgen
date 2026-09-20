@@ -1,0 +1,5 @@
+column_name,column_description
+like_id,Unique identifier for each like.
+object_id,ID of the object the like is given to. may be NULL.
+user_id,ID of the user who gave the like. may be NULL.
+created_at,Date and time the like was given. may be NULL.

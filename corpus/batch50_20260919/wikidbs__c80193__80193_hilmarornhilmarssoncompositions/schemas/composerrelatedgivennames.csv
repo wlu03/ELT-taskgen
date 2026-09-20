@@ -1,0 +1,17 @@
+column_name,column_description
+givennamelabel,givennamelabel of composerrelatedgivennames (real vendored values).
+namedescription,namedescription of composerrelatedgivennames (real vendored values).
+nametype,nametype of composerrelatedgivennames (real vendored values).
+nameday,nameday of composerrelatedgivennames (real vendored values). may be NULL.
+namedifferentiation,namedifferentiation of composerrelatedgivennames (real vendored values). may be NULL.
+languageoforigin,languageoforigin of composerrelatedgivennames (real vendored values). may be NULL.
+nativenamelabel,nativenamelabel of composerrelatedgivennames (real vendored values).
+familynameassociation,familynameassociation of composerrelatedgivennames (real vendored values). may be NULL.
+nameequivalence,nameequivalence of composerrelatedgivennames (real vendored values). may be NULL.
+writingsystemused,writingsystemused of composerrelatedgivennames (real vendored values).
+soundexcode,soundexcode of composerrelatedgivennames (real vendored values). may be NULL.
+colognephoneticscode,colognephoneticscode of composerrelatedgivennames (real vendored values). may be NULL.
+caverphonecode,caverphonecode of composerrelatedgivennames (real vendored values). may be NULL.
+commonscategoryreference,commonscategoryreference of composerrelatedgivennames (real vendored values). may be NULL.
+storenorskeleksikonid,storenorskeleksikonid of composerrelatedgivennames (real vendored values). may be NULL.
+nederlandsevoornamenbankid,nederlandsevoornamenbankid of composerrelatedgivennames (real vendored values). may be NULL.

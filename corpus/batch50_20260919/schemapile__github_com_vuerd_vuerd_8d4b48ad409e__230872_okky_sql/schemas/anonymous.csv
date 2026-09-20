@@ -1,0 +1,7 @@
+column_name,column_description
+article_id,Column article_id of table anonymous.
+content_id,Column content_id of table anonymous.
+id,Column id of table anonymous.
+type,Column type of table anonymous.
+user_id,Column user_id of table anonymous.
+version,Column version of table anonymous.

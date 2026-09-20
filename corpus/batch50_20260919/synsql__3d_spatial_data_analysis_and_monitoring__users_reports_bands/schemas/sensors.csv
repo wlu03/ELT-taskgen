@@ -1,0 +1,10 @@
+column_name,column_description
+sensor_id,Unique identifier for each sensor.
+cell_id,Reference to the associated measurement cell. may be NULL.
+sensor_type,"Type of sensor (e.g., air quality, temperature). always exactly one of 'air quality', 'temperature'. may be NULL."
+installation_date,Date when the sensor was installed. may be NULL.
+last_calibration_date,Date when the sensor was last calibrated. may be NULL.
+manufacturer,Manufacturer of the sensor. may be NULL.
+model,Model of the sensor. may be NULL.
+created_at,Timestamp when the sensor was created. may be NULL.
+updated_at,Timestamp when the sensor was last updated. may be NULL.

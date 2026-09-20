@@ -1,0 +1,24 @@
+column_name,column_description
+bssid,Column bssid of table connections. may be NULL.
+bssid_type,Column bssid_type of table connections. may be NULL.
+channel,Column channel of table connections. may be NULL.
+description,Column description of table connections. may be NULL.
+dns_suffix,Column dns_suffix of table connections. may be NULL.
+dnses,Column dnses of table connections. may be NULL.
+ended_at,Column ended_at of table connections. may be NULL.
+friendly_name,Column friendly_name of table connections. may be NULL.
+gateways,Column gateways of table connections. may be NULL.
+guid,Column guid of table connections. may be NULL.
+id,Column id of table connections.
+ips,Column ips of table connections. may be NULL.
+location_id,Column location_id of table connections. may be NULL.
+mac,Column mac of table connections. may be NULL.
+phy_index,Column phy_index of table connections. may be NULL.
+phy_type,Column phy_type of table connections. may be NULL.
+profile,Column profile of table connections. may be NULL.
+r_speed,Column r_speed of table connections. may be NULL.
+session_id,Column session_id of table connections.
+ssid,Column ssid of table connections. may be NULL.
+started_at,Column started_at of table connections. may be NULL.
+t_speed,Column t_speed of table connections. may be NULL.
+wireless,Column wireless of table connections. may be NULL.

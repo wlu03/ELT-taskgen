@@ -1,0 +1,3 @@
+column_name,column_description
+id,Column id of table erp.product_uom_category.
+name,Column name of table erp.product_uom_category.

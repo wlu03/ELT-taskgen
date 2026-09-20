@@ -1,0 +1,6 @@
+column_name,column_description
+characteristic_id,Unique identifier for each material characteristic.
+material_id,ID of the material. may be NULL.
+characteristic_name,"Name of the characteristic (e.g., melting point, density). always exactly one of 'melting point', 'density'. may be NULL."
+characteristic_value,Value of the characteristic. may be NULL.
+unit,Unit of the characteristic value. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+language,Column language of table Name. may be NULL.
+name,Column name of table Name. may be NULL.
+nameid,Column nameID of table Name.

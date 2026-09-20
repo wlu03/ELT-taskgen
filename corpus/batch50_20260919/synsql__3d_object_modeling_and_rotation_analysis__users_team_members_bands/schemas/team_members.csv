@@ -1,0 +1,7 @@
+column_name,column_description
+member_id,Unique identifier for each team member.
+team_id,ID of the team the member belongs to. may be NULL.
+user_id,ID of the user who is a team member. may be NULL.
+role,"Role of the team member (e.g., lead designer, designer). always exactly one of 'lead designer', 'designer'. may be NULL."
+joined_at,Date and time the member joined the team. may be NULL.
+left_at,Date and time the member left the team. may be NULL.

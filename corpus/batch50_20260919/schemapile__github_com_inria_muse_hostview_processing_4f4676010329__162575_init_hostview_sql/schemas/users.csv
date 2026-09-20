@@ -1,0 +1,6 @@
+column_name,column_description
+created_at,Column created_at of table users. may be NULL.
+id,Column id of table users.
+password,Column password of table users.
+updated_at,Column updated_at of table users. may be NULL.
+username,Column username of table users.

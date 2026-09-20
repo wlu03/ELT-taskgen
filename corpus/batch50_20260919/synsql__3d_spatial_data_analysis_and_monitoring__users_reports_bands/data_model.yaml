@@ -1,0 +1,461 @@
+models:
+- columns:
+  - description: Identifier of the users row. One row per value.
+    name: parent_key
+    type: integer
+  - description: user_name of the users row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: 'role of the users row, copied unchanged. Declared domain: [''researcher'', ''admin'', ''analyst''].'
+    name: parent_status
+    type: text
+  - description: 'Number of reports rows for this users row; 0 when there are none. Every linked reports row counts, whatever its report_type value. An users row kept with no reports row reports 0 here, never 1: its placeholder holds no reports row to count.'
+    name: link_count
+    type: bigint
+  - description: Of those, how many have report_type in ['air quality']. 0, never missing, when none do.
+    name: passing_count
+    type: bigint
+  - description: How many have report_type in ['temperature']. 0 when none do.
+    name: failing_count
+    type: bigint
+  - description: How many DISTINCT report_type values occur among them.
+    name: distinct_status_count
+    type: bigint
+  - description: passing_count divided by link_count as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when there are no links.
+    name: passing_ratio
+    type: float
+  - description: 'Band of passing_ratio, decided on the rounded passing_ratio value this mart reports: ''no_activity'' when there are no links, ''high'' at 0.8 or ABOVE (0.8 itself is high), ''medium'' from 0.5 up to but not including 0.8 (0.5 itself is medium), ''low'' below 0.5. Boundaries are inclusive of the HIGHER band.'
+    name: adoption_band
+    type: text
+  - description: 'parent_status mapped value by value: ''researcher'' becomes ''active''; ''admin'' becomes ''other_1''; any other value — including legal values of the column that the mapping does not name — becomes ''unmapped''. Never NULL.'
+    name: status_group
+    type: text
+  description: Per-users banding of linked reports activity in the 3d_spatial_data_analysis_and_monitoring scenario, over the value domain the source schema itself declares.
+  grain: One row per users (user_id), INCLUDING users rows with no linked reports rows.
+  key_columns:
+  - parent_key
+  name: users_reports_bands
+  source_relationships:
+  - child_columns:
+    - cell_id
+    child_table: access_logs
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - user_id
+    child_table: access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: adjustments
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: alerts
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - sensor_id
+    child_table: calibration_logs
+    parent_columns:
+    - sensor_id
+    parent_table: sensors
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: neighborhoods
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - user_id
+    child_table: reports
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: sensor_readings
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - sensor_id
+    child_table: sensor_readings
+    parent_columns:
+    - sensor_id
+    parent_table: sensors
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: sensors
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  transformation:
+    steps:
+    - description: Read source table users.
+      operation: source
+      order: 1
+      source_inputs:
+      - users
+    - description: Read source table reports.
+      operation: source
+      order: 2
+      source_inputs:
+      - reports
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - parent_status
+      description: One row per users row, keyed by user_id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - users
+    - carried_fields:
+      - user_id
+      condition:
+        public_identifiers:
+        - reports
+        - user_id
+        - parent_key
+      description: 'Bring in reports (hop 1 of 1): rows with no matching reports row are RETAINED and report the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - reports
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - parent_status
+      - link_count
+      - passing_count
+      - failing_count
+      - distinct_status_count
+      description: 'One output row per parent_key, carrying parent_name, parent_status beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting link_count, passing_count, failing_count, distinct_status_count for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - parent_status
+      - link_count
+      - passing_count
+      - failing_count
+      - distinct_status_count
+      description: Name the mart columns.
+      operation: derive
+      order: 6
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - parent_status
+      - link_count
+      - passing_count
+      - failing_count
+      - distinct_status_count
+      - passing_ratio
+      description: 'Guarded ratios: passing_ratio — passing_count divided by link_count as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when there are no links.'
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - parent_status
+      - link_count
+      - passing_count
+      - failing_count
+      - distinct_status_count
+      - passing_ratio
+      - adoption_band
+      description: 'adoption_band — Band of passing_ratio, decided on the rounded passing_ratio value this mart reports: ''no_activity'' when there are no links, ''high'' at 0.8 or ABOVE (0.8 itself is high), ''medium'' from 0.5 up to but not including 0.8 (0.5 itself is medium), ''low'' below 0.5. Boundaries are inclusive of the HIGHER band.'
+      operation: conditional
+      order: 8
+      semantic_parameters:
+        boundary: a value exactly at 0.8 is 'high'; a value exactly at 0.5 is 'medium'
+        domain: researcher, admin, analyst
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - parent_status
+      - link_count
+      - passing_count
+      - failing_count
+      - distinct_status_count
+      - passing_ratio
+      - adoption_band
+      - status_group
+      description: 'status_group — parent_status mapped value by value: ''researcher'' becomes ''active''; ''admin'' becomes ''other_1''; any other value — including legal values of the column that the mapping does not name — becomes ''unmapped''. Never NULL.'
+      operation: conditional
+      order: 9
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+        domain: researcher, admin, analyst
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 10
+- columns:
+  - description: Identifier of the sensors row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked sensor_readings row whose reading_value has a value; ''absent'' when reading_value is missing, including a sensors row with no linked sensor_readings row. A linked sensor_readings row whose reading_value has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: sensor_type of the sensors row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked sensor_readings rows in this entity/state cell; a absent cell holding real sensor_readings rows whose reading_value is missing COUNTS those rows, and only the placeholder cell of a sensors row with no linked sensor_readings row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing reading_value values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no reading_value value at all — both for a sensors row with no linked sensor_readings row and for an absent cell whose rows all have a missing reading_value.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of reading_value in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an reading_value value.
+    name: total_amount
+    type: float
+  - description: Largest reading_value in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an reading_value value.
+    name: max_amount
+    type: float
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(sensors, measure state) distribution of linked sensor_readings rows in the 3d_spatial_data_analysis_and_monitoring scenario.
+  grain: One row per (sensor_id, measure state) pair represented among linked sensor_readings rows; the absent state includes missing reading_value values and a no-activity row for a sensors row with no links. A linked sensor_readings row whose reading_value has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: sensors_sensor_readings_distribution
+  source_relationships:
+  - child_columns:
+    - cell_id
+    child_table: access_logs
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - user_id
+    child_table: access_logs
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: adjustments
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: alerts
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - sensor_id
+    child_table: calibration_logs
+    parent_columns:
+    - sensor_id
+    parent_table: sensors
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: neighborhoods
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - user_id
+    child_table: reports
+    parent_columns:
+    - user_id
+    parent_table: users
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: sensor_readings
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  - child_columns:
+    - sensor_id
+    child_table: sensor_readings
+    parent_columns:
+    - sensor_id
+    parent_table: sensors
+    required: false
+  - child_columns:
+    - cell_id
+    child_table: sensors
+    parent_columns:
+    - cell_id
+    parent_table: cells
+    required: false
+  transformation:
+    steps:
+    - description: Read source table sensors.
+      operation: source
+      order: 1
+      source_inputs:
+      - sensors
+    - description: Read source table sensor_readings.
+      operation: source
+      order: 2
+      source_inputs:
+      - sensor_readings
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each sensor_id and its sensor_type into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - sensors
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - sensor_id
+      condition:
+        public_identifiers:
+        - sensor_readings
+        - sensor_id
+        - entity_key
+      description: Bring the linked sensor_readings rows into each sensors entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - sensor_readings
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real sensor_readings row whose reading_value has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per sensors entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing reading_value values occur (each different value counted once, however many rows repeat it), total reading_value, and largest reading_value.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: reading_value is missing, including the retained placeholder for a sensors row with no sensor_readings rows. A real sensor_readings row whose reading_value has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per sensors entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing reading_value values occur (each different value counted once, however many rows repeat it), total reading_value, and largest reading_value.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14

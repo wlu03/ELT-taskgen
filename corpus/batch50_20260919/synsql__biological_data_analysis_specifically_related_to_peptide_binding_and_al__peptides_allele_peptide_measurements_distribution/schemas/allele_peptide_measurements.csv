@@ -1,0 +1,22 @@
+column_name,column_description
+measurement_id,Unique identifier for each measurement.
+allele_id,ID of the HLA allele. may be NULL.
+peptide_id,ID of the peptide sequence. may be NULL.
+measurement_value,Measurement value indicating binding affinity. may be NULL.
+measurement_inequality,"Inequality symbol (<, >, =) for comparison. may be NULL."
+measurement_type,"Type of measurement (qualitative, quantitative). may be NULL."
+measurement_kind,"Kind of measurement (e.g., mass_spec). may be NULL."
+measurement_source_id,ID of the measurement source. may be NULL.
+original_allele_id,Original allele ID if different from the one listed. may be NULL.
+fold_0,Fold 0 condition result. may be NULL.
+fold_1,Fold 1 condition result. may be NULL.
+fold_2,Fold 2 condition result. may be NULL.
+fold_3,Fold 3 condition result. may be NULL.
+experiment_id,ID of the experiment. may be NULL.
+experiment_date,Date of the experiment. may be NULL.
+researcher_id,ID of the researcher who performed the experiment. may be NULL.
+lab_id,ID of the lab where the experiment was conducted. may be NULL.
+condition_id,ID of the experimental condition. may be NULL.
+reliability_score,Reliability score of the measurement. may be NULL.
+quality_control_passed,Whether the measurement passed quality control. may be NULL.
+additional_notes,Additional notes or comments about the measurement. may be NULL.

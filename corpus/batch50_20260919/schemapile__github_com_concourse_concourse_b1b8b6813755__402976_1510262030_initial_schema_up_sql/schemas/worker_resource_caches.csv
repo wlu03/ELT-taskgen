@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table worker_resource_caches.
+resource_cache_id,Column resource_cache_id of table worker_resource_caches. may be NULL.
+worker_base_resource_type_id,Column worker_base_resource_type_id of table worker_resource_caches. may be NULL.

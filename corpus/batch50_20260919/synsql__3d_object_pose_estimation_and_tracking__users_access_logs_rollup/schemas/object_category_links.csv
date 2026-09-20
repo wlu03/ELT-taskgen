@@ -1,0 +1,4 @@
+column_name,column_description
+link_id,Unique identifier for each link.
+object_id,ID of the object. may be NULL.
+category_id,ID of the category. may be NULL.

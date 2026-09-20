@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column id of table project_role.
+project_id,Column project_id of table project_role.
+role_id,Column role_id of table project_role.
+user_id,Column user_id of table project_role.

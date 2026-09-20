@@ -1,0 +1,6 @@
+column_name,column_description
+role_id,Unique identifier for each role.
+role_name,Name of the role. may be NULL.
+role_description,Description of the role. may be NULL.
+created_at,Timestamp when the role was created. may be NULL.
+updated_at,Timestamp when the role was last updated. may be NULL.

@@ -1,0 +1,11 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_policy_item_access. may be NULL.
+create_time,Column create_time of table x_policy_item_access. may be NULL.
+guid,Column guid of table x_policy_item_access. may be NULL.
+id,Column id of table x_policy_item_access.
+is_allowed,Column is_allowed of table x_policy_item_access.
+policy_item_id,Column policy_item_id of table x_policy_item_access.
+sort_order,Column sort_order of table x_policy_item_access. may be NULL.
+type,Column type of table x_policy_item_access.
+upd_by_id,Column upd_by_id of table x_policy_item_access. may be NULL.
+update_time,Column update_time of table x_policy_item_access. may be NULL.

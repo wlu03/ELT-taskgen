@@ -1,0 +1,15 @@
+column_name,column_description
+lighting_id,Unique identifier for each lighting configuration.
+name,Name of the lighting configuration. may be NULL.
+type,"Type of lighting (e.g., directional, point, ambient). always exactly one of 'directional', 'point', 'ambient'. may be NULL."
+intensity,Intensity of the lighting. may be NULL.
+color,Color of the lighting (RGB values). may be NULL.
+position,"Position of the light source (x, y, z) for point lights. may be NULL."
+direction,"Direction of the light source (x, y, z) for directional lights. may be NULL."
+cone_angle,Cone angle for spotlight lights. may be NULL.
+cone_falloff,Falloff angle for spotlight lights. may be NULL.
+version,Version of the lighting configuration. may be NULL.
+created_at,Creation date and time of the lighting configuration. may be NULL.
+updated_at,Last update date and time of the lighting configuration. may be NULL.
+created_by,ID of the user who created the lighting configuration. may be NULL.
+updated_by,ID of the user who last updated the lighting configuration. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column ID of table Currencies.
+name,Column Name of table Currencies.
+symbol,Column Symbol of table Currencies.

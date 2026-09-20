@@ -1,0 +1,29 @@
+column_name,column_description
+fullname,fullname of sovietanimatorsanddirectors (real vendored values).
+biographicaldescription,biographicaldescription of sovietanimatorsanddirectors (real vendored values).
+primaryoccupation,primaryoccupation of sovietanimatorsanddirectors (real vendored values).
+viafid,viafid of sovietanimatorsanddirectors (real vendored values).
+internationalstandardnameidentifier,internationalstandardnameidentifier of sovietanimatorsanddirectors (real vendored values). may be NULL.
+imdbid,imdbid of sovietanimatorsanddirectors (real vendored values).
+birthplace,birthplace of sovietanimatorsanddirectors (real vendored values). may be NULL.
+deathplace,deathplace of sovietanimatorsanddirectors (real vendored values). may be NULL.
+citizenship,citizenship of sovietanimatorsanddirectors (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of sovietanimatorsanddirectors (real vendored values). may be NULL.
+birthdate,birthdate of sovietanimatorsanddirectors (real vendored values).
+deathdate,deathdate of sovietanimatorsanddirectors (real vendored values). may be NULL.
+entitytype,entitytype of sovietanimatorsanddirectors (real vendored values).
+freebaseid,freebaseid of sovietanimatorsanddirectors (real vendored values). may be NULL.
+awards,awards of sovietanimatorsanddirectors (real vendored values). may be NULL.
+firstname,firstname of sovietanimatorsanddirectors (real vendored values).
+gndid,gndid of sovietanimatorsanddirectors (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of sovietanimatorsanddirectors (real vendored values). may be NULL.
+animatorrupersonid,animatorrupersonid of sovietanimatorsanddirectors (real vendored values).
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of sovietanimatorsanddirectors (real vendored values). may be NULL.
+gender,gender of sovietanimatorsanddirectors (real vendored values).
+copyrightstatus,copyrightstatus of sovietanimatorsanddirectors (real vendored values). may be NULL.
+languages,languages of sovietanimatorsanddirectors (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of sovietanimatorsanddirectors (real vendored values).
+kinoboxpersonid,kinoboxpersonid of sovietanimatorsanddirectors (real vendored values). may be NULL.
+almamater,almamater of sovietanimatorsanddirectors (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of sovietanimatorsanddirectors (real vendored values). may be NULL.
+maincategory,maincategory of sovietanimatorsanddirectors (real vendored values). may be NULL.

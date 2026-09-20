@@ -1,0 +1,9 @@
+column_name,column_description
+combination_type_name,Column Combination_Type_name of table interactome_db.Peptide_Ratio_Value. may be NULL.
+confidence_score_type_name,Column Confidence_Score_Type_name of table interactome_db.Peptide_Ratio_Value. may be NULL.
+peptide_id,Column Peptide_id of table interactome_db.Peptide_Ratio_Value.
+ratio_descriptor_id,Column Ratio_Descriptor_id of table interactome_db.Peptide_Ratio_Value.
+confidence_score_name,Column confidence_score_name of table interactome_db.Peptide_Ratio_Value. may be NULL.
+confidence_score_value,Column confidence_score_value of table interactome_db.Peptide_Ratio_Value. may be NULL.
+id,Column id of table interactome_db.Peptide_Ratio_Value.
+value,Column value of table interactome_db.Peptide_Ratio_Value.

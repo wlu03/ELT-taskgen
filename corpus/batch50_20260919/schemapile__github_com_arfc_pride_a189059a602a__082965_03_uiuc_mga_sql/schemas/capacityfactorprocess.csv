@@ -1,0 +1,7 @@
+column_name,column_description
+cf_process,Column cf_process of table CapacityFactorProcess. may be NULL.
+cf_process_notes,Column cf_process_notes of table CapacityFactorProcess. may be NULL.
+season_name,Column season_name of table CapacityFactorProcess.
+tech,Column tech of table CapacityFactorProcess.
+time_of_day_name,Column time_of_day_name of table CapacityFactorProcess.
+vintage,Column vintage of table CapacityFactorProcess.

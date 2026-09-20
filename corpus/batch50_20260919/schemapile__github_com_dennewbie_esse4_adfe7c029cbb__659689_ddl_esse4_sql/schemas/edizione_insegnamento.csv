@@ -1,0 +1,7 @@
+column_name,column_description
+cfu,Column CFU of table edizione_insegnamento.
+anno_accademico,Column anno_accademico of table edizione_insegnamento.
+anno_corso,Column anno_corso of table edizione_insegnamento.
+codice_insegnamento,Column codice_insegnamento of table edizione_insegnamento.
+semestre,"Column semestre of table edizione_insegnamento. always exactly one of 'PRIMO', 'SECONDO', 'ANNUALE', 'Primo', 'Secondo', 'Annuale', 'primo', 'secondo', 'annuale'."
+svolgimento,"Column svolgimento of table edizione_insegnamento. always exactly one of 'Presenza', 'Telematica', 'presenza', 'telematica', 'PRESENZA', 'TELEMATICA'."

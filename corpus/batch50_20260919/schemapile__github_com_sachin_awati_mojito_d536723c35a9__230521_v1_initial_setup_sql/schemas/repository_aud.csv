@@ -1,0 +1,11 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table repository_aud. may be NULL.
+description,Column description of table repository_aud. may be NULL.
+drop_exporter_type,Column drop_exporter_type of table repository_aud. may be NULL.
+id,Column id of table repository_aud.
+name,Column name of table repository_aud. may be NULL.
+repository_statistic_id,Column repository_statistic_id of table repository_aud. may be NULL.
+rev,Column rev of table repository_aud.
+revend,Column revend of table repository_aud. may be NULL.
+revtype,Column revtype of table repository_aud. may be NULL.
+tm_id,Column tm_id of table repository_aud. may be NULL.

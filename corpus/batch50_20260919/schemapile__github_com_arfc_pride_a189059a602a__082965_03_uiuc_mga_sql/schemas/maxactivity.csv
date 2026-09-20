@@ -1,0 +1,6 @@
+column_name,column_description
+maxact,Column maxact of table MaxActivity. may be NULL.
+maxact_notes,Column maxact_notes of table MaxActivity. may be NULL.
+maxact_units,Column maxact_units of table MaxActivity. may be NULL.
+periods,Column periods of table MaxActivity.
+tech,Column tech of table MaxActivity.

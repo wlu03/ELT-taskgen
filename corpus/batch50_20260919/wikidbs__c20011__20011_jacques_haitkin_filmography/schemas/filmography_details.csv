@@ -1,0 +1,48 @@
+column_name,column_description
+film_title,film title of filmography details (real vendored values).
+film_description,film description of filmography details (real vendored values).
+im_db_id,im db id of filmography details (real vendored values).
+original_language,original language of filmography details (real vendored values).
+freebase_id,freebase id of filmography details (real vendored values). may be NULL.
+country_of_origin,country of origin of filmography details (real vendored values).
+media_type,media type of filmography details (real vendored values).
+release_date,release date of filmography details (real vendored values).
+all_movie_title_id,all movie title id of filmography details (real vendored values). may be NULL.
+allo_cine_film_id,allo cine film id of filmography details (real vendored values). may be NULL.
+film_director,film director of filmography details (real vendored values).
+title,title of filmography details (real vendored values). may be NULL.
+music_composer,music composer of filmography details (real vendored values). may be NULL.
+director_of_photography,director of photography of filmography details (real vendored values).
+film_duration,film duration of filmography details (real vendored values). may be NULL.
+of_db_film_id,of db film id of filmography details (real vendored values). may be NULL.
+cast_members,cast members of filmography details (real vendored values).
+ldi_f_id,ldi f id of filmography details (real vendored values). may be NULL.
+kinopoisk_film_id,kinopoisk film id of filmography details (real vendored values).
+elonet_movie_id,elonet movie id of filmography details (real vendored values). may be NULL.
+el_film_film_id,el film film id of filmography details (real vendored values). may be NULL.
+tcm_movie_database_film_id,tcm movie database film id of filmography details (real vendored values). may be NULL.
+rotten_tomatoes_id,rotten tomatoes id of filmography details (real vendored values). may be NULL.
+film_affinity_film_id,film affinity film id of filmography details (real vendored values). may be NULL.
+eidr_content_id,eidr content id of filmography details (real vendored values). may be NULL.
+csfd_film_id,csfd film id of filmography details (real vendored values). may be NULL.
+movie_meter_film_id,movie meter film id of filmography details (real vendored values). may be NULL.
+douban_film_id,douban film id of filmography details (real vendored values). may be NULL.
+screenwriter,screenwriter of filmography details (real vendored values). may be NULL.
+film_genre,film genre of filmography details (real vendored values). may be NULL.
+distribution_format,distribution format of filmography details (real vendored values). may be NULL.
+distributor,distributor of filmography details (real vendored values). may be NULL.
+letterboxd_film_id,letterboxd film id of filmography details (real vendored values).
+tmdb_movie_id,tmdb movie id of filmography details (real vendored values).
+trakttv_id,trakttv id of filmography details (real vendored values). may be NULL.
+kinobox_film_id,kinobox film id of filmography details (real vendored values).
+plex_media_key,plex media key of filmography details (real vendored values). may be NULL.
+schnittberichtecom_title_id,schnittberichtecom title id of filmography details (real vendored values). may be NULL.
+the_tvdb_movie_id,the tvdb movie id of filmography details (real vendored values). may be NULL.
+film_vandaag_id,film vandaag id of filmography details (real vendored values). may be NULL.
+film_color,film color of filmography details (real vendored values). may be NULL.
+port_film_id,port film id of filmography details (real vendored values). may be NULL.
+deutsche_synchronkartei_film_id,deutsche synchronkartei film id of filmography details (real vendored values). may be NULL.
+moviepilotde_film_id,moviepilotde film id of filmography details (real vendored values). may be NULL.
+film_producer,film producer of filmography details (real vendored values). may be NULL.
+lumiere_film_id,lumiere film id of filmography details (real vendored values). may be NULL.
+apple_tv_movie_id,apple tv movie id of filmography details (real vendored values). may be NULL.

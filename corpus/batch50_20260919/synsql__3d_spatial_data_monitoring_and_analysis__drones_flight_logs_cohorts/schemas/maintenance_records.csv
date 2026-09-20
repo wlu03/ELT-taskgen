@@ -1,0 +1,9 @@
+column_name,column_description
+maintenance_id,Unique identifier for each maintenance record.
+drone_id,Reference to the drone that underwent maintenance. may be NULL.
+maintenance_date,Date when maintenance was performed. may be NULL.
+details,Details of the maintenance performed. may be NULL.
+technician_id,ID of the technician who performed the maintenance. may be NULL.
+parts_replaced,Parts replaced during maintenance. may be NULL.
+maintenance_cost,Cost of the maintenance. may be NULL.
+maintenance_notes,Additional notes about the maintenance. may be NULL.

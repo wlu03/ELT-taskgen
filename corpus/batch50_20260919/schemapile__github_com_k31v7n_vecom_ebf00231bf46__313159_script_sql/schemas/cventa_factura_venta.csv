@@ -1,0 +1,6 @@
+column_name,column_description
+anulado,Column anulado of table cventa.factura_venta.
+factura,Column factura of table cventa.factura_venta.
+factura_venta,Column factura_venta of table cventa.factura_venta.
+monto,Column monto of table cventa.factura_venta.
+venta,Column venta of table cventa.factura_venta.

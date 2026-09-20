@@ -1,0 +1,5 @@
+column_name,column_description
+codice_corso,Column codice_corso of table partecipa_seduta.
+data_appello,Column data_appello of table partecipa_seduta.
+presidente,"Column presidente of table partecipa_seduta. always exactly one of 'y', 'n', 'Y', 'N'."
+tesserino_docente,Column tesserino_docente of table partecipa_seduta.

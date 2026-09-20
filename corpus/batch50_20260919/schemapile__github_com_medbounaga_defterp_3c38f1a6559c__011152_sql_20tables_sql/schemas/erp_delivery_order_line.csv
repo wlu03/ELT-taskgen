@@ -1,0 +1,12 @@
+column_name,column_description
+active,Column active of table erp.delivery_order_line.
+delivery_id,Column delivery_id of table erp.delivery_order_line.
+id,Column id of table erp.delivery_order_line.
+partner_id,Column partner_id of table erp.delivery_order_line. may be NULL.
+price,Column price of table erp.delivery_order_line.
+product_id,Column product_id of table erp.delivery_order_line.
+quantity,Column quantity of table erp.delivery_order_line.
+reserved,Column reserved of table erp.delivery_order_line.
+state,Column state of table erp.delivery_order_line.
+type,Column type of table erp.delivery_order_line. may be NULL.
+uom,Column uom of table erp.delivery_order_line.

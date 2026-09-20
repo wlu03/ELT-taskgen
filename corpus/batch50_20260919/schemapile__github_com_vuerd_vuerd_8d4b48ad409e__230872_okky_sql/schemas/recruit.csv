@@ -1,0 +1,13 @@
+column_name,column_description
+article_id,Column article_id of table recruit.
+city,Column city of table recruit.
+closed,Column closed of table recruit.
+company_id,Column company_id of table recruit. may be NULL.
+district,Column district of table recruit.
+email,Column email of table recruit.
+id,Column id of table recruit.
+job_type,Column job_type of table recruit.
+start_date,Column start_date of table recruit. may be NULL.
+tel,Column tel of table recruit.
+version,Column version of table recruit.
+working_month,Column working_month of table recruit. may be NULL.

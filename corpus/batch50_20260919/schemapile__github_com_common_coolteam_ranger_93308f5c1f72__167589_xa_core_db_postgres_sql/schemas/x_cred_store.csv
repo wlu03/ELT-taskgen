@@ -1,0 +1,8 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_cred_store. may be NULL.
+create_time,Column create_time of table x_cred_store. may be NULL.
+descr,Column descr of table x_cred_store.
+id,Column id of table x_cred_store.
+store_name,Column store_name of table x_cred_store.
+upd_by_id,Column upd_by_id of table x_cred_store. may be NULL.
+update_time,Column update_time of table x_cred_store. may be NULL.

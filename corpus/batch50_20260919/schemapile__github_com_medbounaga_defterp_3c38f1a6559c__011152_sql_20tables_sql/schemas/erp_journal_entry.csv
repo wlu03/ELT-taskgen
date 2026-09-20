@@ -1,0 +1,10 @@
+column_name,column_description
+active,Column active of table erp.journal_entry.
+amount,Column amount of table erp.journal_entry.
+date,Column date of table erp.journal_entry. may be NULL.
+id,Column id of table erp.journal_entry.
+journal_id,Column journal_id of table erp.journal_entry. may be NULL.
+name,Column name of table erp.journal_entry. may be NULL.
+partner_id,Column partner_id of table erp.journal_entry. may be NULL.
+ref,Column ref of table erp.journal_entry. may be NULL.
+state,Column state of table erp.journal_entry. may be NULL.

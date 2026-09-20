@@ -1,0 +1,6 @@
+column_name,column_description
+emis_comm,Column emis_comm of table EmissionLimit.
+emis_limit,Column emis_limit of table EmissionLimit. may be NULL.
+emis_limit_notes,Column emis_limit_notes of table EmissionLimit. may be NULL.
+emis_limit_units,Column emis_limit_units of table EmissionLimit. may be NULL.
+periods,Column periods of table EmissionLimit.

@@ -1,0 +1,8 @@
+column_name,column_description
+code,Column CODE of table DATA_SET_TYPES.
+dbin_id,Column DBIN_ID of table DATA_SET_TYPES.
+description,Column DESCRIPTION of table DATA_SET_TYPES. may be NULL.
+id,Column ID of table DATA_SET_TYPES.
+main_ds_path,Column MAIN_DS_PATH of table DATA_SET_TYPES. may be NULL.
+main_ds_pattern,Column MAIN_DS_PATTERN of table DATA_SET_TYPES. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table DATA_SET_TYPES. may be NULL.

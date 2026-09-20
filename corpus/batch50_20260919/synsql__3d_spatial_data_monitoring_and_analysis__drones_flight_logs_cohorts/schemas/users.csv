@@ -1,0 +1,9 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+username,Username of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., operations manager, data analyst). always exactly one of 'operations manager', 'data analyst'. may be NULL."
+last_login,Last time the user logged in. may be NULL.
+created_at,Date and time the user account was created. may be NULL.
+updated_at,Date and time the user account was last updated. may be NULL.
+status,"Status of the user account (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."

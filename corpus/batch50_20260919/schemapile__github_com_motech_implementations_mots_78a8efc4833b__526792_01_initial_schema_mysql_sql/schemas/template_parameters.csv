@@ -1,0 +1,11 @@
+column_name,column_description
+created_date,Column created_date of table template_parameters. may be NULL.
+data_type,Column data_type of table template_parameters. may be NULL.
+default_value,Column default_value of table template_parameters. may be NULL.
+description,Column description of table template_parameters. may be NULL.
+display_name,Column display_name of table template_parameters. may be NULL.
+id,Column id of table template_parameters.
+name,Column name of table template_parameters. may be NULL.
+required,Column required of table template_parameters.
+template_id,Column template_id of table template_parameters.
+updated_date,Column updated_date of table template_parameters. may be NULL.

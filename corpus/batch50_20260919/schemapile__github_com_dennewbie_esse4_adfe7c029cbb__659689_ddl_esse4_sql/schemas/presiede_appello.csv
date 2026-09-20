@@ -1,0 +1,6 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table presiede_appello.
+codice_insegnamento,Column codice_insegnamento of table presiede_appello.
+data_appello,Column data_appello of table presiede_appello.
+presidente,"Column presidente of table presiede_appello. always exactly one of 'y', 'n', 'Y', 'N'."
+tesserino_docente,Column tesserino_docente of table presiede_appello.

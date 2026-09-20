@@ -1,0 +1,8 @@
+column_name,column_description
+cfu,Column CFU of table tirocinio.
+data_fine,Column data_fine of table tirocinio.
+data_inizio,Column data_inizio of table tirocinio.
+matricola_studente,Column matricola_studente of table tirocinio.
+numero_tirocinio,Column numero_tirocinio of table tirocinio.
+tesserino_docente,Column tesserino_docente of table tirocinio.
+tesserino_tutor_azienda,Column tesserino_tutor_azienda of table tirocinio. may be NULL.

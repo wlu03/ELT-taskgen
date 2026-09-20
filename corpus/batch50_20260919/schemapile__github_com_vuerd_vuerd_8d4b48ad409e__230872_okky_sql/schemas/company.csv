@@ -1,0 +1,9 @@
+column_name,column_description
+enabled,Column enabled of table company.
+id,Column id of table company.
+locked,Column locked of table company.
+logo,Column logo of table company. may be NULL.
+manager_id,Column manager_id of table company. may be NULL.
+name,Column name of table company.
+register_number,Column register_number of table company.
+version,Column version of table company.

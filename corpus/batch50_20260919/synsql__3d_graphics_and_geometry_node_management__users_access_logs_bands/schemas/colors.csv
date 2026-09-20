@@ -1,0 +1,9 @@
+column_name,column_description
+color_id,Unique identifier for each color.
+node_id,Reference to the node that the color belongs to. may be NULL.
+color,"Color information (e.g., X3DColorNode). may be NULL."
+color_per_vertex,Color per vertex value (true or false). may be NULL.
+created_at,Timestamp for when the color was created. may be NULL.
+updated_at,Timestamp for the last update to the color. may be NULL.
+version,Version of the color. may be NULL.
+metadata,"Additional metadata for the color (e.g., JSON format). may be NULL."

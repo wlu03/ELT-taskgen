@@ -1,0 +1,5 @@
+column_name,column_description
+capienza,Column capienza of table corso_laurea.
+codice_corso,Column codice_corso of table corso_laurea.
+nome,Column nome of table corso_laurea.
+tipo,"Column tipo of table corso_laurea. always exactly one of 'MAGISTRALE', 'TRIENNALE', 'magistrale', 'triennale', 'Magistrale', 'Triennale'."

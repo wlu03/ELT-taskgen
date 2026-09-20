@@ -1,0 +1,1478 @@
+models:
+- columns:
+  - description: Identifier of the workers row. One row per value.
+    name: parent_key
+    type: text
+  - description: addr of the workers row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: 'Number of containers rows for this workers row; 0 when there are none. Every linked containers row counts, whether or not it carries an image_check_container_id value. A workers row kept with no containers row reports 0 here, never 1: its placeholder holds no containers row to count.'
+    name: event_count
+    type: bigint
+  - description: Sum of image_check_container_id over all matching containers rows; 0 when there are no rows and when none of those rows carries an image_check_container_id value; a row with no image_check_container_id value adds nothing, so a group with some values sums the values it has.
+    name: lifetime_amount
+    type: integer
+  - description: 'id of the row with the latest best_if_used_by; ties take the smallest id. It is 0 when there are no rows. Every containers row of the workers row ranks, whether or not it carries a image_check_container_id value: the latest best_if_used_by wins even when that row''s image_check_container_id is missing.'
+    name: latest_row_id
+    type: integer
+  - description: image_check_container_id from that same latest row; 0 when there are no rows or when the winning value is missing.
+    name: latest_amount
+    type: integer
+  - description: handle from that same latest row; '(none)' when there are no rows.
+    name: latest_label
+    type: text
+  - description: latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0. The division uses latest_amount as this mart reports it, after its default of 0 for a winning row whose image_check_container_id is missing, so such a row gives 0.0.
+    name: latest_amount_share
+    type: float
+  description: Per-workers latest-row snapshot over linked containers activity in the 402976_1510262030_initial_schema.up.sql schema.
+  grain: One row per workers (name), INCLUDING workers rows with no linked containers rows.
+  key_columns:
+  - parent_key
+  name: workers_containers_snapshot
+  source_relationships:
+  - child_columns:
+    - build_id
+    child_table: build_image_resource_caches
+    parent_columns:
+    - id
+    parent_table: builds
+    required: true
+  - child_columns:
+    - resource_cache_id
+    child_table: build_image_resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - build_id
+    child_table: build_inputs
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - versioned_resource_id
+    child_table: build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: false
+  - child_columns:
+    - build_id
+    child_table: build_outputs
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - versioned_resource_id
+    child_table: build_outputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: false
+  - child_columns:
+    - job_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: false
+  - child_columns:
+    - team_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - build_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - team_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: containers
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - worker_resource_config_check_session_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: worker_resource_config_check_sessions
+    required: false
+  - child_columns:
+    - job_id
+    child_table: independent_build_inputs
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - version_id
+    child_table: independent_build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: true
+  - child_columns:
+    - pipeline_id
+    child_table: jobs
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: true
+  - child_columns:
+    - job_id
+    child_table: jobs_serial_groups
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - job_id
+    child_table: next_build_inputs
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - version_id
+    child_table: next_build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: true
+  - child_columns:
+    - team_id
+    child_table: pipelines
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - team_id
+    child_table: pipes
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - build_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - container_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: containers
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - base_resource_type_id
+    child_table: resource_configs
+    parent_columns:
+    - id
+    parent_table: base_resource_types
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: resource_configs
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: resource_types
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_types
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: resources
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: true
+  - child_columns:
+    - resource_config_id
+    child_table: resources
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - resource_id
+    child_table: versioned_resources
+    parent_columns:
+    - id
+    parent_table: resources
+    required: false
+  - child_columns:
+    - container_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: containers
+    required: false
+  - child_columns:
+    - team_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: volumes
+    parent_columns:
+    - name
+    parent_table: workers
+    required: true
+  - child_columns:
+    - worker_resource_cache_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_resource_caches
+    required: false
+  - child_columns:
+    - worker_task_cache_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_task_caches
+    required: false
+  - child_columns:
+    - base_resource_type_id
+    child_table: worker_base_resource_types
+    parent_columns:
+    - id
+    parent_table: base_resource_types
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: worker_base_resource_types
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: worker_resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: worker_resource_caches
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - resource_config_check_session_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: resource_config_check_sessions
+    required: false
+  - child_columns:
+    - team_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - job_id
+    child_table: worker_task_caches
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: worker_task_caches
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - team_id
+    child_table: workers
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  transformation:
+    steps:
+    - description: Read source table workers.
+      operation: source
+      order: 1
+      source_inputs:
+      - workers
+    - description: Read source table containers.
+      operation: source
+      order: 2
+      source_inputs:
+      - containers
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per workers row, keyed by name.
+      operation: derive
+      order: 3
+      source_inputs:
+      - workers
+    - carried_fields:
+      - worker_name
+      - name
+      condition:
+        public_identifiers:
+        - containers
+        - worker_name
+        - parent_key
+      description: Bring in containers; a workers row with no matching containers row is retained and receives the stated empty snapshot values.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - containers
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting event_count, lifetime_amount for that row''s matching rows.'
+      operation: aggregate
+      order: 5
+    - carried_fields:
+      - parent_key
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest id, and take latest_row_id, latest_amount, latest_label from that winning row. EVERY row of the group ranks, including a row whose ordering measure has no value — such a row sorts after every row that has one — so a group with at least one row always has a winning row, and the declared defaults belong to a group with NO rows.
+      operation: extrema
+      order: 6
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 7
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Name the mart columns; lifetime_amount reports its declared default — never NULL — for a group with no matching rows. For lifetime_amount, the default also applies to a group none of whose real rows carries an input value.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      - latest_amount_share
+      description: 'Guarded ratios: latest_amount_share — latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0. The division uses latest_amount as this mart reports it, after its default of 0 for a winning row whose image_check_container_id is missing, so such a row gives 0.0.'
+      operation: ratio
+      order: 9
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 10
+- columns:
+  - description: Identifier of the teams row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked workers row whose active_containers has a value; ''absent'' when active_containers is missing, including a teams row with no linked workers row. A linked workers row whose active_containers has a value belongs only to the present state and never to the absent state.'
+    name: measure_state
+    type: text
+  - description: auth of the teams row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked workers rows in this entity/state cell; a absent cell holding real workers rows whose active_containers is missing COUNTS those rows, and only the placeholder cell of a teams row with no linked workers row at all reports 0.
+    name: row_count
+    type: bigint
+  - description: Number of unique non-missing active_containers values in this cell; each unique non-missing value is counted once, however many rows repeat it; 0 whenever the cell holds no active_containers value at all — both for a teams row with no linked workers row and for an absent cell whose rows all have a missing active_containers.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of active_containers in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an active_containers value.
+    name: total_amount
+    type: integer
+  - description: Largest active_containers in this cell; 0 for a no-activity cell that has no rows at all, and 0 when none of the cell's rows carries an active_containers value.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(teams, measure state) distribution of linked workers activity in the 402976_1510262030_initial_schema.up.sql schema.
+  grain: One row per (id, measure state) pair represented among linked workers rows; the absent state includes missing active_containers values and a no-activity row for a teams row with no links. A linked workers row whose active_containers has a value belongs only to the present state and never to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: teams_workers_distribution
+  source_relationships:
+  - child_columns:
+    - build_id
+    child_table: build_image_resource_caches
+    parent_columns:
+    - id
+    parent_table: builds
+    required: true
+  - child_columns:
+    - resource_cache_id
+    child_table: build_image_resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - build_id
+    child_table: build_inputs
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - versioned_resource_id
+    child_table: build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: false
+  - child_columns:
+    - build_id
+    child_table: build_outputs
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - versioned_resource_id
+    child_table: build_outputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: false
+  - child_columns:
+    - job_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: false
+  - child_columns:
+    - team_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - build_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - team_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: containers
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - worker_resource_config_check_session_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: worker_resource_config_check_sessions
+    required: false
+  - child_columns:
+    - job_id
+    child_table: independent_build_inputs
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - version_id
+    child_table: independent_build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: true
+  - child_columns:
+    - pipeline_id
+    child_table: jobs
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: true
+  - child_columns:
+    - job_id
+    child_table: jobs_serial_groups
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - job_id
+    child_table: next_build_inputs
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - version_id
+    child_table: next_build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: true
+  - child_columns:
+    - team_id
+    child_table: pipelines
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - team_id
+    child_table: pipes
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - build_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - container_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: containers
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - base_resource_type_id
+    child_table: resource_configs
+    parent_columns:
+    - id
+    parent_table: base_resource_types
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: resource_configs
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: resource_types
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_types
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: resources
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: true
+  - child_columns:
+    - resource_config_id
+    child_table: resources
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - resource_id
+    child_table: versioned_resources
+    parent_columns:
+    - id
+    parent_table: resources
+    required: false
+  - child_columns:
+    - container_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: containers
+    required: false
+  - child_columns:
+    - team_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: volumes
+    parent_columns:
+    - name
+    parent_table: workers
+    required: true
+  - child_columns:
+    - worker_resource_cache_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_resource_caches
+    required: false
+  - child_columns:
+    - worker_task_cache_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_task_caches
+    required: false
+  - child_columns:
+    - base_resource_type_id
+    child_table: worker_base_resource_types
+    parent_columns:
+    - id
+    parent_table: base_resource_types
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: worker_base_resource_types
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: worker_resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: worker_resource_caches
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - resource_config_check_session_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: resource_config_check_sessions
+    required: false
+  - child_columns:
+    - team_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - job_id
+    child_table: worker_task_caches
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: worker_task_caches
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - team_id
+    child_table: workers
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  transformation:
+    steps:
+    - description: Read source table teams.
+      operation: source
+      order: 1
+      source_inputs:
+      - teams
+    - description: Read source table workers.
+      operation: source
+      order: 2
+      source_inputs:
+      - workers
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each id and its auth into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - teams
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - id
+      - team_id
+      condition:
+        public_identifiers:
+        - workers
+        - team_id
+        - entity_key
+      description: Bring the linked workers rows into each teams entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - workers
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real workers row whose active_containers has a value.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per teams entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different non-missing active_containers values occur (each different value counted once, however many rows repeat it), total active_containers, and largest active_containers.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: active_containers is missing, including the retained placeholder for a teams row with no workers rows. A real workers row whose active_containers has a value belongs only to the present state and never to this absent state.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per teams entity that has at least one row in the absent measure state, and no row here for an entity with none, reporting row count, how many different non-missing active_containers values occur (each different value counted once, however many rows repeat it), total active_containers, and largest active_containers.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the resources row. One row per value.
+    name: parent_key
+    type: integer
+  - description: check_error of the resources row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest check_order itself; 0 when the parent has no versioned_resources rows.
+    name: top_measure
+    type: integer
+  - description: How many versioned_resources rows are tied at that largest check_order. 1 when exactly one row carries that largest check_order; 0 when there are no rows.
+    name: tied_count
+    type: bigint
+  - description: 'Number of versioned_resources rows for this resources row; 0 when there are none. A resources row kept with no versioned_resources row reports 0 here, never 1: its placeholder holds no versioned_resources row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of check_order over all of them; 0 when the parent has no versioned_resources rows.
+    name: total_measure
+    type: integer
+  - description: The metadata of the versioned_resources row with the LARGEST check_order for this resources row. Ties in check_order are broken by taking the SMALLEST metadata under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one); rows tied on both are resolved by the smallest id. The literal '(none)' when the parent has no versioned_resources rows at all.
+    name: top_label
+    type: text
+  - description: The id of that same extremal row — the winner under the SAME total order, so it is the identifier of a real versioned_resources row whenever the parent has any. It is 0 when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: integer
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no versioned_resources rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+    name: tie_state
+    type: text
+  description: 'Per-resources extremes over linked versioned_resources rows in the 402976_1510262030_initial_schema.up.sql schema: WHICH row is largest, not how large it is.'
+  grain: One row per resources (id), INCLUDING resources rows with no linked versioned_resources rows.
+  key_columns:
+  - parent_key
+  name: resources_versioned_resources_top
+  source_relationships:
+  - child_columns:
+    - build_id
+    child_table: build_image_resource_caches
+    parent_columns:
+    - id
+    parent_table: builds
+    required: true
+  - child_columns:
+    - resource_cache_id
+    child_table: build_image_resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - build_id
+    child_table: build_inputs
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - versioned_resource_id
+    child_table: build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: false
+  - child_columns:
+    - build_id
+    child_table: build_outputs
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - versioned_resource_id
+    child_table: build_outputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: false
+  - child_columns:
+    - job_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: false
+  - child_columns:
+    - team_id
+    child_table: builds
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - build_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - team_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: containers
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - worker_resource_config_check_session_id
+    child_table: containers
+    parent_columns:
+    - id
+    parent_table: worker_resource_config_check_sessions
+    required: false
+  - child_columns:
+    - job_id
+    child_table: independent_build_inputs
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - version_id
+    child_table: independent_build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: true
+  - child_columns:
+    - pipeline_id
+    child_table: jobs
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: true
+  - child_columns:
+    - job_id
+    child_table: jobs_serial_groups
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - job_id
+    child_table: next_build_inputs
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: true
+  - child_columns:
+    - version_id
+    child_table: next_build_inputs
+    parent_columns:
+    - id
+    parent_table: versioned_resources
+    required: true
+  - child_columns:
+    - team_id
+    child_table: pipelines
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - team_id
+    child_table: pipes
+    parent_columns:
+    - id
+    parent_table: teams
+    required: true
+  - child_columns:
+    - build_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: builds
+    required: false
+  - child_columns:
+    - container_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: containers
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: resource_cache_uses
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - base_resource_type_id
+    child_table: resource_configs
+    parent_columns:
+    - id
+    parent_table: base_resource_types
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: resource_configs
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: resource_types
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: false
+  - child_columns:
+    - resource_config_id
+    child_table: resource_types
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - pipeline_id
+    child_table: resources
+    parent_columns:
+    - id
+    parent_table: pipelines
+    required: true
+  - child_columns:
+    - resource_config_id
+    child_table: resources
+    parent_columns:
+    - id
+    parent_table: resource_configs
+    required: false
+  - child_columns:
+    - resource_id
+    child_table: versioned_resources
+    parent_columns:
+    - id
+    parent_table: resources
+    required: false
+  - child_columns:
+    - container_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: containers
+    required: false
+  - child_columns:
+    - team_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: volumes
+    parent_columns:
+    - name
+    parent_table: workers
+    required: true
+  - child_columns:
+    - worker_resource_cache_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_resource_caches
+    required: false
+  - child_columns:
+    - worker_task_cache_id
+    child_table: volumes
+    parent_columns:
+    - id
+    parent_table: worker_task_caches
+    required: false
+  - child_columns:
+    - base_resource_type_id
+    child_table: worker_base_resource_types
+    parent_columns:
+    - id
+    parent_table: base_resource_types
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: worker_base_resource_types
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - resource_cache_id
+    child_table: worker_resource_caches
+    parent_columns:
+    - id
+    parent_table: resource_caches
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: worker_resource_caches
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - resource_config_check_session_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: resource_config_check_sessions
+    required: false
+  - child_columns:
+    - team_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  - child_columns:
+    - worker_base_resource_type_id
+    child_table: worker_resource_config_check_sessions
+    parent_columns:
+    - id
+    parent_table: worker_base_resource_types
+    required: false
+  - child_columns:
+    - job_id
+    child_table: worker_task_caches
+    parent_columns:
+    - id
+    parent_table: jobs
+    required: false
+  - child_columns:
+    - worker_name
+    child_table: worker_task_caches
+    parent_columns:
+    - name
+    parent_table: workers
+    required: false
+  - child_columns:
+    - team_id
+    child_table: workers
+    parent_columns:
+    - id
+    parent_table: teams
+    required: false
+  transformation:
+    steps:
+    - description: Read source table resources.
+      operation: source
+      order: 1
+      source_inputs:
+      - resources
+    - description: Read source table versioned_resources.
+      operation: source
+      order: 2
+      source_inputs:
+      - versioned_resources
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per resources row, keyed by id.
+      operation: derive
+      order: 3
+      source_inputs:
+      - resources
+    - carried_fields:
+      - resource_id
+      - id
+      condition:
+        public_identifiers:
+        - versioned_resources
+        - resource_id
+        - parent_key
+      description: 'Bring in versioned_resources: a resources row with no versioned_resources rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - versioned_resources
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest metadata under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one), then the smallest id, and take top_label, top_row_id from that winning row. The ordering measure is required on every real input row, so a non-empty group always has a winning row; the declared defaults belong only to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no versioned_resources rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12

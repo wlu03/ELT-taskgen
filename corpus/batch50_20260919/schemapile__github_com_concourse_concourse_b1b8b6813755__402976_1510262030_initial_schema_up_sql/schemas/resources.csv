@@ -1,0 +1,11 @@
+column_name,column_description
+active,Column active of table resources.
+check_error,Column check_error of table resources. may be NULL.
+config,Column config of table resources.
+id,Column id of table resources.
+last_checked,Column last_checked of table resources.
+name,Column name of table resources.
+nonce,Column nonce of table resources. may be NULL.
+paused,Column paused of table resources. may be NULL.
+pipeline_id,Column pipeline_id of table resources.
+resource_config_id,Column resource_config_id of table resources. may be NULL.

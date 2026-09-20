@@ -1,0 +1,6 @@
+column_name,column_description
+id,Column id of table repository_locale.
+locale_id,Column locale_id of table repository_locale.
+parent_locale,Column parent_locale of table repository_locale. may be NULL.
+repository_id,Column repository_id of table repository_locale.
+to_be_fully_translated,Column to_be_fully_translated of table repository_locale. may be NULL.

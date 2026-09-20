@@ -1,0 +1,9 @@
+column_name,column_description
+course_course_code,Column course_course_code of table engineering.course.
+course_course_title,Column course_course_title of table engineering.course.
+course_department,Column course_department of table engineering.course.
+course_id,Column course_id of table engineering.course.
+course_is_active,Column course_is_active of table engineering.course.
+enrollment_id,Column enrollment_id of table engineering.course.
+professor_id,Column professor_id of table engineering.course.
+year_level_id,Column year_level_id of table engineering.course.

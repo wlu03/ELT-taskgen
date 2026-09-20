@@ -1,0 +1,7 @@
+column_name,column_description
+app_id,Unique identifier for each application.
+app_name,Name of the application. may be NULL.
+description,Description of the application. may be NULL.
+created_at,Timestamp when the application was created. may be NULL.
+updated_at,Timestamp when the application was last updated. may be NULL.
+active,Indicates if the application is active. may be NULL.

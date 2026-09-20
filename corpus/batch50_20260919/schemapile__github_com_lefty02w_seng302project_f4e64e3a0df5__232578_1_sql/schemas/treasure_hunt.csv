@@ -1,0 +1,8 @@
+column_name,column_description
+destination_id,Column destination_id of table treasure_hunt.
+end_date,Column end_date of table treasure_hunt.
+profile_id,Column profile_id of table treasure_hunt.
+riddle,Column riddle of table treasure_hunt.
+soft_delete,Column soft_delete of table treasure_hunt.
+start_date,Column start_date of table treasure_hunt.
+treasure_hunt_id,Column treasure_hunt_id of table treasure_hunt.

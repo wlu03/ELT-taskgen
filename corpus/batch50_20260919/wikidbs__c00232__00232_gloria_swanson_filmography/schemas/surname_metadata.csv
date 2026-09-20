@@ -1,0 +1,15 @@
+column_name,column_description
+surname,surname of surname metadata (real vendored values).
+surname_description,surname description of surname metadata (real vendored values).
+entity_type,entity type of surname metadata (real vendored values).
+distinct_from,distinct from of surname metadata (real vendored values). may be NULL.
+writing_system,writing system of surname metadata (real vendored values).
+commons_category,commons category of surname metadata (real vendored values). may be NULL.
+native_surname,native surname of surname metadata (real vendored values).
+soundex_code,soundex code of surname metadata (real vendored values). may be NULL.
+caverphone_code,caverphone code of surname metadata (real vendored values). may be NULL.
+wolfram_entity_code,wolfram entity code of surname metadata (real vendored values). may be NULL.
+geopatronyme_id,geopatronyme id of surname metadata (real vendored values). may be NULL.
+geneanet_family_name_id,geneanet family name id of surname metadata (real vendored values). may be NULL.
+cologne_phonetics_code,cologne phonetics code of surname metadata (real vendored values). may be NULL.
+language_of_origin,language of origin of surname metadata (real vendored values). may be NULL.

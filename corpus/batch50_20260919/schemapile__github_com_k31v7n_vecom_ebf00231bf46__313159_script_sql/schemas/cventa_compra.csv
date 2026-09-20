@@ -1,0 +1,16 @@
+column_name,column_description
+compra,Column compra of table cventa.compra.
+compra_estatus,Column compra_estatus of table cventa.compra.
+concepto,Column concepto of table cventa.compra. may be NULL.
+factura_numero,Column factura_numero of table cventa.compra.
+fecha_compra,Column fecha_compra of table cventa.compra.
+fecha_factura,Column fecha_factura of table cventa.compra.
+fecha_pago,Column fecha_pago of table cventa.compra.
+moneda,Column moneda of table cventa.compra.
+monto,Column monto of table cventa.compra. may be NULL.
+proveedor,Column proveedor of table cventa.compra.
+serie,Column serie of table cventa.compra.
+tipo_pago,Column tipo_pago of table cventa.compra.
+usuario,Column usuario of table cventa.compra.
+valor_base,Column valor_base of table cventa.compra.
+valor_iva,Column valor_iva of table cventa.compra.

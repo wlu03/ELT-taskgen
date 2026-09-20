@@ -1,0 +1,6 @@
+column_name,column_description
+enrollment_id,Column enrollment_id of table engineering.enrollment.
+enrollment_is_active,Column enrollment_is_active of table engineering.enrollment.
+enrollment_sy,Column enrollment_sy of table engineering.enrollment.
+enrollment_term,Column enrollment_term of table engineering.enrollment.
+passingpercentage,Column passingPercentage of table engineering.enrollment.

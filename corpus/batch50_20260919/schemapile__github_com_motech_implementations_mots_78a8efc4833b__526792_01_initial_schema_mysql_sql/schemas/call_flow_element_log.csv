@@ -1,0 +1,8 @@
+column_name,column_description
+call_flow_element_id,Column call_flow_element_id of table call_flow_element_log.
+created_date,Column created_date of table call_flow_element_log. may be NULL.
+end_date,Column end_date of table call_flow_element_log. may be NULL.
+id,Column id of table call_flow_element_log.
+start_date,Column start_date of table call_flow_element_log. may be NULL.
+unit_progress_id,Column unit_progress_id of table call_flow_element_log.
+updated_date,Column updated_date of table call_flow_element_log. may be NULL.

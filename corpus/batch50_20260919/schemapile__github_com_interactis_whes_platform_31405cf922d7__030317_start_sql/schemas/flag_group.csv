@@ -1,0 +1,7 @@
+column_name,column_description
+created_at,Column created_at of table flag_group. may be NULL.
+hidden,Column hidden of table flag_group. may be NULL.
+id,Column id of table flag_group.
+operator,Column operator of table flag_group. may be NULL.
+order,Column order of table flag_group. may be NULL.
+updated_at,Column updated_at of table flag_group. may be NULL.

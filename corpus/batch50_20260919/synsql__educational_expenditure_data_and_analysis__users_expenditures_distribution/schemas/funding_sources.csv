@@ -1,0 +1,7 @@
+column_name,column_description
+fund_id,Unique identifier for each funding source.
+fund_name,Name of the funding source. may be NULL.
+description,Description of the funding source. may be NULL.
+is_active,Indicates if the funding source is currently active. may be NULL.
+budget_limit,Budget limit for the funding source. may be NULL.
+available_balance,Available balance in the funding source. may be NULL.

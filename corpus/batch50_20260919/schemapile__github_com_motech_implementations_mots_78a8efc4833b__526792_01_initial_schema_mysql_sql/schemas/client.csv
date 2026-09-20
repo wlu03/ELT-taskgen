@@ -1,0 +1,11 @@
+column_name,column_description
+access_token_validity_seconds,Column access_token_validity_seconds of table client. may be NULL.
+additional_information,Column additional_information of table client. may be NULL.
+authorities,Column authorities of table client.
+authorized_grant_types,Column authorized_grant_types of table client.
+client_id,Column client_id of table client.
+client_secret,Column client_secret of table client. may be NULL.
+refresh_token_validity_seconds,Column refresh_token_validity_seconds of table client. may be NULL.
+registered_redirect_uris,Column registered_redirect_uris of table client. may be NULL.
+resource_ids,Column resource_ids of table client. may be NULL.
+scope,Column scope of table client. may be NULL.

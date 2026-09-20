@@ -1,0 +1,109 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/article_translation.jsonl
+    sync_mode: full_refresh_append
+    table: article_translation
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/content.jsonl
+    sync_mode: full_refresh_append
+    table: content
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/exhibit_rucksack.jsonl
+    sync_mode: full_refresh_append
+    table: exhibit_rucksack
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/exhibition_code.jsonl
+    sync_mode: full_refresh_append
+    table: exhibition_code
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/media.jsonl
+    sync_mode: full_refresh_append
+    table: media
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/related_tag.jsonl
+    sync_mode: full_refresh_append
+    table: related_tag
+  - path: s3://schemapile--github-com-interactis-whes-plat-0eebdea2f256-bucket/route_translation.jsonl
+    sync_mode: full_refresh_append
+    table: route_translation
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - content_tag
+    - flag
+    - heritage
+    - language
+    - poi
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: schemapile__github_com_interactis_whes_plat_0eebdea2f256
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_interactis_whes_plat_0eebdea2f256/ambassador_translation.csv
+  sync_mode: full_refresh_append
+  table: ambassador_translation
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_interactis_whes_plat_0eebdea2f256/flag_group.csv
+  sync_mode: full_refresh_append
+  table: flag_group
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_interactis_whes_plat_0eebdea2f256/flag_translation.csv
+  sync_mode: full_refresh_append
+  table: flag_translation
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_interactis_whes_plat_0eebdea2f256/heritage_translation.csv
+  sync_mode: full_refresh_append
+  table: heritage_translation
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_interactis_whes_plat_0eebdea2f256
+    sync_mode: full_refresh_append
+    tables:
+    - admin
+    - content_flag
+    - content_valid_time
+    - exhibit
+    - exhibition_code_series
+    - flag_group_translation
+    - media_translation
+    - page
+    - page_translation
+    - poi_translation
+    - rucksack
+    - supplier
+postgres:
+  config:
+    database: schemapile__github_com_interactis_whes_plat_0eebdea2f256
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - article
+    - route
+    - supplier_translation
+    - tag
+    - tag_translation
+    - valid_time
+    user: postgres

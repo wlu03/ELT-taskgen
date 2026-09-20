@@ -1,0 +1,7 @@
+column_name,column_description
+codice_corso,Column codice_corso of table appello_laurea.
+data_appello,Column data_appello of table appello_laurea.
+fine_iscrizioni,Column fine_iscrizioni of table appello_laurea.
+inizio_iscrizioni,Column inizio_iscrizioni of table appello_laurea.
+max_iscrizioni,Column max_iscrizioni of table appello_laurea.
+tipo,"Column tipo of table appello_laurea. always exactly one of 'Presenza', 'Telematica', 'PRESENZA', 'TELEMATICA', 'presenza', 'telematica', 'Non previsto', 'NON PREVISTO', 'non previsto'. may be NULL."

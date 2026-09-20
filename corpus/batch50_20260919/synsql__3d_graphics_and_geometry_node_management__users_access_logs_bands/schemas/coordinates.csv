@@ -1,0 +1,8 @@
+column_name,column_description
+coordinate_id,Unique identifier for each coordinate.
+node_id,Reference to the node that the coordinate belongs to. may be NULL.
+coord,"Coordinate information (e.g., X3DCoordinateNode). may be NULL."
+created_at,Timestamp for when the coordinate was created. may be NULL.
+updated_at,Timestamp for the last update to the coordinate. may be NULL.
+version,Version of the coordinate. may be NULL.
+metadata,"Additional metadata for the coordinate (e.g., JSON format). may be NULL."

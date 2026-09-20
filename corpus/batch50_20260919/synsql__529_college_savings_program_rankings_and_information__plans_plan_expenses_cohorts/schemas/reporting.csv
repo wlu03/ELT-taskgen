@@ -1,0 +1,6 @@
+column_name,column_description
+report_id,Unique identifier for each report.
+user_id,ID of the user who generated the report. may be NULL.
+report_type,"Type of report (e.g., plan performance, user engagement). always exactly one of 'plan performance', 'user engagement'. may be NULL."
+report_date,Date when the report was generated. may be NULL.
+report_data,Data contained in the report. may be NULL.

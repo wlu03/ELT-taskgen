@@ -1,0 +1,7 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table prenotazione_appello.
+codice_insegnamento,Column codice_insegnamento of table prenotazione_appello.
+data_appello,Column data_appello of table prenotazione_appello.
+data_prenotazione,Column data_prenotazione of table prenotazione_appello.
+matricola_studente,Column matricola_studente of table prenotazione_appello.
+numero_prenotazione,Column numero_prenotazione of table prenotazione_appello.

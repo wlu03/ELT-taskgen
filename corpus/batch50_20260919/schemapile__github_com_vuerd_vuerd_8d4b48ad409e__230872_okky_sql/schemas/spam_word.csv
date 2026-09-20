@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table spam_word.
+text,Column text of table spam_word.
+version,Column version of table spam_word.

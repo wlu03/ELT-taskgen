@@ -1,0 +1,9 @@
+column_name,column_description
+action_id,Column action_id of table log. may be NULL.
+create_date,Column create_date of table log.
+creator_id,Column creator_id of table log. may be NULL.
+description,Column description of table log. may be NULL.
+id,Column id of table log.
+ip,Column ip of table log. may be NULL.
+privilege_id,Column privilege_id of table log. may be NULL.
+tab_id,Column tab_id of table log. may be NULL.

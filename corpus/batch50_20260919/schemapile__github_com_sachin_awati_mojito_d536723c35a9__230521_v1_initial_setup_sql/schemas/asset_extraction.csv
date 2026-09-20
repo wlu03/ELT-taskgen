@@ -1,0 +1,8 @@
+column_name,column_description
+asset_id,Column asset_id of table asset_extraction. may be NULL.
+content_md5,Column content_md5 of table asset_extraction. may be NULL.
+created_by_user_id,Column created_by_user_id of table asset_extraction. may be NULL.
+created_date,Column created_date of table asset_extraction. may be NULL.
+id,Column id of table asset_extraction.
+last_modified_date,Column last_modified_date of table asset_extraction. may be NULL.
+pollable_task_id,Column pollable_task_id of table asset_extraction. may be NULL.

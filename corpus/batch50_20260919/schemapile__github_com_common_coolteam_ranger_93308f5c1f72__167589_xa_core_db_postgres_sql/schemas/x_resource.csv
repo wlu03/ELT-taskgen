@@ -1,0 +1,26 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_resource. may be NULL.
+asset_id,Column asset_id of table x_resource.
+col_type,Column col_type of table x_resource.
+create_time,Column create_time of table x_resource. may be NULL.
+descr,Column descr of table x_resource. may be NULL.
+id,Column id of table x_resource.
+is_encrypt,Column is_encrypt of table x_resource.
+is_recursive,Column is_recursive of table x_resource.
+parent_id,Column parent_id of table x_resource. may be NULL.
+parent_path,Column parent_path of table x_resource. may be NULL.
+policy_name,Column policy_name of table x_resource. may be NULL.
+res_col_fams,Column res_col_fams of table x_resource. may be NULL.
+res_cols,Column res_cols of table x_resource. may be NULL.
+res_dbs,Column res_dbs of table x_resource. may be NULL.
+res_group,Column res_group of table x_resource. may be NULL.
+res_name,Column res_name of table x_resource. may be NULL.
+res_services,Column res_services of table x_resource. may be NULL.
+res_status,Column res_status of table x_resource.
+res_tables,Column res_tables of table x_resource. may be NULL.
+res_topologies,Column res_topologies of table x_resource. may be NULL.
+res_type,Column res_type of table x_resource.
+res_udfs,Column res_udfs of table x_resource. may be NULL.
+table_type,Column table_type of table x_resource.
+upd_by_id,Column upd_by_id of table x_resource. may be NULL.
+update_time,Column update_time of table x_resource. may be NULL.

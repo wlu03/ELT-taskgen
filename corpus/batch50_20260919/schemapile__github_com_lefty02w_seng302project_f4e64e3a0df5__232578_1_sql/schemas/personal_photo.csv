@@ -1,0 +1,5 @@
+column_name,column_description
+is_profile_photo,Column is_profile_photo of table personal_photo.
+personal_photo_id,Column personal_photo_id of table personal_photo.
+photo_id,Column photo_id of table personal_photo.
+profile_id,Column profile_id of table personal_photo.

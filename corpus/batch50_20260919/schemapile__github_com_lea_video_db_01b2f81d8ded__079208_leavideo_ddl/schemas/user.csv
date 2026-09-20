@@ -1,0 +1,4 @@
+column_name,column_description
+password,Column password of table User. may be NULL.
+salt,Column salt of table User. may be NULL.
+userid,Column userID of table User.

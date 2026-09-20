@@ -1,0 +1,8 @@
+column_name,column_description
+calibration_id,Unique identifier for each calibration record.
+sensor_id,ID of the sensor being calibrated. may be NULL.
+calibration_date,Date when the calibration took place. may be NULL.
+calibrator_name,Name of the person or entity that performed the calibration. may be NULL.
+calibrator_contact,Contact information for the calibrator. may be NULL.
+created_at,Timestamp when the calibration log was created. may be NULL.
+updated_at,Timestamp when the calibration log was last updated. may be NULL.

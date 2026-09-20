@@ -1,0 +1,133 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    databricks_definition_id: 072d5540-f236-4294-ba7c-ade8fd918496
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-aeganaden-e-rev-lear-09a2e817b512-bucket/engineering_activity.jsonl
+    sync_mode: full_refresh_append
+    table: engineering_activity
+  - path: s3://schemapile--github-com-aeganaden-e-rev-lear-09a2e817b512-bucket/engineering_choice.jsonl
+    sync_mode: full_refresh_append
+    table: engineering_choice
+  - path: s3://schemapile--github-com-aeganaden-e-rev-lear-09a2e817b512-bucket/engineering_fic.jsonl
+    sync_mode: full_refresh_append
+    table: engineering_fic
+  - path: s3://schemapile--github-com-aeganaden-e-rev-lear-09a2e817b512-bucket/engineering_log.jsonl
+    sync_mode: full_refresh_append
+    table: engineering_log
+  - path: s3://schemapile--github-com-aeganaden-e-rev-lear-09a2e817b512-bucket/engineering_student_answer.jsonl
+    sync_mode: full_refresh_append
+    table: engineering_student_answer
+  - path: s3://schemapile--github-com-aeganaden-e-rev-lear-09a2e817b512-bucket/engineering_student_scores.jsonl
+    sync_mode: full_refresh_append
+    table: engineering_student_scores
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - engineering_activity_schedule
+    - engineering_remedial_coursewares
+databricks:
+  config:
+    client_id: ''
+    database: ''
+    hostname: ''
+    http_path: ''
+    schema: schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512
+    secret: ''
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_activity_details.csv
+  sync_mode: full_refresh_append
+  table: engineering_activity_details
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_attendance_in.csv
+  sync_mode: full_refresh_append
+  table: engineering_attendance_in
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_comment.csv
+  sync_mode: full_refresh_append
+  table: engineering_comment
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_course.csv
+  sync_mode: full_refresh_append
+  table: engineering_course
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_courseware.csv
+  sync_mode: full_refresh_append
+  table: engineering_courseware
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_courseware_time.csv
+  sync_mode: full_refresh_append
+  table: engineering_courseware_time
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_data_scores.csv
+  sync_mode: full_refresh_append
+  table: engineering_data_scores
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_lecturer_attendance.csv
+  sync_mode: full_refresh_append
+  table: engineering_lecturer_attendance
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_log_content.csv
+  sync_mode: full_refresh_append
+  table: engineering_log_content
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_student.csv
+  sync_mode: full_refresh_append
+  table: engineering_student
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512/engineering_topic.csv
+  sync_mode: full_refresh_append
+  table: engineering_topic
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512
+    sync_mode: full_refresh_append
+    tables:
+    - engineering_admin
+    - engineering_announcement
+    - engineering_course_modules
+    - engineering_lecturer
+    - engineering_offering
+    - engineering_professor
+    - engineering_remedial_grade_assessment
+    - engineering_schedule
+    - engineering_subject_list
+    - engineering_subject_list_has_topic_list
+    - engineering_total_grade
+    - engineering_year_level
+postgres:
+  config:
+    database: schemapile__github_com_aeganaden_e_rev_lear_09a2e817b512
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - engineering_attendance_out
+    - engineering_courseware_question
+    - engineering_enrollment
+    - engineering_grade_assessment
+    - engineering_lecturer_feedback
+    - engineering_login_sessions
+    - engineering_remedial_student_answer
+    - engineering_subject
+    user: postgres

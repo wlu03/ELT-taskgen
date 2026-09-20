@@ -1,0 +1,4 @@
+column_name,column_description
+expires_at,Column expires_at of table resource_config_check_sessions. may be NULL.
+id,Column id of table resource_config_check_sessions.
+resource_config_id,Column resource_config_id of table resource_config_check_sessions. may be NULL.

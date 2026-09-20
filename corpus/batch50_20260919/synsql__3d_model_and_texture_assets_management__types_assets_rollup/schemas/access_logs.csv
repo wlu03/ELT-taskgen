@@ -1,0 +1,9 @@
+column_name,column_description
+log_id,Unique identifier for each access log.
+asset_id,ID of the asset accessed. may be NULL.
+user_id,ID of the user who accessed the asset. may be NULL.
+access_date,Date the asset was accessed. may be NULL.
+access_type,"Type of access (e.g., view, download). always exactly one of 'view', 'download'. may be NULL."
+ip_address,IP address of the user who accessed the asset. may be NULL.
+user_agent,User agent string of the device used to access the asset. may be NULL.
+description,Description of the access event. may be NULL.

@@ -1,0 +1,18 @@
+column_name,column_description
+surname,surname of surnamemetadata (real vendored values).
+description,description of surnamemetadata (real vendored values).
+languageoforigin,languageoforigin of surnamemetadata (real vendored values). may be NULL.
+typeofname,typeofname of surnamemetadata (real vendored values).
+alternativespelling,alternativespelling of surnamemetadata (real vendored values). may be NULL.
+writingsystem,writingsystem of surnamemetadata (real vendored values). may be NULL.
+nativespelling,nativespelling of surnamemetadata (real vendored values). may be NULL.
+commonscategory,commonscategory of surnamemetadata (real vendored values). may be NULL.
+digitaldictionaryofsurnamesingermanyid,digitaldictionaryofsurnamesingermanyid of surnamemetadata (real vendored values). may be NULL.
+soundexcode,soundexcode of surnamemetadata (real vendored values). may be NULL.
+colognephoneticscode,colognephoneticscode of surnamemetadata (real vendored values). may be NULL.
+caverphonecode,caverphonecode of surnamemetadata (real vendored values). may be NULL.
+equivalentname,equivalentname of surnamemetadata (real vendored values). may be NULL.
+geopatronymeid,geopatronymeid of surnamemetadata (real vendored values). may be NULL.
+geneanetfamilynameid,geneanetfamilynameid of surnamemetadata (real vendored values). may be NULL.
+sourcedescription,sourcedescription of surnamemetadata (real vendored values). may be NULL.
+wolframentitycode,wolframentitycode of surnamemetadata (real vendored values). may be NULL.

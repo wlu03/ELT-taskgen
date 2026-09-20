@@ -1,0 +1,11 @@
+column_name,column_description
+plan_id,Unique identifier for each plan.
+state_id,Reference to the state where the plan is offered. may be NULL.
+plan_name,Name of the 529 College Savings Plan. may be NULL.
+performance_score,Performance score of the plan. may be NULL.
+details_link,Link to the plan details or enrollment page. may be NULL.
+management_fees,Annual management fees for the plan. may be NULL.
+minimum_contribution,Minimum contribution required for the plan. may be NULL.
+maximum_contribution,Maximum contribution allowed for the plan. may be NULL.
+tax_benefits,Tax benefits offered by the plan. may be NULL.
+investment_options,Investment options available in the plan. may be NULL.

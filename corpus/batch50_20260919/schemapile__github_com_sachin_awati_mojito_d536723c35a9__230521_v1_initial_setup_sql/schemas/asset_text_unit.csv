@@ -1,0 +1,11 @@
+column_name,column_description
+asset_extraction_id,Column asset_extraction_id of table asset_text_unit. may be NULL.
+comment,Column comment of table asset_text_unit. may be NULL.
+content,Column content of table asset_text_unit. may be NULL.
+content_md5,Column content_md5 of table asset_text_unit. may be NULL.
+created_by_user_id,Column created_by_user_id of table asset_text_unit. may be NULL.
+created_date,Column created_date of table asset_text_unit. may be NULL.
+id,Column id of table asset_text_unit.
+last_modified_date,Column last_modified_date of table asset_text_unit. may be NULL.
+md5,Column md5 of table asset_text_unit. may be NULL.
+name,Column name of table asset_text_unit. may be NULL.

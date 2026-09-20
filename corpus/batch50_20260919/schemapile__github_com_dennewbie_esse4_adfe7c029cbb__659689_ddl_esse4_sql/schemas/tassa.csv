@@ -1,0 +1,9 @@
+column_name,column_description
+iuv,Column IUV of table tassa. may be NULL.
+data_pagamento,Column data_pagamento of table tassa. may be NULL.
+importo,Column importo of table tassa.
+matricola_studente,Column matricola_studente of table tassa.
+mora,Column mora of table tassa. may be NULL.
+numero_fattura,Column numero_fattura of table tassa.
+scadenza,Column scadenza of table tassa.
+tipo,Column tipo of table tassa. may be NULL.

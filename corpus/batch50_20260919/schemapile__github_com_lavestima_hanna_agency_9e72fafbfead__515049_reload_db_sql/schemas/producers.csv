@@ -1,0 +1,19 @@
+column_name,column_description
+date_created,Column Date_Created of table Producers.
+date_deleted,Column Date_Deleted of table Producers. may be NULL.
+email,Column Email of table Producers.
+first_name,Column First_Name of table Producers. may be NULL.
+full_name,Column Full_Name of table Producers.
+id,Column ID of table Producers.
+id_cities,Column ID_CITIES of table Producers.
+id_countries,Column ID_COUNTRIES of table Producers.
+id_users,Column ID_USERS of table Producers. may be NULL.
+last_name,Column Last_Name of table Producers. may be NULL.
+path_slug,Column Path_Slug of table Producers.
+phone,Column Phone of table Producers.
+postal_code,Column Postal_Code of table Producers.
+short_name,Column Short_Name of table Producers.
+street,Column Street of table Producers.
+user_created,Column User_Created of table Producers.
+user_deleted,Column User_Deleted of table Producers. may be NULL.
+vat,Column VAT of table Producers. may be NULL.

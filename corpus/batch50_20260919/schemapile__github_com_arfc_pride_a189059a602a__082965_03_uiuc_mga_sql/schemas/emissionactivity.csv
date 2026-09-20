@@ -1,0 +1,9 @@
+column_name,column_description
+emis_act,Column emis_act of table EmissionActivity. may be NULL.
+emis_act_notes,Column emis_act_notes of table EmissionActivity. may be NULL.
+emis_act_units,Column emis_act_units of table EmissionActivity. may be NULL.
+emis_comm,Column emis_comm of table EmissionActivity.
+input_comm,Column input_comm of table EmissionActivity.
+output_comm,Column output_comm of table EmissionActivity.
+tech,Column tech of table EmissionActivity.
+vintage,Column vintage of table EmissionActivity.

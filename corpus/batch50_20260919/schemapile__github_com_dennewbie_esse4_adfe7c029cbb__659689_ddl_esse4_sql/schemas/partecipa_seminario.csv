@@ -1,0 +1,4 @@
+column_name,column_description
+data_seminario,Column data_seminario of table partecipa_seminario.
+matricola_studente,Column matricola_studente of table partecipa_seminario.
+tesserino_docente,Column tesserino_docente of table partecipa_seminario.

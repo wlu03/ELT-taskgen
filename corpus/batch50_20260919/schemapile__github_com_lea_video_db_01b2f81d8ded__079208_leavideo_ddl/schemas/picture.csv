@@ -1,0 +1,5 @@
+column_name,column_description
+format,Column format of table Picture. may be NULL.
+height,Column height of table Picture. may be NULL.
+pictureid,Column pictureID of table Picture.
+width,Column width of table Picture. may be NULL.

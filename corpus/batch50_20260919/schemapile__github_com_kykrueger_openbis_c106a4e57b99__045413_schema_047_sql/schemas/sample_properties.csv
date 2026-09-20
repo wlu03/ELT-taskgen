@@ -1,0 +1,10 @@
+column_name,column_description
+cvte_id,Column CVTE_ID of table SAMPLE_PROPERTIES. may be NULL.
+id,Column ID of table SAMPLE_PROPERTIES.
+mate_prop_id,Column MATE_PROP_ID of table SAMPLE_PROPERTIES. may be NULL.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table SAMPLE_PROPERTIES. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table SAMPLE_PROPERTIES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table SAMPLE_PROPERTIES.
+samp_id,Column SAMP_ID of table SAMPLE_PROPERTIES.
+stpt_id,Column STPT_ID of table SAMPLE_PROPERTIES.
+value,Column VALUE of table SAMPLE_PROPERTIES. may be NULL.

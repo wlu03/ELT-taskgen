@@ -1,0 +1,11 @@
+column_name,column_description
+company_id,Column company_id of table person. may be NULL.
+date_created,Column date_created of table person.
+dm_allowed,Column dm_allowed of table person.
+email,Column email of table person.
+full_name,Column full_name of table person.
+homepage_url,Column homepage_url of table person. may be NULL.
+id,Column id of table person.
+last_updated,Column last_updated of table person.
+resume_id,Column resume_id of table person. may be NULL.
+version,Column version of table person.

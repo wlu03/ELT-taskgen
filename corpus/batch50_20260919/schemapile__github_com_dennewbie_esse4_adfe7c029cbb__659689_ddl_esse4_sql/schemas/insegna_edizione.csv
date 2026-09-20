@@ -1,0 +1,5 @@
+column_name,column_description
+anno_accademico,Column anno_accademico of table insegna_edizione.
+codice_insegnamento,Column codice_insegnamento of table insegna_edizione.
+tesserino_docente,Column tesserino_docente of table insegna_edizione.
+tipo_docente,"Column tipo_docente of table insegna_edizione. always exactly one of 'TEORIA', 'Teoria', 'teoria', 'LABORATORIO', 'Laboratorio', 'laboratorio', 'TEORIA E LABORATORIO', 'Teoria e Laboratorio', 'teoria e laboratorio'."

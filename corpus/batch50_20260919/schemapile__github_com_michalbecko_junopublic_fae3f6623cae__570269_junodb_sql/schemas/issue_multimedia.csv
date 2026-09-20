@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table issue_multimedia.
+issue_id,Column issue_id of table issue_multimedia. may be NULL.
+multimedia_id,Column multimedia_id of table issue_multimedia. may be NULL.

@@ -1,0 +1,11 @@
+column_name,column_description
+project_id,Unique identifier for each project.
+project_name,Name of the project. may be NULL.
+project_description,Description of the project. may be NULL.
+start_date,Start date of the project. may be NULL.
+end_date,End date of the project. may be NULL.
+project_manager_id,Reference to the user who is the project manager. may be NULL.
+project_status,"Current status of the project (e.g., active, completed, on hold). always exactly one of 'active', 'completed', 'on hold'. may be NULL."
+budget,Total budget allocated for the project. may be NULL.
+location,Physical location of the project. may be NULL.
+client_id,Reference to the client who commissioned the project. may be NULL.

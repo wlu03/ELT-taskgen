@@ -1,0 +1,13 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_policy_export_audit. may be NULL.
+agent_id,Column agent_id of table x_policy_export_audit. may be NULL.
+client_ip,Column client_ip of table x_policy_export_audit.
+create_time,Column create_time of table x_policy_export_audit. may be NULL.
+exported_json,Column exported_json of table x_policy_export_audit. may be NULL.
+http_ret_code,Column http_ret_code of table x_policy_export_audit.
+id,Column id of table x_policy_export_audit.
+last_updated,Column last_updated of table x_policy_export_audit. may be NULL.
+repository_name,Column repository_name of table x_policy_export_audit. may be NULL.
+req_epoch,Column req_epoch of table x_policy_export_audit.
+upd_by_id,Column upd_by_id of table x_policy_export_audit. may be NULL.
+update_time,Column update_time of table x_policy_export_audit. may be NULL.

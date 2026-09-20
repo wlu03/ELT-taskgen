@@ -1,0 +1,3 @@
+column_name,column_description
+matricola_studente,Column matricola_studente of table telefono_studente.
+numero_telefono_studente,Column numero_telefono_studente of table telefono_studente.

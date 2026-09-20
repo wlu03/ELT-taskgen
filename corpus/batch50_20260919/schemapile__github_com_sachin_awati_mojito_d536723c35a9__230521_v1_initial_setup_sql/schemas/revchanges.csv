@@ -1,0 +1,3 @@
+column_name,column_description
+entityname,Column entityname of table revchanges. may be NULL.
+rev,Column rev of table revchanges.

@@ -1,0 +1,24 @@
+column_name,column_description
+accountpayable_id,Column accountPayable_id of table erp.partner.
+accountreceivable_id,Column accountReceivable_id of table erp.partner.
+active,Column active of table erp.partner.
+city,Column city of table erp.partner. may be NULL.
+country,Column country of table erp.partner. may be NULL.
+create_date,Column create_date of table erp.partner.
+credit,Column credit of table erp.partner. may be NULL.
+customer,Column customer of table erp.partner. may be NULL.
+debit,Column debit of table erp.partner. may be NULL.
+email,Column email of table erp.partner. may be NULL.
+fax,Column fax of table erp.partner. may be NULL.
+id,Column id of table erp.partner.
+image,Column image of table erp.partner. may be NULL.
+image_medium,Column image_medium of table erp.partner. may be NULL.
+is_company,Column is_company of table erp.partner. may be NULL.
+mobile,Column mobile of table erp.partner. may be NULL.
+name,Column name of table erp.partner.
+phone,Column phone of table erp.partner. may be NULL.
+purchase_deals,Column purchase_deals of table erp.partner. may be NULL.
+sale_deals,Column sale_deals of table erp.partner. may be NULL.
+street,Column street of table erp.partner. may be NULL.
+supplier,Column supplier of table erp.partner. may be NULL.
+website,Column website of table erp.partner. may be NULL.

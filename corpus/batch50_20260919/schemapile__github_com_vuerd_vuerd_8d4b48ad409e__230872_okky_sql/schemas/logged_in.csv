@@ -1,0 +1,6 @@
+column_name,column_description
+date_created,Column date_created of table logged_in.
+id,Column id of table logged_in.
+remote_addr,Column remote_addr of table logged_in. may be NULL.
+user_id,Column user_id of table logged_in.
+version,Column version of table logged_in.

@@ -1,0 +1,20 @@
+column_name,column_description
+activo,Column activo of table cventa.usuario.
+alias,Column alias of table cventa.usuario.
+correo,Column correo of table cventa.usuario.
+direccion,Column direccion of table cventa.usuario.
+empresa,Column empresa of table cventa.usuario.
+fecha_modificacion,Column fecha_modificacion of table cventa.usuario. may be NULL.
+fecha_sis,Column fecha_sis of table cventa.usuario.
+firma,Column firma of table cventa.usuario. may be NULL.
+foto,Column foto of table cventa.usuario. may be NULL.
+identificacion,Número de DPI.
+jefe,Column jefe of table cventa.usuario.
+nombre,Column nombre of table cventa.usuario.
+password,Column password of table cventa.usuario.
+rol,Column rol of table cventa.usuario.
+root,Column root of table cventa.usuario.
+subjefe,Column subjefe of table cventa.usuario.
+telefono,Column telefono of table cventa.usuario.
+usuario,Column usuario of table cventa.usuario.
+usuario_genero,Column usuario_genero of table cventa.usuario.

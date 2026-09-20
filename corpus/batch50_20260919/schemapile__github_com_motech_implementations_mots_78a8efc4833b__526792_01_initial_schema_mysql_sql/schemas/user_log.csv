@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column id of table user_log.
+login_date,Column login_date of table user_log. may be NULL.
+logout_date,Column logout_date of table user_log. may be NULL.
+user_id,Column user_id of table user_log.

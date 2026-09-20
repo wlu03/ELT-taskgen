@@ -1,0 +1,19 @@
+column_name,column_description
+_fivetran_synced,When the record was last synced by Fivetran. may be NULL.
+account_id,The ID of the related account. may be NULL.
+created_at,The timestamp the account was created. may be NULL.
+currency,The currently all metrics for the account are set to. may be NULL.
+daily_budget_amount_local_micro,The daily budget amount to be allocated to the campaign. The currency associated with the specified funding instrument will be used. may be NULL.
+deleted,Whether the record has been deleted or not. may be NULL.
+duration_in_days,The time period within which the frequency_cap is achieved. may be NULL.
+end_time,The time the campaign will end. may be NULL.
+entity_status,The status of the campaign. may be NULL.
+frequency_cap,The maximum number of times an ad could be delivered to a user. may be NULL.
+funding_instrument_id,Reference to the funding instrument. may be NULL.
+id,The ID of the campaign. may be NULL.
+name,The name of the campaign. may be NULL.
+servable,Whether the campaign is in a state to be actively served to users. may be NULL.
+standard_delivery,Whether standard delivery is enabled (vs accelerated delivery). may be NULL.
+start_time,The time the campaign will start. may be NULL.
+total_budget_amount_local_micro,The total budget amount to be allocated to the campaign. may be NULL.
+updated_at,The timestamp the account was last updated. may be NULL.

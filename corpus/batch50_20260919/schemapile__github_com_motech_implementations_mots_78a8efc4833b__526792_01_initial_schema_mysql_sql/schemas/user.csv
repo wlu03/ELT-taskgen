@@ -1,0 +1,9 @@
+column_name,column_description
+created_date,Column created_date of table user. may be NULL.
+email,Column email of table user. may be NULL.
+enabled,Column enabled of table user.
+id,Column id of table user.
+name,Column name of table user. may be NULL.
+password,Column password of table user.
+updated_date,Column updated_date of table user. may be NULL.
+username,Column username of table user.

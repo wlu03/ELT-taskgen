@@ -1,0 +1,6 @@
+column_name,column_description
+course_id,Column course_id of table engineering.offering.
+fic_id,Column fic_id of table engineering.offering.
+offering_department,Column offering_department of table engineering.offering.
+offering_id,Column offering_id of table engineering.offering.
+offering_name,Column offering_name of table engineering.offering.

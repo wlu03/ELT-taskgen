@@ -1,0 +1,12 @@
+column_name,column_description
+flight_id,Unique identifier for each flight log.
+drone_id,Reference to the drone that the flight log belongs to. may be NULL.
+start_time,Start time of the drone flight. may be NULL.
+end_time,End time of the drone flight. may be NULL.
+status,"Status of the flight (e.g., completed, aborted). always exactly one of 'completed', 'aborted'. may be NULL."
+starting_point,Starting point of the flight. may be NULL.
+ending_point,Ending point of the flight. may be NULL.
+route_id,ID of the planned route. may be NULL.
+total_distance,Total distance covered in the flight. may be NULL.
+average_speed,Average speed of the flight. may be NULL.
+battery_used,Battery used during the flight. may be NULL.

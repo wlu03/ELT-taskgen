@@ -1,0 +1,3 @@
+column_name,column_description
+ag_id,Column AG_ID of table AUTHORIZATION_GROUP_PERSONS.
+pers_id,Column PERS_ID of table AUTHORIZATION_GROUP_PERSONS.

@@ -1,0 +1,8 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+cell_id,ID of the cell being accessed. may be NULL.
+user_id,ID of the user accessing the cell. may be NULL.
+access_date,Date when the cell data was accessed. may be NULL.
+access_type,"Type of access (e.g., view, download). always exactly one of 'view', 'download'. may be NULL."
+created_at,Timestamp when the access log was created. may be NULL.
+updated_at,Timestamp when the access log was last updated. may be NULL.

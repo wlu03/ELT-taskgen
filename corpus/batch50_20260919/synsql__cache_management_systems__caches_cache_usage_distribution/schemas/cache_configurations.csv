@@ -1,0 +1,8 @@
+column_name,column_description
+config_id,Unique identifier for each configuration.
+cache_id,Reference to the cache type. may be NULL.
+parameter,Name of the configuration parameter. may be NULL.
+value,Value of the configuration parameter. may be NULL.
+data_type,Data type of the configuration parameter. may be NULL.
+description,Description of the configuration parameter. may be NULL.
+required,Indicates if the configuration parameter is required. may be NULL.

@@ -1,0 +1,8 @@
+column_name,column_description
+upload_id,Unique identifier for each upload.
+asset_id,ID of the asset uploaded. may be NULL.
+user_id,ID of the user who uploaded the asset. may be NULL.
+upload_date,Date the asset was uploaded. may be NULL.
+description,"Description of the upload (e.g., reason for upload). may be NULL."
+file_size,Size of the uploaded file in bytes. may be NULL.
+resolution,"Resolution of the uploaded file (if applicable, e.g., 1920x1080). may be NULL."

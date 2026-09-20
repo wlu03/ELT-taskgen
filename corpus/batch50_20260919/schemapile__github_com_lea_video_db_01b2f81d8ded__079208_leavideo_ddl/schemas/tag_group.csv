@@ -1,0 +1,3 @@
+column_name,column_description
+groupid,Column groupID of table Tag_Group.
+tagid,Column tagID of table Tag_Group.

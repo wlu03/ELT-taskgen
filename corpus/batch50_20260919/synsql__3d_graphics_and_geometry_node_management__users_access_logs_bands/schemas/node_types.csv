@@ -1,0 +1,7 @@
+column_name,column_description
+node_type_id,Unique identifier for each node type.
+node_type_name,"Name of the node type (e.g., vertex attribute, color, coordinate). always exactly one of 'vertex attribute', 'color', 'coordinate'. may be NULL."
+description,Description of the node type. may be NULL.
+created_at,Timestamp for when the node type was created. may be NULL.
+updated_at,Timestamp for the last update to the node type. may be NULL.
+category,"Category of the node type (e.g., basic, advanced). always exactly one of 'basic', 'advanced'. may be NULL."

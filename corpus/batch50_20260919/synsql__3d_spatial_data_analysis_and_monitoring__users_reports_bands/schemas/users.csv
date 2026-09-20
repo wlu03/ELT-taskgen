@@ -1,0 +1,8 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., researcher, admin, analyst). always exactly one of 'researcher', 'admin', 'analyst'. may be NULL."
+password,Password for the user account. may be NULL.
+created_at,Timestamp when the user was created. may be NULL.
+updated_at,Timestamp when the user was last updated. may be NULL.

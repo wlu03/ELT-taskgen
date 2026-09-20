@@ -1,0 +1,22 @@
+column_name,column_description
+account_id,Column account_id of table erp.invoice. may be NULL.
+active,Column active of table erp.invoice.
+amount_tax,Column amount_tax of table erp.invoice. may be NULL.
+amount_total,Column amount_total of table erp.invoice. may be NULL.
+amount_untaxed,Column amount_untaxed of table erp.invoice. may be NULL.
+comment,Column comment of table erp.invoice. may be NULL.
+date,Column date of table erp.invoice.
+entry_id,Column entry_id of table erp.invoice. may be NULL.
+id,Column id of table erp.invoice.
+journal_id,Column journal_id of table erp.invoice. may be NULL.
+name,Column name of table erp.invoice. may be NULL.
+number,Column number of table erp.invoice. may be NULL.
+origin,Column origin of table erp.invoice. may be NULL.
+partner_id,Column partner_id of table erp.invoice.
+purchase_id,Column purchase_id of table erp.invoice. may be NULL.
+reference,Column reference of table erp.invoice. may be NULL.
+residual,Column residual of table erp.invoice. may be NULL.
+sale_id,Column sale_id of table erp.invoice. may be NULL.
+state,Column state of table erp.invoice. may be NULL.
+supplier_invoice_number,Column supplier_invoice_number of table erp.invoice. may be NULL.
+type,Column type of table erp.invoice. may be NULL.

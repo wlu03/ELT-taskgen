@@ -1,0 +1,51 @@
+column_name,column_description
+name,name of gloria swanson cinematographers (real vendored values).
+biography,biography of gloria swanson cinematographers (real vendored values).
+role,role of gloria swanson cinematographers (real vendored values).
+viaf_id,viaf id of gloria swanson cinematographers (real vendored values). may be NULL.
+international_standard_name_identifier,international standard name identifier of gloria swanson cinematographers (real vendored values). may be NULL.
+nationality,nationality of gloria swanson cinematographers (real vendored values).
+library_of_congress_authority_id,library of congress authority id of gloria swanson cinematographers (real vendored values). may be NULL.
+gnd_id,gnd id of gloria swanson cinematographers (real vendored values). may be NULL.
+im_db_id,im db id of gloria swanson cinematographers (real vendored values).
+profile_image,profile image of gloria swanson cinematographers (real vendored values). may be NULL.
+birth_date,birth date of gloria swanson cinematographers (real vendored values).
+death_date,death date of gloria swanson cinematographers (real vendored values).
+birth_place,birth place of gloria swanson cinematographers (real vendored values).
+death_place,death place of gloria swanson cinematographers (real vendored values).
+entity_type,entity type of gloria swanson cinematographers (real vendored values).
+freebase_id,freebase id of gloria swanson cinematographers (real vendored values).
+id_ref_id,id ref id of gloria swanson cinematographers (real vendored values). may be NULL.
+nl_cr_aut_id,nl cr aut id of gloria swanson cinematographers (real vendored values). may be NULL.
+national_library_of_spain_id,national library of spain id of gloria swanson cinematographers (real vendored values).
+first_name,first name of gloria swanson cinematographers (real vendored values).
+find_a_grave_memorial_id,find a grave memorial id of gloria swanson cinematographers (real vendored values). may be NULL.
+allo_cine_person_id,allo cine person id of gloria swanson cinematographers (real vendored values). may be NULL.
+all_movie_person_id,all movie person id of gloria swanson cinematographers (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of gloria swanson cinematographers (real vendored values).
+port_person_id,port person id of gloria swanson cinematographers (real vendored values).
+filmportal_id,filmportal id of gloria swanson cinematographers (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of gloria swanson cinematographers (real vendored values).
+csfd_person_id,csfd person id of gloria swanson cinematographers (real vendored values). may be NULL.
+elonet_person_id,elonet person id of gloria swanson cinematographers (real vendored values). may be NULL.
+danish_national_filmography_person_id,danish national filmography person id of gloria swanson cinematographers (real vendored values). may be NULL.
+commons_category,commons category of gloria swanson cinematographers (real vendored values). may be NULL.
+burial_place,burial place of gloria swanson cinematographers (real vendored values). may be NULL.
+surname,surname of gloria swanson cinematographers (real vendored values).
+open_media_database_person_id,open media database person id of gloria swanson cinematographers (real vendored values). may be NULL.
+languages,languages of gloria swanson cinematographers (real vendored values). may be NULL.
+gender,gender of gloria swanson cinematographers (real vendored values).
+world_cat_identities_id_superseded,world cat identities id superseded of gloria swanson cinematographers (real vendored values). may be NULL.
+deutsche_biographie_gnd_id,deutsche biographie gnd id of gloria swanson cinematographers (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of gloria swanson cinematographers (real vendored values).
+m_ymovies_person_id,m ymovies person id of gloria swanson cinematographers (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of gloria swanson cinematographers (real vendored values). may be NULL.
+movie_walker_press_person_id,movie walker press person id of gloria swanson cinematographers (real vendored values). may be NULL.
+ivi_person_id,ivi person id of gloria swanson cinematographers (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of gloria swanson cinematographers (real vendored values).
+prabook_id,prabook id of gloria swanson cinematographers (real vendored values). may be NULL.
+filmru_person_id,filmru person id of gloria swanson cinematographers (real vendored values). may be NULL.
+award_nominations,award nominations of gloria swanson cinematographers (real vendored values). may be NULL.
+europeana_entity_id,europeana entity id of gloria swanson cinematographers (real vendored values). may be NULL.
+academy_awards_database_nominee_id,academy awards database nominee id of gloria swanson cinematographers (real vendored values). may be NULL.
+american_film_institute_person_id,american film institute person id of gloria swanson cinematographers (real vendored values). may be NULL.

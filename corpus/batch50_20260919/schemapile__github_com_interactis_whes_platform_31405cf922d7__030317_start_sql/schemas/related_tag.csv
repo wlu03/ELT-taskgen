@@ -1,0 +1,6 @@
+column_name,column_description
+created_at,Column created_at of table related_tag. may be NULL.
+id,Column id of table related_tag.
+related_tag_id,Column related_tag_id of table related_tag. may be NULL.
+tag_id,Column tag_id of table related_tag. may be NULL.
+updated_at,Column updated_at of table related_tag. may be NULL.

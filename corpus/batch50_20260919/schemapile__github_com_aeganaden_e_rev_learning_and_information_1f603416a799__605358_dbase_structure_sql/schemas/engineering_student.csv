@@ -1,0 +1,14 @@
+column_name,column_description
+email,Column email of table engineering.student.
+firstname,Column firstname of table engineering.student.
+image_path,Column image_path of table engineering.student.
+lastname,Column lastname of table engineering.student.
+midname,Column midname of table engineering.student.
+offering_id,Column offering_id of table engineering.student.
+password,Column password of table engineering.student.
+student_department,Column student_department of table engineering.student.
+student_id,Column student_id of table engineering.student.
+student_is_blocked,Column student_is_blocked of table engineering.student.
+student_num,Column student_num of table engineering.student.
+token,Column token of table engineering.student. may be NULL.
+username,Column username of table engineering.student.

@@ -1,0 +1,3 @@
+column_name,column_description
+avatar_tags_id,Column avatar_tags_id of table avatar_tag. may be NULL.
+tag_id,Column tag_id of table avatar_tag. may be NULL.

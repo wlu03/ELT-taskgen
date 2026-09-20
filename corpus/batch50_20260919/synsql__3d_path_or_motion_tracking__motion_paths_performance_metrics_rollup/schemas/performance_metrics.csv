@@ -1,0 +1,10 @@
+column_name,column_description
+metric_id,Unique identifier for each performance metric.
+robot_id,ID of the robot. may be NULL.
+path_id,ID of the motion path. may be NULL.
+metric_name,"Name of the performance metric (e.g., cycle time, efficiency). always exactly one of 'cycle time', 'efficiency'. may be NULL."
+metric_value,Value of the performance metric. may be NULL.
+recorded_date,Date the metric was recorded. may be NULL.
+unit,"Unit of the metric (e.g., seconds, percent). always exactly one of 'seconds', 'percent'. may be NULL."
+target_value,Target value for the metric. may be NULL.
+threshold_value,Threshold value for the metric. may be NULL.

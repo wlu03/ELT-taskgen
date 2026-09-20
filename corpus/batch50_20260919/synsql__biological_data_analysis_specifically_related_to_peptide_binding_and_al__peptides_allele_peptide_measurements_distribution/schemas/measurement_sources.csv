@@ -1,0 +1,9 @@
+column_name,column_description
+source_id,Unique identifier for each measurement source.
+source_description,Description of the source. may be NULL.
+reference,Reference to the publication or data source. may be NULL.
+source_type,"Type of source (e.g., publication, internal data, external database). always exactly one of 'publication', 'internal data', 'external database'. may be NULL."
+source_year,Year of the source. may be NULL.
+source_authors,Authors of the source. may be NULL.
+source_institution,Institution associated with the source. may be NULL.
+source_url,URL to access the source. may be NULL.

@@ -1,0 +1,27 @@
+column_name,column_description
+best_if_used_by,Column best_if_used_by of table containers. may be NULL.
+build_id,Column build_id of table containers. may be NULL.
+discontinued,Column discontinued of table containers.
+handle,Column handle of table containers.
+hijacked,Column hijacked of table containers.
+id,Column id of table containers.
+image_check_container_id,Column image_check_container_id of table containers. may be NULL.
+image_get_container_id,Column image_get_container_id of table containers. may be NULL.
+meta_attempt,Column meta_attempt of table containers.
+meta_build_id,Column meta_build_id of table containers.
+meta_build_name,Column meta_build_name of table containers.
+meta_job_id,Column meta_job_id of table containers.
+meta_job_name,Column meta_job_name of table containers.
+meta_pipeline_id,Column meta_pipeline_id of table containers.
+meta_pipeline_name,Column meta_pipeline_name of table containers.
+meta_process_user,Column meta_process_user of table containers.
+meta_step_name,Column meta_step_name of table containers.
+meta_type,Column meta_type of table containers.
+meta_working_directory,Column meta_working_directory of table containers.
+pipeline_id,Column pipeline_id of table containers. may be NULL.
+plan_id,Column plan_id of table containers. may be NULL.
+resource_id,Column resource_id of table containers. may be NULL.
+state,Column state of table containers.
+team_id,Column team_id of table containers. may be NULL.
+worker_name,Column worker_name of table containers. may be NULL.
+worker_resource_config_check_session_id,Column worker_resource_config_check_session_id of table containers. may be NULL.

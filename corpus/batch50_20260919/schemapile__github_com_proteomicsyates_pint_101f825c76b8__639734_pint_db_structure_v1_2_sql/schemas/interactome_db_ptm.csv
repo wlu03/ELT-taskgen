@@ -1,0 +1,7 @@
+column_name,column_description
+psm_id,Column PSM_id of table interactome_db.PTM. may be NULL.
+peptide_id,Column Peptide_id of table interactome_db.PTM. may be NULL.
+cv_id,Column cv_id of table interactome_db.PTM. may be NULL.
+id,Column id of table interactome_db.PTM.
+mass_shift,Column mass_shift of table interactome_db.PTM.
+name,Column name of table interactome_db.PTM.

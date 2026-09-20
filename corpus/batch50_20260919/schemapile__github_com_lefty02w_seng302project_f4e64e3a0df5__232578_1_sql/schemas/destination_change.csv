@@ -1,0 +1,5 @@
+column_name,column_description
+action,Column action of table destination_change.
+id,Column id of table destination_change.
+request_id,Column request_id of table destination_change.
+traveller_type_id,Column traveller_type_id of table destination_change.

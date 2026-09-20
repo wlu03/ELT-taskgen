@@ -1,0 +1,8 @@
+column_name,column_description
+version_id,Unique identifier for each version.
+path_id,ID of the motion path. may be NULL.
+version_number,Version number of the path. may be NULL.
+created_date,Date the version was created. may be NULL.
+description,Description of the changes in the version. may be NULL.
+created_by,User who created the version. may be NULL.
+change_log,Detailed change log for the version. may be NULL.

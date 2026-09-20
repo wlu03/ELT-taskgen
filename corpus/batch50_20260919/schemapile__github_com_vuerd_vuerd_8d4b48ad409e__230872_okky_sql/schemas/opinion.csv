@@ -1,0 +1,9 @@
+column_name,column_description
+author_id,Column author_id of table opinion.
+comment,Column comment of table opinion.
+content_id,Column content_id of table opinion.
+date_created,Column date_created of table opinion.
+id,Column id of table opinion.
+last_updated,Column last_updated of table opinion.
+version,Column version of table opinion.
+vote_count,Column vote_count of table opinion.

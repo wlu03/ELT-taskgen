@@ -1,0 +1,5 @@
+column_name,column_description
+availability,Column Availability of table Products_Sizes.
+id,Column ID of table Products_Sizes.
+id_products,Column ID_PRODUCTS of table Products_Sizes.
+id_sizes,Column ID_SIZES of table Products_Sizes.

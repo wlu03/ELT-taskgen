@@ -1,0 +1,5 @@
+column_name,column_description
+active,Column active of table tag. may be NULL.
+created_at,Column created_at of table tag. may be NULL.
+id,Column id of table tag.
+updated_at,Column updated_at of table tag. may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+minact,Column minact of table MinActivity. may be NULL.
+minact_notes,Column minact_notes of table MinActivity. may be NULL.
+minact_units,Column minact_units of table MinActivity. may be NULL.
+periods,Column periods of table MinActivity.
+tech,Column tech of table MinActivity.

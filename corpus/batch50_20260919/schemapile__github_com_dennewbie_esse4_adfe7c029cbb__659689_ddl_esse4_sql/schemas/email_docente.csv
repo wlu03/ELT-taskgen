@@ -1,0 +1,3 @@
+column_name,column_description
+mail_docente,Column mail_docente of table email_docente.
+tesserino_docente,Column tesserino_docente of table email_docente.

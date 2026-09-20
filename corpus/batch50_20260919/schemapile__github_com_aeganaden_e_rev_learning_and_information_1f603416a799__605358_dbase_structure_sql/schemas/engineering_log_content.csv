@@ -1,0 +1,3 @@
+column_name,column_description
+log_content_id,Column log_content_id of table engineering.log_content.
+log_content_name,Column log_content_name of table engineering.log_content.

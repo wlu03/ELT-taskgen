@@ -1,0 +1,8 @@
+column_name,column_description
+region_code,Unique identifier for each educational region.
+region_name,Name of the educational region. may be NULL.
+region_type,"Type of region (e.g., urban, rural, suburban). always exactly one of 'urban', 'rural', 'suburban'. may be NULL."
+population,Population of the region. may be NULL.
+number_of_schools,Number of schools in the region. may be NULL.
+contact_person,Name of the contact person for the region. may be NULL.
+contact_email,Email of the contact person for the region. may be NULL.

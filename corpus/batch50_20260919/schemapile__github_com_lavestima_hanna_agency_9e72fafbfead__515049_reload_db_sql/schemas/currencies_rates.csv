@@ -1,0 +1,5 @@
+column_name,column_description
+conversion_rate,Column Conversion_Rate of table Currencies_Rates.
+date_rate,Column Date_Rate of table Currencies_Rates.
+id,Column ID of table Currencies_Rates.
+id_currencies,Column ID_CURRENCIES of table Currencies_Rates.

@@ -1,0 +1,5 @@
+column_name,column_description
+build_id,Column build_id of table build_inputs. may be NULL.
+modified_time,Column modified_time of table build_inputs.
+name,Column name of table build_inputs.
+versioned_resource_id,Column versioned_resource_id of table build_inputs. may be NULL.

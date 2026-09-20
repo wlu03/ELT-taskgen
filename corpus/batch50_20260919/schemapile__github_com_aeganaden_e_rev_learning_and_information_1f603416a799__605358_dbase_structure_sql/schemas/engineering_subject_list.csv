@@ -1,0 +1,7 @@
+column_name,column_description
+subject_list_department,Column subject_list_department of table engineering.subject_list.
+subject_list_description,Column subject_list_description of table engineering.subject_list. may be NULL.
+subject_list_id,Column subject_list_id of table engineering.subject_list.
+subject_list_is_active,Column subject_list_is_active of table engineering.subject_list.
+subject_list_name,Column subject_list_name of table engineering.subject_list.
+year_level_id,Column year_level_id of table engineering.subject_list.

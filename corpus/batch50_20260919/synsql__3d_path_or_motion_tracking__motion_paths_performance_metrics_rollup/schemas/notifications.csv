@@ -1,0 +1,6 @@
+column_name,column_description
+notification_id,Unique identifier for each notification.
+robot_id,ID of the robot. may be NULL.
+notification_date,Date the notification was sent. may be NULL.
+notification_type,"Type of notification (e.g., maintenance, optimization). always exactly one of 'maintenance', 'optimization'. may be NULL."
+message,Message of the notification. may be NULL.

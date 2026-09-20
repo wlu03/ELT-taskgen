@@ -1,0 +1,4 @@
+column_name,column_description
+nationality,Column nationality of table profile_nationality.
+profile,Column profile of table profile_nationality.
+profile_nationality_id,Column profile_nationality_id of table profile_nationality.

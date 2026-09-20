@@ -1,0 +1,9 @@
+column_name,column_description
+code,Column CODE of table DATA_STORES.
+dbin_id,Column DBIN_ID of table DATA_STORES.
+download_url,Column DOWNLOAD_URL of table DATA_STORES.
+id,Column ID of table DATA_STORES.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table DATA_STORES. may be NULL.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table DATA_STORES.
+remote_url,Column REMOTE_URL of table DATA_STORES.
+session_token,Column SESSION_TOKEN of table DATA_STORES.

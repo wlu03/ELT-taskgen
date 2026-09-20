@@ -1,0 +1,11 @@
+column_name,column_description
+big,Column big of table interactome_db.Project.
+description,Column description of table interactome_db.Project. may be NULL.
+hidden,Column hidden of table interactome_db.Project.
+id,Column id of table interactome_db.Project.
+name,Column name of table interactome_db.Project.
+private,Column private of table interactome_db.Project.
+pubmedlink,Column pubmedLink of table interactome_db.Project. may be NULL.
+releasedate,Column releaseDate of table interactome_db.Project. may be NULL.
+tag,Column tag of table interactome_db.Project.
+uploadeddate,Column uploadedDate of table interactome_db.Project.

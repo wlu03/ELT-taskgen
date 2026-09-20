@@ -1,0 +1,6 @@
+column_name,column_description
+end_date,Column end_date of table tag_test_case. may be NULL.
+id,Column id of table tag_test_case.
+name,Column name of table tag_test_case. may be NULL.
+start_date,Column start_date of table tag_test_case. may be NULL.
+test_case_id,Column test_case_id of table tag_test_case. may be NULL.

@@ -1,0 +1,19 @@
+column_name,column_description
+fullname,fullname of filmeditor (real vendored values).
+biography,biography of filmeditor (real vendored values). may be NULL.
+birthdate,birthdate of filmeditor (real vendored values). may be NULL.
+deathdate,deathdate of filmeditor (real vendored values). may be NULL.
+entitytype,entitytype of filmeditor (real vendored values).
+nationality,nationality of filmeditor (real vendored values). may be NULL.
+gender,gender of filmeditor (real vendored values).
+birthplace,birthplace of filmeditor (real vendored values). may be NULL.
+imdbid,imdbid of filmeditor (real vendored values).
+profession,profession of filmeditor (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmeditor (real vendored values).
+danskefilmpersonid,danskefilmpersonid of filmeditor (real vendored values). may be NULL.
+surname,surname of filmeditor (real vendored values). may be NULL.
+danskfilmogtvpersonid,danskfilmogtvpersonid of filmeditor (real vendored values). may be NULL.
+firstname,firstname of filmeditor (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmeditor (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmeditor (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmeditor (real vendored values). may be NULL.

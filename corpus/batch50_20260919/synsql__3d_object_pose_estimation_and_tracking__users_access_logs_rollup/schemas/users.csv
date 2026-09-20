@@ -1,0 +1,8 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., researcher, data analyst, admin). always exactly one of 'researcher', 'data analyst', 'admin'. may be NULL."
+department,Department of the user. may be NULL.
+position,Position of the user. may be NULL.
+access_level,"Access level of the user (e.g., read, write, admin). always exactly one of 'read', 'write', 'admin'. may be NULL."

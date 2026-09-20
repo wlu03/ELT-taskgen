@@ -1,0 +1,11 @@
+column_name,column_description
+content,Column content of table call_flow_element. may be NULL.
+created_date,Column created_date of table call_flow_element. may be NULL.
+id,Column id of table call_flow_element.
+ivr_id,Column ivr_id of table call_flow_element. may be NULL.
+ivr_name,Column ivr_name of table call_flow_element. may be NULL.
+list_order,Column list_order of table call_flow_element.
+name,Column name of table call_flow_element.
+type,Column type of table call_flow_element.
+unit_id,Column unit_id of table call_flow_element. may be NULL.
+updated_date,Column updated_date of table call_flow_element. may be NULL.

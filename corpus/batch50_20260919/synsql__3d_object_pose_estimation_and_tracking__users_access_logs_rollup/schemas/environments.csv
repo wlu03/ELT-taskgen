@@ -1,0 +1,6 @@
+column_name,column_description
+environment_id,Unique identifier for each environment.
+environment_name,Name of the environment. may be NULL.
+environment_type,"Type of the environment (e.g., indoor, outdoor). always exactly one of 'indoor', 'outdoor'. may be NULL."
+environment_description,Detailed description of the environment. may be NULL.
+environment_conditions,"Additional conditions of the environment (e.g., weather, noise level). always exactly one of 'weather', 'noise level'. may be NULL."

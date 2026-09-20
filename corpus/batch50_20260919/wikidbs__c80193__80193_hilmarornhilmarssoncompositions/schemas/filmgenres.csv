@@ -1,0 +1,28 @@
+column_name,column_description
+genrename,genrename of filmgenres (real vendored values).
+genredescription,genredescription of filmgenres (real vendored values).
+commonscategory,commonscategory of filmgenres (real vendored values). may be NULL.
+instanceof,instanceof of filmgenres (real vendored values).
+maincategory,maincategory of filmgenres (real vendored values).
+gndid,gndid of filmgenres (real vendored values). may be NULL.
+freebaseid,freebaseid of filmgenres (real vendored values). may be NULL.
+representativeimage,representativeimage of filmgenres (real vendored values). may be NULL.
+quoratopicid,quoratopicid of filmgenres (real vendored values). may be NULL.
+babelnetid,babelnetid of filmgenres (real vendored values). may be NULL.
+libraryofcongressgenreformtermsid,libraryofcongressgenreformtermsid of filmgenres (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmgenres (real vendored values). may be NULL.
+iabcode,iabcode of filmgenres (real vendored values). may be NULL.
+ysoid,ysoid of filmgenres (real vendored values). may be NULL.
+kbpediaid,kbpediaid of filmgenres (real vendored values). may be NULL.
+subclassof,subclassof of filmgenres (real vendored values).
+xtopicid,xtopicid of filmgenres (real vendored values). may be NULL.
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of filmgenres (real vendored values). may be NULL.
+norwegianthesaurusongenreandformid,norwegianthesaurusongenreandformid of filmgenres (real vendored values). may be NULL.
+nlcrautid,nlcrautid of filmgenres (real vendored values). may be NULL.
+suddeutschezeitungtopicid,suddeutschezeitungtopicid of filmgenres (real vendored values). may be NULL.
+rateyourmusicfilmgenreid,rateyourmusicfilmgenreid of filmgenres (real vendored values). may be NULL.
+itunesgenreid,itunesgenreid of filmgenres (real vendored values). may be NULL.
+wikikidsid,wikikidsid of filmgenres (real vendored values). may be NULL.
+relatedlist,relatedlist of filmgenres (real vendored values). may be NULL.
+allmoviegenreid,allmoviegenreid of filmgenres (real vendored values). may be NULL.
+gsafdid,gsafdid of filmgenres (real vendored values). may be NULL.

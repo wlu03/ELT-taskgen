@@ -1,0 +1,7 @@
+column_name,column_description
+activo,Column activo of table cventa.modulo.
+fecha_sis,Column fecha_sis of table cventa.modulo.
+icono,Column icono of table cventa.modulo.
+modulo,Column modulo of table cventa.modulo.
+nombre,Column nombre of table cventa.modulo.
+orden,Column orden of table cventa.modulo.

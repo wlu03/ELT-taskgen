@@ -1,0 +1,6 @@
+column_name,column_description
+categorylabel,categorylabel of filmdirectorcategories (real vendored values).
+categorydescription,categorydescription of filmdirectorcategories (real vendored values).
+categorytype,categorytype of filmdirectorcategories (real vendored values).
+relatedtopics,relatedtopics of filmdirectorcategories (real vendored values).
+containedtopics,containedtopics of filmdirectorcategories (real vendored values).

@@ -1,0 +1,5 @@
+column_name,column_description
+destination_id,Column destination_id of table destination_photo.
+destination_photo_id,Column destination_photo_id of table destination_photo.
+photo_id,Column photo_id of table destination_photo.
+profile_id,Column profile_id of table destination_photo.

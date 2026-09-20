@@ -1,0 +1,9 @@
+column_name,column_description
+created_at,Column created_at of table page_translation. may be NULL.
+description,Column description of table page_translation. may be NULL.
+id,Column id of table page_translation.
+language_id,Column language_id of table page_translation. may be NULL.
+page_id,Column page_id of table page_translation. may be NULL.
+slug,Column slug of table page_translation. may be NULL.
+title,Column title of table page_translation. may be NULL.
+updated_at,Column updated_at of table page_translation. may be NULL.

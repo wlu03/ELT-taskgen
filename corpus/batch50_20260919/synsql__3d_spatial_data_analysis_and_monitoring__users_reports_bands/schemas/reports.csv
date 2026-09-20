@@ -1,0 +1,8 @@
+column_name,column_description
+report_id,Unique identifier for each report.
+user_id,ID of the user who created the report. may be NULL.
+report_date,Date when the report was generated. may be NULL.
+report_content,Content of the report. may be NULL.
+report_type,"Type of report (e.g., air quality, temperature). always exactly one of 'air quality', 'temperature'. may be NULL."
+created_at,Timestamp when the report was created. may be NULL.
+updated_at,Timestamp when the report was last updated. may be NULL.

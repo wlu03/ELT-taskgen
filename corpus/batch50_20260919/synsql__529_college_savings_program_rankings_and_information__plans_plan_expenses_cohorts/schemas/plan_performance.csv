@@ -1,0 +1,6 @@
+column_name,column_description
+performance_id,Unique identifier for each performance entry.
+plan_id,ID of the plan. may be NULL.
+year,Year for which the performance score is recorded. may be NULL.
+performance_score,Performance score of the plan for the specified year. may be NULL.
+rank,Ranking of the plan within its peer group. may be NULL.

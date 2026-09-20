@@ -1,0 +1,6 @@
+column_name,column_description
+access_token,Column access_token of table oauthid.
+id,Column id of table oauthid.
+provider,Column provider of table oauthid.
+user_id,Column user_id of table oauthid.
+version,Column version of table oauthid.

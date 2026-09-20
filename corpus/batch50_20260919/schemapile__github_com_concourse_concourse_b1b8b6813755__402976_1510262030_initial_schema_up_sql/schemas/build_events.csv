@@ -1,0 +1,6 @@
+column_name,column_description
+build_id,Column build_id of table build_events. may be NULL.
+event_id,Column event_id of table build_events.
+payload,Column payload of table build_events.
+type,Column type of table build_events.
+version,Column version of table build_events.

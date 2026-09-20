@@ -1,0 +1,11 @@
+column_name,column_description
+position_id,Unique identifier for each position record.
+drone_id,Reference to the drone that the position data belongs to. may be NULL.
+pos_x,X coordinate of the drone's position. may be NULL.
+pos_y,Y coordinate of the drone's position. may be NULL.
+pos_z,Z coordinate of the drone's position (altitude). may be NULL.
+timestamp,Timestamp of when the position was recorded. may be NULL.
+altitude,Altitude of the drone. may be NULL.
+latitude,Latitude of the drone. may be NULL.
+longitude,Longitude of the drone. may be NULL.
+accuracy,Accuracy of the position data. may be NULL.

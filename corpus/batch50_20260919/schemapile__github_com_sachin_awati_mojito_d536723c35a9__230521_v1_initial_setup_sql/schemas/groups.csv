@@ -1,0 +1,6 @@
+column_name,column_description
+created_by_user_id,Column created_by_user_id of table groups. may be NULL.
+created_date,Column created_date of table groups. may be NULL.
+group_name,Column group_name of table groups.
+id,Column id of table groups.
+last_modified_date,Column last_modified_date of table groups. may be NULL.

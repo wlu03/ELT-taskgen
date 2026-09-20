@@ -1,0 +1,11 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., parent, financial advisor, admin). always exactly one of 'parent', 'financial advisor', 'admin'. may be NULL."
+password_hash,Hashed password for user authentication. may be NULL.
+phone_number,Phone number of the user. may be NULL.
+address,Street address of the user. may be NULL.
+city,City where the user resides. may be NULL.
+state_id,State where the user resides. may be NULL.
+zip_code,Zip code of the user's address. may be NULL.

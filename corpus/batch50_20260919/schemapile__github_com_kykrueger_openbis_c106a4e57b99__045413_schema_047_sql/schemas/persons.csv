@@ -1,0 +1,11 @@
+column_name,column_description
+dbin_id,Column DBIN_ID of table PERSONS.
+display_settings,Column DISPLAY_SETTINGS of table PERSONS. may be NULL.
+email,Column EMAIL of table PERSONS. may be NULL.
+first_name,Column FIRST_NAME of table PERSONS. may be NULL.
+grou_id,Column GROU_ID of table PERSONS. may be NULL.
+id,Column ID of table PERSONS.
+last_name,Column LAST_NAME of table PERSONS. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table PERSONS. may be NULL.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table PERSONS.
+user_id,Column USER_ID of table PERSONS.

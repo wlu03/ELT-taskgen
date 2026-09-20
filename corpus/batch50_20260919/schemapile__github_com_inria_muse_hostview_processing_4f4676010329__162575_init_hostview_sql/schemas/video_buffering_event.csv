@@ -1,0 +1,7 @@
+column_name,column_description
+ended_at,Column ended_at of table video_buffering_event. may be NULL.
+ended_by_abort,Column ended_by_abort of table video_buffering_event. may be NULL.
+id,Column id of table video_buffering_event.
+started_at,Column started_at of table video_buffering_event. may be NULL.
+type,Column type of table video_buffering_event. may be NULL.
+video_session_id,Column video_session_id of table video_buffering_event.

@@ -1,0 +1,23 @@
+column_name,column_description
+anonymity,Column anonymity of table category. may be NULL.
+code,Column code of table category.
+date_created,Column date_created of table category.
+default_label,Column default_label of table category.
+enabled,Column enabled of table category.
+external_link,Column external_link of table category. may be NULL.
+icon_css_names,Column icon_css_names of table category. may be NULL.
+isurl,Column isurl of table category.
+label_code,Column label_code of table category.
+last_updated,Column last_updated of table category.
+level,Column level of table category.
+parent_id,Column parent_id of table category. may be NULL.
+require_tag,Column require_tag of table category.
+sort_order,Column sort_order of table category.
+url,Column url of table category. may be NULL.
+use_evaluate,Column use_evaluate of table category.
+use_note,Column use_note of table category.
+use_opinion,Column use_opinion of table category.
+use_tag,Column use_tag of table category.
+version,Column version of table category.
+writable,Column writable of table category.
+write_by_external_link,Column write_by_external_link of table category. may be NULL.

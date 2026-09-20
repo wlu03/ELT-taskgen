@@ -1,0 +1,11 @@
+column_name,column_description
+cap,Column CAP of table tutor_aziendale. may be NULL.
+citta,Column citta of table tutor_aziendale. may be NULL.
+cognome,Column cognome of table tutor_aziendale.
+data_nascita,Column data_nascita of table tutor_aziendale.
+nome,Column nome of table tutor_aziendale.
+numero_civico,Column numero_civico of table tutor_aziendale. may be NULL.
+numero_tesserino,Column numero_tesserino of table tutor_aziendale.
+partita_iva,Column partita_iva of table tutor_aziendale.
+sesso,"Column sesso of table tutor_aziendale. always exactly one of 'M', 'F', 'U', 'm', 'f', 'u'. may be NULL."
+via,Column via of table tutor_aziendale. may be NULL.

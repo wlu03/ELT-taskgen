@@ -1,0 +1,16 @@
+column_name,column_description
+connection_id,Column connection_id of table http_logs.
+content_length,Column content_length of table http_logs. may be NULL.
+content_type,Column content_type of table http_logs. may be NULL.
+destination_ip,Column destination_ip of table http_logs. may be NULL.
+destination_port,Column destination_port of table http_logs. may be NULL.
+http_host,Column http_host of table http_logs. may be NULL.
+http_status_code,Column http_status_code of table http_logs. may be NULL.
+http_verb,Column http_verb of table http_logs. may be NULL.
+http_verb_param,Column http_verb_param of table http_logs. may be NULL.
+id,Column id of table http_logs.
+logged_at,Column logged_at of table http_logs. may be NULL.
+protocol,Column protocol of table http_logs. may be NULL.
+referer,Column referer of table http_logs. may be NULL.
+source_ip,Column source_ip of table http_logs. may be NULL.
+source_port,Column source_port of table http_logs. may be NULL.

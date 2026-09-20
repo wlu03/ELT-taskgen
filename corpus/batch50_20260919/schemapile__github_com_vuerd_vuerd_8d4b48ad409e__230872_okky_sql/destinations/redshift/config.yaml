@@ -1,0 +1,125 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-vuerd-vuerd-8d4b48ad-3d085ad29924-bucket/area_city_code.jsonl
+    sync_mode: full_refresh_append
+    table: area_city_code
+  - path: s3://schemapile--github-com-vuerd-vuerd-8d4b48ad-3d085ad29924-bucket/avatar_tag.jsonl
+    sync_mode: full_refresh_append
+    table: avatar_tag
+  - path: s3://schemapile--github-com-vuerd-vuerd-8d4b48ad-3d085ad29924-bucket/category.jsonl
+    sync_mode: full_refresh_append
+    table: category
+  - path: s3://schemapile--github-com-vuerd-vuerd-8d4b48ad-3d085ad29924-bucket/content.jsonl
+    sync_mode: full_refresh_append
+    table: content
+  - path: s3://schemapile--github-com-vuerd-vuerd-8d4b48ad-3d085ad29924-bucket/job_position_tag.jsonl
+    sync_mode: full_refresh_append
+    table: job_position_tag
+  - path: s3://schemapile--github-com-vuerd-vuerd-8d4b48ad-3d085ad29924-bucket/scrap.jsonl
+    sync_mode: full_refresh_append
+    table: scrap
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - anonymous
+    - banner
+    - company_info
+    - content_file
+    - job_position
+    - logged_in
+    - managed_user
+    - notification
+    - notification_read
+    - person
+    - tag
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/activity.csv
+  sync_mode: full_refresh_append
+  table: activity
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/area_district_code.csv
+  sync_mode: full_refresh_append
+  table: area_district_code
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/article_tag.csv
+  sync_mode: full_refresh_append
+  table: article_tag
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/company.csv
+  sync_mode: full_refresh_append
+  table: company
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/content_vote.csv
+  sync_mode: full_refresh_append
+  table: content_vote
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/oauthid.csv
+  sync_mode: full_refresh_append
+  table: oauthid
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924/spam_word.csv
+  sync_mode: full_refresh_append
+  table: spam_word
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924
+    sync_mode: full_refresh_append
+    tables:
+    - article
+    - confirm_email
+    - file
+    - recruit
+    - role
+    - tag_similar_text
+    - user
+    - user_role
+postgres:
+  config:
+    database: schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - avatar
+    - banner_click
+    - career
+    - change_log
+    - follow
+    - opinion
+    - resume
+    user: postgres
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: schemapile__github_com_vuerd_vuerd_8d4b48ad_3d085ad29924
+    secret_access_key: ''
+    username: ''

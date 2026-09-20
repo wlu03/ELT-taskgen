@@ -1,0 +1,4 @@
+column_name,column_description
+code,Column code of table exhibition_code.
+exhibition_code_series_id,Column exhibition_code_series_id of table exhibition_code. may be NULL.
+id,Column id of table exhibition_code.

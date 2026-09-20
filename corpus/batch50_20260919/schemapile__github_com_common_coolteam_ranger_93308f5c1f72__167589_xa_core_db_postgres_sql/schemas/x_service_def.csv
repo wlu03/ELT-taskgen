@@ -1,0 +1,15 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_service_def. may be NULL.
+create_time,Column create_time of table x_service_def. may be NULL.
+description,Column description of table x_service_def. may be NULL.
+guid,Column guid of table x_service_def. may be NULL.
+id,Column id of table x_service_def.
+impl_class_name,Column impl_class_name of table x_service_def. may be NULL.
+is_enabled,Column is_enabled of table x_service_def. may be NULL.
+label,Column label of table x_service_def. may be NULL.
+name,Column name of table x_service_def. may be NULL.
+rb_key_description,Column rb_key_description of table x_service_def. may be NULL.
+rb_key_label,Column rb_key_label of table x_service_def. may be NULL.
+upd_by_id,Column upd_by_id of table x_service_def. may be NULL.
+update_time,Column update_time of table x_service_def. may be NULL.
+version,Column version of table x_service_def. may be NULL.

@@ -1,0 +1,15 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_policy. may be NULL.
+create_time,Column create_time of table x_policy. may be NULL.
+description,Column description of table x_policy. may be NULL.
+guid,Column guid of table x_policy. may be NULL.
+id,Column id of table x_policy.
+is_audit_enabled,Column is_audit_enabled of table x_policy.
+is_enabled,Column is_enabled of table x_policy.
+name,Column name of table x_policy. may be NULL.
+policy_type,Column policy_type of table x_policy. may be NULL.
+resource_signature,Column resource_signature of table x_policy. may be NULL.
+service,Column service of table x_policy. may be NULL.
+upd_by_id,Column upd_by_id of table x_policy. may be NULL.
+update_time,Column update_time of table x_policy. may be NULL.
+version,Column version of table x_policy. may be NULL.

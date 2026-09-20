@@ -1,0 +1,7 @@
+column_name,column_description
+data_fine,Column data_fine of table relatore.
+data_inizio,Column data_inizio of table relatore.
+matricola_studente,Column matricola_studente of table relatore.
+tesserino_docente,Column tesserino_docente of table relatore.
+tipo_tesi,"Column tipo_tesi of table relatore. always exactly one of 'Compilativa', 'COMPILATIVA', 'compilativa', 'Sperimentale', 'SPERIMENTALE', 'sperimentale'. may be NULL."
+titolo_tesi,Column titolo_tesi of table relatore. may be NULL.

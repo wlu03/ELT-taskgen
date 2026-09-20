@@ -1,0 +1,6 @@
+column_name,column_description
+confidence_score_type_name,Column Confidence_Score_Type_name of table interactome_db.Protein_Score.
+protein_id,Column Protein_id of table interactome_db.Protein_Score.
+id,Column id of table interactome_db.Protein_Score.
+name,Column name of table interactome_db.Protein_Score.
+value,Column value of table interactome_db.Protein_Score.

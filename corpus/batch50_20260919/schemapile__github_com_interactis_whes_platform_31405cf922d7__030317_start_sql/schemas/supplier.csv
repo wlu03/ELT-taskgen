@@ -1,0 +1,14 @@
+column_name,column_description
+address_addition,Column address_addition of table supplier. may be NULL.
+city,Column city of table supplier. may be NULL.
+content_id,Column content_id of table supplier. may be NULL.
+created_at,Column created_at of table supplier. may be NULL.
+email,Column email of table supplier. may be NULL.
+geom,Column geom of table supplier. may be NULL.
+id,Column id of table supplier.
+phone,Column phone of table supplier. may be NULL.
+street,Column street of table supplier. may be NULL.
+street_number,Column street_number of table supplier. may be NULL.
+updated_at,Column updated_at of table supplier. may be NULL.
+url,Column url of table supplier. may be NULL.
+zip,Column zip of table supplier. may be NULL.

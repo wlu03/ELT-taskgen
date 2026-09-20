@@ -1,0 +1,5 @@
+column_name,column_description
+tech,Column tech of table DiscountRate.
+tech_rate,Column tech_rate of table DiscountRate. may be NULL.
+tech_rate_notes,Column tech_rate_notes of table DiscountRate. may be NULL.
+vintage,Column vintage of table DiscountRate.

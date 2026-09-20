@@ -1,0 +1,4 @@
+column_name,column_description
+authority,Column authority of table role.
+id,Column id of table role.
+version,Column version of table role.

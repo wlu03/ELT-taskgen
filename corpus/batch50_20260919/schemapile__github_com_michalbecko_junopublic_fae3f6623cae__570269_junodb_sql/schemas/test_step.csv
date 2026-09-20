@@ -1,0 +1,7 @@
+column_name,column_description
+create_date,Column create_date of table test_step.
+creator_id,Column creator_id of table test_step. may be NULL.
+expected_result,Column expected_result of table test_step. may be NULL.
+id,Column id of table test_step.
+precondition,Column precondition of table test_step. may be NULL.
+test_case_id,Column test_case_id of table test_step.

@@ -1,0 +1,27 @@
+column_name,column_description
+fullname,fullname of productiondesigner (real vendored values).
+biography,biography of productiondesigner (real vendored values).
+viafid,viafid of productiondesigner (real vendored values). may be NULL.
+isniidentifier,isniidentifier of productiondesigner (real vendored values). may be NULL.
+gndid,gndid of productiondesigner (real vendored values). may be NULL.
+imdbid,imdbid of productiondesigner (real vendored values).
+birthdate,birthdate of productiondesigner (real vendored values). may be NULL.
+entitytype,entitytype of productiondesigner (real vendored values).
+birthplace,birthplace of productiondesigner (real vendored values). may be NULL.
+freebaseid,freebaseid of productiondesigner (real vendored values).
+citizenship,citizenship of productiondesigner (real vendored values).
+profession,profession of productiondesigner (real vendored values).
+firstname,firstname of productiondesigner (real vendored values).
+filmportalid,filmportalid of productiondesigner (real vendored values). may be NULL.
+sbnauthorid,sbnauthorid of productiondesigner (real vendored values). may be NULL.
+gender,gender of productiondesigner (real vendored values).
+lastname,lastname of productiondesigner (real vendored values).
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of productiondesigner (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of productiondesigner (real vendored values). may be NULL.
+languages,languages of productiondesigner (real vendored values).
+tmdbpersonid,tmdbpersonid of productiondesigner (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of productiondesigner (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of productiondesigner (real vendored values).
+deathdate,deathdate of productiondesigner (real vendored values). may be NULL.
+deathplace,deathplace of productiondesigner (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of productiondesigner (real vendored values). may be NULL.

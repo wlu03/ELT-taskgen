@@ -1,0 +1,6 @@
+column_name,column_description
+date_created,Column Date_Created of table Tokens.
+date_expired,Column Date_Expired of table Tokens.
+id,Column ID of table Tokens.
+id_users,Column ID_USERS of table Tokens.
+token,Column Token of table Tokens.

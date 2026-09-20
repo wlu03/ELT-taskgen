@@ -1,0 +1,6 @@
+column_name,column_description
+entry_id,Column entry_id of table undo_stack.
+item_type,Column item_type of table undo_stack. may be NULL.
+object_id,Column object_id of table undo_stack. may be NULL.
+profile_id,Column profile_id of table undo_stack. may be NULL.
+time_created,Column time_created of table undo_stack.

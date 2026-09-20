@@ -1,0 +1,18 @@
+column_name,column_description
+component_id,Unique identifier for each component (UUID).
+project_id,Reference to the project the component belongs to. may be NULL.
+component_name,Name of the component. may be NULL.
+coordinate_x,X-coordinate of the component in meters. may be NULL.
+coordinate_y,Y-coordinate of the component in meters. may be NULL.
+coordinate_z,Z-coordinate of the component in meters. may be NULL.
+component_type_id,Reference to the type of the component. may be NULL.
+installation_date,Date the component was installed. may be NULL.
+status,"Status of the component (e.g., installed, pending, removed). always exactly one of 'installed', 'pending', 'removed'. may be NULL."
+material,Material used for the component. may be NULL.
+manufacturer,Manufacturer of the component. may be NULL.
+serial_number,Unique serial number for the component. may be NULL.
+weight,Weight of the component in kilograms. may be NULL.
+dimensions,"Dimensions of the component (e.g., '10x5x2'). may be NULL."
+notes,Additional notes or comments about the component. may be NULL.
+last_modified_by,Reference to the user who last modified the component data. may be NULL.
+last_modified_date,Date when the component data was last modified. may be NULL.

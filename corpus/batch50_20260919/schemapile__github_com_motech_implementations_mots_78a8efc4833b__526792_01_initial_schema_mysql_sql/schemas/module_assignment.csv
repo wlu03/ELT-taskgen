@@ -1,0 +1,3 @@
+column_name,column_description
+assigned_modules_id,Column assigned_modules_id of table module_assignment.
+module_id,Column module_id of table module_assignment.

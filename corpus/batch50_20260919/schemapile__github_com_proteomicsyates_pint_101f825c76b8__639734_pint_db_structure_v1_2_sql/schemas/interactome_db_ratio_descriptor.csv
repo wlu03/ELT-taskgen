@@ -1,0 +1,5 @@
+column_name,column_description
+experimental_condition_1_id,Column Experimental_Condition_1_id of table interactome_db.Ratio_Descriptor.
+experimental_condition_2_id,Column Experimental_Condition_2_id of table interactome_db.Ratio_Descriptor.
+description,Column description of table interactome_db.Ratio_Descriptor.
+id,Column id of table interactome_db.Ratio_Descriptor.

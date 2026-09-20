@@ -1,0 +1,3 @@
+column_name,column_description
+event_id,Column event_id of table event_photo.
+photo_id,Column photo_id of table event_photo.

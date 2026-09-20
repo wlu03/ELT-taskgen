@@ -1,0 +1,16 @@
+column_name,column_description
+active_containers,Column active_containers of table workers. may be NULL.
+addr,Column addr of table workers. may be NULL.
+baggageclaim_url,Column baggageclaim_url of table workers. may be NULL.
+expires,Column expires of table workers. may be NULL.
+http_proxy_url,Column http_proxy_url of table workers. may be NULL.
+https_proxy_url,Column https_proxy_url of table workers. may be NULL.
+name,Column name of table workers.
+no_proxy,Column no_proxy of table workers. may be NULL.
+platform,Column platform of table workers. may be NULL.
+resource_types,Column resource_types of table workers. may be NULL.
+start_time,Column start_time of table workers. may be NULL.
+state,Column state of table workers.
+tags,Column tags of table workers. may be NULL.
+team_id,Column team_id of table workers. may be NULL.
+version,Column version of table workers. may be NULL.

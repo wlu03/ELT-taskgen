@@ -1,0 +1,12 @@
+column_name,column_description
+country_id,Unique identifier for each country.
+country_name,Name of the country. may be NULL.
+population,Population of the country. may be NULL.
+continent,Continent on which the country is located. may be NULL.
+iso_code,ISO 3166-1 alpha-3 code for the country. may be NULL.
+capital,Capital city of the country. may be NULL.
+currency,Currency used in the country. may be NULL.
+official_language,Official language(s) of the country. may be NULL.
+area_km2,Area of the country in square kilometers. may be NULL.
+population_density,Population density of the country. may be NULL.
+government_type,"Type of government (e.g., democracy, monarchy). always exactly one of 'democracy', 'monarchy'. may be NULL."

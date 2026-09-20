@@ -1,0 +1,6 @@
+column_name,column_description
+forced_status_id,Column forced_status_id of table test_plan_sprint_case. may be NULL.
+id,Column id of table test_plan_sprint_case.
+status_id,Column status_id of table test_plan_sprint_case. may be NULL.
+test_plan_case_id,Column test_plan_case_id of table test_plan_sprint_case.
+test_plan_sprint_id,Column test_plan_sprint_id of table test_plan_sprint_case.

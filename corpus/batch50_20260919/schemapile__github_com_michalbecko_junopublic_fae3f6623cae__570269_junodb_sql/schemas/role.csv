@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column id of table role.
+is_for_project,Column is_for_project of table role. may be NULL.
+name,Column name of table role.
+name_safe,Column name_safe of table role.

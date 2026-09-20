@@ -1,0 +1,4 @@
+column_name,column_description
+data_assegnazione,Column data_assegnazione of table assegnazione_borse.
+matricola_studente,Column matricola_studente of table assegnazione_borse.
+numero_bando_borsa,Column numero_bando_borsa of table assegnazione_borse.

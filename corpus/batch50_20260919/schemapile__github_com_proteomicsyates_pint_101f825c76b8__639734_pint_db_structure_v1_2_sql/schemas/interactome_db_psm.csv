@@ -1,0 +1,17 @@
+column_name,column_description
+mh,Column MH of table interactome_db.PSM. may be NULL.
+ms_run_id,Column MS_Run_id of table interactome_db.PSM.
+peptide_id,Column Peptide_id of table interactome_db.PSM.
+afterseq,Column afterSeq of table interactome_db.PSM. may be NULL.
+beforeseq,Column beforeSeq of table interactome_db.PSM. may be NULL.
+cal_mh,Column cal_mh of table interactome_db.PSM. may be NULL.
+chargestate,Column chargeState of table interactome_db.PSM. may be NULL.
+full_sequence,Column full_sequence of table interactome_db.PSM.
+id,Column id of table interactome_db.PSM.
+ion_proportion,Column ion_proportion of table interactome_db.PSM. may be NULL.
+pi,Column pi of table interactome_db.PSM. may be NULL.
+ppm_error,Column ppm_error of table interactome_db.PSM. may be NULL.
+psmid,Column psmID of table interactome_db.PSM. may be NULL.
+sequence,Column sequence of table interactome_db.PSM.
+spr,Column spr of table interactome_db.PSM. may be NULL.
+total_intensity,Column total_intensity of table interactome_db.PSM. may be NULL.

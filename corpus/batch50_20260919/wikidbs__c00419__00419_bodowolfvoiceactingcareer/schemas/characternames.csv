@@ -1,0 +1,19 @@
+column_name,column_description
+charactername,charactername of characternames (real vendored values).
+namedescription,namedescription of characternames (real vendored values).
+nametype,nametype of characternames (real vendored values).
+alternatespelling,alternatespelling of characternames (real vendored values). may be NULL.
+distinctfrom,distinctfrom of characternames (real vendored values). may be NULL.
+familynameassociation,familynameassociation of characternames (real vendored values). may be NULL.
+nativespelling,nativespelling of characternames (real vendored values).
+scripttype,scripttype of characternames (real vendored values).
+soundexcode,soundexcode of characternames (real vendored values). may be NULL.
+colognephoneticscode,colognephoneticscode of characternames (real vendored values). may be NULL.
+caverphonecode,caverphonecode of characternames (real vendored values). may be NULL.
+nominisgivennameid,nominisgivennameid of characternames (real vendored values). may be NULL.
+languageassociation,languageassociation of characternames (real vendored values). may be NULL.
+nameattestation,nameattestation of characternames (real vendored values). may be NULL.
+commonscategory,commonscategory of characternames (real vendored values). may be NULL.
+pronunciationaudiofile,pronunciationaudiofile of characternames (real vendored values). may be NULL.
+nederlandsevoornamenbankid,nederlandsevoornamenbankid of characternames (real vendored values). may be NULL.
+namedayobserved,namedayobserved of characternames (real vendored values). may be NULL.

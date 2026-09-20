@@ -1,0 +1,3 @@
+column_name,column_description
+asset_id,ID of the asset.
+tag_id,ID of the tag. may be NULL.

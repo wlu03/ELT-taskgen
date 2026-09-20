@@ -1,0 +1,8 @@
+column_name,column_description
+created_at,Column created_at of table flag_translation. may be NULL.
+disclaimer,Column disclaimer of table flag_translation. may be NULL.
+flag_id,Column flag_id of table flag_translation. may be NULL.
+id,Column id of table flag_translation.
+language_id,Column language_id of table flag_translation. may be NULL.
+title,Column title of table flag_translation. may be NULL.
+updated_at,Column updated_at of table flag_translation. may be NULL.

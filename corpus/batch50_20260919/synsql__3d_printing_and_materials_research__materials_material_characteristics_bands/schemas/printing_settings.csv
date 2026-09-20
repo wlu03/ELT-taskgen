@@ -1,0 +1,12 @@
+column_name,column_description
+setting_id,Unique identifier for each printing setting.
+layer_height,Layer height of the print. may be NULL.
+wall_thickness,Wall thickness of the print. may be NULL.
+infill_density,Infill density of the print. may be NULL.
+infill_pattern,Infill pattern of the print. may be NULL.
+nozzle_temperature,Nozzle temperature during printing. may be NULL.
+bed_temperature,Bed temperature during printing. may be NULL.
+print_speed,Print speed during printing. may be NULL.
+adhesion_sheet,Use of adhesion sheet. may be NULL.
+raft,Use of raft. may be NULL.
+support_material,Use of support material. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table test_case_multimedia.
+multimedia_id,Column multimedia_id of table test_case_multimedia.
+test_case_id,Column test_case_id of table test_case_multimedia.

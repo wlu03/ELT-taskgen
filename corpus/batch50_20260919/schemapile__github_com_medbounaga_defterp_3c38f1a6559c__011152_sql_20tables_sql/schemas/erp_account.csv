@@ -1,0 +1,7 @@
+column_name,column_description
+active,Column active of table erp.account.
+code,Column code of table erp.account.
+id,Column id of table erp.account.
+name,Column name of table erp.account.
+title,Column title of table erp.account.
+type,Column type of table erp.account.

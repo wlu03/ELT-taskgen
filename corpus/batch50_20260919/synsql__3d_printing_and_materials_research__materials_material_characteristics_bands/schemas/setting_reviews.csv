@@ -1,0 +1,8 @@
+column_name,column_description
+review_id,Unique identifier for each setting review.
+setting_id,ID of the printing setting reviewed. may be NULL.
+user_id,ID of the user who wrote the review. may be NULL.
+review_date,Date the review was written. may be NULL.
+review_time,Time the review was written. may be NULL.
+rating,"Rating given by the user (e.g., 1-5). may be NULL."
+review_text,Text of the review. may be NULL.

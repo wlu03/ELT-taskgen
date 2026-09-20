@@ -1,0 +1,3 @@
+column_name,column_description
+celebrityid,Column celebrityID of table Actor.
+videoid,Column videoID of table Actor.

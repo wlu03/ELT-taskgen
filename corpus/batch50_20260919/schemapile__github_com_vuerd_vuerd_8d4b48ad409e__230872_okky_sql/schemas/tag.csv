@@ -1,0 +1,6 @@
+column_name,column_description
+date_created,Column date_created of table tag.
+description,Column description of table tag. may be NULL.
+id,Column id of table tag.
+name,Column name of table tag.
+tagged_count,Column tagged_count of table tag.

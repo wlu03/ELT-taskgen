@@ -1,0 +1,11 @@
+column_name,column_description
+sensor_id,Unique identifier for each sensor.
+sensor_name,Name of the sensor. may be NULL.
+sensor_type,"Type of sensor (e.g., IMU, GPS). always exactly one of 'IMU', 'GPS'. may be NULL."
+location,"Location of the sensor (e.g., Robot Arm, VR Headset). always exactly one of 'Robot Arm', 'VR Headset'. may be NULL."
+description,Description of the sensor. may be NULL.
+calibration_date,Date the sensor was last calibrated. may be NULL.
+status,"Current status of the sensor (e.g., active, inactive, maintenance). always exactly one of 'active', 'inactive', 'maintenance'. may be NULL."
+firmware_version,Firmware version of the sensor. may be NULL.
+software_version,Software version of the sensor. may be NULL.
+manufacturer,Manufacturer of the sensor. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+cost,Column Cost of table Shipment_Options.
+id,Column ID of table Shipment_Options.
+name,Column Name of table Shipment_Options.

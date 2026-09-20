@@ -1,0 +1,4 @@
+column_name,column_description
+id,Column id of table managed_user.
+user_id,Column user_id of table managed_user.
+version,Column version of table managed_user.

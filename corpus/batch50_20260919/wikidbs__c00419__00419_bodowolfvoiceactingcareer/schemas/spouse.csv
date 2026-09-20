@@ -1,0 +1,29 @@
+column_name,column_description
+fullname,fullname of spouse (real vendored values).
+biography,biography of spouse (real vendored values).
+gender,gender of spouse (real vendored values).
+profession,profession of spouse (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of spouse (real vendored values). may be NULL.
+viafid,viafid of spouse (real vendored values). may be NULL.
+nationality,nationality of spouse (real vendored values).
+birthplace,birthplace of spouse (real vendored values).
+imdbid,imdbid of spouse (real vendored values).
+birthdate,birthdate of spouse (real vendored values).
+entitytype,entitytype of spouse (real vendored values).
+partner,partner of spouse (real vendored values).
+freebaseid,freebaseid of spouse (real vendored values). may be NULL.
+firstname,firstname of spouse (real vendored values).
+allocinepersonid,allocinepersonid of spouse (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of spouse (real vendored values). may be NULL.
+wikitreepersonid,wikitreepersonid of spouse (real vendored values). may be NULL.
+careerstartyear,careerstartyear of spouse (real vendored values). may be NULL.
+surname,surname of spouse (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of spouse (real vendored values). may be NULL.
+languages,languages of spouse (real vendored values). may be NULL.
+primarylanguage,primarylanguage of spouse (real vendored values). may be NULL.
+writinglanguage,writinglanguage of spouse (real vendored values). may be NULL.
+cinemagiapersonid,cinemagiapersonid of spouse (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of spouse (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of spouse (real vendored values). may be NULL.
+almamater,almamater of spouse (real vendored values). may be NULL.
+prabookid,prabookid of spouse (real vendored values). may be NULL.

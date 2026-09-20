@@ -1,0 +1,8 @@
+column_name,column_description
+direction,Column direction of table pcap_events. may be NULL.
+flow_id,Column flow_id of table pcap_events. may be NULL.
+id,Column id of table pcap_events.
+pcap_id,Column pcap_id of table pcap_events.
+seq,Column seq of table pcap_events. may be NULL.
+time,Column time of table pcap_events. may be NULL.
+type,Column type of table pcap_events. may be NULL.

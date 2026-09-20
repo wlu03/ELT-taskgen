@@ -1,0 +1,8 @@
+column_name,column_description
+created_date,Column created_date of table unit_progress. may be NULL.
+id,Column id of table unit_progress.
+module_progress_id,Column module_progress_id of table unit_progress.
+number_of_replays,Column number_of_replays of table unit_progress.
+status,Column status of table unit_progress.
+unit_id,Column unit_id of table unit_progress.
+updated_date,Column updated_date of table unit_progress. may be NULL.

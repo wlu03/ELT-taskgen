@@ -1,0 +1,12 @@
+column_name,column_description
+code,Column CODE of table GRID_CUSTOM_COLUMNS.
+dbin_id,Column DBIN_ID of table GRID_CUSTOM_COLUMNS.
+description,Column DESCRIPTION of table GRID_CUSTOM_COLUMNS. may be NULL.
+expression,Column EXPRESSION of table GRID_CUSTOM_COLUMNS.
+grid_id,Column GRID_ID of table GRID_CUSTOM_COLUMNS.
+id,Column ID of table GRID_CUSTOM_COLUMNS.
+is_public,Column IS_PUBLIC of table GRID_CUSTOM_COLUMNS.
+label,Column LABEL of table GRID_CUSTOM_COLUMNS.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table GRID_CUSTOM_COLUMNS. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table GRID_CUSTOM_COLUMNS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table GRID_CUSTOM_COLUMNS.

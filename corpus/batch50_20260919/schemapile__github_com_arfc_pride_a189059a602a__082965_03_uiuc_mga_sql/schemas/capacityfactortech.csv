@@ -1,0 +1,6 @@
+column_name,column_description
+cf_tech,Column cf_tech of table CapacityFactorTech. may be NULL.
+cf_tech_notes,Column cf_tech_notes of table CapacityFactorTech. may be NULL.
+season_name,Column season_name of table CapacityFactorTech.
+tech,Column tech of table CapacityFactorTech.
+time_of_day_name,Column time_of_day_name of table CapacityFactorTech.

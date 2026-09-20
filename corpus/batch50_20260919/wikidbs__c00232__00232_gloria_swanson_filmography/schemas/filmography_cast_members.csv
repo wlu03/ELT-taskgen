@@ -1,0 +1,76 @@
+column_name,column_description
+full_name,full name of filmography cast members (real vendored values).
+biography,biography of filmography cast members (real vendored values).
+primary_occupation,primary occupation of filmography cast members (real vendored values).
+viaf_id,viaf id of filmography cast members (real vendored values). may be NULL.
+library_of_congress_authority_id,library of congress authority id of filmography cast members (real vendored values). may be NULL.
+gnd_id,gnd id of filmography cast members (real vendored values). may be NULL.
+international_standard_name_identifier,international standard name identifier of filmography cast members (real vendored values). may be NULL.
+notable_award,notable award of filmography cast members (real vendored values). may be NULL.
+commons_category,commons category of filmography cast members (real vendored values). may be NULL.
+birthplace,birthplace of filmography cast members (real vendored values).
+deathplace,deathplace of filmography cast members (real vendored values).
+profile_image,profile image of filmography cast members (real vendored values). may be NULL.
+partner,partner of filmography cast members (real vendored values). may be NULL.
+im_db_id,im db id of filmography cast members (real vendored values).
+id_ref_id,id ref id of filmography cast members (real vendored values). may be NULL.
+bibliotheque_nationale_de_france_id,bibliotheque nationale de france id of filmography cast members (real vendored values). may be NULL.
+birth_date,birth date of filmography cast members (real vendored values).
+death_date,death date of filmography cast members (real vendored values).
+nl_cr_aut_id,nl cr aut id of filmography cast members (real vendored values). may be NULL.
+entity_type,entity type of filmography cast members (real vendored values).
+main_category,main category of filmography cast members (real vendored values). may be NULL.
+nationality,nationality of filmography cast members (real vendored values).
+freebase_id,freebase id of filmography cast members (real vendored values).
+national_library_of_spain_id,national library of spain id of filmography cast members (real vendored values). may be NULL.
+nationale_thesaurus_voor_auteursnamen_id,nationale thesaurus voor auteursnamen id of filmography cast members (real vendored values). may be NULL.
+first_name,first name of filmography cast members (real vendored values).
+nndb_people_id,nndb people id of filmography cast members (real vendored values). may be NULL.
+original_name,original name of filmography cast members (real vendored values). may be NULL.
+allo_cine_person_id,allo cine person id of filmography cast members (real vendored values). may be NULL.
+all_movie_person_id,all movie person id of filmography cast members (real vendored values). may be NULL.
+gran_enciclopedia_catalana_id_former_scheme,gran enciclopedia catalana id former scheme of filmography cast members (real vendored values). may be NULL.
+burial_site,burial site of filmography cast members (real vendored values). may be NULL.
+language,language of filmography cast members (real vendored values). may be NULL.
+swedish_film_database_person_id,swedish film database person id of filmography cast members (real vendored values). may be NULL.
+fast_id,fast id of filmography cast members (real vendored values). may be NULL.
+port_person_id,port person id of filmography cast members (real vendored values). may be NULL.
+elonet_person_id,elonet person id of filmography cast members (real vendored values). may be NULL.
+csfd_person_id,csfd person id of filmography cast members (real vendored values). may be NULL.
+kinopoisk_person_id,kinopoisk person id of filmography cast members (real vendored values). may be NULL.
+internet_broadway_database_person_id,internet broadway database person id of filmography cast members (real vendored values). may be NULL.
+wiki_tree_person_id,wiki tree person id of filmography cast members (real vendored values). may be NULL.
+tcm_movie_database_person_id,tcm movie database person id of filmography cast members (real vendored values). may be NULL.
+find_a_grave_memorial_id,find a grave memorial id of filmography cast members (real vendored values). may be NULL.
+encyclopdia_britannica_online_id,encyclopdia britannica online id of filmography cast members (real vendored values). may be NULL.
+n_ese_id,n ese id of filmography cast members (real vendored values). may be NULL.
+snac_ark_id,snac ark id of filmography cast members (real vendored values). may be NULL.
+career_start,career start of filmography cast members (real vendored values). may be NULL.
+career_end,career end of filmography cast members (real vendored values). may be NULL.
+surname,surname of filmography cast members (real vendored values). may be NULL.
+american_national_biography_id,american national biography id of filmography cast members (real vendored values). may be NULL.
+death_nature,death nature of filmography cast members (real vendored values). may be NULL.
+death_cause,death cause of filmography cast members (real vendored values). may be NULL.
+gender,gender of filmography cast members (real vendored values).
+source_description,source description of filmography cast members (real vendored values). may be NULL.
+genicom_profile_id,genicom profile id of filmography cast members (real vendored values). may be NULL.
+spoken_languages,spoken languages of filmography cast members (real vendored values). may be NULL.
+deutsche_biographie_gnd_id,deutsche biographie gnd id of filmography cast members (real vendored values). may be NULL.
+world_cat_identities_id_superseded,world cat identities id superseded of filmography cast members (real vendored values). may be NULL.
+plwabn_id,plwabn id of filmography cast members (real vendored values). may be NULL.
+national_library_of_israel_j9u_id,national library of israel j9u id of filmography cast members (real vendored values). may be NULL.
+filmwebpl_person_id,filmwebpl person id of filmography cast members (real vendored values). may be NULL.
+american_film_institute_person_id,american film institute person id of filmography cast members (real vendored values). may be NULL.
+tmdb_person_id,tmdb person id of filmography cast members (real vendored values).
+m_ymovies_person_id,m ymovies person id of filmography cast members (real vendored values). may be NULL.
+george_eastman_museum_people_id,george eastman museum people id of filmography cast members (real vendored values). may be NULL.
+prabook_id,prabook id of filmography cast members (real vendored values). may be NULL.
+cine_magia_person_id,cine magia person id of filmography cast members (real vendored values). may be NULL.
+fandango_person_id,fandango person id of filmography cast members (real vendored values). may be NULL.
+movie_walker_press_person_id,movie walker press person id of filmography cast members (real vendored values). may be NULL.
+ivi_person_id,ivi person id of filmography cast members (real vendored values). may be NULL.
+kinobox_person_id,kinobox person id of filmography cast members (real vendored values).
+gran_enciclopedia_catalana_id,gran enciclopedia catalana id of filmography cast members (real vendored values). may be NULL.
+cinematheque_quebecoise_person_id,cinematheque quebecoise person id of filmography cast members (real vendored values). may be NULL.
+writing_languages,writing languages of filmography cast members (real vendored values). may be NULL.
+filmru_person_id,filmru person id of filmography cast members (real vendored values). may be NULL.

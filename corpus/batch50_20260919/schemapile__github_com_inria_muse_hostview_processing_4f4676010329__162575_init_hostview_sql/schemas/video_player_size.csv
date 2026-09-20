@@ -1,0 +1,8 @@
+column_name,column_description
+ended_at,Column ended_at of table video_player_size. may be NULL.
+height,Column height of table video_player_size. may be NULL.
+id,Column id of table video_player_size.
+is_full_screen,Column is_full_screen of table video_player_size. may be NULL.
+started_at,Column started_at of table video_player_size. may be NULL.
+video_session_id,Column video_session_id of table video_player_size.
+width,Column width of table video_player_size. may be NULL.

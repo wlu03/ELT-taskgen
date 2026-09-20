@@ -1,0 +1,13 @@
+column_name,column_description
+active,Column active of table erp.delivery_order.
+back_order_id,Column back_order_id of table erp.delivery_order. may be NULL.
+date,Column date of table erp.delivery_order.
+delivery_method,Column delivery_method of table erp.delivery_order. may be NULL.
+id,Column id of table erp.delivery_order.
+name,Column name of table erp.delivery_order. may be NULL.
+origin,Column origin of table erp.delivery_order. may be NULL.
+partner_id,Column partner_id of table erp.delivery_order.
+purchase_id,Column purchase_id of table erp.delivery_order. may be NULL.
+sale_id,Column sale_id of table erp.delivery_order. may be NULL.
+state,Column state of table erp.delivery_order. may be NULL.
+type,Column type of table erp.delivery_order. may be NULL.

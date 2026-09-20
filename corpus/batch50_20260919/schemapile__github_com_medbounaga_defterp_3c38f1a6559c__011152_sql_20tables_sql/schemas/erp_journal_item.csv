@@ -1,0 +1,19 @@
+column_name,column_description
+account_id,Column account_id of table erp.journal_item. may be NULL.
+active,Column active of table erp.journal_item.
+cost_of_goods_sold,Column cost_of_goods_sold of table erp.journal_item.
+credit,Column credit of table erp.journal_item.
+date,Column date of table erp.journal_item.
+debit,Column debit of table erp.journal_item.
+entry_id,Column entry_id of table erp.journal_item. may be NULL.
+id,Column id of table erp.journal_item.
+journal_id,Column journal_id of table erp.journal_item. may be NULL.
+name,Column name of table erp.journal_item. may be NULL.
+partner_id,Column partner_id of table erp.journal_item. may be NULL.
+product_id,Column product_id of table erp.journal_item. may be NULL.
+quantity,Column quantity of table erp.journal_item. may be NULL.
+ref,Column ref of table erp.journal_item. may be NULL.
+residual_amount,Column residual_amount of table erp.journal_item. may be NULL.
+tax_amount,Column tax_amount of table erp.journal_item. may be NULL.
+tax_id,Column tax_id of table erp.journal_item. may be NULL.
+uom_id,Column uom_id of table erp.journal_item. may be NULL.

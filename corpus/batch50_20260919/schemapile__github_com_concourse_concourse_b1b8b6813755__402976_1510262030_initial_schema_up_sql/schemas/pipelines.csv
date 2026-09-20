@@ -1,0 +1,10 @@
+column_name,column_description
+groups,Column groups of table pipelines. may be NULL.
+id,Column id of table pipelines.
+last_scheduled,Column last_scheduled of table pipelines.
+name,Column name of table pipelines.
+ordering,Column ordering of table pipelines.
+paused,Column paused of table pipelines. may be NULL.
+public,Column public of table pipelines.
+team_id,Column team_id of table pipelines.
+version,Column version of table pipelines.

@@ -1,0 +1,8 @@
+column_name,column_description
+cvte_id_store,Column CVTE_ID_STORE of table EXTERNAL_DATA. may be NULL.
+cvte_id_stor_fmt,Column CVTE_ID_STOR_FMT of table EXTERNAL_DATA.
+data_id,Column DATA_ID of table EXTERNAL_DATA.
+ffty_id,Column FFTY_ID of table EXTERNAL_DATA.
+is_complete,Column IS_COMPLETE of table EXTERNAL_DATA.
+location,Column LOCATION of table EXTERNAL_DATA.
+loty_id,Column LOTY_ID of table EXTERNAL_DATA.

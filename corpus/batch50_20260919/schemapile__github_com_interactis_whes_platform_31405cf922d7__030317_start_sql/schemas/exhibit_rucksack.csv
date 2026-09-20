@@ -1,0 +1,7 @@
+column_name,column_description
+content_id,Column content_id of table exhibit_rucksack. may be NULL.
+created_at,Column created_at of table exhibit_rucksack. may be NULL.
+exhibit_id,Column exhibit_id of table exhibit_rucksack. may be NULL.
+id,Column id of table exhibit_rucksack.
+rucksackid,Column rucksackId of table exhibit_rucksack. may be NULL.
+updated_at,Column updated_at of table exhibit_rucksack. may be NULL.

@@ -1,0 +1,11 @@
+column_name,column_description
+dbin_id,Column DBIN_ID of table FILTERS.
+description,Column DESCRIPTION of table FILTERS. may be NULL.
+expression,Column EXPRESSION of table FILTERS.
+grid_id,Column GRID_ID of table FILTERS.
+id,Column ID of table FILTERS.
+is_public,Column IS_PUBLIC of table FILTERS.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table FILTERS. may be NULL.
+name,Column NAME of table FILTERS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table FILTERS.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table FILTERS.

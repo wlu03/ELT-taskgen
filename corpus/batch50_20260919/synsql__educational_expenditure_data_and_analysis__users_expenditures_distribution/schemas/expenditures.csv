@@ -1,0 +1,17 @@
+column_name,column_description
+exp_id,Unique identifier for each expenditure record.
+region_code,Reference to the educational region. may be NULL.
+schl_year,Reference to the school year. may be NULL.
+category_group,General category group of the expenditure. may be NULL.
+category,Specific category of the expenditure. may be NULL.
+exp_usd_amt,Amount of expenditure in USD. may be NULL.
+expenditure_date,Date of the expenditure. may be NULL.
+funding_source_id,Direct reference to the funding source. may be NULL.
+budgeted_amount,Budgeted amount for the expenditure. may be NULL.
+actual_amount,Actual amount spent. may be NULL.
+variance,Variance between budgeted and actual amounts. may be NULL.
+description,Description of the expenditure. may be NULL.
+created_by,User ID of the person who created the record. may be NULL.
+created_at,Timestamp when the record was created. may be NULL.
+updated_by,User ID of the person who last updated the record. may be NULL.
+updated_at,Timestamp when the record was last updated. may be NULL.

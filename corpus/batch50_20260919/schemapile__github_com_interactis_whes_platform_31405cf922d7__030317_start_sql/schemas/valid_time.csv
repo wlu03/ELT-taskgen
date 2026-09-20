@@ -1,0 +1,12 @@
+column_name,column_description
+end_day,Column end_day of table valid_time. may be NULL.
+end_month,Column end_month of table valid_time. may be NULL.
+end_time,Column end_time of table valid_time. may be NULL.
+end_year,Column end_year of table valid_time. may be NULL.
+id,Column id of table valid_time.
+reuse,Column reuse of table valid_time. may be NULL.
+start_day,Column start_day of table valid_time. may be NULL.
+start_month,Column start_month of table valid_time. may be NULL.
+start_time,Column start_time of table valid_time. may be NULL.
+start_year,Column start_year of table valid_time. may be NULL.
+title,Column title of table valid_time. may be NULL.

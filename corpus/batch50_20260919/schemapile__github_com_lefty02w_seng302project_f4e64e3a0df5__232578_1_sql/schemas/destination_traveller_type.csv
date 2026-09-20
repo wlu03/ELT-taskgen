@@ -1,0 +1,4 @@
+column_name,column_description
+destination_id,Column destination_id of table destination_traveller_type.
+id,Column id of table destination_traveller_type.
+traveller_type_id,Column traveller_type_id of table destination_traveller_type.

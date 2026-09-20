@@ -1,0 +1,9 @@
+column_name,column_description
+videovideoid,Column VideovideoID of table Media.
+audiobitrate,Column audioBitrate of table Media.
+audioencoding,Column audioEncoding of table Media.
+hasaudio,Column hasAudio of table Media.
+hasvideo,Column hasVideo of table Media.
+mediaid,Column mediaID of table Media.
+videobitrate,Column videoBitrate of table Media.
+videoencoding,Column videoEncoding of table Media.

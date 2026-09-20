@@ -1,0 +1,103 @@
+column_name,column_description
+fullname,fullname of filmographycastandcrew (real vendored values).
+biography,biography of filmographycastandcrew (real vendored values).
+role,role of filmographycastandcrew (real vendored values).
+viafid,viafid of filmographycastandcrew (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of filmographycastandcrew (real vendored values). may be NULL.
+nationality,nationality of filmographycastandcrew (real vendored values).
+musicbrainzartistid,musicbrainzartistid of filmographycastandcrew (real vendored values). may be NULL.
+commonscategory,commonscategory of filmographycastandcrew (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of filmographycastandcrew (real vendored values). may be NULL.
+gndid,gndid of filmographycastandcrew (real vendored values). may be NULL.
+imdbid,imdbid of filmographycastandcrew (real vendored values). may be NULL.
+profileimage,profileimage of filmographycastandcrew (real vendored values). may be NULL.
+findagravememorialid,findagravememorialid of filmographycastandcrew (real vendored values). may be NULL.
+birthdate,birthdate of filmographycastandcrew (real vendored values).
+deathdate,deathdate of filmographycastandcrew (real vendored values). may be NULL.
+deathlocation,deathlocation of filmographycastandcrew (real vendored values). may be NULL.
+entitytype,entitytype of filmographycastandcrew (real vendored values).
+freebaseid,freebaseid of filmographycastandcrew (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of filmographycastandcrew (real vendored values). may be NULL.
+librariesaustraliaid,librariesaustraliaid of filmographycastandcrew (real vendored values). may be NULL.
+idrefid,idrefid of filmographycastandcrew (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of filmographycastandcrew (real vendored values). may be NULL.
+nlcrautid,nlcrautid of filmographycastandcrew (real vendored values). may be NULL.
+firstname,firstname of filmographycastandcrew (real vendored values). may be NULL.
+deathcause,deathcause of filmographycastandcrew (real vendored values). may be NULL.
+discogsartistid,discogsartistid of filmographycastandcrew (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of filmographycastandcrew (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of filmographycastandcrew (real vendored values). may be NULL.
+deathmanner,deathmanner of filmographycastandcrew (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of filmographycastandcrew (real vendored values). may be NULL.
+granenciclopediacatalanaidformerscheme,granenciclopediacatalanaidformerscheme of filmographycastandcrew (real vendored values). may be NULL.
+portpersonid,portpersonid of filmographycastandcrew (real vendored values). may be NULL.
+fastid,fastid of filmographycastandcrew (real vendored values). may be NULL.
+filmportalid,filmportalid of filmographycastandcrew (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of filmographycastandcrew (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of filmographycastandcrew (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of filmographycastandcrew (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of filmographycastandcrew (real vendored values). may be NULL.
+languages,languages of filmographycastandcrew (real vendored values).
+nndbpeopleid,nndbpeopleid of filmographycastandcrew (real vendored values). may be NULL.
+norafid,norafid of filmographycastandcrew (real vendored values). may be NULL.
+nukatid,nukatid of filmographycastandcrew (real vendored values). may be NULL.
+encyclopdiauniversalisid,encyclopdiauniversalisid of filmographycastandcrew (real vendored values). may be NULL.
+nationaldiscographyofitaliansongartistgroupid,nationaldiscographyofitaliansongartistgroupid of filmographycastandcrew (real vendored values). may be NULL.
+cinematografoitnameorcompanyid,cinematografoitnameorcompanyid of filmographycastandcrew (real vendored values). may be NULL.
+nationalethesaurusvoorauteursnamenid,nationalethesaurusvoorauteursnamenid of filmographycastandcrew (real vendored values). may be NULL.
+surname,surname of filmographycastandcrew (real vendored values).
+awards,awards of filmographycastandcrew (real vendored values). may be NULL.
+openmediadatabasepersonid,openmediadatabasepersonid of filmographycastandcrew (real vendored values). may be NULL.
+treccaniid,treccaniid of filmographycastandcrew (real vendored values). may be NULL.
+mymoviesactoridformerscheme,mymoviesactoridformerscheme of filmographycastandcrew (real vendored values). may be NULL.
+muziekwebperformerid,muziekwebperformerid of filmographycastandcrew (real vendored values). may be NULL.
+gender,gender of filmographycastandcrew (real vendored values).
+sbnauthorid,sbnauthorid of filmographycastandcrew (real vendored values). may be NULL.
+nativename,nativename of filmographycastandcrew (real vendored values). may be NULL.
+careerstart,careerstart of filmographycastandcrew (real vendored values). may be NULL.
+nlatrovepeopleid,nlatrovepeopleid of filmographycastandcrew (real vendored values). may be NULL.
+cinemagiapersonid,cinemagiapersonid of filmographycastandcrew (real vendored values). may be NULL.
+neseid,neseid of filmographycastandcrew (real vendored values). may be NULL.
+careerend,careerend of filmographycastandcrew (real vendored values). may be NULL.
+sourcedescription,sourcedescription of filmographycastandcrew (real vendored values). may be NULL.
+tcmmoviedatabasepersonid,tcmmoviedatabasepersonid of filmographycastandcrew (real vendored values). may be NULL.
+genicomprofileid,genicomprofileid of filmographycastandcrew (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of filmographycastandcrew (real vendored values). may be NULL.
+cobisauthorid,cobisauthorid of filmographycastandcrew (real vendored values). may be NULL.
+deutschebiographiegndid,deutschebiographiegndid of filmographycastandcrew (real vendored values). may be NULL.
+filmwebplpersonid,filmwebplpersonid of filmographycastandcrew (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of filmographycastandcrew (real vendored values). may be NULL.
+canadiananameauthorityid,canadiananameauthorityid of filmographycastandcrew (real vendored values). may be NULL.
+nationallibraryofisraelj9uid,nationallibraryofisraelj9uid of filmographycastandcrew (real vendored values). may be NULL.
+nationallibraryoflithuaniaid,nationallibraryoflithuaniaid of filmographycastandcrew (real vendored values). may be NULL.
+plwabnid,plwabnid of filmographycastandcrew (real vendored values). may be NULL.
+sapaid,sapaid of filmographycastandcrew (real vendored values). may be NULL.
+cinemathequequebecoisepersonid,cinemathequequebecoisepersonid of filmographycastandcrew (real vendored values). may be NULL.
+sharecatalogueauthorid,sharecatalogueauthorid of filmographycastandcrew (real vendored values). may be NULL.
+eveneid,eveneid of filmographycastandcrew (real vendored values). may be NULL.
+iszdbpersonid,iszdbpersonid of filmographycastandcrew (real vendored values). may be NULL.
+mymoviespersonid,mymoviespersonid of filmographycastandcrew (real vendored values). may be NULL.
+enciclopediadiromapersonid,enciclopediadiromapersonid of filmographycastandcrew (real vendored values). may be NULL.
+nlpidold,nlpidold of filmographycastandcrew (real vendored values). may be NULL.
+documentation,documentation of filmographycastandcrew (real vendored values). may be NULL.
+fandangopersonid,fandangopersonid of filmographycastandcrew (real vendored values). may be NULL.
+raitechepersonid,raitechepersonid of filmographycastandcrew (real vendored values). may be NULL.
+cinematografoitnameorcompanyidnew,cinematografoitnameorcompanyidnew of filmographycastandcrew (real vendored values). may be NULL.
+birthlocation,birthlocation of filmographycastandcrew (real vendored values).
+ivipersonid,ivipersonid of filmographycastandcrew (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of filmographycastandcrew (real vendored values). may be NULL.
+granenciclopediacatalanaid,granenciclopediacatalanaid of filmographycastandcrew (real vendored values). may be NULL.
+listalid,listalid of filmographycastandcrew (real vendored values). may be NULL.
+spousename,spousename of filmographycastandcrew (real vendored values). may be NULL.
+children,children of filmographycastandcrew (real vendored values). may be NULL.
+snacarkid,snacarkid of filmographycastandcrew (real vendored values). may be NULL.
+education,education of filmographycastandcrew (real vendored values). may be NULL.
+prabookid,prabookid of filmographycastandcrew (real vendored values). may be NULL.
+rottentomatoesid,rottentomatoesid of filmographycastandcrew (real vendored values). may be NULL.
+moviewalkerpresspersonid,moviewalkerpresspersonid of filmographycastandcrew (real vendored values). may be NULL.
+birthname,birthname of filmographycastandcrew (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of filmographycastandcrew (real vendored values). may be NULL.
+website,website of filmographycastandcrew (real vendored values). may be NULL.
+filmtvitpersonid,filmtvitpersonid of filmographycastandcrew (real vendored values). may be NULL.
+unifrancepersonid,unifrancepersonid of filmographycastandcrew (real vendored values). may be NULL.
+partner,partner of filmographycastandcrew (real vendored values). may be NULL.

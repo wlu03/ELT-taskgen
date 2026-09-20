@@ -1,0 +1,8 @@
+column_name,column_description
+data_assegnazione,Column data_assegnazione of table assegnazione_erasmus.
+data_partenza,Column data_partenza of table assegnazione_erasmus.
+data_rientro,Column data_rientro of table assegnazione_erasmus.
+localita,Column localita of table assegnazione_erasmus. may be NULL.
+matricola_studente,Column matricola_studente of table assegnazione_erasmus.
+nome_universita,Column nome_universita of table assegnazione_erasmus. may be NULL.
+numero_bando_erasmus,Column numero_bando_erasmus of table assegnazione_erasmus.

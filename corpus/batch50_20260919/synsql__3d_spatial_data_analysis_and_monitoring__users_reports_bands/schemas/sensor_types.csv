@@ -1,0 +1,6 @@
+column_name,column_description
+sensor_type_id,Unique identifier for each sensor type.
+sensor_type_name,Name of the sensor type. may be NULL.
+sensor_type_description,Description of the sensor type. may be NULL.
+created_at,Timestamp when the sensor type was created. may be NULL.
+updated_at,Timestamp when the sensor type was last updated. may be NULL.

@@ -1,0 +1,4 @@
+column_name,column_description
+data_domanda,Column data_domanda of table partecipazione_bando_erasmus.
+matricola_studente,Column matricola_studente of table partecipazione_bando_erasmus.
+numero_bando_erasmus,Column numero_bando_erasmus of table partecipazione_bando_erasmus.

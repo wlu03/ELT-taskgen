@@ -1,0 +1,34 @@
+column_name,column_description
+name,name of directorofphotography (real vendored values).
+biography,biography of directorofphotography (real vendored values). may be NULL.
+gender,gender of directorofphotography (real vendored values).
+birthplace,birthplace of directorofphotography (real vendored values). may be NULL.
+nationality,nationality of directorofphotography (real vendored values). may be NULL.
+viafid,viafid of directorofphotography (real vendored values). may be NULL.
+gndid,gndid of directorofphotography (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of directorofphotography (real vendored values). may be NULL.
+entitytype,entitytype of directorofphotography (real vendored values).
+profession,profession of directorofphotography (real vendored values).
+freebaseid,freebaseid of directorofphotography (real vendored values). may be NULL.
+birthdate,birthdate of directorofphotography (real vendored values). may be NULL.
+imdbid,imdbid of directorofphotography (real vendored values).
+firstname,firstname of directorofphotography (real vendored values).
+allocinepersonid,allocinepersonid of directorofphotography (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of directorofphotography (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of directorofphotography (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of directorofphotography (real vendored values). may be NULL.
+portpersonid,portpersonid of directorofphotography (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of directorofphotography (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of directorofphotography (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of directorofphotography (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of directorofphotography (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of directorofphotography (real vendored values). may be NULL.
+nukatid,nukatid of directorofphotography (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of directorofphotography (real vendored values). may be NULL.
+lastname,lastname of directorofphotography (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of directorofphotography (real vendored values).
+filmrupersonid,filmrupersonid of directorofphotography (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of directorofphotography (real vendored values).
+danskefilmpersonid,danskefilmpersonid of directorofphotography (real vendored values). may be NULL.
+nlcrautid,nlcrautid of directorofphotography (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of directorofphotography (real vendored values). may be NULL.

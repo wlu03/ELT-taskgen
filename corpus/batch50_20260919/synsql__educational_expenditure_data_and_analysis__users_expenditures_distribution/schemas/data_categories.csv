@@ -1,0 +1,5 @@
+column_name,column_description
+category_group,General category group of the expenditure data.
+category,Specific category within the expenditure data. may be NULL.
+category_description,Detailed description of the category. may be NULL.
+is_active,Indicates if the category is currently active. may be NULL.

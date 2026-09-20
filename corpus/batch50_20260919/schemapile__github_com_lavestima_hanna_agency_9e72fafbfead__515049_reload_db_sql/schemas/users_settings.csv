@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column ID of table Users_Settings.
+id_users,Column ID_USERS of table Users_Settings.
+locale,Column Locale of table Users_Settings.
+newsletter,Column Newsletter of table Users_Settings.

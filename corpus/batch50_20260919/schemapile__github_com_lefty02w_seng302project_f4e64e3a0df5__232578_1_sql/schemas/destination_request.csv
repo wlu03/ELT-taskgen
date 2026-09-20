@@ -1,0 +1,4 @@
+column_name,column_description
+destination_id,Column destination_Id of table destination_request. may be NULL.
+id,Column id of table destination_request.
+profile_id,Column profile_Id of table destination_request. may be NULL.

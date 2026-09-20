@@ -1,0 +1,12 @@
+column_name,column_description
+connection_id,Column connection_id of table dns_logs.
+destination_ip,Column destination_ip of table dns_logs. may be NULL.
+destination_port,Column destination_port of table dns_logs. may be NULL.
+host,Column host of table dns_logs. may be NULL.
+id,Column id of table dns_logs.
+ip,Column ip of table dns_logs. may be NULL.
+logged_at,Column logged_at of table dns_logs. may be NULL.
+protocol,Column protocol of table dns_logs. may be NULL.
+source_ip,Column source_ip of table dns_logs. may be NULL.
+source_port,Column source_port of table dns_logs. may be NULL.
+type,Column type of table dns_logs. may be NULL.

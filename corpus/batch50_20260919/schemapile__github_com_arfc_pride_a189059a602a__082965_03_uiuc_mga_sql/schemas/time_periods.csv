@@ -1,0 +1,3 @@
+column_name,column_description
+flag,Column flag of table time_periods. may be NULL.
+t_periods,Column t_periods of table time_periods.

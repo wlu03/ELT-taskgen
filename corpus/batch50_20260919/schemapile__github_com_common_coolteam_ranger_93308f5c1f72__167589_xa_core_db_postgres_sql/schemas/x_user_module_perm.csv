@@ -1,0 +1,9 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_user_module_perm. may be NULL.
+create_time,Column create_time of table x_user_module_perm. may be NULL.
+id,Column id of table x_user_module_perm.
+is_allowed,Column is_allowed of table x_user_module_perm.
+module_id,Column module_id of table x_user_module_perm. may be NULL.
+upd_by_id,Column upd_by_id of table x_user_module_perm. may be NULL.
+update_time,Column update_time of table x_user_module_perm. may be NULL.
+user_id,Column user_id of table x_user_module_perm. may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+log_id,Unique identifier for each log entry.
+log_date,Date the log entry was created. may be NULL.
+log_time,Time the log entry was created. may be NULL.
+log_level,"Level of the log entry (e.g., debug, info, warning, error). always exactly one of 'debug', 'info', 'warning', 'error'. may be NULL."
+log_message,Message of the log entry. may be NULL.

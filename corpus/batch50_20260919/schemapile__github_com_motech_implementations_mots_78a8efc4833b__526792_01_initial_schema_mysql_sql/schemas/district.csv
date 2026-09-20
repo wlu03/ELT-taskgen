@@ -1,0 +1,7 @@
+column_name,column_description
+created_date,Column created_date of table district. may be NULL.
+id,Column id of table district.
+ivr_group_id,Column ivr_group_id of table district. may be NULL.
+name,Column name of table district.
+owner_id,Column owner_id of table district.
+updated_date,Column updated_date of table district. may be NULL.

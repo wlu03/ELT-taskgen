@@ -1,0 +1,3 @@
+column_name,column_description
+peptide_id,Column Peptide_id of table interactome_db.Protein_has_Peptide.
+protein_id,Column Protein_id of table interactome_db.Protein_has_Peptide.

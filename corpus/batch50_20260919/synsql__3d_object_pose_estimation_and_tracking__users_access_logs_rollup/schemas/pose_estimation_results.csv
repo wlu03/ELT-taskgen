@@ -1,0 +1,8 @@
+column_name,column_description
+result_id,Unique identifier for each result.
+pose_id,ID of the pose estimation. may be NULL.
+method_id,ID of the pose estimation method. may be NULL.
+accuracy,Accuracy of the pose estimation. may be NULL.
+method_version,Version of the method used. may be NULL.
+result_description,Detailed description of the result. may be NULL.
+result_timestamp,Timestamp when the result was generated. may be NULL.

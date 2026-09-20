@@ -1,0 +1,13 @@
+column_name,column_description
+robot_id,Unique identifier for each robot.
+robot_name,Name of the robot. may be NULL.
+robot_type,"Type of the robot (e.g., robotic arm, AGV). always exactly one of 'robotic arm', 'AGV'. may be NULL."
+model,Model of the robot. may be NULL.
+serial_number,Serial number of the robot. may be NULL.
+installation_date,Date the robot was installed. may be NULL.
+last_maintenance_date,Date of the last maintenance. may be NULL.
+location,Location where the robot is installed. may be NULL.
+manufacturer,Manufacturer of the robot. may be NULL.
+contact_email,Contact email for the manufacturer. may be NULL.
+ip_address,IP address of the robot. may be NULL.
+mac_address,MAC address of the robot. may be NULL.

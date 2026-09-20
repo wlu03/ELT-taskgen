@@ -1,0 +1,10 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., animator, modeler, admin). always exactly one of 'animator', 'modeler', 'admin'. may be NULL."
+password_hash,Hashed password for the user. may be NULL.
+created_at,Date and time the user account was created. may be NULL.
+updated_at,Date and time the user account was last updated. may be NULL.
+is_active,Flag to indicate if the user account is active. may be NULL.
+last_login,Date and time of the user's last login. may be NULL.

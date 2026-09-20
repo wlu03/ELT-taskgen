@@ -1,0 +1,8 @@
+column_name,column_description
+user_id,Unique identifier for each user.
+user_name,Full name of the user. may be NULL.
+email,Email address of the user. may be NULL.
+role,"Role of the user (e.g., producer, director, analyst). always exactly one of 'producer', 'director', 'analyst'. may be NULL."
+date_joined,Date when the user joined the platform. may be NULL.
+last_login,Date of the user's last login. may be NULL.
+status,"User status (e.g., active, inactive). always exactly one of 'active', 'inactive'. may be NULL."

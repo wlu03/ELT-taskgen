@@ -1,0 +1,4 @@
+column_name,column_description
+defaulttag,Column defaultTag of table Tag. may be NULL.
+parenttagid,Column parentTagID of table Tag. may be NULL.
+tagid,Column tagID of table Tag.

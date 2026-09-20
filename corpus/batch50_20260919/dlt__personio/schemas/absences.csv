@@ -1,0 +1,4 @@
+column_name,column_description
+id,primary key of dlt resource 'absences' (synthesized from the dlt manifest (no observed schema)).
+updated_at,incremental cursor of dlt resource 'absences' (dlt cursor path 'updated_at').
+payload,raw endpoint record body (synthesized schema). may be NULL.

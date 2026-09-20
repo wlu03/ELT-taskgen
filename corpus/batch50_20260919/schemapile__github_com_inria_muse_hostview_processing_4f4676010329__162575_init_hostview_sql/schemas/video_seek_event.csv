@@ -1,0 +1,7 @@
+column_name,column_description
+buffering_event_id,Column buffering_event_id of table video_seek_event. may be NULL.
+id,Column id of table video_seek_event.
+logged_at,Column logged_at of table video_seek_event. may be NULL.
+pause_event_id,Column pause_event_id of table video_seek_event. may be NULL.
+to_video_time,Column to_video_time of table video_seek_event. may be NULL.
+video_session_id,Column video_session_id of table video_seek_event.

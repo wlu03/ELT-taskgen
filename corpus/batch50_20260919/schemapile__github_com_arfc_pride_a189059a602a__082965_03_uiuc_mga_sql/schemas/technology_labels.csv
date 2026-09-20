@@ -1,0 +1,3 @@
+column_name,column_description
+tech_labels,Column tech_labels of table technology_labels.
+tech_labels_desc,Column tech_labels_desc of table technology_labels. may be NULL.

@@ -1,0 +1,6 @@
+column_name,column_description
+content_id,Column content_id of table content_valid_time. may be NULL.
+created_at,Column created_at of table content_valid_time. may be NULL.
+id,Column id of table content_valid_time.
+updated_at,Column updated_at of table content_valid_time. may be NULL.
+valid_time_id,Column valid_time_id of table content_valid_time. may be NULL.

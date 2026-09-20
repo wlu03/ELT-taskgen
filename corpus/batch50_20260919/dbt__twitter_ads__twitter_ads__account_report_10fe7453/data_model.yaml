@@ -1,0 +1,736 @@
+models:
+- columns:
+  - description: The ID of the account.
+    name: account_id
+    type: text
+  - description: Where on Twitter the ad is being displayed. Possible values include 'ALL_ON_TWITTER', 'PUBLISHER_NETWORK', 'TWITTER_PROFILE', 'TWITTER_SEARCH', 'TWITTER_TIMELINE', and 'TAP_*', which are more granular options for `PUBLISHER_NETWORK`.
+    name: placement
+    type: text
+  - description: The date of the performance. It is date truncated to the start of its calendar day at 00:00:00 and remains part of the mart grain.
+    name: date_day
+    type: timestamp
+  - description: Name of the account. Taken as the `name` of the matching `account_history` record.
+    name: account_name
+    type: text
+  - description: The approval status of the account. Taken as the `approval_status` of the matching `account_history` record.
+    name: approval_status
+    type: text
+  - description: The ID of the related business. Taken as the `business_id` of the matching `account_history` record.
+    name: business_id
+    type: text
+  - description: The name of the related business. Taken as the `business_name` of the matching `account_history` record.
+    name: business_name
+    type: text
+  - description: The timestamp the account was created. Taken as the `created_at` of the matching `account_history` record.
+    name: created_timestamp
+    type: timestamp
+  - description: The industry of the accounts. Taken as the `industry_type` of the matching `account_history` record.
+    name: industry_type
+    type: text
+  - description: Whether the record has been deleted or not. Taken as the `deleted` of the matching `account_history` record.
+    name: is_deleted
+    type: boolean
+  - description: The timezone the account is set to. Taken as the `timezone` of the matching `account_history` record.
+    name: timezone
+    type: text
+  - description: The timestamp the account's timezone was last changed. Taken as the `timezone_switch_at` of the matching `account_history` record.
+    name: timezone_switched_timestamp
+    type: timestamp
+  - description: The timestamp the account was last updated. Taken as the `updated_at` of the matching `account_history` record.
+    name: updated_timestamp
+    type: timestamp
+  - description: 'The clicks for th account on that day. Includes clicks on the URL (shortened or regular links), profile pic, screen name, username, detail, hashtags, and likes. Per-input source lineage: `clicks` is the value of source column `promoted_tweet_report.clicks`, added up over the source rows that share the mart row''s grain.'
+    name: clicks
+    type: bigint
+  - description: 'The number of conversions of type CUSTOM. Included by the `twitter_ads__conversion_fields` variable by default. Per-input source lineage: `conversion_custom_metric` is the value of source column `promoted_tweet_report.conversion_custom_metric`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_custom_metric
+    type: bigint
+  - description: 'The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. Per-input source lineage: `conversion_custom_sale_amount` is the value of source column `promoted_tweet_report.conversion_custom_sale_amount`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_custom_sale_amount
+    type: float
+  - description: 'Total number of purchases. The sum of post view, post engagement, and assisted purchases for both your website and mobile app. Included by the `twitter_ads__conversion_fields` variable by default. Per-input source lineage: `conversion_purchases_metric` is the value of source column `promoted_tweet_report.conversion_purchases_metric`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_purchases_metric
+    type: bigint
+  - description: 'The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. Per-input source lineage: `conversion_purchases_sale_amount` is the value of source column `promoted_tweet_report.conversion_purchases_sale_amount`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_purchases_sale_amount
+    type: float
+  - description: 'The impressions for the account on that day.  This is the number of users who see a Promoted Ad either in their home timeline or search results. Per-input source lineage: `impressions` is the value of source column `promoted_tweet_report.impressions`, added up over the source rows that share the mart row''s grain.'
+    name: impressions
+    type: bigint
+  - description: 'The spend for the account on that day. Units: converted out of promoted_tweet_report.billed_charge_local_micro — each source value is divided by 1,000,000 and rounded to 2 decimal places, and those values are then added together, a source row with no value adding nothing to the total, and a mart row whose source rows all lack a value reports an empty total, not 0. Per-input source lineage: `billed_charge_local_micro` is the value of source column `promoted_tweet_report.billed_charge_local_micro`.'
+    name: spend
+    type: float
+  - description: 'The spend (in micros) for the account on that day. Per-input source lineage: `spend_micro` is the value of source column `promoted_tweet_report.billed_charge_local_micro`, added up over the source rows that share the mart row''s grain.'
+    name: spend_micro
+    type: bigint
+  - description: 'The url clicks for the account on that day. Per-input source lineage: `url_clicks` is the value of source column `promoted_tweet_report.url_clicks`, added up over the source rows that share the mart row''s grain.'
+    name: url_clicks
+    type: bigint
+  description: 'Each record in this table represents the daily performance of ads at the account level, within a placement in Twitter.
+
+    '
+  grain: One row per account_id, placement, date_day. Each record in this table represents the daily performance of ads at the account level, within a placement in Twitter. The carried columns account_name, approval_status, business_id, business_name, created_timestamp, industry_type, is_deleted, timezone, timezone_switched_timestamp, updated_timestamp are part of this grain together with these keys, so rows that agree on the keys but differ in one of them are separate output rows.
+  key_columns:
+  - account_id
+  - placement
+  - date_day
+  name: twitter_ads__account_report
+  source_relationships:
+  - child_columns:
+    - campaign_id
+    child_table: line_item_history
+    parent_columns:
+    - id
+    parent_table: campaign_history
+    required: false
+  - child_columns:
+    - account_id
+    child_table: line_item_keywords_report
+    parent_columns:
+    - id
+    parent_table: account_history
+    required: false
+  - child_columns:
+    - line_item_id
+    child_table: line_item_keywords_report
+    parent_columns:
+    - id
+    parent_table: line_item_history
+    required: false
+  - child_columns:
+    - line_item_id
+    child_table: promoted_tweet_history
+    parent_columns:
+    - id
+    parent_table: line_item_history
+    required: false
+  - child_columns:
+    - tweet_id
+    child_table: promoted_tweet_history
+    parent_columns:
+    - id
+    parent_table: tweet
+    required: false
+  - child_columns:
+    - account_id
+    child_table: promoted_tweet_report
+    parent_columns:
+    - id
+    parent_table: account_history
+    required: false
+  - child_columns:
+    - promoted_tweet_id
+    child_table: promoted_tweet_report
+    parent_columns:
+    - id
+    parent_table: promoted_tweet_history
+    required: false
+  transformation:
+    steps:
+    - description: Read source table promoted_tweet_report.
+      operation: source
+      order: 1
+      source_inputs:
+      - promoted_tweet_report
+    - description: Read source table account_history.
+      operation: source
+      order: 2
+      source_inputs:
+      - account_history
+    - carried_fields:
+      - account_id
+      - placement
+      - date_day
+      description: 'Form the mart key columns account_id, placement, date_day from source table promoted_tweet_report. date_day is not copied from a promoted_tweet_report column but computed from promoted_tweet_report: It is date truncated to the start of its calendar day at 00:00:00 and remains part of the mart grain.'
+      operation: derive
+      order: 3
+      source_inputs:
+      - promoted_tweet_report
+    - carried_fields:
+      - account_id
+      - id
+      condition:
+        public_identifiers:
+        - account_history
+        - id
+        - account_id
+      description: Each promoted_tweet_report row is matched to its account_history row across the relationship the package declares; account_history is the parent side, so every promoted_tweet_report row appears exactly once, including promoted_tweet_report rows with no account_history row.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - account_history
+    - carried_fields:
+      - account_id
+      - placement
+      - date_day
+      - account_name
+      - approval_status
+      - business_id
+      - business_name
+      - created_timestamp
+      - industry_type
+      - is_deleted
+      - timezone
+      - timezone_switched_timestamp
+      - updated_timestamp
+      - clicks
+      - conversion_custom_metric
+      - conversion_custom_sale_amount
+      - conversion_purchases_metric
+      - conversion_purchases_sale_amount
+      - impressions
+      - spend
+      - spend_micro
+      - url_clicks
+      description: 'One output row per account_id, placement, date_day together with the carried account_name, approval_status, business_id, business_name, created_timestamp, industry_type, is_deleted, timezone, timezone_switched_timestamp, updated_timestamp, which are part of the grain: source rows that agree on the key columns but differ in a carried column fall in different output rows, reporting clicks, conversion_custom_metric, conversion_custom_sale_amount, conversion_purchases_metric, conversion_purchases_sale_amount, impressions, spend, spend_micro, url_clicks for that row''s matching rows. These aggregate outputs have no declared replacement for an empty result: clicks, impressions, spend, spend_micro, url_clicks. Preserve an empty result as empty, not 0: a missing input value contributes nothing, and an output whose matching input values are all missing is empty, whether it reads every matching row or only the rows that qualify for its condition. Every other output follows its
+        own declared column rule. These aggregate outputs count a missing input value as 0, so a row whose matching values are all missing reports 0, never empty: conversion_custom_metric, conversion_custom_sale_amount, conversion_purchases_metric, conversion_purchases_sale_amount.'
+      operation: aggregate
+      order: 5
+    - carried_fields:
+      - account_id
+      - placement
+      - date_day
+      - account_name
+      - approval_status
+      - business_id
+      - business_name
+      - created_timestamp
+      - industry_type
+      - is_deleted
+      - timezone
+      - timezone_switched_timestamp
+      - updated_timestamp
+      - clicks
+      - conversion_custom_metric
+      - conversion_custom_sale_amount
+      - conversion_purchases_metric
+      - conversion_purchases_sale_amount
+      - impressions
+      - spend
+      - spend_micro
+      - url_clicks
+      description: Name the mart columns.
+      operation: derive
+      order: 6
+    - carried_fields:
+      - account_id
+      - placement
+      - date_day
+      description: 'Deterministic output order: sort by account_id, placement, date_day.'
+      operation: tie_break
+      order: 7
+- columns:
+  - description: The ID of the related account.
+    name: account_id
+    type: text
+  - description: The keyword whose performance is being tracked.
+    name: keyword
+    type: text
+  - description: The ID of the related line item (ad group).
+    name: line_item_id
+    type: text
+  - description: Where on Twitter the ad is being displayed. Possible values include 'ALL_ON_TWITTER', 'PUBLISHER_NETWORK', 'TWITTER_PROFILE', 'TWITTER_SEARCH', 'TWITTER_TIMELINE', and 'TAP_*', which are more granular options for `PUBLISHER_NETWORK`.
+    name: placement
+    type: text
+  - description: The date of the performance. It is date truncated to the start of its calendar day at 00:00:00 and remains part of the mart grain.
+    name: date_day
+    type: timestamp
+  - description: To form keyword_id, take account_id, line_item_id, segment, placement in that order, render each value as text, replace a missing value with '_dbt_utils_surrogate_key_null_', and place '-' between adjacent values. The result is the lowercase 32-character hexadecimal MD5 digest of that combined text. It is computed before accumulation and remains part of the mart grain.
+    name: keyword_id
+    type: text
+  - description: Name of the associated account. Taken as the `name` of the matching `account_history` record.
+    name: account_name
+    type: text
+  - description: The ID of the related campaign. Taken as the `campaign_id` of the matching `line_item_history` record.
+    name: campaign_id
+    type: text
+  - description: The currency all metrics for the account are set to. Taken as the `currency` of the matching `line_item_history` record.
+    name: currency
+    type: text
+  - description: The ID of the related line item. Taken as the `name` of the matching `line_item_history` record.
+    name: line_item_name
+    type: text
+  - description: 'The clicks for the line item + keyword on that day. Includes clicks on the URL (shortened or regular links), profile pic, screen name, username, detail, hashtags, and likes. Per-input source lineage: `clicks` is the value of source column `line_item_keywords_report.clicks`, added up over the source rows that share the mart row''s grain.'
+    name: clicks
+    type: bigint
+  - description: 'The number of conversions of type CUSTOM. Included by the `twitter_ads__conversion_fields` variable by default. Per-input source lineage: `conversion_custom_metric` is the value of source column `line_item_keywords_report.conversion_custom_metric`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_custom_metric
+    type: bigint
+  - description: 'The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. Per-input source lineage: `conversion_custom_sale_amount` is the value of source column `line_item_keywords_report.conversion_custom_sale_amount`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_custom_sale_amount
+    type: float
+  - description: 'Total number of purchases. The sum of post view, post engagement, and assisted purchases for both your website and mobile app. Included by the `twitter_ads__conversion_fields` variable by default. Per-input source lineage: `conversion_purchases_metric` is the value of source column `line_item_keywords_report.conversion_purchases_metric`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_purchases_metric
+    type: bigint
+  - description: 'The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. Per-input source lineage: `conversion_purchases_sale_amount` is the value of source column `line_item_keywords_report.conversion_purchases_sale_amount`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_purchases_sale_amount
+    type: float
+  - description: 'The impressions for the line item + keyword on that day.  This is the number of users who see a Promoted Ad either in their home timeline or search results. Per-input source lineage: `impressions` is the value of source column `line_item_keywords_report.impressions`, added up over the source rows that share the mart row''s grain.'
+    name: impressions
+    type: bigint
+  - description: 'The spend for the line item + keyword on that day in whichever currency was selected during account creation. Units: converted out of the micros of line_item_keywords_report.billed_charge_local_micro — each source value is divided by 1,000,000 and rounded to 2 decimal places, and those values are then added together, a source row with no value adding nothing to the total, and a mart row whose source rows all lack a value reports an empty total, not 0. Per-input source lineage: `billed_charge_local_micro` is the value of source column `line_item_keywords_report.billed_charge_local_micro`.'
+    name: spend
+    type: float
+  - description: 'The spend for the line item + keyword on that day, in micros and in whichever currency was selected during account creation. Per-input source lineage: `spend_micro` is the value of source column `line_item_keywords_report.billed_charge_local_micro`, added up over the source rows that share the mart row''s grain.'
+    name: spend_micro
+    type: bigint
+  - description: 'Sum of all fields included in `twitter_ads__conversion_fields` variable (this mart uses exactly conversion_purchases_metric + conversion_custom_metric). This exact per-input component list is complete and authoritative for this column; every named component remains an input even if it is not emitted as a separate mart output. For each input row, missing conversion_purchases_metric, conversion_custom_metric values contribute 0 before the components are added; the resulting row values are then accumulated for the mart grain. Per-input source lineage: `conversion_custom_metric` is the value of source column `line_item_keywords_report.conversion_custom_metric`; `conversion_purchases_metric` is the value of source column `line_item_keywords_report.conversion_purchases_metric`, added up over the source rows that share the mart row''s grain.'
+    name: total_conversions
+    type: bigint
+  - description: 'Sum of all fields included in `twitter_ads__conversion_sale_amount_fields` variable (this mart uses exactly conversion_purchases_sale_amount + conversion_custom_sale_amount + conversion_sign_ups_sale_amount). This exact per-input component list is complete and authoritative for this column; every named component remains an input even if it is not emitted as a separate mart output. For each input row, missing conversion_purchases_sale_amount, conversion_custom_sale_amount, conversion_sign_ups_sale_amount values contribute 0 before the components are added; the resulting row values are then accumulated for the mart grain. Per-input source lineage: `conversion_custom_sale_amount` is the value of source column `line_item_keywords_report.conversion_custom_sale_amount`; `conversion_purchases_sale_amount` is the value of source column `line_item_keywords_report.conversion_purchases_sale_amount`; `conversion_sign_ups_sale_amount` is the value of source column `line_item_keywords_report.conversion_sign_ups_sale_amount`,
+      added up over the source rows that share the mart row''s grain.'
+    name: total_conversions_sale_amount
+    type: float
+  - description: 'The url clicks for the line item + keyword on that day. Per-input source lineage: `url_clicks` is the value of source column `line_item_keywords_report.url_clicks`, added up over the source rows that share the mart row''s grain.'
+    name: url_clicks
+    type: bigint
+  description: 'Each record in this table represents the daily performance of ads at the account, campaign, line item (ad group), and keyword level, within a placement in Twitter.
+
+    '
+  grain: One row per account_id, keyword, line_item_id, placement, date_day, keyword_id. Each record in this table represents the daily performance of ads at the account, campaign, line item (ad group), and keyword level, within a placement in Twitter. The carried columns account_name, campaign_id, currency, line_item_name are part of this grain together with these keys, so rows that agree on the keys but differ in one of them are separate output rows.
+  key_columns:
+  - account_id
+  - keyword
+  - line_item_id
+  - placement
+  - date_day
+  - keyword_id
+  name: twitter_ads__keyword_report
+  source_relationships:
+  - child_columns:
+    - campaign_id
+    child_table: line_item_history
+    parent_columns:
+    - id
+    parent_table: campaign_history
+    required: false
+  - child_columns:
+    - account_id
+    child_table: line_item_keywords_report
+    parent_columns:
+    - id
+    parent_table: account_history
+    required: false
+  - child_columns:
+    - line_item_id
+    child_table: line_item_keywords_report
+    parent_columns:
+    - id
+    parent_table: line_item_history
+    required: false
+  - child_columns:
+    - line_item_id
+    child_table: promoted_tweet_history
+    parent_columns:
+    - id
+    parent_table: line_item_history
+    required: false
+  - child_columns:
+    - tweet_id
+    child_table: promoted_tweet_history
+    parent_columns:
+    - id
+    parent_table: tweet
+    required: false
+  - child_columns:
+    - account_id
+    child_table: promoted_tweet_report
+    parent_columns:
+    - id
+    parent_table: account_history
+    required: false
+  - child_columns:
+    - promoted_tweet_id
+    child_table: promoted_tweet_report
+    parent_columns:
+    - id
+    parent_table: promoted_tweet_history
+    required: false
+  transformation:
+    steps:
+    - description: Read source table line_item_keywords_report.
+      operation: source
+      order: 1
+      source_inputs:
+      - line_item_keywords_report
+    - description: Read source table line_item_history.
+      operation: source
+      order: 2
+      source_inputs:
+      - line_item_history
+    - description: Read source table account_history.
+      operation: source
+      order: 3
+      source_inputs:
+      - account_history
+    - description: 'Read source table campaign_history for extraction only: no rule of this mart matches or reads its rows, and it adds no rows and no columns to the mart.'
+      operation: source
+      order: 4
+      source_inputs:
+      - campaign_history
+    - carried_fields:
+      - account_id
+      - keyword
+      - line_item_id
+      - placement
+      - date_day
+      - keyword_id
+      description: 'Form the mart key columns account_id, keyword, line_item_id, placement, date_day, keyword_id from source table line_item_keywords_report. date_day is not copied from a line_item_keywords_report column but computed from line_item_keywords_report: It is date truncated to the start of its calendar day at 00:00:00 and remains part of the mart grain. keyword_id is not copied from a line_item_keywords_report column but computed from line_item_keywords_report: It is computed before accumulation and remains part of the mart grain. keyword is the value of the segment column of line_item_keywords_report.'
+      operation: derive
+      order: 5
+      source_inputs:
+      - line_item_keywords_report
+    - carried_fields:
+      - line_item_id
+      - id
+      condition:
+        public_identifiers:
+        - line_item_history
+        - id
+        - line_item_id
+      description: Each line_item_keywords_report row is matched to its line_item_history row across the relationship the package declares; line_item_history is the parent side, so every line_item_keywords_report row appears exactly once, including line_item_keywords_report rows with no line_item_history row.
+      join_preservation: left
+      operation: join
+      order: 6
+      source_inputs:
+      - line_item_history
+    - carried_fields:
+      - account_id
+      - id
+      condition:
+        public_identifiers:
+        - account_history
+        - id
+        - account_id
+      description: Each line_item_keywords_report row is matched to its account_history row across the relationship the package declares; account_history is the parent side, so every line_item_keywords_report row appears exactly once, including line_item_keywords_report rows with no account_history row.
+      join_preservation: left
+      operation: join
+      order: 7
+      source_inputs:
+      - account_history
+    - carried_fields:
+      - account_id
+      - keyword
+      - line_item_id
+      - placement
+      - date_day
+      - keyword_id
+      - account_name
+      - campaign_id
+      - currency
+      - line_item_name
+      - clicks
+      - conversion_custom_metric
+      - conversion_custom_sale_amount
+      - conversion_purchases_metric
+      - conversion_purchases_sale_amount
+      - impressions
+      - spend
+      - spend_micro
+      - total_conversions
+      - total_conversions_sale_amount
+      - url_clicks
+      description: 'One output row per account_id, keyword, line_item_id, placement, date_day, keyword_id together with the carried account_name, campaign_id, currency, line_item_name, which are part of the grain: source rows that agree on the key columns but differ in a carried column fall in different output rows, reporting clicks, conversion_custom_metric, conversion_custom_sale_amount, conversion_purchases_metric, conversion_purchases_sale_amount, impressions, spend, spend_micro, total_conversions, total_conversions_sale_amount, url_clicks for that row''s matching rows. These aggregate outputs have no declared replacement for an empty result: clicks, impressions, spend, spend_micro, url_clicks. Preserve an empty result as empty, not 0: a missing input value contributes nothing, and an output whose matching input values are all missing is empty, whether it reads every matching row or only the rows that qualify for its condition. Every other output follows its own declared column rule.
+        These aggregate outputs count a missing input value as 0, so a row whose matching values are all missing reports 0, never empty: conversion_custom_metric, conversion_custom_sale_amount, conversion_purchases_metric, conversion_purchases_sale_amount, total_conversions, total_conversions_sale_amount.'
+      operation: aggregate
+      order: 8
+    - carried_fields:
+      - account_id
+      - keyword
+      - line_item_id
+      - placement
+      - date_day
+      - keyword_id
+      - account_name
+      - campaign_id
+      - currency
+      - line_item_name
+      - clicks
+      - conversion_custom_metric
+      - conversion_custom_sale_amount
+      - conversion_purchases_metric
+      - conversion_purchases_sale_amount
+      - impressions
+      - spend
+      - spend_micro
+      - total_conversions
+      - total_conversions_sale_amount
+      - url_clicks
+      description: Name the mart columns.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - account_id
+      - keyword
+      - line_item_id
+      - placement
+      - date_day
+      - keyword_id
+      description: 'Deterministic output order: sort by account_id, keyword, line_item_id, placement, date_day, keyword_id.'
+      operation: tie_break
+      order: 10
+- columns:
+  - description: Where on Twitter the ad is being displayed. Possible values include 'ALL_ON_TWITTER', 'PUBLISHER_NETWORK', 'TWITTER_PROFILE', 'TWITTER_SEARCH', 'TWITTER_TIMELINE', and 'TAP_*', which are more granular options for `PUBLISHER_NETWORK`.
+    name: placement
+    type: text
+  - description: The ID of the promoted tweet that the URL appeared in.
+    name: promoted_tweet_id
+    type: text
+  - description: The ID of the related account.
+    name: account_id
+    type: text
+  - description: The date of the performance. It is date truncated to the start of its calendar day at 00:00:00 and remains part of the mart grain.
+    name: date_day
+    type: timestamp
+  - description: The name of the related account. Taken as the `name` of the matching `account_history` record.
+    name: account_name
+    type: text
+  - description: The approval status of the promoted tweet. Taken as the `approval_status` of the matching `promoted_tweet_history` record.
+    name: approval_status
+    type: text
+  - description: The timestamp the account was created. Taken as the `created_at` of the matching `promoted_tweet_history` record.
+    name: created_timestamp
+    type: timestamp
+  - description: Whether the record has been deleted or not. Taken as the `deleted` of the matching `promoted_tweet_history` record.
+    name: is_deleted
+    type: boolean
+  - description: The ID of the related line item (ad group). Taken as the `line_item_id` of the matching `promoted_tweet_history` record.
+    name: line_item_id
+    type: text
+  - description: The status of the promoted tweet. Taken as the `entity_status` of the matching `promoted_tweet_history` record.
+    name: promoted_tweet_status
+    type: text
+  - description: The ID of the tweet that the URL appeared in. Taken as the `tweet_id` of the matching `promoted_tweet_history` record.
+    name: tweet_id
+    type: text
+  - description: The timestamp the account was last updated. Taken as the `updated_at` of the matching `promoted_tweet_history` record.
+    name: updated_timestamp
+    type: timestamp
+  - description: 'The clicks for the promoted tweet + URL on that day. Includes clicks on the URL (shortened or regular links), profile pic, screen name, username, detail, hashtags, and likes. Per-input source lineage: `clicks` is the value of source column `promoted_tweet_report.clicks`, added up over the source rows that share the mart row''s grain.'
+    name: clicks
+    type: bigint
+  - description: 'The number of conversions of type CUSTOM. Included by the `twitter_ads__conversion_fields` variable by default. Per-input source lineage: `conversion_custom_metric` is the value of source column `promoted_tweet_report.conversion_custom_metric`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_custom_metric
+    type: bigint
+  - description: 'The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. Per-input source lineage: `conversion_custom_sale_amount` is the value of source column `promoted_tweet_report.conversion_custom_sale_amount`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_custom_sale_amount
+    type: float
+  - description: 'Total number of purchases. The sum of post view, post engagement, and assisted purchases for both your website and mobile app. Included by the `twitter_ads__conversion_fields` variable by default. Per-input source lineage: `conversion_purchases_metric` is the value of source column `promoted_tweet_report.conversion_purchases_metric`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_purchases_metric
+    type: bigint
+  - description: 'The sale amount corresponding to PURCHASE conversion events. Included by the `twitter_ads__conversion_sale_amount_fields` variable by default. Per-input source lineage: `conversion_purchases_sale_amount` is the value of source column `promoted_tweet_report.conversion_purchases_sale_amount`, added up over the source rows that share the mart row''s grain.'
+    name: conversion_purchases_sale_amount
+    type: float
+  - description: 'The impressions for the promoted tweet + URL on that day.  This is the number of users who see a Promoted Ad either in their home timeline or search results. Per-input source lineage: `impressions` is the value of source column `promoted_tweet_report.impressions`, added up over the source rows that share the mart row''s grain.'
+    name: impressions
+    type: bigint
+  - description: 'The spend for the promoted tweet + URL on that day. Units: converted out of promoted_tweet_report.billed_charge_local_micro — each source value is divided by 1,000,000 and rounded to 2 decimal places, and those values are then added together, a source row with no value adding nothing to the total, and a mart row whose source rows all lack a value reports an empty total, not 0. Per-input source lineage: `billed_charge_local_micro` is the value of source column `promoted_tweet_report.billed_charge_local_micro`.'
+    name: spend
+    type: float
+  - description: 'The spend, in micros, for the tweet + URL on that day. Per-input source lineage: `spend_micro` is the value of source column `promoted_tweet_report.billed_charge_local_micro`, added up over the source rows that share the mart row''s grain.'
+    name: spend_micro
+    type: bigint
+  - description: 'Sum of all fields included in `twitter_ads__conversion_fields` variable (this mart uses exactly conversion_purchases_metric + conversion_custom_metric). This exact per-input component list is complete and authoritative for this column; every named component remains an input even if it is not emitted as a separate mart output. For each input row, missing conversion_purchases_metric, conversion_custom_metric values contribute 0 before the components are added; the resulting row values are then accumulated for the mart grain. Per-input source lineage: `conversion_custom_metric` is the value of source column `promoted_tweet_report.conversion_custom_metric`; `conversion_purchases_metric` is the value of source column `promoted_tweet_report.conversion_purchases_metric`, added up over the source rows that share the mart row''s grain.'
+    name: total_conversions
+    type: bigint
+  - description: 'Sum of all fields included in `twitter_ads__conversion_sale_amount_fields` variable (this mart uses exactly conversion_purchases_sale_amount + conversion_custom_sale_amount + conversion_sign_ups_sale_amount). This exact per-input component list is complete and authoritative for this column; every named component remains an input even if it is not emitted as a separate mart output. For each input row, missing conversion_purchases_sale_amount, conversion_custom_sale_amount, conversion_sign_ups_sale_amount values contribute 0 before the components are added; the resulting row values are then accumulated for the mart grain. Per-input source lineage: `conversion_custom_sale_amount` is the value of source column `promoted_tweet_report.conversion_custom_sale_amount`; `conversion_purchases_sale_amount` is the value of source column `promoted_tweet_report.conversion_purchases_sale_amount`; `conversion_sign_ups_sale_amount` is the value of source column `promoted_tweet_report.conversion_sign_ups_sale_amount`,
+      added up over the source rows that share the mart row''s grain.'
+    name: total_conversions_sale_amount
+    type: float
+  - description: 'The URL clicks for the promoted tweet + URL on that day. Per-input source lineage: `url_clicks` is the value of source column `promoted_tweet_report.url_clicks`, added up over the source rows that share the mart row''s grain.'
+    name: url_clicks
+    type: bigint
+  description: 'Each record in this table represents the daily performance of ads at the account, campaign, line item (ad group), and promoted tweet level, within a placement in Twitter.
+
+    '
+  grain: One row per placement, promoted_tweet_id, account_id, date_day. Each record in this table represents the daily performance of ads at the account, campaign, line item (ad group), and promoted tweet level, within a placement in Twitter. The carried columns account_name, approval_status, created_timestamp, is_deleted, line_item_id, promoted_tweet_status, tweet_id, updated_timestamp are part of this grain together with these keys, so rows that agree on the keys but differ in one of them are separate output rows.
+  key_columns:
+  - placement
+  - promoted_tweet_id
+  - account_id
+  - date_day
+  name: twitter_ads__promoted_tweet_report
+  source_relationships:
+  - child_columns:
+    - campaign_id
+    child_table: line_item_history
+    parent_columns:
+    - id
+    parent_table: campaign_history
+    required: false
+  - child_columns:
+    - account_id
+    child_table: line_item_keywords_report
+    parent_columns:
+    - id
+    parent_table: account_history
+    required: false
+  - child_columns:
+    - line_item_id
+    child_table: line_item_keywords_report
+    parent_columns:
+    - id
+    parent_table: line_item_history
+    required: false
+  - child_columns:
+    - line_item_id
+    child_table: promoted_tweet_history
+    parent_columns:
+    - id
+    parent_table: line_item_history
+    required: false
+  - child_columns:
+    - tweet_id
+    child_table: promoted_tweet_history
+    parent_columns:
+    - id
+    parent_table: tweet
+    required: false
+  - child_columns:
+    - account_id
+    child_table: promoted_tweet_report
+    parent_columns:
+    - id
+    parent_table: account_history
+    required: false
+  - child_columns:
+    - promoted_tweet_id
+    child_table: promoted_tweet_report
+    parent_columns:
+    - id
+    parent_table: promoted_tweet_history
+    required: false
+  transformation:
+    steps:
+    - description: Read source table promoted_tweet_report.
+      operation: source
+      order: 1
+      source_inputs:
+      - promoted_tweet_report
+    - description: Read source table promoted_tweet_history.
+      operation: source
+      order: 2
+      source_inputs:
+      - promoted_tweet_history
+    - description: Read source table account_history.
+      operation: source
+      order: 3
+      source_inputs:
+      - account_history
+    - description: 'Read source table campaign_history for extraction only: no rule of this mart matches or reads its rows, and it adds no rows and no columns to the mart.'
+      operation: source
+      order: 4
+      source_inputs:
+      - campaign_history
+    - description: 'Read source table line_item_history for extraction only: no rule of this mart matches or reads its rows, and it adds no rows and no columns to the mart.'
+      operation: source
+      order: 5
+      source_inputs:
+      - line_item_history
+    - description: 'Read source table tweet for extraction only: no rule of this mart matches or reads its rows, and it adds no rows and no columns to the mart.'
+      operation: source
+      order: 6
+      source_inputs:
+      - tweet
+    - carried_fields:
+      - placement
+      - promoted_tweet_id
+      - account_id
+      - date_day
+      description: 'Form the mart key columns placement, promoted_tweet_id, account_id, date_day from source table promoted_tweet_report. date_day is not copied from a promoted_tweet_report column but computed from promoted_tweet_report: It is date truncated to the start of its calendar day at 00:00:00 and remains part of the mart grain.'
+      operation: derive
+      order: 7
+      source_inputs:
+      - promoted_tweet_report
+    - carried_fields:
+      - promoted_tweet_id
+      - id
+      condition:
+        public_identifiers:
+        - promoted_tweet_history
+        - id
+        - promoted_tweet_id
+      description: Each promoted_tweet_report row is matched to its promoted_tweet_history row across the relationship the package declares; promoted_tweet_history is the parent side, so every promoted_tweet_report row appears exactly once, including promoted_tweet_report rows with no promoted_tweet_history row.
+      join_preservation: left
+      operation: join
+      order: 8
+      source_inputs:
+      - promoted_tweet_history
+    - carried_fields:
+      - account_id
+      - id
+      condition:
+        public_identifiers:
+        - account_history
+        - id
+        - account_id
+      description: Each promoted_tweet_report row is matched to its account_history row across the relationship the package declares; account_history is the parent side, so every promoted_tweet_report row appears exactly once, including promoted_tweet_report rows with no account_history row.
+      join_preservation: left
+      operation: join
+      order: 9
+      source_inputs:
+      - account_history
+    - carried_fields:
+      - placement
+      - promoted_tweet_id
+      - account_id
+      - date_day
+      - account_name
+      - approval_status
+      - created_timestamp
+      - is_deleted
+      - line_item_id
+      - promoted_tweet_status
+      - tweet_id
+      - updated_timestamp
+      - clicks
+      - conversion_custom_metric
+      - conversion_custom_sale_amount
+      - conversion_purchases_metric
+      - conversion_purchases_sale_amount
+      - impressions
+      - spend
+      - spend_micro
+      - total_conversions
+      - total_conversions_sale_amount
+      - url_clicks
+      description: 'One output row per placement, promoted_tweet_id, account_id, date_day together with the carried account_name, approval_status, created_timestamp, is_deleted, line_item_id, promoted_tweet_status, tweet_id, updated_timestamp, which are part of the grain: source rows that agree on the key columns but differ in a carried column fall in different output rows, reporting clicks, conversion_custom_metric, conversion_custom_sale_amount, conversion_purchases_metric, conversion_purchases_sale_amount, impressions, spend, spend_micro, total_conversions, total_conversions_sale_amount, url_clicks for that row''s matching rows. These aggregate outputs have no declared replacement for an empty result: clicks, impressions, spend, spend_micro, url_clicks. Preserve an empty result as empty, not 0: a missing input value contributes nothing, and an output whose matching input values are all missing is empty, whether it reads every matching row or only the rows that qualify for its condition.
+        Every other output follows its own declared column rule. These aggregate outputs count a missing input value as 0, so a row whose matching values are all missing reports 0, never empty: conversion_custom_metric, conversion_custom_sale_amount, conversion_purchases_metric, conversion_purchases_sale_amount, total_conversions, total_conversions_sale_amount.'
+      operation: aggregate
+      order: 10
+    - carried_fields:
+      - placement
+      - promoted_tweet_id
+      - account_id
+      - date_day
+      - account_name
+      - approval_status
+      - created_timestamp
+      - is_deleted
+      - line_item_id
+      - promoted_tweet_status
+      - tweet_id
+      - updated_timestamp
+      - clicks
+      - conversion_custom_metric
+      - conversion_custom_sale_amount
+      - conversion_purchases_metric
+      - conversion_purchases_sale_amount
+      - impressions
+      - spend
+      - spend_micro
+      - total_conversions
+      - total_conversions_sale_amount
+      - url_clicks
+      description: Name the mart columns.
+      operation: derive
+      order: 11
+    - carried_fields:
+      - placement
+      - promoted_tweet_id
+      - account_id
+      - date_day
+      description: 'Deterministic output order: sort by placement, promoted_tweet_id, account_id, date_day.'
+      operation: tie_break
+      order: 12

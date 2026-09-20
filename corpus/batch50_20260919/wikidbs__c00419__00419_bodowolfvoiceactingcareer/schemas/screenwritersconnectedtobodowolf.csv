@@ -1,0 +1,29 @@
+column_name,column_description
+screenwritername,screenwritername of screenwritersconnectedtobodowolf (real vendored values).
+biography,biography of screenwritersconnectedtobodowolf (real vendored values).
+gender,gender of screenwritersconnectedtobodowolf (real vendored values).
+profession,profession of screenwritersconnectedtobodowolf (real vendored values).
+nationality,nationality of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+entitytype,entitytype of screenwritersconnectedtobodowolf (real vendored values).
+freebaseid,freebaseid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+birthdate,birthdate of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+imdbid,imdbid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+firstname,firstname of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+viafid,viafid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+nationallibraryofspainid,nationallibraryofspainid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+portpersonid,portpersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+birthplace,birthplace of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+isniidentifier,isniidentifier of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+languages,languages of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+lastname,lastname of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+almamater,almamater of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+fandomarticleid,fandomarticleid of screenwritersconnectedtobodowolf (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of screenwritersconnectedtobodowolf (real vendored values). may be NULL.

@@ -1,0 +1,10 @@
+column_name,column_description
+id,Column ID of table MATERIAL_TYPE_PROPERTY_TYPES.
+is_managed_internally,Column IS_MANAGED_INTERNALLY of table MATERIAL_TYPE_PROPERTY_TYPES.
+is_mandatory,Column IS_MANDATORY of table MATERIAL_TYPE_PROPERTY_TYPES.
+maty_id,Column MATY_ID of table MATERIAL_TYPE_PROPERTY_TYPES.
+ordinal,Column ORDINAL of table MATERIAL_TYPE_PROPERTY_TYPES.
+pers_id_registerer,Column PERS_ID_REGISTERER of table MATERIAL_TYPE_PROPERTY_TYPES.
+prty_id,Column PRTY_ID of table MATERIAL_TYPE_PROPERTY_TYPES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table MATERIAL_TYPE_PROPERTY_TYPES.
+section,Column SECTION of table MATERIAL_TYPE_PROPERTY_TYPES. may be NULL.

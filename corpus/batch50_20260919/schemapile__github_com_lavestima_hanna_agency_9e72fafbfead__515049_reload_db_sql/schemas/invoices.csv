@@ -1,0 +1,10 @@
+column_name,column_description
+date_created,Column Date_Created of table Invoices.
+date_deleted,Column Date_Deleted of table Invoices. may be NULL.
+date_issued,Column Date_Issued of table Invoices.
+id,Column ID of table Invoices.
+id_customers,Column ID_CUSTOMERS of table Invoices.
+name,Column Name of table Invoices.
+path_slug,Column Path_Slug of table Invoices.
+user_created,Column User_Created of table Invoices.
+user_deleted,Column User_Deleted of table Invoices. may be NULL.

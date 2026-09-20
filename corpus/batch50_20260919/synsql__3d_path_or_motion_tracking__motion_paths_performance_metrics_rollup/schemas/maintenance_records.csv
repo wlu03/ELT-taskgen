@@ -1,0 +1,9 @@
+column_name,column_description
+record_id,Unique identifier for each maintenance record.
+robot_id,ID of the robot. may be NULL.
+maintenance_date,Date the maintenance was performed. may be NULL.
+maintenance_type,"Type of maintenance (e.g., routine, emergency). always exactly one of 'routine', 'emergency'. may be NULL."
+description,Description of the maintenance performed. may be NULL.
+performed_by,User who performed the maintenance. may be NULL.
+next_maintenance_due,Date the next maintenance is due. may be NULL.
+maintenance_duration,Duration of the maintenance in minutes. may be NULL.

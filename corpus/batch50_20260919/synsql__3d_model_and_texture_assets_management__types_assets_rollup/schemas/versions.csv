@@ -1,0 +1,8 @@
+column_name,column_description
+version_id,Unique identifier for each version.
+asset_id,ID of the asset. may be NULL.
+version_number,Version number of the asset. may be NULL.
+upload_date,Date the version was uploaded. may be NULL.
+description,Description of the changes made in this version. may be NULL.
+file_size,Size of the file in this version. may be NULL.
+resolution,"Resolution of the file in this version (if applicable, e.g., 1920x1080). may be NULL."

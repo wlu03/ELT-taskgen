@@ -1,0 +1,116 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-lavestima-hanna-agen-03c140bc6686-bucket/countries.jsonl
+    sync_mode: full_refresh_append
+    table: countries
+  - path: s3://schemapile--github-com-lavestima-hanna-agen-03c140bc6686-bucket/currencies_rates.jsonl
+    sync_mode: full_refresh_append
+    table: currencies_rates
+  - path: s3://schemapile--github-com-lavestima-hanna-agen-03c140bc6686-bucket/history_customers.jsonl
+    sync_mode: full_refresh_append
+    table: history_customers
+  - path: s3://schemapile--github-com-lavestima-hanna-agen-03c140bc6686-bucket/login_attempts.jsonl
+    sync_mode: full_refresh_append
+    table: login_attempts
+  - path: s3://schemapile--github-com-lavestima-hanna-agen-03c140bc6686-bucket/orders.jsonl
+    sync_mode: full_refresh_append
+    table: orders
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - categories_parameters
+    - currencies
+    - orders_products
+    - parameters
+    - products
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/categories.csv
+  sync_mode: full_refresh_append
+  table: categories
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/cities.csv
+  sync_mode: full_refresh_append
+  table: cities
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/history_invoices.csv
+  sync_mode: full_refresh_append
+  table: history_invoices
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/invoices.csv
+  sync_mode: full_refresh_append
+  table: invoices
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/invoices_products.csv
+  sync_mode: full_refresh_append
+  table: invoices_products
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/producers.csv
+  sync_mode: full_refresh_append
+  table: producers
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_lavestima_hanna_agen_03c140bc6686/products_sizes.csv
+  sync_mode: full_refresh_append
+  table: products_sizes
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_lavestima_hanna_agen_03c140bc6686
+    sync_mode: full_refresh_append
+    tables:
+    - customers
+    - history_orders
+    - history_products
+    - history_users
+    - products_parameters
+    - products_shipment_options
+    - sizes
+    - tokens
+    - users
+    - users_settings
+postgres:
+  config:
+    database: schemapile__github_com_lavestima_hanna_agen_03c140bc6686
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - addresses
+    - orders_statuses
+    - product_images
+    - roles
+    - shipment_options
+    user: postgres
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: schemapile__github_com_lavestima_hanna_agen_03c140bc6686
+    secret_access_key: ''
+    username: ''

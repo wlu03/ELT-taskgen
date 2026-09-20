@@ -1,0 +1,10 @@
+column_name,column_description
+content,Column content of table asset.
+content_md5,Column content_md5 of table asset. may be NULL.
+created_by_user_id,Column created_by_user_id of table asset. may be NULL.
+created_date,Column created_date of table asset. may be NULL.
+id,Column id of table asset.
+last_modified_date,Column last_modified_date of table asset. may be NULL.
+last_successful_asset_extraction_id,Column last_successful_asset_extraction_id of table asset. may be NULL.
+path,Column path of table asset.
+repository_id,Column repository_id of table asset.

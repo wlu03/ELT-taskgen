@@ -1,0 +1,149 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/capacityfactortech.jsonl
+    sync_mode: full_refresh_append
+    table: capacityfactortech
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/commodity_labels.jsonl
+    sync_mode: full_refresh_append
+    table: commodity_labels
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/costfixed.jsonl
+    sync_mode: full_refresh_append
+    table: costfixed
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/demandspecificdistribution.jsonl
+    sync_mode: full_refresh_append
+    table: demandspecificdistribution
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/discountrate.jsonl
+    sync_mode: full_refresh_append
+    table: discountrate
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/globaldiscountrate.jsonl
+    sync_mode: full_refresh_append
+    table: globaldiscountrate
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/minactivity.jsonl
+    sync_mode: full_refresh_append
+    table: minactivity
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/technology_labels.jsonl
+    sync_mode: full_refresh_append
+    table: technology_labels
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/techoutputsplit.jsonl
+    sync_mode: full_refresh_append
+    table: techoutputsplit
+  - path: s3://schemapile--github-com-arfc-pride-a189059a6-8d54f7f4c500-bucket/time_of_day.jsonl
+    sync_mode: full_refresh_append
+    table: time_of_day
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - costvariable
+    - emissionactivity
+    - output_v_capacity
+    - sector_labels
+    - time_periods
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/capacityfactorprocess.csv
+  sync_mode: full_refresh_append
+  table: capacityfactorprocess
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/emissionlimit.csv
+  sync_mode: full_refresh_append
+  table: emissionlimit
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/growthrateseed.csv
+  sync_mode: full_refresh_append
+  table: growthrateseed
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/lifetimeloantech.csv
+  sync_mode: full_refresh_append
+  table: lifetimeloantech
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/lifetimetech.csv
+  sync_mode: full_refresh_append
+  table: lifetimetech
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/maxactivity.csv
+  sync_mode: full_refresh_append
+  table: maxactivity
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/maxcapacity.csv
+  sync_mode: full_refresh_append
+  table: maxcapacity
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/mincapacity.csv
+  sync_mode: full_refresh_append
+  table: mincapacity
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/output_vflow_in.csv
+  sync_mode: full_refresh_append
+  table: output_vflow_in
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/technologies.csv
+  sync_mode: full_refresh_append
+  table: technologies
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/time_period_labels.csv
+  sync_mode: full_refresh_append
+  table: time_period_labels
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500/time_season.csv
+  sync_mode: full_refresh_append
+  table: time_season
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500
+    sync_mode: full_refresh_append
+    tables:
+    - costinvest
+    - efficiency
+    - existingcapacity
+    - output_capacitybyperiodandtech
+    - output_vflow_out
+    - segfrac
+postgres:
+  config:
+    database: schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - commodities
+    - demand
+    - growthratemax
+    - lifetimeprocess
+    - output_costs
+    - output_objective
+    - techinputsplit
+    user: postgres
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: schemapile__github_com_arfc_pride_a189059a6_8d54f7f4c500
+    secret_access_key: ''
+    username: ''

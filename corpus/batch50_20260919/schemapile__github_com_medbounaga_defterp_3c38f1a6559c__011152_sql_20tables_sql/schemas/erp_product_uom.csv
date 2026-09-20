@@ -1,0 +1,6 @@
+column_name,column_description
+active,Column active of table erp.product_uom.
+category_id,Column category_id of table erp.product_uom.
+decimals,Column decimals of table erp.product_uom.
+id,Column id of table erp.product_uom.
+name,Column name of table erp.product_uom.

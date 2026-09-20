@@ -1,0 +1,9 @@
+column_name,column_description
+env_data_id,Unique identifier for each environmental data entry.
+pose_id,ID of the pose estimation. may be NULL.
+temperature,Temperature of the environment. may be NULL.
+humidity,Humidity of the environment. may be NULL.
+lighting,Lighting of the environment. may be NULL.
+environment_type,"Type of the environment (e.g., indoor, outdoor). always exactly one of 'indoor', 'outdoor'. may be NULL."
+environment_description,Detailed description of the environment. may be NULL.
+environment_conditions,"Additional conditions of the environment (e.g., weather, noise level). always exactly one of 'weather', 'noise level'. may be NULL."

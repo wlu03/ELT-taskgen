@@ -1,0 +1,7 @@
+column_name,column_description
+created_date,Column created_date of table sector. may be NULL.
+district_id,Column district_id of table sector.
+id,Column id of table sector.
+name,Column name of table sector.
+owner_id,Column owner_id of table sector.
+updated_date,Column updated_date of table sector. may be NULL.

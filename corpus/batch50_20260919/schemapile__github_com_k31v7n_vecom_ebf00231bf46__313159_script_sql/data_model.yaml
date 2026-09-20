@@ -1,0 +1,1601 @@
+models:
+- columns:
+  - description: Identifier of the cventa_venta_estatus row. One row per value.
+    name: parent_key
+    type: integer
+  - description: nombre of the cventa_venta_estatus row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: 'Number of cventa_venta rows for this cventa_venta_estatus row; 0 when there are none. A cventa_venta_estatus row kept with no cventa_venta row reports 0 here, never 1: its placeholder holds no cventa_venta row to count.'
+    name: event_count
+    type: bigint
+  - description: Sum of iva over all matching cventa_venta rows; 0 when there are no rows.
+    name: lifetime_amount
+    type: decimal
+  - description: venta of the row with the latest fecha_sis; ties take the smallest venta. It is 0 when there are no rows.
+    name: latest_row_id
+    type: integer
+  - description: iva from that same latest row; 0 when there are no rows.
+    name: latest_amount
+    type: decimal
+  - description: concepto from that same latest row; '(none)' when there are no rows.
+    name: latest_label
+    type: text
+  - description: latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0.
+    name: latest_amount_share
+    type: float
+  description: Per-cventa_venta_estatus latest-row snapshot over linked cventa_venta activity in the 313159_script.sql schema.
+  grain: One row per cventa_venta_estatus (venta_estatus), INCLUDING cventa_venta_estatus rows with no linked cventa_venta rows.
+  key_columns:
+  - parent_key
+  name: cventa_venta_estatus_cventa_venta_snapshot
+  source_relationships:
+  - child_columns:
+    - usuario
+    child_table: cventa_bitacora_password
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - bodega_tipo
+    child_table: cventa_bodega
+    parent_columns:
+    - bodega_tipo
+    parent_table: cventa_bodega_tipo
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_bodega
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - bodega
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - bodega
+    parent_table: cventa_bodega
+    required: true
+  - child_columns:
+    - bodega_movimiento_tipo
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - bodega_movimiento_tipo
+    parent_table: cventa_bodega_movimiento_tipo
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - bodega
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - bodega
+    parent_table: cventa_bodega
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - cliente_tipo
+    child_table: cventa_cliente
+    parent_columns:
+    - cliente_tipo
+    parent_table: cventa_cliente_tipo
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_cliente
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_cliente
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - compra_estatus
+    child_table: cventa_compra
+    parent_columns:
+    - compra_estatus
+    parent_table: cventa_compra_estatus
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_compra
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - proveedor
+    child_table: cventa_compra
+    parent_columns:
+    - proveedor
+    parent_table: cventa_proveedor
+    required: true
+  - child_columns:
+    - tipo_pago
+    child_table: cventa_compra
+    parent_columns:
+    - tipo_pago
+    parent_table: cventa_tipo_pago
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_compra
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - compra
+    child_table: cventa_compra_detalle
+    parent_columns:
+    - compra
+    parent_table: cventa_compra
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_compra_detalle
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_empresa
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - pais_empresa
+    child_table: cventa_empresa
+    parent_columns:
+    - pais_empresa
+    parent_table: cventa_pais_empresa
+    required: true
+  - child_columns:
+    - factura_estatus
+    child_table: cventa_factura
+    parent_columns:
+    - factura_estatus
+    parent_table: cventa_factura_estatus
+    required: true
+  - child_columns:
+    - factura_serie
+    child_table: cventa_factura
+    parent_columns:
+    - factura_serie
+    parent_table: cventa_factura_serie
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_factura
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_factura_serie
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - factura
+    child_table: cventa_factura_venta
+    parent_columns:
+    - factura
+    parent_table: cventa_factura
+    required: true
+  - child_columns:
+    - venta
+    child_table: cventa_factura_venta
+    parent_columns:
+    - venta
+    parent_table: cventa_venta
+    required: true
+  - child_columns:
+    - modulo
+    child_table: cventa_menu
+    parent_columns:
+    - modulo
+    parent_table: cventa_modulo
+    required: true
+  - child_columns:
+    - submenu
+    child_table: cventa_menu
+    parent_columns:
+    - submenu
+    parent_table: cventa_submenu
+    required: true
+  - child_columns:
+    - producto_tipo
+    child_table: cventa_producto
+    parent_columns:
+    - producto_tipo
+    parent_table: cventa_producto_tipo
+    required: true
+  - child_columns:
+    - proveedor
+    child_table: cventa_producto
+    parent_columns:
+    - proveedor
+    parent_table: cventa_proveedor
+    required: true
+  - child_columns:
+    - unidad_medida
+    child_table: cventa_producto
+    parent_columns:
+    - unidad_medida
+    parent_table: cventa_unidad_medida
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_producto
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_proveedor
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - proveedor_clasificacion
+    child_table: cventa_proveedor
+    parent_columns:
+    - proveedor_clasificacion
+    parent_table: cventa_proveedor_clasificacion
+    required: true
+  - child_columns:
+    - proveedor_tipo
+    child_table: cventa_proveedor
+    parent_columns:
+    - proveedor_tipo
+    parent_table: cventa_proveedor_tipo
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_proveedor
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_usuario
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - rol
+    child_table: cventa_usuario
+    parent_columns:
+    - rol
+    parent_table: cventa_rol
+    required: true
+  - child_columns:
+    - usuario_genero
+    child_table: cventa_usuario
+    parent_columns:
+    - usuario_genero
+    parent_table: cventa_usuario_genero
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_usuario_empresa
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_usuario_empresa
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - menu
+    child_table: cventa_usuario_menu
+    parent_columns:
+    - menu
+    parent_table: cventa_menu
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_usuario_menu
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_vendedor
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - cliente
+    child_table: cventa_vendedor_cliente
+    parent_columns:
+    - cliente
+    parent_table: cventa_cliente
+    required: true
+  - child_columns:
+    - vendedor
+    child_table: cventa_vendedor_cliente
+    parent_columns:
+    - vendedor
+    parent_table: cventa_vendedor
+    required: true
+  - child_columns:
+    - cliente
+    child_table: cventa_venta
+    parent_columns:
+    - cliente
+    parent_table: cventa_cliente
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_venta
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - tipo_pago
+    child_table: cventa_venta
+    parent_columns:
+    - tipo_pago
+    parent_table: cventa_tipo_pago
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_venta
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - venta_estatus
+    child_table: cventa_venta
+    parent_columns:
+    - venta_estatus
+    parent_table: cventa_venta_estatus
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_venta_detalle
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - venta
+    child_table: cventa_venta_detalle
+    parent_columns:
+    - venta
+    parent_table: cventa_venta
+    required: true
+  transformation:
+    steps:
+    - description: Read source table cventa_venta_estatus.
+      operation: source
+      order: 1
+      source_inputs:
+      - cventa_venta_estatus
+    - description: Read source table cventa_venta.
+      operation: source
+      order: 2
+      source_inputs:
+      - cventa_venta
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per cventa_venta_estatus row, keyed by venta_estatus.
+      operation: derive
+      order: 3
+      source_inputs:
+      - cventa_venta_estatus
+    - carried_fields:
+      - venta_estatus
+      condition:
+        public_identifiers:
+        - cventa_venta
+        - venta_estatus
+        - parent_key
+      description: Bring in cventa_venta; a cventa_venta_estatus row with no matching cventa_venta row is retained and receives the stated empty snapshot values.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - cventa_venta
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting event_count, lifetime_amount for that row''s matching rows.'
+      operation: aggregate
+      order: 5
+    - carried_fields:
+      - parent_key
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest venta, and take latest_row_id, latest_amount, latest_label from that winning row. The ordering measure is required on every real input row, so a non-empty group always has a winning row; the declared defaults belong only to a group with NO rows.
+      operation: extrema
+      order: 6
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 7
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      description: Name the mart columns; lifetime_amount reports its declared default — never NULL — for a group with no matching rows.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - event_count
+      - lifetime_amount
+      - latest_row_id
+      - latest_amount
+      - latest_label
+      - latest_amount_share
+      description: 'Guarded ratios: latest_amount_share — latest_amount divided by lifetime_amount as a fraction, rounded to 4 decimal places; 0.0 when lifetime_amount is 0.'
+      operation: ratio
+      order: 9
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 10
+- columns:
+  - description: Identifier of the cventa_usuario_genero row.
+    name: entity_key
+    type: integer
+  - description: '''present'' for a linked cventa_usuario row; ''absent'' only for a cventa_usuario_genero row with no linked cventa_usuario row. activo is required on every real cventa_usuario row.'
+    name: measure_state
+    type: text
+  - description: codigo of the cventa_usuario_genero row, copied unchanged.
+    name: entity_name
+    type: text
+  - description: Number of linked cventa_usuario rows in this entity/state cell; 0 for a no-activity absent cell.
+    name: row_count
+    type: bigint
+  - description: Number of unique activo values in this cell; each unique value is counted once, however many rows repeat it; 0 for a no-activity absent cell.
+    name: distinct_amount_count
+    type: bigint
+  - description: Sum of activo in this cell; 0 for a no-activity absent cell.
+    name: total_amount
+    type: integer
+  - description: Largest activo in this cell; 0 for a no-activity absent cell.
+    name: max_amount
+    type: integer
+  - description: max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+    name: max_amount_share
+    type: float
+  description: Per-(cventa_usuario_genero, measure state) distribution of linked cventa_usuario activity in the 313159_script.sql schema.
+  grain: One row per (usuario_genero, measure state) pair represented by linked cventa_usuario rows, plus one absent no-activity row for a cventa_usuario_genero row with no links. Because activo is required, no linked cventa_usuario row belongs to the absent state.
+  key_columns:
+  - entity_key
+  - measure_state
+  name: cventa_usuario_genero_cventa_usuario_distribution
+  source_relationships:
+  - child_columns:
+    - usuario
+    child_table: cventa_bitacora_password
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - bodega_tipo
+    child_table: cventa_bodega
+    parent_columns:
+    - bodega_tipo
+    parent_table: cventa_bodega_tipo
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_bodega
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - bodega
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - bodega
+    parent_table: cventa_bodega
+    required: true
+  - child_columns:
+    - bodega_movimiento_tipo
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - bodega_movimiento_tipo
+    parent_table: cventa_bodega_movimiento_tipo
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - bodega
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - bodega
+    parent_table: cventa_bodega
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - cliente_tipo
+    child_table: cventa_cliente
+    parent_columns:
+    - cliente_tipo
+    parent_table: cventa_cliente_tipo
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_cliente
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_cliente
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - compra_estatus
+    child_table: cventa_compra
+    parent_columns:
+    - compra_estatus
+    parent_table: cventa_compra_estatus
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_compra
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - proveedor
+    child_table: cventa_compra
+    parent_columns:
+    - proveedor
+    parent_table: cventa_proveedor
+    required: true
+  - child_columns:
+    - tipo_pago
+    child_table: cventa_compra
+    parent_columns:
+    - tipo_pago
+    parent_table: cventa_tipo_pago
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_compra
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - compra
+    child_table: cventa_compra_detalle
+    parent_columns:
+    - compra
+    parent_table: cventa_compra
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_compra_detalle
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_empresa
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - pais_empresa
+    child_table: cventa_empresa
+    parent_columns:
+    - pais_empresa
+    parent_table: cventa_pais_empresa
+    required: true
+  - child_columns:
+    - factura_estatus
+    child_table: cventa_factura
+    parent_columns:
+    - factura_estatus
+    parent_table: cventa_factura_estatus
+    required: true
+  - child_columns:
+    - factura_serie
+    child_table: cventa_factura
+    parent_columns:
+    - factura_serie
+    parent_table: cventa_factura_serie
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_factura
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_factura_serie
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - factura
+    child_table: cventa_factura_venta
+    parent_columns:
+    - factura
+    parent_table: cventa_factura
+    required: true
+  - child_columns:
+    - venta
+    child_table: cventa_factura_venta
+    parent_columns:
+    - venta
+    parent_table: cventa_venta
+    required: true
+  - child_columns:
+    - modulo
+    child_table: cventa_menu
+    parent_columns:
+    - modulo
+    parent_table: cventa_modulo
+    required: true
+  - child_columns:
+    - submenu
+    child_table: cventa_menu
+    parent_columns:
+    - submenu
+    parent_table: cventa_submenu
+    required: true
+  - child_columns:
+    - producto_tipo
+    child_table: cventa_producto
+    parent_columns:
+    - producto_tipo
+    parent_table: cventa_producto_tipo
+    required: true
+  - child_columns:
+    - proveedor
+    child_table: cventa_producto
+    parent_columns:
+    - proveedor
+    parent_table: cventa_proveedor
+    required: true
+  - child_columns:
+    - unidad_medida
+    child_table: cventa_producto
+    parent_columns:
+    - unidad_medida
+    parent_table: cventa_unidad_medida
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_producto
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_proveedor
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - proveedor_clasificacion
+    child_table: cventa_proveedor
+    parent_columns:
+    - proveedor_clasificacion
+    parent_table: cventa_proveedor_clasificacion
+    required: true
+  - child_columns:
+    - proveedor_tipo
+    child_table: cventa_proveedor
+    parent_columns:
+    - proveedor_tipo
+    parent_table: cventa_proveedor_tipo
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_proveedor
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_usuario
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - rol
+    child_table: cventa_usuario
+    parent_columns:
+    - rol
+    parent_table: cventa_rol
+    required: true
+  - child_columns:
+    - usuario_genero
+    child_table: cventa_usuario
+    parent_columns:
+    - usuario_genero
+    parent_table: cventa_usuario_genero
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_usuario_empresa
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_usuario_empresa
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - menu
+    child_table: cventa_usuario_menu
+    parent_columns:
+    - menu
+    parent_table: cventa_menu
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_usuario_menu
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_vendedor
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - cliente
+    child_table: cventa_vendedor_cliente
+    parent_columns:
+    - cliente
+    parent_table: cventa_cliente
+    required: true
+  - child_columns:
+    - vendedor
+    child_table: cventa_vendedor_cliente
+    parent_columns:
+    - vendedor
+    parent_table: cventa_vendedor
+    required: true
+  - child_columns:
+    - cliente
+    child_table: cventa_venta
+    parent_columns:
+    - cliente
+    parent_table: cventa_cliente
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_venta
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - tipo_pago
+    child_table: cventa_venta
+    parent_columns:
+    - tipo_pago
+    parent_table: cventa_tipo_pago
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_venta
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - venta_estatus
+    child_table: cventa_venta
+    parent_columns:
+    - venta_estatus
+    parent_table: cventa_venta_estatus
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_venta_detalle
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - venta
+    child_table: cventa_venta_detalle
+    parent_columns:
+    - venta
+    parent_table: cventa_venta
+    required: true
+  transformation:
+    steps:
+    - description: Read source table cventa_usuario_genero.
+      operation: source
+      order: 1
+      source_inputs:
+      - cventa_usuario_genero
+    - description: Read source table cventa_usuario.
+      operation: source
+      order: 2
+      source_inputs:
+      - cventa_usuario
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: Carry each usuario_genero and its codigo into the measure-state calculation.
+      operation: derive
+      order: 3
+      source_inputs:
+      - cventa_usuario_genero
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - usuario_genero
+      condition:
+        public_identifiers:
+        - cventa_usuario
+        - usuario_genero
+        - entity_key
+      description: Bring the linked cventa_usuario rows into each cventa_usuario_genero entity; retain an entity with no linked row so its absent state is visible.
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - cventa_usuario
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the present measure-state rows: a real cventa_usuario row; activo is required on every such row.'
+      operation: filter
+      order: 5
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per cventa_usuario_genero entity that has at least one row in the present measure state, and no row here for an entity with none, reporting row count, how many different activo values occur (each different value counted once, however many rows repeat it), total activo, and largest activo.
+      operation: distinct
+      order: 6
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 7
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the present measure state.
+      operation: derive
+      order: 8
+    - carried_fields:
+      - entity_key
+      - entity_name
+      description: 'Keep the absent measure-state rows: the retained placeholder for a cventa_usuario_genero row with no cventa_usuario rows; no real row can enter this state because activo is required.'
+      operation: filter
+      order: 9
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      description: One row per cventa_usuario_genero entity with no linked cventa_usuario row at all, whose retained placeholder is its one row in the absent measure state, and no row here for an entity that has a linked cventa_usuario row, reporting a row count of 0, 0 different activo values, a total activo of 0 and a largest activo of 0.
+      operation: distinct
+      order: 10
+    - carried_fields:
+      - entity_key
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: max_amount_share is max_amount divided by total_amount as a fraction, rounded to 4 decimal places; 0.0 when total_amount is 0.
+      operation: ratio
+      order: 11
+      semantic_parameters:
+        null_result: 0.0 when total_amount is 0
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: Label these measures as the absent measure state.
+      operation: derive
+      order: 12
+    - carried_fields:
+      - entity_key
+      - measure_state
+      - entity_name
+      - row_count
+      - distinct_amount_count
+      - total_amount
+      - max_amount
+      - max_amount_share
+      description: 'Stack the present-state summary and the absent-state summary into one output list: every present-state row and every absent-state row is its own output row, an entity with rows in both states appears twice, once per state, and the two summaries are never matched to each other.'
+      operation: union
+      order: 13
+      semantic_parameters:
+        mode: all
+    - carried_fields:
+      - entity_key
+      - measure_state
+      description: 'Deterministic output order: entity, then measure state.'
+      operation: tie_break
+      order: 14
+- columns:
+  - description: Identifier of the cventa_usuario row. One row per value.
+    name: parent_key
+    type: integer
+  - description: alias of the cventa_usuario row, copied unchanged.
+    name: parent_name
+    type: text
+  - description: The largest iva itself; 0 when the parent has no cventa_venta rows.
+    name: top_measure
+    type: decimal
+  - description: How many cventa_venta rows are tied at that largest iva. 1 when exactly one row carries that largest iva; 0 when there are no rows.
+    name: tied_count
+    type: bigint
+  - description: 'Number of cventa_venta rows for this cventa_usuario row; 0 when there are none. A cventa_usuario row kept with no cventa_venta row reports 0 here, never 1: its placeholder holds no cventa_venta row to count.'
+    name: child_count
+    type: bigint
+  - description: Sum of iva over all of them; 0 when the parent has no cventa_venta rows.
+    name: total_measure
+    type: decimal
+  - description: The concepto of the cventa_venta row with the LARGEST iva for this cventa_usuario row. Ties in iva are broken by taking the SMALLEST concepto under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one); rows tied on both are resolved by the smallest venta. The literal '(none)' when the parent has no cventa_venta rows at all.
+    name: top_label
+    type: text
+  - description: The venta of that same extremal row — the winner under the SAME total order, so it is the identifier of a real cventa_venta row whenever the parent has any. It is 0 when there are no rows, and only then. It identifies WHICH row won, so a tie resolved the wrong way is visible even when two rows share a label.
+    name: top_row_id
+    type: integer
+  - description: top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.
+    name: top_measure_share
+    type: float
+  - description: '''empty'' when no row holds a maximum at all — the parent has no cventa_venta rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+    name: tie_state
+    type: text
+  description: 'Per-cventa_usuario extremes over linked cventa_venta rows in the 313159_script.sql schema: WHICH row is largest, not how large it is.'
+  grain: One row per cventa_usuario (usuario), INCLUDING cventa_usuario rows with no linked cventa_venta rows.
+  key_columns:
+  - parent_key
+  name: cventa_usuario_cventa_venta_top
+  source_relationships:
+  - child_columns:
+    - usuario
+    child_table: cventa_bitacora_password
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - bodega_tipo
+    child_table: cventa_bodega
+    parent_columns:
+    - bodega_tipo
+    parent_table: cventa_bodega_tipo
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_bodega
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - bodega
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - bodega
+    parent_table: cventa_bodega
+    required: true
+  - child_columns:
+    - bodega_movimiento_tipo
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - bodega_movimiento_tipo
+    parent_table: cventa_bodega_movimiento_tipo
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_bodega_movimiento
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - bodega
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - bodega
+    parent_table: cventa_bodega
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_bodega_producto
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - cliente_tipo
+    child_table: cventa_cliente
+    parent_columns:
+    - cliente_tipo
+    parent_table: cventa_cliente_tipo
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_cliente
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_cliente
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - compra_estatus
+    child_table: cventa_compra
+    parent_columns:
+    - compra_estatus
+    parent_table: cventa_compra_estatus
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_compra
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - proveedor
+    child_table: cventa_compra
+    parent_columns:
+    - proveedor
+    parent_table: cventa_proveedor
+    required: true
+  - child_columns:
+    - tipo_pago
+    child_table: cventa_compra
+    parent_columns:
+    - tipo_pago
+    parent_table: cventa_tipo_pago
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_compra
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - compra
+    child_table: cventa_compra_detalle
+    parent_columns:
+    - compra
+    parent_table: cventa_compra
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_compra_detalle
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_empresa
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - pais_empresa
+    child_table: cventa_empresa
+    parent_columns:
+    - pais_empresa
+    parent_table: cventa_pais_empresa
+    required: true
+  - child_columns:
+    - factura_estatus
+    child_table: cventa_factura
+    parent_columns:
+    - factura_estatus
+    parent_table: cventa_factura_estatus
+    required: true
+  - child_columns:
+    - factura_serie
+    child_table: cventa_factura
+    parent_columns:
+    - factura_serie
+    parent_table: cventa_factura_serie
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_factura
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_factura_serie
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - factura
+    child_table: cventa_factura_venta
+    parent_columns:
+    - factura
+    parent_table: cventa_factura
+    required: true
+  - child_columns:
+    - venta
+    child_table: cventa_factura_venta
+    parent_columns:
+    - venta
+    parent_table: cventa_venta
+    required: true
+  - child_columns:
+    - modulo
+    child_table: cventa_menu
+    parent_columns:
+    - modulo
+    parent_table: cventa_modulo
+    required: true
+  - child_columns:
+    - submenu
+    child_table: cventa_menu
+    parent_columns:
+    - submenu
+    parent_table: cventa_submenu
+    required: true
+  - child_columns:
+    - producto_tipo
+    child_table: cventa_producto
+    parent_columns:
+    - producto_tipo
+    parent_table: cventa_producto_tipo
+    required: true
+  - child_columns:
+    - proveedor
+    child_table: cventa_producto
+    parent_columns:
+    - proveedor
+    parent_table: cventa_proveedor
+    required: true
+  - child_columns:
+    - unidad_medida
+    child_table: cventa_producto
+    parent_columns:
+    - unidad_medida
+    parent_table: cventa_unidad_medida
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_producto
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_proveedor
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - proveedor_clasificacion
+    child_table: cventa_proveedor
+    parent_columns:
+    - proveedor_clasificacion
+    parent_table: cventa_proveedor_clasificacion
+    required: true
+  - child_columns:
+    - proveedor_tipo
+    child_table: cventa_proveedor
+    parent_columns:
+    - proveedor_tipo
+    parent_table: cventa_proveedor_tipo
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_proveedor
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_usuario
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - rol
+    child_table: cventa_usuario
+    parent_columns:
+    - rol
+    parent_table: cventa_rol
+    required: true
+  - child_columns:
+    - usuario_genero
+    child_table: cventa_usuario
+    parent_columns:
+    - usuario_genero
+    parent_table: cventa_usuario_genero
+    required: true
+  - child_columns:
+    - empresa
+    child_table: cventa_usuario_empresa
+    parent_columns:
+    - empresa
+    parent_table: cventa_empresa
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_usuario_empresa
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - menu
+    child_table: cventa_usuario_menu
+    parent_columns:
+    - menu
+    parent_table: cventa_menu
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_usuario_menu
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_vendedor
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - cliente
+    child_table: cventa_vendedor_cliente
+    parent_columns:
+    - cliente
+    parent_table: cventa_cliente
+    required: true
+  - child_columns:
+    - vendedor
+    child_table: cventa_vendedor_cliente
+    parent_columns:
+    - vendedor
+    parent_table: cventa_vendedor
+    required: true
+  - child_columns:
+    - cliente
+    child_table: cventa_venta
+    parent_columns:
+    - cliente
+    parent_table: cventa_cliente
+    required: true
+  - child_columns:
+    - moneda
+    child_table: cventa_venta
+    parent_columns:
+    - moneda
+    parent_table: cventa_moneda
+    required: true
+  - child_columns:
+    - tipo_pago
+    child_table: cventa_venta
+    parent_columns:
+    - tipo_pago
+    parent_table: cventa_tipo_pago
+    required: true
+  - child_columns:
+    - usuario
+    child_table: cventa_venta
+    parent_columns:
+    - usuario
+    parent_table: cventa_usuario
+    required: true
+  - child_columns:
+    - venta_estatus
+    child_table: cventa_venta
+    parent_columns:
+    - venta_estatus
+    parent_table: cventa_venta_estatus
+    required: true
+  - child_columns:
+    - producto
+    child_table: cventa_venta_detalle
+    parent_columns:
+    - producto
+    parent_table: cventa_producto
+    required: true
+  - child_columns:
+    - venta
+    child_table: cventa_venta_detalle
+    parent_columns:
+    - venta
+    parent_table: cventa_venta
+    required: true
+  transformation:
+    steps:
+    - description: Read source table cventa_usuario.
+      operation: source
+      order: 1
+      source_inputs:
+      - cventa_usuario
+    - description: Read source table cventa_venta.
+      operation: source
+      order: 2
+      source_inputs:
+      - cventa_venta
+    - carried_fields:
+      - parent_key
+      - parent_name
+      description: One row per cventa_usuario row, keyed by usuario.
+      operation: derive
+      order: 3
+      source_inputs:
+      - cventa_usuario
+    - carried_fields:
+      - usuario
+      condition:
+        public_identifiers:
+        - cventa_venta
+        - usuario
+        - parent_key
+      description: 'Bring in cventa_venta: a cventa_usuario row with no cventa_venta rows still appears, with the declared defaults.'
+      join_preservation: left
+      operation: join
+      order: 4
+      source_inputs:
+      - cventa_venta
+    - carried_fields:
+      - parent_key
+      description: Rank the joined rows within each group under an explicit total order (measure first, then the declared tie-break), so the extremal row is a function of the input and not of row order.
+      operation: window
+      order: 5
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      description: 'One output row per parent_key, carrying parent_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting top_measure, tied_count, child_count, total_measure for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      operation: filtered_aggregate
+      order: 6
+    - carried_fields:
+      - parent_key
+      - top_label
+      - top_row_id
+      description: Keep the single row per parent_key at which the ordering measure is largest, ties broken by the smallest concepto under a plain case-sensitive comparison of the stored text (the warehouse default order, in which every uppercase letter sorts before every lowercase one), then the smallest venta, and take top_label, top_row_id from that winning row. The ordering measure is required on every real input row, so a non-empty group always has a winning row; the declared defaults belong only to a group with NO rows.
+      operation: extrema
+      order: 7
+    - carried_fields:
+      - parent_key
+      condition:
+        public_identifiers:
+        - parent_key
+      description: Attach the extremal row's attributes to the grouped measures. LEFT, so a group with no rows at all keeps its measures.
+      join_preservation: left
+      operation: join
+      order: 8
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      description: Name the mart columns; top_measure, total_measure report their declared defaults — never NULL — for a group with no matching rows.
+      operation: derive
+      order: 9
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      description: 'Guarded ratios: top_measure_share — top_measure divided by total_measure as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimals, 0.0 when total_measure is 0.'
+      operation: ratio
+      order: 10
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - carried_fields:
+      - parent_key
+      - parent_name
+      - top_measure
+      - tied_count
+      - child_count
+      - total_measure
+      - top_label
+      - top_row_id
+      - top_measure_share
+      - tie_state
+      description: 'tie_state — ''empty'' when no row holds a maximum at all — the parent has no cventa_venta rows — ''unique'' when exactly one row holds the maximum, ''tied'' when two or more do. Equivalently, tie_state follows tied_count: ''empty'' when tied_count is 0, ''unique'' when it is 1, ''tied'' when it is 2 or more.'
+      operation: conditional
+      order: 11
+      semantic_parameters:
+        boundary: categorical mapping; no numeric boundary
+    - carried_fields:
+      - parent_key
+      description: 'Deterministic output order: sort by parent_key.'
+      operation: tie_break
+      order: 12

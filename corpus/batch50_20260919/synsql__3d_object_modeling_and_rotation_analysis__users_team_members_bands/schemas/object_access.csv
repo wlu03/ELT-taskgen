@@ -1,0 +1,6 @@
+column_name,column_description
+access_id,Unique identifier for each access event.
+object_id,ID of the object being accessed. may be NULL.
+user_id,ID of the user accessing the object. may be NULL.
+access_date,Date when the object was accessed. may be NULL.
+access_type,"Type of access (e.g., view, edit). always exactly one of 'view', 'edit'. may be NULL."

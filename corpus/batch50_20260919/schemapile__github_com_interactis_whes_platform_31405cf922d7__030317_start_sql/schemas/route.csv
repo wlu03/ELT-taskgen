@@ -1,0 +1,21 @@
+column_name,column_description
+arrival_station,Column arrival_station of table route. may be NULL.
+arrival_url,Column arrival_url of table route. may be NULL.
+ascent,Column ascent of table route. may be NULL.
+content_id,Column content_id of table route. may be NULL.
+created_at,Column created_at of table route. may be NULL.
+departure_station,Column departure_station of table route. may be NULL.
+departure_url,Column departure_url of table route. may be NULL.
+descent,Column descent of table route. may be NULL.
+difficulty,Column difficulty of table route. may be NULL.
+distance_in_km,Column distance_in_km of table route. may be NULL.
+duration_in_min,Column duration_in_min of table route. may be NULL.
+end_altitude,Column end_altitude of table route. may be NULL.
+geom,Column geom of table route. may be NULL.
+id,Column id of table route.
+max_altitude,Column max_altitude of table route. may be NULL.
+min_altitude,Column min_altitude of table route. may be NULL.
+print_available,Column print_available of table route. may be NULL.
+profile,Column profile of table route. may be NULL.
+start_altitude,Column start_altitude of table route. may be NULL.
+updated_at,Column updated_at of table route. may be NULL.

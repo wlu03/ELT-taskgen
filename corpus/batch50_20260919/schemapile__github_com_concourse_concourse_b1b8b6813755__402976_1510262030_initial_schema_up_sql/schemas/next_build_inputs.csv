@@ -1,0 +1,6 @@
+column_name,column_description
+first_occurrence,Column first_occurrence of table next_build_inputs.
+id,Column id of table next_build_inputs.
+input_name,Column input_name of table next_build_inputs.
+job_id,Column job_id of table next_build_inputs.
+version_id,Column version_id of table next_build_inputs.

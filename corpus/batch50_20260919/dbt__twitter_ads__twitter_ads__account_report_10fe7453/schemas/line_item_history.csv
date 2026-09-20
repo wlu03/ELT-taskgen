@@ -1,0 +1,26 @@
+column_name,column_description
+_fivetran_synced,When the record was last synced by Fivetran. may be NULL.
+advertiser_domain,"The website domain for this advertiser, without the protocol specification. may be NULL."
+advertiser_user_id,The Twitter user identifier for the handle promoting the ad. may be NULL.
+automatically_select_bid,Whether automatically optimize bidding is enabled based on daily budget and campaign flight dates. may be NULL.
+bid_amount_local_micro,The bid amount to be associated with this line item. may be NULL.
+bid_type,The bidding mechanism. may be NULL.
+bid_unit,The bid unit for this line item. may be NULL.
+campaign_id,The ID of the related campaign. may be NULL.
+charge_by,The unit to charge this line item by. may be NULL.
+created_at,The timestamp the account was created. may be NULL.
+creative_source,The source of the creatives for the line item. may be NULL.
+currency,The currency in which metrics will be reported. may be NULL.
+deleted,Whether the record has been deleted or not. may be NULL.
+end_time,The timestamp at which the line item will stop being served. may be NULL.
+entity_status,The status of the line item. may be NULL.
+id,The ID of the line item.
+name,The name of the line item. may be NULL.
+objective,The campaign objective for this line item. may be NULL.
+optimization,The optimization setting to use with this line item. may be NULL.
+primary_web_event_tag,The identifier of the primary web event tag. Allows more accurate tracking of engagements for the campaign pertaining to this line item. may be NULL.
+product_type,The type of promoted product that this line item will contain. may be NULL.
+start_time,The timestamp at which the line item will start being served. may be NULL.
+target_cpa_local_micro,The target cost per acquisition for the line item. may be NULL.
+total_budget_amount_local_micro,The total budget amount to be allocated to the line item. may be NULL.
+updated_at,The timestamp the account was last updated. may be NULL.

@@ -1,0 +1,20 @@
+column_name,column_description
+action,Column action of table x_trx_log. may be NULL.
+added_by_id,Column added_by_id of table x_trx_log. may be NULL.
+attr_name,Column attr_name of table x_trx_log. may be NULL.
+class_type,Column class_type of table x_trx_log.
+create_time,Column create_time of table x_trx_log. may be NULL.
+id,Column id of table x_trx_log.
+new_val,Column new_val of table x_trx_log. may be NULL.
+object_id,Column object_id of table x_trx_log. may be NULL.
+object_name,Column object_name of table x_trx_log. may be NULL.
+parent_object_class_type,Column parent_object_class_type of table x_trx_log.
+parent_object_id,Column parent_object_id of table x_trx_log. may be NULL.
+parent_object_name,Column parent_object_name of table x_trx_log. may be NULL.
+prev_val,Column prev_val of table x_trx_log. may be NULL.
+req_id,Column req_id of table x_trx_log. may be NULL.
+sess_id,Column sess_id of table x_trx_log. may be NULL.
+sess_type,Column sess_type of table x_trx_log. may be NULL.
+trx_id,Column trx_id of table x_trx_log. may be NULL.
+upd_by_id,Column upd_by_id of table x_trx_log. may be NULL.
+update_time,Column update_time of table x_trx_log. may be NULL.

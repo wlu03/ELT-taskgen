@@ -1,0 +1,6 @@
+column_name,column_description
+date_created,Column Date_Created of table Login_Attempts.
+id,Column ID of table Login_Attempts.
+id_users,Column ID_USERS of table Login_Attempts. may be NULL.
+ip_address,Column Ip_Address of table Login_Attempts.
+is_failed,Column Is_Failed of table Login_Attempts.

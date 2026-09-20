@@ -1,0 +1,8 @@
+column_name,column_description
+confidence_score_type_name,Column Confidence_Score_Type_name of table interactome_db.PTM_site. may be NULL.
+ptm_id,Column PTM_id of table interactome_db.PTM_site.
+aa,Column aa of table interactome_db.PTM_site.
+confidence_score_name,Column confidence_score_name of table interactome_db.PTM_site. may be NULL.
+confidence_score_value,Column confidence_score_value of table interactome_db.PTM_site. may be NULL.
+id,Column id of table interactome_db.PTM_site.
+position,Column position of table interactome_db.PTM_site.

@@ -1,0 +1,7 @@
+column_name,column_description
+team_id,Unique identifier for each design team.
+team_name,Name of the design team. may be NULL.
+description,Description of the design team. may be NULL.
+leader_id,ID of the team leader. may be NULL.
+created_at,Date and time the team was created. may be NULL.
+updated_at,Date and time the team was last updated. may be NULL.

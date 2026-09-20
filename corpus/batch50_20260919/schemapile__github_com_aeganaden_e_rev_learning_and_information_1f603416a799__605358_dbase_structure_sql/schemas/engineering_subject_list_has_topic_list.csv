@@ -1,0 +1,3 @@
+column_name,column_description
+subject_list_id,Column subject_list_id of table engineering.subject_list_has_topic_list.
+topic_list_id,Column topic_list_id of table engineering.subject_list_has_topic_list.

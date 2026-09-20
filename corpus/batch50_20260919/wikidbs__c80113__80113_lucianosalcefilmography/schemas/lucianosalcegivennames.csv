@@ -1,0 +1,20 @@
+column_name,column_description
+givenname,givenname of lucianosalcegivennames (real vendored values).
+description,description of lucianosalcegivennames (real vendored values).
+instanceof,instanceof of lucianosalcegivennames (real vendored values).
+languageoforigin,languageoforigin of lucianosalcegivennames (real vendored values). may be NULL.
+alternativename,alternativename of lucianosalcegivennames (real vendored values). may be NULL.
+distinctfrom,distinctfrom of lucianosalcegivennames (real vendored values). may be NULL.
+nativelabel,nativelabel of lucianosalcegivennames (real vendored values).
+writingsystem,writingsystem of lucianosalcegivennames (real vendored values).
+soundexcode,soundexcode of lucianosalcegivennames (real vendored values). may be NULL.
+colognephonetics,colognephonetics of lucianosalcegivennames (real vendored values). may be NULL.
+caverphonecode,caverphonecode of lucianosalcegivennames (real vendored values). may be NULL.
+familynameassociation,familynameassociation of lucianosalcegivennames (real vendored values). may be NULL.
+nominisgivennameid,nominisgivennameid of lucianosalcegivennames (real vendored values). may be NULL.
+commonscategory,commonscategory of lucianosalcegivennames (real vendored values). may be NULL.
+sourcedescription,sourcedescription of lucianosalcegivennames (real vendored values). may be NULL.
+gendervariant,gendervariant of lucianosalcegivennames (real vendored values). may be NULL.
+attestedin,attestedin of lucianosalcegivennames (real vendored values). may be NULL.
+pronunciationaudio,pronunciationaudio of lucianosalcegivennames (real vendored values). may be NULL.
+nederlandsevoornamenbankid,nederlandsevoornamenbankid of lucianosalcegivennames (real vendored values). may be NULL.

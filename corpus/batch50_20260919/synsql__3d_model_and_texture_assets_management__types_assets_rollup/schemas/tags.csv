@@ -1,0 +1,6 @@
+column_name,column_description
+tag_id,Unique identifier for each tag.
+tag_name,Name of the tag. may be NULL.
+created_at,Date and time when the tag was created. may be NULL.
+updated_at,Date and time when the tag was last updated. may be NULL.
+description,Detailed description of the tag. may be NULL.

@@ -1,0 +1,13 @@
+column_name,column_description
+current_src,Column current_src of table video_session. may be NULL.
+duration,Column duration of table video_session. may be NULL.
+end_reason,Column end_reason of table video_session. may be NULL.
+ended_at,Column ended_at of table video_session. may be NULL.
+file_id,Column file_id of table video_session. may be NULL.
+id,Column id of table video_session.
+qoe_score,Column qoe_score of table video_session. may be NULL.
+service_type,Column service_type of table video_session. may be NULL.
+session_id,Column session_id of table video_session.
+started_at,Column started_at of table video_session. may be NULL.
+title,Column title of table video_session. may be NULL.
+window_location,Column window_location of table video_session. may be NULL.

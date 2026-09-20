@@ -1,0 +1,13 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_enum_element_def. may be NULL.
+create_time,Column create_time of table x_enum_element_def. may be NULL.
+enum_def_id,Column enum_def_id of table x_enum_element_def.
+guid,Column guid of table x_enum_element_def. may be NULL.
+id,Column id of table x_enum_element_def.
+item_id,Column item_id of table x_enum_element_def.
+label,Column label of table x_enum_element_def. may be NULL.
+name,Column name of table x_enum_element_def. may be NULL.
+rb_key_label,Column rb_key_label of table x_enum_element_def. may be NULL.
+sort_order,Column sort_order of table x_enum_element_def. may be NULL.
+upd_by_id,Column upd_by_id of table x_enum_element_def. may be NULL.
+update_time,Column update_time of table x_enum_element_def. may be NULL.

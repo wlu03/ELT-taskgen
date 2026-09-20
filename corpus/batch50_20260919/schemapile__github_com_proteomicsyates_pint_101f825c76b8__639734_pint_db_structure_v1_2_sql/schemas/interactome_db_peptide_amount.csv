@@ -1,0 +1,7 @@
+column_name,column_description
+amount_type_name,Column Amount_Type_name of table interactome_db.Peptide_Amount.
+combination_type_name,Column Combination_Type_name of table interactome_db.Peptide_Amount. may be NULL.
+condition_id,Column Condition_id of table interactome_db.Peptide_Amount.
+peptide_id,Column Peptide_id of table interactome_db.Peptide_Amount.
+id,Column id of table interactome_db.Peptide_Amount.
+value,Column value of table interactome_db.Peptide_Amount.

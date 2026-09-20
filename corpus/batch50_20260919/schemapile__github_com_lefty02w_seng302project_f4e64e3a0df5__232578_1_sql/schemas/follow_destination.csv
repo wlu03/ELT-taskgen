@@ -1,0 +1,4 @@
+column_name,column_description
+destination_follow_id,Column destination_follow_id of table follow_destination.
+destination_id,Column destination_id of table follow_destination.
+profile_id,Column profile_id of table follow_destination.

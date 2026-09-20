@@ -1,0 +1,4 @@
+column_name,column_description
+data_domanda,Column data_domanda of table partecipazione_bando_borsa.
+matricola_studente,Column matricola_studente of table partecipazione_bando_borsa.
+numero_bando_borsa,Column numero_bando_borsa of table partecipazione_bando_borsa.

@@ -1,0 +1,11 @@
+column_name,column_description
+code,Column CODE of table SAMPLE_TYPES.
+dbin_id,Column DBIN_ID of table SAMPLE_TYPES.
+description,Column DESCRIPTION of table SAMPLE_TYPES. may be NULL.
+generated_from_depth,Column GENERATED_FROM_DEPTH of table SAMPLE_TYPES.
+id,Column ID of table SAMPLE_TYPES.
+is_listable,Column IS_LISTABLE of table SAMPLE_TYPES.
+modification_timestamp,Column MODIFICATION_TIMESTAMP of table SAMPLE_TYPES. may be NULL.
+part_of_depth,Column PART_OF_DEPTH of table SAMPLE_TYPES.
+generated_code_prefix,Column generated_code_prefix of table SAMPLE_TYPES.
+is_auto_generated_code,Column is_auto_generated_code of table SAMPLE_TYPES.

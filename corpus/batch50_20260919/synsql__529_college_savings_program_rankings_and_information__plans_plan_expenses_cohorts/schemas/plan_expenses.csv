@@ -1,0 +1,5 @@
+column_name,column_description
+expense_id,Unique identifier for each expense.
+plan_id,ID of the plan. may be NULL.
+expense_type,"Type of expense (e.g., management fee, administrative fee). always exactly one of 'management fee', 'administrative fee'. may be NULL."
+expense_amount,Amount of the expense. may be NULL.

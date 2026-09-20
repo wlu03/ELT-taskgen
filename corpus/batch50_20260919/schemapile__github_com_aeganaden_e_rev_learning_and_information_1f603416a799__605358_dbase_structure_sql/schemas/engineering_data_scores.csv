@@ -1,0 +1,5 @@
+column_name,column_description
+data_scores_id,Column data_scores_id of table engineering.data_scores.
+data_scores_passing,Column data_scores_passing of table engineering.data_scores.
+data_scores_score,Column data_scores_score of table engineering.data_scores.
+data_scores_type,Column data_scores_type of table engineering.data_scores.

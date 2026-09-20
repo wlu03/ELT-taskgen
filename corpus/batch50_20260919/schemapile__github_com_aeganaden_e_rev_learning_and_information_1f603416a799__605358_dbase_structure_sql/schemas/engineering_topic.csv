@@ -1,0 +1,7 @@
+column_name,column_description
+subject_id,Column subject_id of table engineering.topic.
+topic_description,Column topic_description of table engineering.topic. may be NULL.
+topic_done,Column topic_done of table engineering.topic.
+topic_id,Column topic_id of table engineering.topic.
+topic_list_id,Column topic_list_id of table engineering.topic. may be NULL.
+topic_name,Column topic_name of table engineering.topic.

@@ -1,0 +1,33 @@
+column_name,column_description
+fullname,fullname of sovietactorsprofile (real vendored values).
+biography,biography of sovietactorsprofile (real vendored values).
+profession,profession of sovietactorsprofile (real vendored values).
+birthplace,birthplace of sovietactorsprofile (real vendored values). may be NULL.
+partner,partner of sovietactorsprofile (real vendored values). may be NULL.
+viafid,viafid of sovietactorsprofile (real vendored values). may be NULL.
+imdbid,imdbid of sovietactorsprofile (real vendored values).
+commonscategory,commonscategory of sovietactorsprofile (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of sovietactorsprofile (real vendored values). may be NULL.
+gndid,gndid of sovietactorsprofile (real vendored values). may be NULL.
+entitytype,entitytype of sovietactorsprofile (real vendored values).
+libraryofcongressauthorityid,libraryofcongressauthorityid of sovietactorsprofile (real vendored values). may be NULL.
+birthdate,birthdate of sovietactorsprofile (real vendored values).
+freebaseid,freebaseid of sovietactorsprofile (real vendored values). may be NULL.
+honorsawarded,honorsawarded of sovietactorsprofile (real vendored values).
+nationality,nationality of sovietactorsprofile (real vendored values).
+firstname,firstname of sovietactorsprofile (real vendored values). may be NULL.
+almamater,almamater of sovietactorsprofile (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of sovietactorsprofile (real vendored values). may be NULL.
+profileimage,profileimage of sovietactorsprofile (real vendored values). may be NULL.
+languages,languages of sovietactorsprofile (real vendored values). may be NULL.
+affiliatedinstitution,affiliatedinstitution of sovietactorsprofile (real vendored values). may be NULL.
+animatorrupersonid,animatorrupersonid of sovietactorsprofile (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of sovietactorsprofile (real vendored values). may be NULL.
+careerstartyear,careerstartyear of sovietactorsprofile (real vendored values). may be NULL.
+gender,gender of sovietactorsprofile (real vendored values).
+tmdbpersonid,tmdbpersonid of sovietactorsprofile (real vendored values).
+filmrupersonid,filmrupersonid of sovietactorsprofile (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of sovietactorsprofile (real vendored values).
+deathlocation,deathlocation of sovietactorsprofile (real vendored values). may be NULL.
+deathdate,deathdate of sovietactorsprofile (real vendored values). may be NULL.
+burialsite,burialsite of sovietactorsprofile (real vendored values). may be NULL.

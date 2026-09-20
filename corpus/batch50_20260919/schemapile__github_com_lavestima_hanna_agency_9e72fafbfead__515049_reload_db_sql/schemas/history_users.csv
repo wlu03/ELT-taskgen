@@ -1,0 +1,9 @@
+column_name,column_description
+date_edited,Column Date_Edited of table History_Users.
+email,Column Email of table History_Users. may be NULL.
+id,Column ID of table History_Users.
+id_roles,Column ID_ROLES of table History_Users. may be NULL.
+id_users,Column ID_USERS of table History_Users.
+login,Column Login of table History_Users. may be NULL.
+password_hash,Column Password_Hash of table History_Users. may be NULL.
+user_edited,Column User_Edited of table History_Users.

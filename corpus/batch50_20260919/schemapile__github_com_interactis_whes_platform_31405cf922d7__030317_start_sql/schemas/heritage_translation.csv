@@ -1,0 +1,12 @@
+column_name,column_description
+created_at,Column created_at of table heritage_translation. may be NULL.
+description,Column description of table heritage_translation. may be NULL.
+heritage_id,Column heritage_id of table heritage_translation. may be NULL.
+id,Column id of table heritage_translation.
+language_id,Column language_id of table heritage_translation. may be NULL.
+link_text,Column link_text of table heritage_translation. may be NULL.
+link_url,Column link_url of table heritage_translation. may be NULL.
+name,Column name of table heritage_translation. may be NULL.
+short_name,Column short_name of table heritage_translation. may be NULL.
+slug,Column slug of table heritage_translation. may be NULL.
+updated_at,Column updated_at of table heritage_translation. may be NULL.

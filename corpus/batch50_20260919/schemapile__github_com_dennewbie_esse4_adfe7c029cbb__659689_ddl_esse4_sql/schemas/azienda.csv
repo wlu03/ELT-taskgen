@@ -1,0 +1,7 @@
+column_name,column_description
+cap,Column CAP of table azienda. may be NULL.
+citta,Column citta of table azienda.
+nome,Column nome of table azienda.
+numero_civico,Column numero_civico of table azienda. may be NULL.
+partita_iva,Column partita_iva of table azienda.
+via,Column via of table azienda. may be NULL.

@@ -1,0 +1,13 @@
+column_name,column_description
+active,Column active of table jobs.
+build_number_seq,Column build_number_seq of table jobs.
+config,Column config of table jobs.
+first_logged_build_id,Column first_logged_build_id of table jobs.
+id,Column id of table jobs.
+inputs_determined,Column inputs_determined of table jobs.
+interruptible,Column interruptible of table jobs.
+max_in_flight_reached,Column max_in_flight_reached of table jobs.
+name,Column name of table jobs.
+nonce,Column nonce of table jobs. may be NULL.
+paused,Column paused of table jobs. may be NULL.
+pipeline_id,Column pipeline_id of table jobs.

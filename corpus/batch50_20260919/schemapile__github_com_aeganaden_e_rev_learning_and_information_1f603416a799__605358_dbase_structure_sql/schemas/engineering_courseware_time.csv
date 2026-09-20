@@ -1,0 +1,4 @@
+column_name,column_description
+courseware_time_id,Column courseware_time_id of table engineering.courseware_time.
+courseware_time_time,Column courseware_time_time of table engineering.courseware_time.
+grade_assessment_id,Column grade_assessment_id of table engineering.courseware_time.

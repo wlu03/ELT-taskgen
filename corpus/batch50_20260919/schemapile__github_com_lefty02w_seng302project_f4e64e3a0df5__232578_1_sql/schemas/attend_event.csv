@@ -1,0 +1,4 @@
+column_name,column_description
+attend_event_id,Column attend_event_id of table attend_event.
+event_id,Column event_id of table attend_event.
+profile_id,Column profile_id of table attend_event.

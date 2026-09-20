@@ -1,0 +1,37 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    redshift_definition_id: f7a7d195-377f-cf5b-70a5-be6b819019dc
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    username: ''
+    workspace_id: ''
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - alleles
+    - measurement_sources
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: synsql__biological_data_analysis_specifical_f5849dc70415
+    sync_mode: full_refresh_append
+    tables:
+    - allele_peptide_measurements
+    - peptides
+redshift:
+  config:
+    access_key_id: ''
+    database: ''
+    host: ''
+    password: ''
+    port: 5439
+    s3_bucket_name: ''
+    s3_bucket_region: ''
+    schema: synsql__biological_data_analysis_specifical_f5849dc70415
+    secret_access_key: ''
+    username: ''

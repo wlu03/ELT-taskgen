@@ -1,0 +1,14 @@
+column_name,column_description
+choose_module_question_ivr_id,Column choose_module_question_ivr_id of table course. may be NULL.
+created_date,Column created_date of table course. may be NULL.
+description,Column description of table course. may be NULL.
+id,Column id of table course.
+ivr_id,Column ivr_id of table course. may be NULL.
+ivr_name,Column ivr_name of table course. may be NULL.
+menu_intro_message_ivr_id,Column menu_intro_message_ivr_id of table course. may be NULL.
+name,Column name of table course. may be NULL.
+no_modules_message_ivr_id,Column no_modules_message_ivr_id of table course. may be NULL.
+previous_version_id,Column previous_version_id of table course. may be NULL.
+status,Column status of table course.
+updated_date,Column updated_date of table course. may be NULL.
+version,Column version of table course.

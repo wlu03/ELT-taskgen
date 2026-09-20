@@ -1,0 +1,39 @@
+column_name,column_description
+directorname,directorname of director (real vendored values).
+biography,biography of director (real vendored values). may be NULL.
+gender,gender of director (real vendored values).
+viafid,viafid of director (real vendored values). may be NULL.
+internationalstandardnameidentifier,internationalstandardnameidentifier of director (real vendored values). may be NULL.
+libraryofcongressauthorityid,libraryofcongressauthorityid of director (real vendored values). may be NULL.
+gndid,gndid of director (real vendored values). may be NULL.
+imdbid,imdbid of director (real vendored values).
+commonscategory,commonscategory of director (real vendored values). may be NULL.
+birthdate,birthdate of director (real vendored values). may be NULL.
+entitytype,entitytype of director (real vendored values).
+birthplace,birthplace of director (real vendored values). may be NULL.
+freebaseid,freebaseid of director (real vendored values). may be NULL.
+bibliothequenationaledefranceid,bibliothequenationaledefranceid of director (real vendored values). may be NULL.
+nationality,nationality of director (real vendored values). may be NULL.
+profession,profession of director (real vendored values).
+firstname,firstname of director (real vendored values).
+nationalethesaurusvoorauteursnamenid,nationalethesaurusvoorauteursnamenid of director (real vendored values). may be NULL.
+allocinepersonid,allocinepersonid of director (real vendored values). may be NULL.
+allmoviepersonid,allmoviepersonid of director (real vendored values). may be NULL.
+swedishfilmdatabasepersonid,swedishfilmdatabasepersonid of director (real vendored values). may be NULL.
+elonetpersonid,elonetpersonid of director (real vendored values). may be NULL.
+portpersonid,portpersonid of director (real vendored values). may be NULL.
+scopedkpersonid,scopedkpersonid of director (real vendored values). may be NULL.
+danishnationalfilmographypersonid,danishnationalfilmographypersonid of director (real vendored values). may be NULL.
+csfdpersonid,csfdpersonid of director (real vendored values). may be NULL.
+kinopoiskpersonid,kinopoiskpersonid of director (real vendored values). may be NULL.
+lastname,lastname of director (real vendored values). may be NULL.
+idrefid,idrefid of director (real vendored values). may be NULL.
+languages,languages of director (real vendored values). may be NULL.
+relatedcategory,relatedcategory of director (real vendored values). may be NULL.
+tmdbpersonid,tmdbpersonid of director (real vendored values). may be NULL.
+moviemeterpersonid,moviemeterpersonid of director (real vendored values). may be NULL.
+awards,awards of director (real vendored values). may be NULL.
+ivipersonid,ivipersonid of director (real vendored values). may be NULL.
+kinoboxpersonid,kinoboxpersonid of director (real vendored values). may be NULL.
+worldcatidentitiesidsuperseded,worldcatidentitiesidsuperseded of director (real vendored values). may be NULL.
+filmrupersonid,filmrupersonid of director (real vendored values). may be NULL.

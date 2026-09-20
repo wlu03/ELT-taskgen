@@ -1,0 +1,6 @@
+column_name,column_description
+browser,Column browser of table browser_activity. may be NULL.
+id,Column id of table browser_activity.
+location,Column location of table browser_activity. may be NULL.
+logged_at,Column logged_at of table browser_activity. may be NULL.
+session_id,Column session_id of table browser_activity.

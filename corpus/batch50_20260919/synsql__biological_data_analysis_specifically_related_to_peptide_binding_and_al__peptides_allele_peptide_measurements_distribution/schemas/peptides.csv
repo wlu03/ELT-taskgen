@@ -1,0 +1,9 @@
+column_name,column_description
+peptide_id,Unique identifier for each peptide.
+sequence,Sequence of the peptide. may be NULL.
+description,Description of the peptide. may be NULL.
+length,Length of the peptide. may be NULL.
+molecular_weight,Molecular weight of the peptide. may be NULL.
+is_cyclic,Whether the peptide is cyclic. may be NULL.
+chemical_formula,Chemical formula of the peptide. may be NULL.
+references,List of publications or references related to the peptide. may be NULL.

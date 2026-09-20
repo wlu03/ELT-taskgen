@@ -1,0 +1,3 @@
+column_name,column_description
+not_found_text_unit_ids,Column not_found_text_unit_ids of table translation_kit_not_found_text_unit_ids. may be NULL.
+translation_kit_id,Column translation_kit_id of table translation_kit_not_found_text_unit_ids.

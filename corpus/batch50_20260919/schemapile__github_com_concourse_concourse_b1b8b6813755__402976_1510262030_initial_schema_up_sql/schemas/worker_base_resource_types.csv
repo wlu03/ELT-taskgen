@@ -1,0 +1,6 @@
+column_name,column_description
+base_resource_type_id,Column base_resource_type_id of table worker_base_resource_types. may be NULL.
+id,Column id of table worker_base_resource_types.
+image,Column image of table worker_base_resource_types.
+version,Column version of table worker_base_resource_types.
+worker_name,Column worker_name of table worker_base_resource_types. may be NULL.

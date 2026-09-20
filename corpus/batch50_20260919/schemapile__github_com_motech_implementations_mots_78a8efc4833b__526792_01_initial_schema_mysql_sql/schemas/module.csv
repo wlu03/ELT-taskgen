@@ -1,0 +1,11 @@
+column_name,column_description
+created_date,Column created_date of table module. may be NULL.
+description,Column description of table module. may be NULL.
+id,Column id of table module.
+ivr_group,Column ivr_group of table module. may be NULL.
+name,Column name of table module.
+name_code,Column name_code of table module.
+previous_version_id,Column previous_version_id of table module. may be NULL.
+status,Column status of table module.
+updated_date,Column updated_date of table module. may be NULL.
+version,Column version of table module.

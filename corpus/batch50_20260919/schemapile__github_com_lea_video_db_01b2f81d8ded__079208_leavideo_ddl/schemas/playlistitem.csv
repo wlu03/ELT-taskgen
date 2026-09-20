@@ -1,0 +1,5 @@
+column_name,column_description
+galerieid,Column galerieID of table PlaylistItem. may be NULL.
+playlistid,Column playlistID of table PlaylistItem.
+playlistitemid,Column playlistItemID of table PlaylistItem.
+videoid,Column videoID of table PlaylistItem. may be NULL.

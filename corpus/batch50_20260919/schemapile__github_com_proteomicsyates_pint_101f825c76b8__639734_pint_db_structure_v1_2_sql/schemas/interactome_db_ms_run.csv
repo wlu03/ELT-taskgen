@@ -1,0 +1,6 @@
+column_name,column_description
+project_id,Column Project_id of table interactome_db.MS_Run.
+date,Column date of table interactome_db.MS_Run. may be NULL.
+id,Column id of table interactome_db.MS_Run.
+path,Column path of table interactome_db.MS_Run.
+runid,Column runID of table interactome_db.MS_Run.

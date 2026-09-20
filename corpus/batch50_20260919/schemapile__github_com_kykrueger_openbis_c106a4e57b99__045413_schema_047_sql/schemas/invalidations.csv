@@ -1,0 +1,5 @@
+column_name,column_description
+id,Column ID of table INVALIDATIONS.
+pers_id_registerer,Column PERS_ID_REGISTERER of table INVALIDATIONS.
+reason,Column REASON of table INVALIDATIONS. may be NULL.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table INVALIDATIONS.

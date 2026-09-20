@@ -1,0 +1,9 @@
+column_name,column_description
+content,Column content of table tm_text_unit_variant_comment. may be NULL.
+created_by_user_id,Column created_by_user_id of table tm_text_unit_variant_comment. may be NULL.
+created_date,Column created_date of table tm_text_unit_variant_comment. may be NULL.
+id,Column id of table tm_text_unit_variant_comment.
+last_modified_date,Column last_modified_date of table tm_text_unit_variant_comment. may be NULL.
+severity,Column severity of table tm_text_unit_variant_comment. may be NULL.
+tm_text_unit_variant_id,Column tm_text_unit_variant_id of table tm_text_unit_variant_comment. may be NULL.
+type,Column type of table tm_text_unit_variant_comment. may be NULL.

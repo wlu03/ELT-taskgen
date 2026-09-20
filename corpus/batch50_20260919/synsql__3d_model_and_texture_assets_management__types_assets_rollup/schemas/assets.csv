@@ -1,0 +1,17 @@
+column_name,column_description
+asset_id,Unique identifier for each asset.
+type_id,"ID of the type of asset (e.g., 3D Models, Textures, HDRI). may be NULL."
+category_id,"ID of the category of asset (e.g., Installations, Buildings). may be NULL."
+subcategory_id,"ID of the subcategory of asset (e.g., Destroyed, Lamps). may be NULL."
+tags,"Tags associated with the asset (e.g., cyber, neon, pixel). always exactly one of 'cyber', 'neon', 'pixel'. may be NULL."
+file_path,File path to the asset. may be NULL.
+class,Class of the asset. may be NULL.
+created_at,Date and time when the asset was created. may be NULL.
+updated_at,Date and time when the asset was last updated. may be NULL.
+description,Detailed description of the asset. may be NULL.
+status,"Status of the asset (e.g., active, archived, draft). always exactly one of 'active', 'archived', 'draft'. may be NULL."
+thumbnail_path,Path to the thumbnail image of the asset. may be NULL.
+license,License information for the asset. may be NULL.
+author_id,ID of the user who created the asset. may be NULL.
+file_size,Size of the asset file in bytes. may be NULL.
+resolution,"Resolution of the asset (if applicable, e.g., 1920x1080). may be NULL."

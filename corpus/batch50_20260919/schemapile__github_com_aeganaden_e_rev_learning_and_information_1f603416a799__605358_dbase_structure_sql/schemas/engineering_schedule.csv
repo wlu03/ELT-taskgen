@@ -1,0 +1,7 @@
+column_name,column_description
+lecturer_id,Column lecturer_id of table engineering.schedule. may be NULL.
+offering_id,Column offering_id of table engineering.schedule.
+schedule_end_time,Column schedule_end_time of table engineering.schedule.
+schedule_id,Column schedule_id of table engineering.schedule.
+schedule_start_time,Column schedule_start_time of table engineering.schedule.
+schedule_venue,Column schedule_venue of table engineering.schedule.

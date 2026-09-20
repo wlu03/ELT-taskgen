@@ -1,0 +1,14 @@
+column_name,column_description
+_fivetran_synced,When the record was last synced by Fivetran. may be NULL.
+approval_status,The approval status of the account. may be NULL.
+business_id,The ID of the related business. may be NULL.
+business_name,The name of the related business. may be NULL.
+created_at,The timestamp the account was created. may be NULL.
+deleted,Whether the record has been deleted or not. may be NULL.
+id,The ID of the account.
+industry_type,The industry of the accounts. may be NULL.
+name,The name of the account. may be NULL.
+salt,The random encryption key used to has data. may be NULL.
+timezone,The timezone the account is set to. may be NULL.
+timezone_switch_at,The timestamp the account's timezone was last changed. may be NULL.
+updated_at,The timestamp the account was last updated. may be NULL.

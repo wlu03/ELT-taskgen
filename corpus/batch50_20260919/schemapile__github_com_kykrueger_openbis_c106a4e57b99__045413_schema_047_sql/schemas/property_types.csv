@@ -1,0 +1,13 @@
+column_name,column_description
+code,Column CODE of table PROPERTY_TYPES.
+covo_id,Column COVO_ID of table PROPERTY_TYPES. may be NULL.
+daty_id,Column DATY_ID of table PROPERTY_TYPES.
+dbin_id,Column DBIN_ID of table PROPERTY_TYPES.
+description,Column DESCRIPTION of table PROPERTY_TYPES.
+id,Column ID of table PROPERTY_TYPES.
+is_internal_namespace,Column IS_INTERNAL_NAMESPACE of table PROPERTY_TYPES.
+is_managed_internally,Column IS_MANAGED_INTERNALLY of table PROPERTY_TYPES.
+label,Column LABEL of table PROPERTY_TYPES.
+maty_prop_id,Column MATY_PROP_ID of table PROPERTY_TYPES. may be NULL.
+pers_id_registerer,Column PERS_ID_REGISTERER of table PROPERTY_TYPES.
+registration_timestamp,Column REGISTRATION_TIMESTAMP of table PROPERTY_TYPES.

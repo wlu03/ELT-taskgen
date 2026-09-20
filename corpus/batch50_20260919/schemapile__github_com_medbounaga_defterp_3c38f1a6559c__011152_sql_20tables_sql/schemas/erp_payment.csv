@@ -1,0 +1,16 @@
+column_name,column_description
+account_id,Column account_id of table erp.payment. may be NULL.
+active,Column active of table erp.payment.
+amount,Column amount of table erp.payment.
+date,Column date of table erp.payment.
+entry_id,Column entry_id of table erp.payment. may be NULL.
+id,Column id of table erp.payment.
+invoice_id,Column invoice_id of table erp.payment. may be NULL.
+journal_id,Column journal_id of table erp.payment. may be NULL.
+name,Column name of table erp.payment. may be NULL.
+overpayment,Column overpayment of table erp.payment.
+partner_id,Column partner_id of table erp.payment. may be NULL.
+partner_type,Column partner_type of table erp.payment.
+reference,Column reference of table erp.payment. may be NULL.
+state,Column state of table erp.payment. may be NULL.
+type,Column type of table erp.payment. may be NULL.

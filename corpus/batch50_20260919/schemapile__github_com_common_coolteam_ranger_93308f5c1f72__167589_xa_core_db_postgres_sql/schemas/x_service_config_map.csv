@@ -1,0 +1,10 @@
+column_name,column_description
+added_by_id,Column added_by_id of table x_service_config_map. may be NULL.
+config_key,Column config_key of table x_service_config_map. may be NULL.
+config_value,Column config_value of table x_service_config_map. may be NULL.
+create_time,Column create_time of table x_service_config_map. may be NULL.
+guid,Column guid of table x_service_config_map. may be NULL.
+id,Column id of table x_service_config_map.
+service,Column service of table x_service_config_map.
+upd_by_id,Column upd_by_id of table x_service_config_map. may be NULL.
+update_time,Column update_time of table x_service_config_map. may be NULL.

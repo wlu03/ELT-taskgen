@@ -1,0 +1,7 @@
+column_name,column_description
+director_id,Unique identifier for each director.
+director_name,Full name of the director. may be NULL.
+email,Email address of the director. may be NULL.
+nationality,Director's nationality. may be NULL.
+date_of_birth,Director's date of birth. may be NULL.
+biography,Brief biography of the director. may be NULL.

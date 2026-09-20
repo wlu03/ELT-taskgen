@@ -1,0 +1,8 @@
+column_name,column_description
+cpu,Column cpu of table processes. may be NULL.
+id,Column id of table processes.
+logged_at,Column logged_at of table processes. may be NULL.
+memory,Column memory of table processes. may be NULL.
+name,Column name of table processes. may be NULL.
+pid,Column pid of table processes. may be NULL.
+session_id,Column session_id of table processes.

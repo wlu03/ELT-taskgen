@@ -1,0 +1,6 @@
+column_name,column_description
+course_modules_id,Column course_modules_id of table engineering.course_modules.
+course_modules_name,Column course_modules_name of table engineering.course_modules.
+course_modules_path,Column course_modules_path of table engineering.course_modules.
+course_modules_status,Column course_modules_status of table engineering.course_modules.
+topic_id,Column topic_id of table engineering.course_modules.

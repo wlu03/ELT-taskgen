@@ -1,0 +1,5 @@
+column_name,column_description
+asset_extraction_id,Column asset_extraction_id of table asset_text_unit_to_tm_text_unit. may be NULL.
+asset_text_unit_id,Column asset_text_unit_id of table asset_text_unit_to_tm_text_unit. may be NULL.
+id,Column id of table asset_text_unit_to_tm_text_unit.
+tm_text_unit_id,Column tm_text_unit_id of table asset_text_unit_to_tm_text_unit. may be NULL.

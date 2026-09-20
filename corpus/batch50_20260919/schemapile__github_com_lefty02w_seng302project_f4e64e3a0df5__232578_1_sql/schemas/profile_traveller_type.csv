@@ -1,0 +1,4 @@
+column_name,column_description
+profile,Column profile of table profile_traveller_type.
+profile_traveller_type_id,Column profile_traveller_type_id of table profile_traveller_type.
+traveller_type,Column traveller_type of table profile_traveller_type.

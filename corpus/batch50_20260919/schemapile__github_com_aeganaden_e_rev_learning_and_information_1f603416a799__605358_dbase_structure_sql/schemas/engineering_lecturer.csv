@@ -1,0 +1,11 @@
+column_name,column_description
+email,Column email of table engineering.lecturer.
+firstname,Column firstname of table engineering.lecturer.
+id_number,Column id_number of table engineering.lecturer. may be NULL.
+image_path,Column image_path of table engineering.lecturer.
+lastname,Column lastname of table engineering.lecturer.
+lecturer_expertise,Column lecturer_expertise of table engineering.lecturer.
+lecturer_id,Column lecturer_id of table engineering.lecturer.
+lecturer_is_confirm,Column lecturer_is_confirm of table engineering.lecturer.
+lecturer_status,Column lecturer_status of table engineering.lecturer.
+midname,Column midname of table engineering.lecturer.

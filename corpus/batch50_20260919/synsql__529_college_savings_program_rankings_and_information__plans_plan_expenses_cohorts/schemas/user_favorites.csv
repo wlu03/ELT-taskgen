@@ -1,0 +1,6 @@
+column_name,column_description
+favorite_id,Unique identifier for each favorite entry.
+user_id,ID of the user who saved the plan. may be NULL.
+plan_id,ID of the plan saved as a favorite. may be NULL.
+added_date,Date when the plan was added to favorites. may be NULL.
+notes,User notes or comments about the plan. may be NULL.
