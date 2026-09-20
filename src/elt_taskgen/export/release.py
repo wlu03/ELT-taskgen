@@ -789,15 +789,15 @@ def _verify_required_units(engine: EngineLike, task: TaskIR) -> dict[str, Varian
     return records
 
 
-def _verify_release_audit(
+def _verify_release_selection(
     engine: EngineLike, task: TaskIR, selection: SelectionLike
 ) -> None:
-    """Verify the final audit and task verdict while holding task locks."""
+    """Verify the selection and final task verdict while holding task locks."""
 
     currency = getattr(engine, "report_is_current", None)
     select_report = None
     if callable(currency):
-        # Check every earlier stage for invalidation after the audit.
+        # Check every earlier stage for invalidation after the selection.
         # Import locally to keep lightweight engine test doubles working.
         from elt_taskgen.engine import STAGE_ORDER, StageName
 
@@ -837,30 +837,27 @@ def _verify_release_audit(
                 "match the cohort being frozen"
             )
 
-    audit = engine.latest_report(task.task_id, "audit")
-    if audit is None:
+    # SELECT is the last per-task stage, so it carries the verdict release
+    # fails closed on. Checked unconditionally: an engine without
+    # `report_is_current` skipped the loop above and has proved nothing yet.
+    if select_report is None:
+        select_report = engine.latest_report(task.task_id, "select")
+    if select_report is None:
         raise ValueError(
-            f"task {task.task_id!r}: no final audit report (fail closed)"
+            f"task {task.task_id!r}: no final selection report (fail closed)"
         )
-    verdict = _report_field(audit, "verdict")
+    verdict = _report_field(select_report, "verdict")
     if verdict != "pass":
         raise ValueError(
-            f"task {task.task_id!r}: latest audit verdict is {verdict!r}, "
+            f"task {task.task_id!r}: latest selection verdict is {verdict!r}, "
             "not 'pass'"
         )
-    bound = _report_field(audit, "content_hash")
+    bound = _report_field(select_report, "content_hash")
     current = task.content_hash()
     if bound != current:
         raise ValueError(
-            f"task {task.task_id!r}: audit is bound to stale content hash "
+            f"task {task.task_id!r}: selection is bound to stale content hash "
             f"{str(bound)[:12]} (current {current[:12]})"
-        )
-    select_id = _report_field(select_report, "id")
-    audit_id = _report_field(audit, "id")
-    if select_id is not None and audit_id is not None and audit_id <= select_id:
-        raise ValueError(
-            f"task {task.task_id!r}: audit report does not follow the current "
-            "selection report"
         )
     final_verdict = getattr(engine, "final_verdict", None)
     if not callable(final_verdict):
@@ -1751,7 +1748,7 @@ def freeze_release(
     """Freeze a selection while holding every selected task lock.
 
     Lock at this production boundary so direct callers and the ``release``
-    stage share audit-to-copy atomicity. Test doubles without the Engine lock
+    stage share verify-to-copy atomicity. Test doubles without the Engine lock
     API still use the pure freezer.
     """
 
@@ -1935,7 +1932,7 @@ def _freeze_release_locked(
                 f"{task.content_hash()[:12]}; re-run selection"
             )
         _verify_required_units(engine, task)
-        _verify_release_audit(engine, task, selection)
+        _verify_release_selection(engine, task, selection)
         tasks[tid] = task
 
     # Phase 2: family/split isolation.

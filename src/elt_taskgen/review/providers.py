@@ -104,21 +104,13 @@ __all__ = [
     "proposed_case_schema",
     "transcripts_present",
     "agents_config_of",
-    # -- Step 8/9 surface: batch submission + the advisory audit triage role --
-    "AUDIT_TRIAGE_AXES",
-    "AUDIT_TRIAGE_LABELS",
-    "AUDIT_TRIAGE_ROLE",
-    "AUDIT_TRIAGE_SYSTEM",
-    "AUDIT_TRIAGE_TOOL_NAME",
+    # -- Step 8 surface: batch submission --
     "BATCH_API_PATH",
     "BatchQueue",
     "BatchRequest",
     "BatchRunResult",
-    "TriageAdvice",
-    "audit_triage_tool_schema",
     "role_behavior_sha256",
     "batch_transport_default",
-    "parse_triage_response",
     "transcript_key",
     "tool_name_for",
     "tool_schema_for",
@@ -758,140 +750,6 @@ def _normalized_findings_text(role_name: str, data: dict) -> str:
     return canonical_json({"role": role_name, "findings": findings})
 
 
-# The audit_triage role (Step 9): ADVISORY labels for the human audit queue
-#
-# Triage makes a human reviewer faster, never replaces one. There is deliberately
-# NO approval vocabulary in its schema and no code path from a triage response to
-# writing an AuditApproval — only `audit approve`, driven by a named human, does.
-
-AUDIT_TRIAGE_ROLE = "audit_triage"
-AUDIT_TRIAGE_TOOL_NAME = "report_triage"
-
-#: The review axes a triage pass must label (keys of per_axis_labels).
-AUDIT_TRIAGE_AXES: tuple[str, ...] = (
-    "contamination",
-    "licensing",
-    "specification",
-    "dual_build",
-    "difficulty",
-)
-
-#: The advisory label vocabulary. Note what is ABSENT: 'approved', 'accepted',
-#: 'signed_off'. The strongest thing triage can say is not a sign-off.
-AUDIT_TRIAGE_LABELS: tuple[str, ...] = (
-    "clean",
-    "needs_review",
-    "concerning",
-    "unknown",
-)
-
-
-def audit_triage_tool_schema() -> dict:
-    """JSON schema for one advisory triage response (labels only)."""
-    return {
-        "type": "object",
-        "properties": {
-            "labels": {
-                "type": "object",
-                "description": (
-                    "One advisory label per review axis. Advisory only: a "
-                    "label is a reading aid for the human auditor, never a "
-                    "sign-off."
-                ),
-                "properties": {
-                    axis: {"type": "string", "enum": list(AUDIT_TRIAGE_LABELS)}
-                    for axis in AUDIT_TRIAGE_AXES
-                },
-                "required": list(AUDIT_TRIAGE_AXES),
-                "additionalProperties": False,
-            },
-            "flag_for_human": {
-                "type": "boolean",
-                "description": (
-                    "True when a human must look at this task before anything "
-                    "else happens. False NEVER means approved — it only means "
-                    "triage found no additional reason to escalate."
-                ),
-            },
-            "rationale": {
-                "type": "string",
-                "description": "Evidence for the labels, naming what you read.",
-            },
-        },
-        "required": ["labels", "flag_for_human", "rationale"],
-        "additionalProperties": False,
-    }
-
-
-def _validate_triage_payload(data: Any) -> str | None:
-    """Return a problem string if `data` is not a valid triage payload."""
-    if not isinstance(data, dict):
-        return "payload is not an object"
-    labels = data.get("labels")
-    if not isinstance(labels, dict):
-        return "missing 'labels' object"
-    missing = [axis for axis in AUDIT_TRIAGE_AXES if axis not in labels]
-    if missing:
-        return f"labels are missing required axes: {missing}"
-    extra = sorted(set(labels) - set(AUDIT_TRIAGE_AXES))
-    if extra:
-        return f"labels carry unknown axes: {extra}"
-    for axis, label in sorted(labels.items()):
-        if label not in AUDIT_TRIAGE_LABELS:
-            return f"axis {axis!r} has invalid label {label!r}"
-    if not isinstance(data.get("flag_for_human"), bool):
-        return "'flag_for_human' is not a boolean"
-    if not isinstance(data.get("rationale", ""), str):
-        return "'rationale' is not a string"
-    return None
-
-
-def _normalized_triage_text(role_name: str, data: dict) -> str:
-    """Canonical JSON of one triage response (labels + escalation bit only)."""
-    return canonical_json(
-        {
-            "role": role_name,
-            "labels": {axis: data["labels"][axis] for axis in AUDIT_TRIAGE_AXES},
-            "flag_for_human": bool(data["flag_for_human"]),
-            "rationale": str(data.get("rationale", "")),
-        }
-    )
-
-
-@dataclass(frozen=True)
-class TriageAdvice:
-    """A parsed advisory triage response. Carries no approval — by shape."""
-
-    labels: Mapping[str, str]
-    flag_for_human: bool
-    rationale: str = ""
-
-    def as_record(self) -> dict:
-        return {
-            "labels": dict(sorted(self.labels.items())),
-            "flag_for_human": bool(self.flag_for_human),
-            "rationale": self.rationale,
-        }
-
-
-def parse_triage_response(text: str) -> TriageAdvice:
-    """Parse a normalized triage response; fail closed on anything else."""
-    try:
-        data = json.loads(text)
-    except (json.JSONDecodeError, ValueError) as exc:
-        raise ProviderProtocolError(
-            f"audit_triage response is not valid JSON: {exc}"
-        ) from exc
-    problem = _validate_triage_payload(data)
-    if problem is not None:
-        raise ProviderProtocolError(f"audit_triage response is invalid: {problem}")
-    return TriageAdvice(
-        labels={axis: data["labels"][axis] for axis in AUDIT_TRIAGE_AXES},
-        flag_for_human=bool(data["flag_for_human"]),
-        rationale=str(data.get("rationale", "")),
-    )
-
-
 #: Role-invariant framing shared by BOTH prompts here, written as identical text
 #: so a provider caching prompt prefixes caches it once.
 SHARED_ROLE_PREFIX = (
@@ -928,124 +786,17 @@ SHARED_ROLE_PREFIX = (
 )
 
 
-AUDIT_TRIAGE_SYSTEM = (
-    SHARED_ROLE_PREFIX
-    + "YOUR ROLE: audit triage. A task reaches you only when it is ALREADY "
-    "sitting in the human audit queue — it has borderline contamination "
-    "collisions awaiting sign-off, or an independent build that disagrees with "
-    "the frozen gold, or an unresolved license. Your single job is to make the "
-    "human reviewer faster by labelling what you see, and to route the "
-    "borderline cases to that human with a specific reason. Nothing else.\n"
-    "\n"
-    "YOU HAVE NO AUTHORITY. You have no authority to approve, accept, sign "
-    "off, clear or release anything, and no sentence you write can constitute "
-    "approval. A sign-off exists only when a named human runs 'elt-taskgen "
-    "audit approve', which writes an AuditApproval bound to the task's content "
-    "hash; your record is not read by that command, nor by the audit stage. "
-    "flag_for_human=false NEVER means approved — it means only that you found "
-    "no ADDITIONAL reason to escalate. The strongest reading you may express "
-    "is that an axis looks 'clean'. Never phrase any part of your output as an "
-    "approval, a clearance, or a recommendation to release.\n"
-    "\n"
-    "WHAT YOU ARE LOOKING AT. The user message is one audit-queue entry, "
-    "deterministically rendered: task_id, content_hash, family_id, origin, "
-    "license and attribution; the solver-visible prose; the source tables with "
-    "their backends; every mart with its grain, key columns, column "
-    "descriptions and numbered plan rules; the LATEST recorded gate battery "
-    "(each gate PASS/FAIL with a projected outcome code — the gate's raw "
-    "details, counts, measured values and evidence are withheld — and the "
-    "word STALE on the verdict "
-    "when the battery was recorded at a different content hash); the latest "
-    "council findings as severity + role + a one-line summary; the pending "
-    "borderline contamination collisions as fingerprint prefix + description; "
-    "and, when dual-build adjudication is pending, its status plus one "
-    "value-free projected outcome code (mismatch, parse_error, "
-    "execution_error or unclassified). The independent build's raw detail, "
-    "hidden-population identity and row-level evidence are withheld.\n"
-    "\n"
-    "WHAT YOU ARE NOT GIVEN — do not pretend otherwise: the reference SQL, the "
-    "frozen gold outputs, any generated rows, the benchmark corpus the "
-    "collisions were measured against, the full bodies of the council "
-    "findings, calibration or difficulty measurements, earlier revisions of "
-    "this task, the raw dual-build disagreement detail or diagnosis, and any "
-    "previous human decision. If an axis would need "
-    "something on that list, its label is 'unknown' — never guess.\n"
-    "\n"
-    "OUTPUT CONTRACT. Call the report_triage tool exactly once with: 'labels' "
-    "carrying one label for EVERY axis (contamination, licensing, "
-    "specification, dual_build, difficulty — all five required, no others "
-    "accepted), 'flag_for_human' as a boolean, and 'rationale' as a string. "
-    "Each label is one of 'clean', 'needs_review', 'concerning', 'unknown'. "
-    "There is no approve/accept field anywhere in the schema and that absence "
-    "is deliberate. providers.parse_triage_response validates this payload: a "
-    "missing axis, an unknown axis, a label outside the vocabulary, or a "
-    "non-boolean flag raises ProviderProtocolError and the triage pass fails.\n"
-    "\n"
-    "THE AXES, and what each one actually asks:\n"
-    "  contamination — do the pending collisions look like genuine overlap "
-    "with a benchmark or an admitted task, or like coincidental reuse of "
-    "common names? You see only a fingerprint prefix and a description, so "
-    "'unknown' is frequently the honest label here.\n"
-    "  licensing — is the declared license present, resolved, and consistent "
-    "with the stated origin and attribution?\n"
-    "  specification — does the solver-visible prose actually determine every "
-    "mart as specified (grain, key columns, each column, each numbered plan "
-    "rule), and does it leak reference SQL or expected output values?\n"
-    "  dual_build — you receive only adjudication status and a value-free "
-    "outcome code, never enough causal detail to decide whether the task, "
-    "reference, data, comparator or independent implementation is wrong. A "
-    "pending status is never clean: label it 'needs_review' and set "
-    "flag_for_human=true. State that causal adjudication remains pending; do "
-    "not infer a winner from 'mismatch', 'parse_error', 'execution_error' or "
-    "'unclassified'.\n"
-    "  difficulty — is the work the marts and plan rules demand plausible for "
-    "the difficulty this task claims? The queue entry carries NO measured "
-    "calibration numbers, so judge structurally from the marts and rules or "
-    "label it 'unknown'.\n"
-    "\n"
-    "ESCALATION. Set flag_for_human to true whenever ANYTHING should stop a "
-    "reviewer: a failing gate, gate evidence marked STALE, a major or blocking "
-    "council finding, a pending dual-build adjudication, an unresolved "
-    "license, or a label of your own that contradicts the recorded council "
-    "findings or the gate verdict. A disagreement with the council is exactly "
-    "the case a human must settle: name the contradiction in the rationale and "
-    "set the flag. A confidently wrong 'clean' is the most expensive mistake "
-    "you can make — the human reads your labels beside those same findings in "
-    "'elt-taskgen audit list', so a label that contradicts what is already in "
-    "front of them costs more time than no label at all.\n"
-    "\n"
-    "RATIONALE. Cite the evidence: the gate name, the finding role and "
-    "severity, the collision fingerprint prefix, the mart and column, the "
-    "license string, the adjudication status and projected outcome code. Your "
-    "labels are bound to the "
-    "content_hash shown in the entry; if the task is later repaired they go "
-    "visibly stale rather than silently carrying over."
-)
-
-
 def tool_name_for(role_name: str) -> str:
     """Forced tool name for one schema-enforced role."""
-    return (
-        AUDIT_TRIAGE_TOOL_NAME
-        if role_name == AUDIT_TRIAGE_ROLE
-        else FINDINGS_TOOL_NAME
-    )
+    return FINDINGS_TOOL_NAME
 
 
 def tool_schema_for(role_name: str) -> dict:
     """Forced tool schema for one schema-enforced role."""
-    if role_name == AUDIT_TRIAGE_ROLE:
-        return audit_triage_tool_schema()
     return findings_tool_schema(role_name)
 
 
 def _tool_description_for(role_name: str) -> str:
-    if role_name == AUDIT_TRIAGE_ROLE:
-        return (
-            "Record ADVISORY per-axis triage labels for a task already in the "
-            "human audit queue. Advisory only — there is no approve/accept "
-            "field and this output never grants sign-off."
-        )
     return (
         "Report the review findings for this council role. "
         "Findings only — there is no approve/accept field."
@@ -1063,15 +814,11 @@ def validate_payload_for(
     role_name: str, data: Any, *, normalized: bool = False
 ) -> str | None:
     """Schema check for one role's tool payload (None = valid)."""
-    if role_name == AUDIT_TRIAGE_ROLE:
-        return _validate_triage_payload(data)
     return _validate_findings_payload(data, role_name, normalized=normalized)
 
 
 def normalized_text_for(role_name: str, data: dict) -> str:
     """Canonical text served to the caller for one role's tool payload."""
-    if role_name == AUDIT_TRIAGE_ROLE:
-        return _normalized_triage_text(role_name, data)
     return _normalized_findings_text(role_name, data)
 
 
@@ -1832,10 +1579,6 @@ def _system_prompt(
     """
     if role_name == REPAIR_PROPOSER_ROLE:
         return REPAIR_PROPOSER_SYSTEM
-    # audit_triage is not a council role (it never reviews a candidate — it
-    # annotates a queue entry for a human), so its prompt lives here too.
-    if role_name == AUDIT_TRIAGE_ROLE:
-        return AUDIT_TRIAGE_SYSTEM
     prompt = role_system_prompt(role_name, agents_config=agents_config)
     if prompt is not None:
         return prompt

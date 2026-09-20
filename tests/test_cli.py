@@ -1854,10 +1854,10 @@ class TestExitCodes(unittest.TestCase):
                 for stage in STAGE_ORDER
                 if stage is not StageName.INTAKE
             }
-            runners[StageName.AUDIT] = lambda e, t: StageOutcome(
+            runners[StageName.SELECT] = lambda e, t: StageOutcome(
                 "blocked",
                 StagePayload(
-                    error="1 borderline collision(s) require human sign-off",
+                    error="a pending repair adjudication requires human sign-off",
                     data={"blocked_on": "human"},
                 ),
             )
@@ -1875,19 +1875,20 @@ class TestExitCodes(unittest.TestCase):
                 ]
             )
         self.assertEqual(code, 2)
-        self.assertIn("BLOCKED at audit", printed)
+        self.assertIn("BLOCKED at select", printed)
         self.assertIn("waiting on: human", printed)
         self.assertIn("nothing was rejected", printed)
 
     def test_a_block_further_down_the_ladder_is_not_this_stage_verdict(self):
-        """A stage subcommand answers for ITS stage: an outstanding audit
-        sign-off must not make `generate` report failure."""
+        """A stage subcommand answers for ITS stage: an outstanding
+        sign-off further down the ladder must not make `generate` report
+        failure."""
         engine = Engine(self.workspace)
         task = demo_fixture.demo_task()
         engine.register(task)
         engine.record_report(
             task,
-            StageName.AUDIT.value,
+            StageName.SELECT.value,
             "blocked",
             StagePayload(
                 error="waiting for a signature", data={"blocked_on": "human"}

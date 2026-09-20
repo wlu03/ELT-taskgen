@@ -1,17 +1,15 @@
-"""The two non-council prompts in review/providers.py: repair_proposer and
-audit_triage.
+"""The non-council prompt in review/providers.py: repair_proposer.
 
-These are production prompts for live models, so the tests hold them to the
-same standard the rest of the factory is held to: they must be GROUNDED in the
-code that actually feeds and certifies them. Every assertion below is derived
-from a real symbol (RepairPatch's fields, ROUTE_ALLOWLIST, ROUTE_IR_PATHS,
-AUDIT_TRIAGE_AXES, AUDIT_TRIAGE_LABELS, audit_triage_tool_schema), so a prompt
-that drifts away from the mechanism it describes fails here rather than at a
-paid API call.
+This is a production prompt for live models, so the tests hold it to the same
+standard the rest of the factory is held to: it must be GROUNDED in the code
+that actually feeds and certifies it. Every assertion below is derived from a
+real symbol (RepairPatch's fields, ROUTE_ALLOWLIST, ROUTE_IR_PATHS), so a
+prompt that drifts away from the mechanism it describes fails here rather than
+at a paid API call.
 
-The load-bearing invariant: NEITHER prompt may grant its role acceptance
+The load-bearing invariant: the prompt may not grant its role acceptance
 authority. Critics and proposers block, report or propose; only executable
-code (and, for the audit queue, a named human) decides.
+code decides.
 """
 
 from __future__ import annotations
@@ -27,7 +25,7 @@ from elt_taskgen.review.council import ProviderProtocolError
 
 
 #: Phrases that would GRANT the role authority it does not have. A bare word
-#: ban is useless here — both prompts must be able to say "you have no
+#: ban is useless here — the prompt must be able to say "you have no
 #: authority to approve" — so the ban is on the granting forms.
 APPROVAL_GRANTS = (
     "you may approve",
@@ -50,24 +48,23 @@ APPROVAL_GRANTS = (
 
 PROMPTS = {
     "repair_proposer": P.REPAIR_PROPOSER_SYSTEM,
-    "audit_triage": P.AUDIT_TRIAGE_SYSTEM,
 }
 
 
 class NoApprovalVocabularyTest(unittest.TestCase):
     """Rule 4: no role in this factory may approve, accept or pass anything."""
 
-    def test_neither_prompt_grants_approval_authority(self):
+    def test_the_prompt_does_not_grant_approval_authority(self):
         for name, prompt in PROMPTS.items():
             lowered = prompt.lower()
             for phrase in APPROVAL_GRANTS:
                 self.assertNotIn(phrase, lowered, f"{name} prompt: {phrase!r}")
 
-    def test_both_prompts_deny_authority_explicitly(self):
+    def test_the_prompt_denies_authority_explicitly(self):
         for name, prompt in PROMPTS.items():
             self.assertIn("no authority", prompt.lower(), name)
 
-    def test_neither_prompt_claims_its_own_output_decides(self):
+    def test_the_prompt_does_not_claim_its_own_output_decides(self):
         for name, prompt in PROMPTS.items():
             lowered = prompt.lower()
             self.assertIn("code certifies", lowered, name)
@@ -77,7 +74,7 @@ class NoApprovalVocabularyTest(unittest.TestCase):
 class SharedPrefixTest(unittest.TestCase):
     """Rule 7: role-invariant framing first, byte-identical across roles."""
 
-    def test_both_prompts_open_with_the_same_prefix(self):
+    def test_the_prompt_opens_with_the_shared_prefix(self):
         for name, prompt in PROMPTS.items():
             self.assertTrue(prompt.startswith(P.SHARED_ROLE_PREFIX), name)
 
@@ -281,82 +278,6 @@ class RepairProposerPromptTest(unittest.TestCase):
         self.assertIn("do not manufacture", self.lowered)
         self.assertIn("abstains", self.lowered)
         self.assertIn("human adjudication", self.lowered)
-
-
-class AuditTriagePromptTest(unittest.TestCase):
-    """Advisory by construction — the prompt must say so as loudly as the
-    schema does."""
-
-    def setUp(self):
-        self.prompt = P.AUDIT_TRIAGE_SYSTEM
-        self.lowered = self.prompt.lower()
-
-    def test_wired_as_this_role_system_message(self):
-        self.assertEqual(
-            P._system_prompt(P.AUDIT_TRIAGE_ROLE, schema_mode=True),
-            P.AUDIT_TRIAGE_SYSTEM,
-        )
-
-    def test_names_every_axis_it_must_label(self):
-        for axis in P.AUDIT_TRIAGE_AXES:
-            # Once in the contract, once as an explained axis definition.
-            self.assertGreaterEqual(self.lowered.count(axis), 2, axis)
-
-    def test_names_every_label_in_the_vocabulary(self):
-        for label in P.AUDIT_TRIAGE_LABELS:
-            self.assertIn(f"'{label}'", self.prompt, label)
-
-    def test_names_the_tool_and_every_schema_key(self):
-        self.assertIn(P.AUDIT_TRIAGE_TOOL_NAME, self.prompt)
-        for key in P.audit_triage_tool_schema()["properties"]:
-            self.assertIn(key, self.prompt, key)
-        self.assertIn("parse_triage_response", self.prompt)
-
-    def test_states_the_no_approval_rule_and_who_really_signs_off(self):
-        self.assertIn("no authority to approve", self.lowered)
-        self.assertIn("audit approve", self.lowered)
-        self.assertIn("named human", self.lowered)
-        self.assertIn("never means approved", self.lowered)
-        self.assertIn("never phrase", self.lowered)
-        # The schema it is held to has no acceptance field at all.
-        self.assertEqual(
-            set(P.audit_triage_tool_schema()["properties"]),
-            {"labels", "flag_for_human", "rationale"},
-        )
-
-    def test_states_what_the_queue_entry_does_and_does_not_carry(self):
-        for present in (
-            "content_hash",
-            "solver-visible prose",
-            "grain",
-            "plan rules",
-            "stale",
-            "council findings",
-            "fingerprint prefix",
-            "dual-build adjudication",
-        ):
-            self.assertIn(present, self.lowered, present)
-        for absent in ("reference sql", "gold outputs", "calibration"):
-            self.assertIn(absent, self.lowered, absent)
-        self.assertIn("never guess", self.lowered)
-
-    def test_pending_dual_build_is_code_only_and_requires_human_escalation(self):
-        self.assertIn(
-            "status plus one value-free projected outcome code", self.lowered
-        )
-        self.assertIn("raw dual-build disagreement detail", self.lowered)
-        self.assertIn("pending status is never clean", self.lowered)
-        self.assertIn("label it 'needs_review'", self.prompt)
-        self.assertIn("flag_for_human=true", self.prompt)
-        self.assertIn("causal adjudication remains pending", self.lowered)
-        self.assertNotIn("adjudication status and detail", self.lowered)
-        self.assertNotIn("cite the adjudication detail", self.lowered)
-
-    def test_routes_disagreement_with_the_council_to_a_human(self):
-        self.assertIn("flag_for_human", self.prompt)
-        self.assertIn("disagreement with the council", self.lowered)
-        self.assertIn("confidently wrong", self.lowered)
-        self.assertIn("audit list", self.lowered)
 
 
 if __name__ == "__main__":  # pragma: no cover

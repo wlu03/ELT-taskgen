@@ -104,9 +104,9 @@ graded populations and reference answers remain private.
 
 ### The ladder
 
-A task walks one serial ledger of stages (**15**), from `intake` through
+A task walks one serial ledger of stages (**14**), from `intake` through
 `generate`, `reference`, `author`, `review` and `attack`, the three gate
-stages, `calibrate`, `select`, `audit` and `release`. A stage that fails stops
+stages, `calibrate`, `select` and `release`. A stage that fails stops
 the task; nothing downstream runs on unproven evidence.
 
 Three gate rosters judge the task, and each roster is pinned:

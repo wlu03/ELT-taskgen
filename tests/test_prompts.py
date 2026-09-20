@@ -68,8 +68,8 @@ class RoleCoverageTest(unittest.TestCase):
     def test_non_council_roles_get_no_prompt(self):
         # The implementer's prompt is built entirely by reference/independent.py
         # (a factory-side system message would tip off the agreement test);
-        # audit_triage and repair_proposer live in providers.py.
-        for role_name in ("independent_implementer", "audit_triage",
+        # repair_proposer lives in providers.py.
+        for role_name in ("independent_implementer",
                           "repair_proposer", "mystery_critic"):
             self.assertIsNone(prompts.role_system_prompt(role_name), role_name)
 

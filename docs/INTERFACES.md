@@ -28,7 +28,7 @@ Conventions binding on every module:
   docstring of the ported function.
 
 **Counts in this document are derived from code.** The pipeline has
-**15** ledger stages (`engine.STAGE_ORDER`), **13** shared-integrity gates
+**14** ledger stages (`engine.STAGE_ORDER`), **13** shared-integrity gates
 (`gates.GATE_NAMES`), and separate EL/T gate rosters
 (`gates.VARIANT_GATE_NAMES`: **15** for `extract_load`, **16** for
 `transform`). Compute these counts from the code. The roster is also
@@ -131,8 +131,8 @@ CREATE TABLE IF NOT EXISTS reports (
                                    -- 'reference'|'author'|'review'|'attack'|
                                    -- 'gates'|'gates_extract_load'|
                                    -- 'gates_transform'|'calibrate'|
-                                   -- 'contamination_post'|'select'|'audit'|
-                                   -- 'release'   (15 values)
+                                   -- 'contamination_post'|'select'|
+                                   -- 'release'   (14 values)
   verdict       TEXT NOT NULL,     -- 'pass' | 'fail' | 'blocked' | 'fatal'
   payload_json  TEXT NOT NULL,     -- canonical JSON of the typed report object
   content_hash  TEXT NOT NULL,     -- TaskIR.content_hash() the report binds to
@@ -222,8 +222,8 @@ latest `gates_extract_load` and `gates_transform` reports are both current,
 roster-complete, and carry `accepted=true`. The shared `gates` row is internal
 integrity evidence, not a third unit verdict.
 
-`blocked` is the fourth verdict. It indicates a pending human sign-off (`audit
-approve`) or an environmental condition (an
+`blocked` is the fourth verdict. It indicates a pending human adjudication
+(an exhausted repair proposer) or an environmental condition (an
 immutable `release/` already holds different content or fails byte
 verification; the contamination index does not have `ARMED` coverage in this
 workspace; the
@@ -274,10 +274,6 @@ def variant_task_id(task_id: str, variant: TaskVariant) -> str
     # phase evidence. Variants keep the PARENT family_id, so family/cluster
     # split isolation is unchanged.
 
-class AuditApproval(CanonicalModel)    # human sign-off BOUND to task_content_hash
-    # task_id, task_content_hash, approved_collision_fingerprints: tuple[str, ...],
-    # per_axis_labels: dict[str, str], reviewer, approved_at (caller-supplied ISO).
-    # A pre-repair approval is STALE at the new hash and fails the audit stage.
 ```
 
 #### Round 4 additions to `models.py` (additive, hash-neutral)
@@ -410,12 +406,12 @@ must reproduce it exactly.
 ### `engine.py`
 
 ```python
-class StageName(str, Enum): ...            # the 15 ledger stages listed above
+class StageName(str, Enum): ...            # the 14 ledger stages listed above
 STAGE_ORDER: tuple[StageName, ...]         # intake, contamination_pre, generate, reference,
                                            # author, review, attack, gates,
                                            # gates_extract_load, gates_transform, calibrate,
-                                           # contamination_post, select, audit, release
-                                           # (len == 15 — THE authority on stage count)
+                                           # contamination_post, select, release
+                                           # (len == 14 — THE authority on stage count)
 
 class Engine:
     def __init__(self, workspace: Path, *, max_repair_rounds: int = 3): ...
@@ -1600,18 +1596,7 @@ class BatchQueue:
     # metered at full interactive rates; submission/poll/result failures fall
     # back PER CALL to RoutedProvider.complete.
 
-AUDIT_TRIAGE_ROLE = "audit_triage"; AUDIT_TRIAGE_TOOL_NAME = "report_triage"
-AUDIT_TRIAGE_AXES   = ("contamination","licensing","specification",
-                       "dual_build","difficulty")
-AUDIT_TRIAGE_LABELS = ("clean","needs_review","concerning","unknown")
-AUDIT_TRIAGE_SYSTEM: str                       # this role's prompt lives HERE
-def audit_triage_tool_schema() -> dict         # labels/flag_for_human/rationale
-def parse_triage_response(text) -> TriageAdvice
 ```
-
-The triage schema has no acceptance vocabulary. No provider output can be
-parsed into an AuditApproval, and no code path leads from a triage response to
-writing one (see `cli triage`).
 
 ### `review/metrology_fixtures/` (Phase 4 item 5 — the frozen fixture families)
 
@@ -1700,7 +1685,7 @@ def run_independent_build(task, workspace, provider, gold, *, max_samples=2)
     # that also fail the PUBLIC (development) examples are resampled (N=2);
     # a sample that aces development but disagrees on hidden gold =>
     # NEEDS_ADJUDICATION immediately (recorded into <workspace>/audit/).
-def record_build_result(workspace, task, result) -> Path   # gate evidence + audit queue
+def record_build_result(workspace, task, result) -> Path   # gate evidence + adjudication record
 def load_build_result(workspace, task_id) -> dict | None
 def load_adjudication(workspace, task_id) -> dict | None
 def adjudication_path(workspace, task_id) -> Path          # audit/<id>.adjudication.json
@@ -1879,7 +1864,7 @@ when the benchmark stores contain at least one `shape:` fingerprint. A store
 measured before shape fingerprints existed remains `NAME_ONLY` regardless of
 its typed-hash count and reports `measure-target` as the remedy. A whole-schema
 `shape:` hit is fatal; a per-table
-`shape-table:` hit is borderline and goes to the human audit queue. `sql:`
+`shape-table:` hit is borderline and is recorded, not rejected. `sql:`
 fingerprints are normalized through `sqlglot`, while schema, shape, and
 dependency fingerprints do not depend on `sqlglot`. Run `measure-target` again
 whenever the `sqlglot` pin changes.
@@ -1935,7 +1920,7 @@ def promote_proposed_cases(task: TaskIR, findings: list[Finding], workspace: Pat
     # an uncompilable/erroring proposal — writes
     # `attacks/<case>/rejected_proposal.json` with BOTH matrices (predicted and
     # measured), the value-free `projection` and, since Phase 3, the
-    # post-session `projection_matrix` (booleans only; `audit list` renders it)
+    # post-session `projection_matrix` (booleans only)
     # and promotes nothing; it is never silently dropped. Promoted
     # cases join task.attack_cases (a semantic edit: NEW content hash) and are
     # asserted from then on by the standing 'required-mutants' gate. Idempotent:
@@ -2251,7 +2236,7 @@ def failure_detail(payload, *, route=None, task=None, stage=None) -> str
     # payload becomes {failing_gates: [], codes: {attack: <code>}} on EVERY
     # route (the promoter's per-proposal verdict codes — inert, inapplicable,
     # no_kill_predicted, mismatch, fidelity_failed, unknown_kind — are
-    # post-session records for rejected_proposal.json / audit list only, never
+    # post-session records for rejected_proposal.json only, never
     # a view; `proposals` is outside _EVIDENCE_KEYS); a StagePayload
     # {codes: {stage: <code>}}; a CalibratePayload the impossible/trivial
     # variant names and `skipped`; a ReviewPayload the (role, severity)
@@ -2372,11 +2357,10 @@ def proposer_attempt_budget(config_path=None) -> int   # agents.yaml repair.max_
 def repair_adjudication_path(workspace, task_id); queue_adjudication(...)
 def load_repair_adjudication(workspace, task_id)
     # proposal attempts exhausted / explicit abort => STATUS_NEEDS_ADJUDICATION
-    # in the workspace audit queue. Engine records VERDICT_BLOCKED with
+    # in <workspace>/audit/. Engine records VERDICT_BLOCKED with
     # blocked_on=human at the failed stage: no forced patch, repair row, revision
-    # or invalidation. `audit list` renders a pending entry bound to the current
-    # hash (cli._pending_repair_adjudication; `_audit_queue(engine,
-    # include_repair=True)` returns it as a 4th element).
+    # or invalidation. The record is bound to the current content hash and goes
+    # stale when a repair moves the identity.
 
 # Phase 1 item 1.P — the bounded proposer (certify addendum Design H §2-§3)
 REPAIR_PROPOSER_MODES = ("one_shot", "bounded"); DEFAULT_REPAIR_PROPOSER_MODE = "one_shot"
@@ -2614,8 +2598,7 @@ class ToolRegistry:
 since Phase 3, the post-session `projection_matrix`
 (`critic_validators.project_proposal_matrix`: `{finding_id: {promoted,
 per_population: {pop: {predicted, measured_pass}}, fidelity_ok}}`, booleans
-only) that `elt-taskgen audit list` renders; neither is ever returned to a
-session.
+only); neither is ever returned to a session.
 
 ### `review/tools/certify.py` and the proposer's `certify` tool (Phase 1 item 1.P — certify addendum Design H §2, §3.1)
 
@@ -2827,7 +2810,7 @@ def measured_match_bit(ctx, {"finding_index": int}) -> Diagnostic   # POP, flag 
     # session's gold handle (D3 gold-bearing worker); source=promotion, code promoted|mismatch
 def project_proposal_matrix(outcomes) -> dict   # POST-SESSION, never a tool: {finding_id: {promoted,
     # per_population: {pop: {predicted, measured_pass}}, fidelity_ok}}, booleans only; written to
-    # rejected_proposal.json (`projection_matrix`) by attacks._record_rejected_proposal, read by audit list
+    # rejected_proposal.json (`projection_matrix`) by attacks._record_rejected_proposal
 class CompileProposalTool   # harness_only validator, ToolCost(oracle_bits=3, wall_s=20), POP
 class CompileProbeTool      # harness_only validator, ToolCost(oracle_bits=3, wall_s=20), SHC
 class MeasuredMatchBitTool  # harness_only validator, ToolCost(oracle_bits=1, wall_s=300, per_session=1), POP
@@ -3791,7 +3774,7 @@ removed on 2026-08-14. Current commands are `record-transcripts`,
 `ingest-wikidbs`, `ingest-dlt`, `measure-target` (deprecated alias
 `ingest-anchor`), `generate`, `reference-run`, `review`, `attack`, `validate`,
 `validate-el`, `validate-t`, `calibrate`, `select`, `export`, `release`,
-`pipeline`, `verify`, `score`, `semantic`, `runtime`, `audit`, `triage`. `semantic`
+`pipeline`, `verify`, `score`, `semantic`, `runtime`. `semantic`
 contains `score`. `runtime` contains
 `install-airbyte`, `bootstrap-task`, `prepare`, `source-up`, `source-down`,
 `provision-snowflake`, `reset-snowflake`, `provision-databricks`,
@@ -3993,42 +3976,6 @@ boundary around exactly those types. Any other exception produces a traceback.
   In contrast, `pipeline`, `select`, and `release` require current empirical
   EL+T evidence by default and run a missing/stale campaign; their explicit
   `--allow-structural-difficulty` option is development-only.
-* `triage [--task-id ID]` — advisory audit triage. For every task in the
-  audit queue with pending borderline collisions or a dual-build adjudication
-  at the current hash, it shows the `audit_triage` role the full bundle, the
-  projected gate battery (`{gate, passed, code}` rows through
-  `review/tools/projection.project_gate_battery`; raw gate details, evidence,
-  counts, rewards, and paths never enter the prompt, and the dual-build
-  adjudication is one code), and council findings. It writes
-  `<workspace>/audit/<task_id>.triage.json` with per-axis labels (the
-  `AuditApproval.per_axis_labels` vocabulary), a `flag_for_human` bit and a
-  rationale. It may flag a task for human review but cannot approve it. The
-  record is advisory, `run_audit` never reads it, and nothing on the triage path
-  constructs an `AuditApproval` (asserted by a test). Key-optional: without a
-  transcript or a key it refuses with the standard remedy and exits 1; a
-  `ProviderProtocolError` (malformed provider output) or a
-  `DiagnosticTripwire` (a producer leaked into the view) is could-not-measure
-  and exits 2.
-* `audit list` — pending human sign-offs, advisory triage labels at the current
-  hash marked as not approvals, and a
-  `REPAIR ADJUDICATION (not a sign-off item ...)` block for a task whose
-  repair proposer abstained at the current hash (Phase 1 finding 1-7), and a
-  `REJECTED PROPOSAL (not a sign-off item; the post-session matrix projection
-  for humans)` line per finding of every `attacks/<case>/rejected_proposal.json`
-  bound to the current hash (Phase 3: the case, the finding, the `promoted` and
-  `fidelity_ok` booleans and per population the adversary's prediction beside
-  the measured pass boolean — never a reward); the
-  empty-queue line reads "audit queue empty: no task has pending borderline
-  collisions, dual-build adjudications or repair adjudications";
-  `audit approve ID --reviewer NAME
-  [--labels k=v ...] [--approved-at ISO]`; `audit reject ID --reason R`.
-  Approve/reject are mutually exclusive (each deletes the other's record).
-  The CLI computes collision fingerprints as SHA-256 of the canonical
-  `{kind, against, detail}`, so a reviewer does not enter one. Coverage must be
-  exact at audit time; unapproved-pending and approved-but-not-pending both
-  fail. `--approved-at` defaults to wall clock — pass it for deterministic
-  runs (wall clock is allowed in workspace state, never inside artifacts).
-
 ---
 
 ## Removed: `demo` (2026-08-14)

@@ -1174,33 +1174,6 @@ class DifficultyMeasurement(CanonicalModel):
         return load_weight * self.load_score + (1.0 - load_weight) * self.transform_score
 
 
-# --- Human audit ---
-
-class AuditApproval(CanonicalModel):
-    """Human audit approval bound to a task hash and exact collision set."""
-
-    task_id: str = Field(min_length=1)
-    #: Content hash of the TaskIR this approval binds to.
-    task_content_hash: str = Field(min_length=64, max_length=64)
-    #: Fingerprints the reviewer signed off on; must equal the pending borderline
-    #: set exactly.
-    approved_collision_fingerprints: tuple[str, ...] = ()
-    #: Free-form per-axis review labels (e.g. {"license": "ok", "risk": "low"}).
-    per_axis_labels: dict[str, str] = Field(default_factory=dict)
-    reviewer: str = Field(min_length=1)
-    #: ISO-8601 timestamp supplied BY THE CALLER (never computed inside a model).
-    approved_at: str = Field(min_length=1)
-
-    @field_validator("approved_at")
-    @classmethod
-    def _approved_at_iso(cls, v: str) -> str:
-        try:
-            datetime.fromisoformat(v)
-        except ValueError as exc:
-            raise ValueError(f"approved_at {v!r} is not an ISO-8601 timestamp") from exc
-        return v
-
-
 # --- Revisions ---
 
 class TaskRevision(BaseModel):

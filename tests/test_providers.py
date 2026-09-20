@@ -2054,7 +2054,7 @@ class DisabledRunnerBlockKeyStabilityTest(unittest.TestCase):
 
     def test_critic_seat_blocks_stay_hashed_verbatim_and_a_bare_role_is_unmoved(self):
         before = P.transcript_key("ambiguity_critic", "p")
-        bare = P.transcript_key("audit_triage", "q")
+        bare = P.transcript_key("unconfigured_role", "q")
         doc = json.loads(json.dumps(P._agents_doc()))
         doc["roles"]["ambiguity_critic"]["session"]["max_wall_s"] = 301
         with self._patched(doc):
@@ -2063,8 +2063,8 @@ class DisabledRunnerBlockKeyStabilityTest(unittest.TestCase):
             self.assertEqual(P.role_manifest_limits("ambiguity_critic"), P.role_loop_limits("ambiguity_critic"))
             self.assertEqual(P.role_behavior_manifest("ambiguity_critic")["loop_limits"]["max_wall_s"], 301)
             self.assertNotEqual(P.transcript_key("ambiguity_critic", "p"), before)
-            self.assertEqual(P.transcript_key("audit_triage", "q"), bare)
-            self.assertEqual(P.role_manifest_limits("audit_triage"), {})
+            self.assertEqual(P.transcript_key("unconfigured_role", "q"), bare)
+            self.assertEqual(P.role_manifest_limits("unconfigured_role"), {})
         P.clear_behavior_caches()
 
 
@@ -2940,7 +2940,7 @@ class BehaviorManifestTest(unittest.TestCase):
     def test_role_behavior_sha256_is_sha256_of_canonical_manifest(self):
         from elt_taskgen.models import canonical_json
 
-        for role in ("ambiguity_critic", "semantic_author", "audit_triage",
+        for role in ("ambiguity_critic", "semantic_author",
                      "independent_implementer", "repair_proposer"):
             manifest = P.role_behavior_manifest(role)
             self.assertEqual(
@@ -2981,7 +2981,7 @@ class BehaviorManifestTest(unittest.TestCase):
         `report_findings` / `report_triage` object for a schema role
         (roadmap R-G), nothing for a prose role."""
         routing = self._routing()
-        roles = sorted(set(routing.roles) | {P.AUDIT_TRIAGE_ROLE, "solver__tier"})
+        roles = sorted(set(routing.roles) | {"solver__tier"})
         for role in roles:
             with self.subTest(role=role):
                 manifest = P.role_behavior_manifest(role)
@@ -3455,7 +3455,7 @@ class BehaviorManifestTest(unittest.TestCase):
             P.role_manifest_limits("independent_implementer"),
             P.role_loop_limits("independent_implementer"),
         )
-        self.assertEqual(P.role_loop_limits("audit_triage"), {})
+        self.assertEqual(P.role_loop_limits("unconfigured_role"), {})
         # The author's two harness-validated-submit keys are DERIVED (R0.2):
         # a block omitting them hashes the same as one declaring them, and a
         # disagreeing declaration is refused rather than silently overridden.
@@ -3537,7 +3537,7 @@ class BehaviorManifestTest(unittest.TestCase):
             P.clear_behavior_caches()
             self.assertEqual(P.session_policy_for("repair_proposer").limits.format_error_disposition, "halt")
             # A role without a block still reads the session-wide default.
-            self.assertEqual(P.session_policy_for("audit_triage").limits.format_error_disposition, "stage_fail")
+            self.assertEqual(P.session_policy_for("unconfigured_role").limits.format_error_disposition, "stage_fail")
         with mock.patch.object(P, "_agents_doc", lambda: base):
             P.clear_behavior_caches()
             self.assertEqual(P.session_policy_for("repair_proposer").sha256(), default.sha256())

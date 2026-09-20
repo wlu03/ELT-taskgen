@@ -481,7 +481,7 @@ class ZeroToolParityTest(_SessionCase):
         )
         with _agents(doc):
             provider = _provider(tempfile.mkdtemp(), FakeTransport([]))
-            for role in ("ambiguity_critic", AUTHOR, IMPLEMENTER, "audit_triage", "repair_proposer"):
+            for role in ("ambiguity_critic", AUTHOR, IMPLEMENTER, "repair_proposer"):
                 with self.subTest(role=role):
                     policy = P.session_policy_for(role)
                     self.assertEqual(policy.tools, ())

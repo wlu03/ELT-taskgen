@@ -152,7 +152,6 @@ Aug-12 drive an `argparse` **exit 2** (verified by execution, both still exit 2)
 | You might type | Result | What actually reaches that stage |
 |---|---|---|
 | `elt-taskgen author …` | **exit 2**, `invalid choice: 'author'` | `elt-taskgen review` — AUTHOR is ladder stage 5, run inside it (the subcommand's own help reads "semantic authoring + council review") |
-| `elt-taskgen audit --workspace … --task-id …` | **exit 2**, `invalid choice: '/tmp/…'` | `elt-taskgen release` — AUDIT is ladder stage 14. The `audit` subcommand is a *human adjudication queue*, not a stage, and takes only `list` / `approve` / `reject` |
 
 Complete subcommand list (`elt-taskgen --help` is the authority; there is no `demo`,
 it was removed 2026-08-14):

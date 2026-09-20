@@ -71,7 +71,6 @@ ROLES = (
     "independent_loader",
     "independent_implementer",
     "repair_proposer",
-    "audit_triage",
 )
 
 #: The RPR rows of the permission matrix (Output 5 §2 and §3) and SoT T1/T3:

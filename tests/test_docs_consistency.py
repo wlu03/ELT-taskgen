@@ -961,7 +961,7 @@ class TestStageNumbering(unittest.TestCase):
 
     def test_runbook_ladder_numbers(self) -> None:
         text = _read("docs/plans/endtoend_runbook.md")
-        for name, stage in (("AUTHOR", "author"), ("AUDIT", "audit")):
+        for name, stage in (("AUTHOR", "author"),):
             found = re.findall(rf"{name} is ladder stage (\d+)", text)
             self.assertTrue(found, f"runbook no longer states {name}'s ladder position")
             for number in found:

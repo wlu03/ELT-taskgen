@@ -274,7 +274,7 @@ class ProviderKindTests(unittest.TestCase):
         # through Claude Code raised 5 false alarms on 10 clean tasks and hit
         # the impossible canary twice; the API seat raised none).
         one_shot_roles = ("ambiguity_critic", "population_adversary", "shortcut_attacker",
-                          "feasibility_reviewer", "audit_triage")
+                          "feasibility_reviewer")
         witness_roles = ("independent_implementer", "independent_loader")
         with mock.patch.dict(os.environ, {}, clear=False):
             for name in ("ELT_TASKGEN_AGENT_HARNESS", "ELT_TASKGEN_CLAUDE_PROVIDER", "ELT_TASKGEN_OSS_PROVIDER"):

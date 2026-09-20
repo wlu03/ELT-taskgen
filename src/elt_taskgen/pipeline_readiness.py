@@ -53,14 +53,12 @@ _PROVIDER_STAGES = frozenset(
         StageName.GATES_EXTRACT_LOAD,
         StageName.GATES_TRANSFORM,
         StageName.CALIBRATE,
-        StageName.AUDIT,
     }
 )
 _SELECTION_STAGES = frozenset(
     {
         StageName.CONTAMINATION_POST,
         StageName.SELECT,
-        StageName.AUDIT,
         StageName.RELEASE,
     }
 )
@@ -85,7 +83,6 @@ _CONFIGURED_STAGE_ROLES: dict[StageName, tuple[str, ...]] = {
     StageName.TASK_INTEGRITY: ("independent_implementer",),
     StageName.GATES_EXTRACT_LOAD: ("independent_loader",),
     StageName.GATES_TRANSFORM: ("independent_implementer",),
-    StageName.AUDIT: ("audit_triage",),
 }
 
 _COMMON_PROVIDER_IMPLEMENTATION_MODULES = (
@@ -232,10 +229,6 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
     StageName.SELECT: (
         "elt_taskgen.corpus.selection",
     ),
-    StageName.AUDIT: (
-        "elt_taskgen.cli",
-        "elt_taskgen.review.providers",
-    ),
     StageName.RELEASE: (
         "elt_taskgen.airbyte_connector_config",
         "elt_taskgen.destinations",
@@ -274,7 +267,6 @@ DEFAULT_ROLE_STAGE_MAP: dict[str, str] = {
     "independent_implementer": StageName.TASK_INTEGRITY.value,
     "independent_loader": StageName.GATES_EXTRACT_LOAD.value,
     "repair_proposer": "repair",
-    "audit_triage": StageName.AUDIT.value,
 }
 
 
@@ -413,7 +405,7 @@ class ReadinessProfile(str, Enum):
             self.LOCAL_READY: StageName.GATES_TRANSFORM,
             self.PACKAGED: StageName.GATES_TRANSFORM,
             self.CALIBRATED: StageName.CALIBRATE,
-            self.RELEASE_READY: StageName.AUDIT,
+            self.RELEASE_READY: StageName.SELECT,
             self.RELEASE: StageName.RELEASE,
         }[self]
 
@@ -2409,7 +2401,7 @@ def task_readiness(
     # A current battery does not replace missing population or gold prerequisites.
     local = passed_through(StageName.GATES_TRANSFORM)
     calibrated = local and passed(StageName.CALIBRATE)
-    release_ready = passed_through(StageName.AUDIT)
+    release_ready = passed_through(StageName.SELECT)
     packaged = False
     package_status = ReadinessState.NOT_RUN
     package_failures: list[str] = []

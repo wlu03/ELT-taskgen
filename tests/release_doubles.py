@@ -89,20 +89,20 @@ class FakeReport:
 
 
 class FakeEngine:
-    """Ledger double serving batteries plus the final release audit boundary.
+    """Ledger double serving batteries plus the final release boundary.
 
-    Release now refuses to ship a variant without a PASSING, roster-complete
+    Release refuses to ship a variant without a PASSING, roster-complete
     battery on its own ledger stage at the current parent hash (acceptance
-    rule R3), and refuses to freeze without a current final audit and accepted
-    task verdict. A double that knew only about ``gates`` would therefore be
-    asserting two older, fictional release boundaries.
+    rule R3), and refuses to freeze without a current selection row and an
+    accepted task verdict. A double that knew only about ``gates`` would
+    therefore be asserting two older, fictional release boundaries.
     """
 
     def __init__(self, workspace: Path, task, report: FakeReport, variants=None):
         self.workspace = workspace
         self._task = task
         self._report = report
-        self._audit = FakeReport(report.verdict, report.content_hash, gates=())
+        self._select = FakeReport(report.verdict, report.content_hash, gates=())
         census = _census_evidence(Path(workspace), task)
         # Release now re-reads the canonical-reachability record the
         # transform battery judged (training.canonical.assert_canonical_ready).
@@ -136,8 +136,8 @@ class FakeEngine:
     def latest_report(self, task_id: str, stage: str):
         if stage == "gates":
             return self._report
-        if stage == "audit":
-            return self._audit
+        if stage == "select":
+            return self._select
         for variant, row in self._variants.items():
             if variant_gate_stage(variant).value == stage:
                 return row

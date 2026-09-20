@@ -453,7 +453,7 @@ proposer's section of `validators.py` was concurrently edited by item 1.
   POST-SESSION projection, booleans only, written into
   `attacks/<case>/rejected_proposal.json` as `projection_matrix` by
   `verification/attacks._record_rejected_proposal` and rendered by
-  `elt-taskgen audit list`; NEVER a tool of any manifest
+  the `audit list` subcommand (since removed); NEVER a tool of any manifest
   (`POST_SESSION_PROJECTION_NAMES`: `project_proposal_matrix`,
   `proposal_matrix`, `predict_check`, `mutant_applicable`).
 * The seat's session state and policy: `CriticSession(*, task, role, gold=None,
@@ -593,8 +593,8 @@ projection for humans)` line per finding (`_rejected_proposal_matrices`,
 `fidelity_ok` booleans and, per population, the adversary's own prediction
 beside the measured pass boolean — never a reward, never a reason sentence);
 a record written before the field existed is rendered from its `projection`
-sibling. `_audit_queue` and triage are unchanged. Pinned by
-tests/test_audit.py `test_audit_list_renders_the_rejected_proposal_matrix`.
+sibling. (The audit queue and triage that rendered it were removed with the
+audit stage; this finding is a historical record.)
 
 ### Item 5 — `config/agents.yaml`
 

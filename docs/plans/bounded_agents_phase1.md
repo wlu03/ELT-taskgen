@@ -432,10 +432,10 @@ cannot drift silently. None is behind a config key.
   "audit queue empty: no task has pending borderline collisions, dual-build
   adjudications or repair adjudications" (the baseline said "no task has
   pending borderline collisions or dual-build adjudications"). A stale entry
-  (another hash) is not listed. Pinned by
-  `test_audit_list_names_repair_adjudications` (tests/test_audit.py) and
-  `test_audit_list_renders_repair_adjudication`
-  (tests/test_repair_proposer_agentic.py).
+  (another hash) is not listed. (The audit queue listing was removed with the
+  audit stage; the record itself is pinned by
+  `test_repair_adjudication_record_is_bound_to_the_current_hash`
+  in tests/test_repair_proposer_agentic.py.)
 * **Finding 3-0 — the REFERENCE field allowlist is narrowed to
   `reference.sql_by_mart.*` (a sanctioned SECURITY change; permission matrix
   §4 "reference SQL", trust boundary §6.6).** The one-shot allowlist was
@@ -456,7 +456,7 @@ cannot drift silently. None is behind a config key.
   `test_validate_scope_refuses_verifier_inert_only_diff_as_noop`
   (tests/test_repair_proposer.py) and
   `test_proposer_prompt_allowlists_match_code_both_directions`
-  (tests/test_prompts_repair_triage.py).
+  (tests/test_prompts_repair.py).
 * **The Phase 1 re-key of the author and proposer fixtures.** Consequence
   of findings 1-0 and 3-0 together: the one-shot author key moved with the
   Phase 1 session block and moved back under the fold; the one-shot

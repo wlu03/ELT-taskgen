@@ -52,7 +52,6 @@ ROLES = (
     "independent_loader",
     "independent_implementer",
     "repair_proposer",
-    "audit_triage",
 )
 
 
@@ -995,7 +994,7 @@ class RegistryTest(unittest.TestCase):
         # real lifecycle in the role-specific validator suites. Disabled
         # one-shot roles expose no accidentally dispatchable tool here.
         checked = 0
-        for role in ("ambiguity_critic", "feasibility_reviewer", "audit_triage"):
+        for role in ("ambiguity_critic", "feasibility_reviewer"):
             registry = RG.ToolRegistry.for_role(role)
             for name in registry.names:
                 result = registry.dispatch(

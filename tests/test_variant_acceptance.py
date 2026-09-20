@@ -153,7 +153,7 @@ class FakeEngine:
 
     def latest_report(self, task_id: str, stage: str):
         assert task_id == self._task.task_id
-        if stage == "audit":
+        if stage == "select":
             return FakeRow("pass", self._task.content_hash(), {})
         return self._rows.get(stage)
 

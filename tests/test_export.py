@@ -119,7 +119,7 @@ class FakeEngine:
         self.reports: dict[str, FakeReport] = {}
         #: (task_id, variant stage name) -> FakeReport
         self.variant_reports: dict[tuple[str, str], FakeReport] = {}
-        self.audit_reports: dict[str, FakeReport] = {}
+        self.select_reports: dict[str, FakeReport] = {}
 
     def load_task(self, task_id: str) -> TaskIR:
         return self.tasks[task_id]
@@ -127,8 +127,8 @@ class FakeEngine:
     def latest_report(self, task_id: str, stage: str):
         if stage == "gates":
             return self.reports.get(task_id)
-        if stage == "audit":
-            return self.audit_reports.get(task_id)
+        if stage == "select":
+            return self.select_reports.get(task_id)
         # EL and T are the complete active release contract; each has its own
         # current-hash, roster-complete battery.
         return self.variant_reports.get((task_id, stage))
@@ -1586,7 +1586,7 @@ class _FreezeReleaseHarness(ExportTaskBase):
                 gates=VARIANT_GATE_NAMES[variant],
                 task_id=variant_task_id(self.task.task_id, variant),
             )
-        self.engine.audit_reports[self.task.task_id] = FakeReport(
+        self.engine.select_reports[self.task.task_id] = FakeReport(
             "pass", self.task.content_hash()
         )
         self.selection = FakeSelection(
@@ -1969,17 +1969,17 @@ class TestFreezeRelease(_FreezeReleaseHarness):
         with self.assertRaisesRegex(ValueError, "certification phases are required"):
             self.freeze()
 
-    def test_refuses_missing_final_audit(self):
-        self.engine.audit_reports.pop(self.task.task_id)
-        with self.assertRaisesRegex(ValueError, "no final audit report"):
+    def test_refuses_missing_final_selection(self):
+        self.engine.select_reports.pop(self.task.task_id)
+        with self.assertRaisesRegex(ValueError, "no final selection report"):
             self.freeze()
         self.assertFalse(self.out_dir.exists())
 
-    def test_refuses_stale_final_audit(self):
-        self.engine.audit_reports[self.task.task_id] = FakeReport(
+    def test_refuses_stale_final_selection(self):
+        self.engine.select_reports[self.task.task_id] = FakeReport(
             "pass", "0" * 64
         )
-        with self.assertRaisesRegex(ValueError, "audit is bound to stale"):
+        with self.assertRaisesRegex(ValueError, "selection is bound to stale"):
             self.freeze()
         self.assertFalse(self.out_dir.exists())
 
@@ -2059,7 +2059,7 @@ class TestFreezeRelease(_FreezeReleaseHarness):
                 gates=VARIANT_GATE_NAMES[variant],
                 task_id=variant_task_id(sibling.task_id, variant),
             )
-        self.engine.audit_reports[sibling.task_id] = FakeReport(
+        self.engine.select_reports[sibling.task_id] = FakeReport(
             "pass", sibling.content_hash()
         )
         both = tuple(v.value for v in RLVR_TASK_VARIANTS)

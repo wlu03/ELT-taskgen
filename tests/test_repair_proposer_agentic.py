@@ -2466,10 +2466,9 @@ class BoundedProposerTest(_BoundedFixture):
         self.assertEqual(queued["attempts"][0]["abort_reason"], "cannot_repair")
         self.assertEqual(queued["task_content_hash"], self.task.content_hash())
         self.assertEqual(self.task_tree(engine), before)
-        # A proposer call alone has not made this a live queue item: the
-        # engine must also map the disposition onto a BLOCKED stage row.
-        self.assertEqual(cli_mod._audit_queue(engine, include_repair=True), [])
-        self.assertEqual(cli_mod._audit_queue(engine), [])  # the triage's predicate is unchanged
+        # A proposer call alone has not made this a live hold: the engine must
+        # also map the disposition onto a BLOCKED stage row.
+        self.assertIsNone(engine.blocked_stage(self.task_id))
 
         run_workspace = self.workspace("abort-run")
         provider, run_transport = self.provider(
@@ -2498,9 +2497,9 @@ class BoundedProposerTest(_BoundedFixture):
         latest_data = json.loads(latest.payload_json)["data"]
         self.assertEqual(latest_data["blocked_on"], engine_mod.BLOCKED_ON_HUMAN)
         self.assertEqual(latest_data["status"], rp.STATUS_NEEDS_ADJUDICATION)
-        entries = cli_mod._audit_queue(run_engine, include_repair=True)
-        self.assertEqual(len(entries), 1)
-        self.assertEqual(entries[0][3]["status"], rp.STATUS_NEEDS_ADJUDICATION)
+        self.assertIsNotNone(run_engine.blocked_stage(self.task_id))
+        queued_now = rp.load_repair_adjudication(run_engine.workspace, self.task_id)
+        self.assertEqual(queued_now["status"], rp.STATUS_NEEDS_ADJUDICATION)
 
     def test_session_instructions_cover_batching_and_a_green_cheap_check(self):
         """Run 11 (2026-09-11) transcripts: across 50 read_view, 87 read_field
@@ -2876,14 +2875,10 @@ class BoundedProposerTest(_BoundedFixture):
                 finally:
                     engine.close()
 
-    def test_audit_list_renders_repair_adjudication(self):
-        """Roadmap 1.P cli.py row: `_audit_queue` reads
-        `<ws>/audit/<task>.repair_adjudication.json` (bound to the current
-        hash) and `audit list` renders it as a non-sign-off item with the
-        stage, route, attempts and rejection codes; a stale entry is not queued."""
-        import contextlib
-        import io
-
+    def test_repair_adjudication_record_is_bound_to_the_current_hash(self):
+        """`queue_adjudication` writes `<ws>/audit/<task>.repair_adjudication.json`
+        carrying the stage, route, attempts and rejection codes, bound to the
+        task's current hash; a repair that moves the identity leaves it stale."""
         engine = self.make_engine(self.workspace("audit"))
         record = rp.RepairAttemptRecord(
             task_id=self.task_id, task_content_hash=self.task.content_hash(), stage="review",
@@ -2904,31 +2899,23 @@ class BoundedProposerTest(_BoundedFixture):
             engine_mod.VERDICT_BLOCKED,
             engine_mod.StagePayload(detail="repair proposer awaiting adjudication"),
         )
-        entries = cli_mod._audit_queue(engine, include_repair=True)
-        self.assertEqual(len(entries), 1)
-        task, pending, adjudication, repair_entry = entries[0]
-        self.assertEqual((task.task_id, pending, adjudication), (self.task_id, {}, None))
-        self.assertEqual(repair_entry["kind"], rp.ADJUDICATION_KIND)
-        self.assertEqual(cli_mod._audit_queue(engine), [])
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            code = cli_mod.main(["audit", "list", "--workspace", str(engine.workspace)])
-        out = buf.getvalue()
-        self.assertEqual(code, 0)
-        self.assertIn(self.task_id, out)
-        self.assertIn("REPAIR ADJUDICATION", out)
-        self.assertIn("stage=review", out)
-        self.assertIn("route=specification", out)
-        self.assertIn("attempts=2", out)
-        self.assertIn("revalidation_red_review", out)
-        self.assertIn("ABSTAINED after 2 session(s)", out)
-        # A later repair that moved the identity leaves the entry stale, not queued.
+        queued = rp.load_repair_adjudication(engine.workspace, self.task_id)
+        self.assertEqual(queued["kind"], rp.ADJUDICATION_KIND)
+        self.assertEqual(queued["task_content_hash"], self.task.content_hash())
+        self.assertEqual((queued["stage"], queued["route"]), ("review", "specification"))
+        self.assertEqual(len(queued["attempts"]), 2)
+        self.assertEqual(
+            queued["attempts"][0]["rejection_code"], "revalidation_red_review"
+        )
+        self.assertIn("ABSTAINED after 2 session(s)", queued["detail"])
+        self.assertIsNotNone(engine.blocked_stage(self.task_id))
+        # A later repair that moved the identity leaves the record stale.
         engine.save_task(self.task.model_copy(update={"solver_prompt": PROSE + " " + SENTINEL}))
-        self.assertEqual(cli_mod._audit_queue(engine, include_repair=True), [])
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            self.assertEqual(cli_mod.main(["audit", "list", "--workspace", str(engine.workspace)]), 0)
-        self.assertIn("audit queue empty", buf.getvalue())
+        moved = rp.load_repair_adjudication(engine.workspace, self.task_id)
+        self.assertNotEqual(
+            moved["task_content_hash"], engine.load_task(self.task_id).content_hash()
+        )
+        self.assertIsNone(engine.blocked_stage(self.task_id))
 
 
 class BS_FakeClock:

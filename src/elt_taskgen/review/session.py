@@ -1107,7 +1107,6 @@ COUNCIL_ROLES_WITHOUT_WORKING_LIMIT: frozenset[str] = frozenset(
         "independent_loader",
         "independent_implementer",
         "repair_proposer",
-        "audit_triage",
     }
 )
 

@@ -109,7 +109,7 @@ needs gold; `materialize_mutation` is never called inside a session), the
 post-session screen's VOID / NOTED / DUPLICATE lexicon, realized row counts,
 rewards, the predicted or measured matrix. The full matrix is written
 post-session to `attacks/<case>/rejected_proposal.json` (`projection_matrix`,
-booleans only) for human audit and `elt-taskgen audit list`.
+booleans only) for human audit and the `audit list` subcommand (since removed).
 
 ## 3. Cohort digest
 

@@ -745,10 +745,10 @@ class TestStaleEvidenceBlockIsActuallyClearable(unittest.TestCase):
         buf = io.StringIO()
         self.engine.record_report(
             self.task,
-            StageName.AUDIT.value,
+            StageName.SELECT.value,
             VERDICT_BLOCKED,
             StagePayload(
-                error="1 borderline collision(s) require human sign-off",
+                error="a pending repair adjudication requires human sign-off",
                 data={"blocked_on": "human"},
             ),
         )

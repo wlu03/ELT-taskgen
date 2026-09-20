@@ -152,7 +152,6 @@ class StageName(str, Enum):
     CALIBRATE = "calibrate"
     CONTAMINATION_POST = "contamination_post"
     SELECT = "select"
-    AUDIT = "audit"
     RELEASE = "release"
 
 

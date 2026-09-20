@@ -1749,7 +1749,7 @@ class RevalidationScopeTestCase(unittest.TestCase):
         stages = rp.revalidation_stages(RepairRoute.POPULATION, "gates")
         self.assertEqual(stages, ("generate", "reference", "attack", "gates"))
         # a stage outside the route's rerun set is still proven
-        self.assertIn("audit", rp.revalidation_stages(RepairRoute.REFERENCE, "audit"))
+        self.assertIn("intake", rp.revalidation_stages(RepairRoute.REFERENCE, "intake"))
 
     def test_attempt_budget_defaults_when_config_says_nothing(self):
         import yaml

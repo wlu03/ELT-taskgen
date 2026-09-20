@@ -33,6 +33,7 @@ from elt_taskgen.engine import (
     VERDICT_PASS,
     Engine,
     InfrastructureFailure,
+    ReportRow,
     StageName,
     StageOutcome,
     StagePayload,
@@ -61,6 +62,20 @@ from elt_taskgen.models import (
 )
 from elt_taskgen.verification import gates as gates_mod
 from elt_taskgen.verification import variant_battery
+
+
+def _blocked_row(error: str) -> ReportRow:
+    """A blocked SELECT row, as `Engine.blocked_stage` would return one."""
+    return ReportRow(
+        id=1,
+        task_id="",
+        revision=1,
+        stage=StageName.SELECT.value,
+        verdict=VERDICT_BLOCKED,
+        payload_json=json.dumps({"error": error, "data": {"blocked_on": "human"}}),
+        content_hash="0" * 64,
+        created_at="2026-01-01T00:00:00+00:00",
+    )
 
 
 class PipelineParserPolicyTests(unittest.TestCase):
@@ -606,7 +621,7 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
             cmd_pipeline(args)
         worker.assert_not_called()
 
-    def test_rejected_candidate_is_excluded_before_global_select_and_audit(
+    def test_rejected_candidate_is_excluded_before_global_selection(
         self,
     ) -> None:
         prepared = demo_fixture.demo_task().model_copy(
@@ -657,13 +672,6 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
         )
         with (
             mock.patch.object(cli_mod, "_pipeline_worker", side_effect=worker),
-            mock.patch.object(
-                cli_mod,
-                "run_audit",
-                return_value=StageOutcome(
-                    VERDICT_PASS, StagePayload(detail="audit passed")
-                ),
-            ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             self.assertEqual(cmd_pipeline(args), 0)
@@ -673,14 +681,8 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
             self.assertIsNotNone(
                 check.latest_report(prepared.task_id, StageName.SELECT.value)
             )
-            self.assertIsNotNone(
-                check.latest_report(prepared.task_id, StageName.AUDIT.value)
-            )
             self.assertIsNone(
                 check.latest_report(rejected.task_id, StageName.SELECT.value)
-            )
-            self.assertIsNone(
-                check.latest_report(rejected.task_id, StageName.AUDIT.value)
             )
         finally:
             check.close()
@@ -874,7 +876,7 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
             "score:dbt__a_winner", observations[0]["different_evidence"]
         )
 
-    def test_blocked_audit_never_publishes_global_selection(self) -> None:
+    def test_blocked_selection_never_publishes_global_selection(self) -> None:
         task = demo_fixture.demo_task().model_copy(update={"origin": Origin.DBT})
         engine = Engine(self.workspace)
         try:
@@ -900,12 +902,9 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
         with (
             mock.patch.object(cli_mod, "_pipeline_worker", return_value=worker_result),
             mock.patch.object(
-                cli_mod,
-                "run_audit",
-                return_value=StageOutcome(
-                    VERDICT_BLOCKED,
-                    StagePayload(error="waiting for human approval"),
-                ),
+                Engine,
+                "blocked_stage",
+                return_value=_blocked_row("waiting for human adjudication"),
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -914,7 +913,7 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
             (self.workspace / "state" / "corpus_selection.json").exists()
         )
 
-    def test_fatal_audit_never_publishes_global_selection(self) -> None:
+    def test_rejected_selection_never_publishes_global_selection(self) -> None:
         task = demo_fixture.demo_task().model_copy(update={"origin": Origin.DBT})
         engine = Engine(self.workspace)
         try:
@@ -940,12 +939,7 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
         with (
             mock.patch.object(cli_mod, "_pipeline_worker", return_value=worker_result),
             mock.patch.object(
-                cli_mod,
-                "run_audit",
-                return_value=StageOutcome(
-                    VERDICT_FATAL,
-                    StagePayload(error="audit rejected candidate"),
-                ),
+                Engine, "final_verdict", return_value=FINAL_REJECTED
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -969,7 +963,12 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
             "usd": 0.0,
         }
 
-        def mutate_measurement(_engine: Engine, current_task) -> StageOutcome:
+        real_coordinator_lock = Engine.coordinator_lock
+
+        def mutate_measurement(_engine: Engine):
+            """Drift the recorded measurement after the tentative selection is
+            derived and before it is re-derived under the publication lock."""
+            current_task = _engine.load_task(task.task_id)
             path = cli_mod._evidence_dir(_engine, current_task) / "difficulty.json"
             measurement = structural_difficulty(current_task)
             changed = measurement.model_copy(
@@ -981,7 +980,7 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
                 }
             )
             path.write_text(changed.model_dump_json(), encoding="utf-8")
-            return StageOutcome(VERDICT_PASS, StagePayload(detail="audit passed"))
+            return real_coordinator_lock(_engine)
 
         args = self._args(
             "--task-id",
@@ -994,7 +993,9 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
         )
         with (
             mock.patch.object(cli_mod, "_pipeline_worker", return_value=worker_result),
-            mock.patch.object(cli_mod, "run_audit", side_effect=mutate_measurement),
+            mock.patch.object(
+                Engine, "coordinator_lock", mutate_measurement
+            ),
             contextlib.redirect_stdout(io.StringIO()),
             self.assertRaisesRegex(CliUsageError, "selection inputs changed"),
         ):
@@ -1062,13 +1063,6 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
         output = io.StringIO()
         with (
             mock.patch.object(cli_mod, "_pipeline_worker", return_value=worker_result),
-            mock.patch.object(
-                cli_mod,
-                "run_audit",
-                return_value=StageOutcome(
-                    VERDICT_PASS, StagePayload(detail="audit passed")
-                ),
-            ),
             mock.patch.object(
                 release_mod, "verify_release", return_value=verification
             ) as verify,
@@ -1219,13 +1213,6 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
         args = self._args("--allow-structural-difficulty")
         with (
             mock.patch.object(cli_mod, "_pipeline_worker", side_effect=worker),
-            mock.patch.object(
-                cli_mod,
-                "run_audit",
-                return_value=StageOutcome(
-                    VERDICT_PASS, StagePayload(detail="audit passed")
-                ),
-            ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             self.assertEqual(cmd_pipeline(args), 0)

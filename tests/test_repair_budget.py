@@ -415,11 +415,11 @@ class TestBlockedSpendsNoRounds(RepairBudgetTestCase):
     """BLOCKED is a wait, not a failure: no repair row, no fatal row, no
     rejection, and the stage re-runs when the condition clears."""
 
-    def _blocked_audit(self, engine, task):
+    def _blocked_select(self, engine, task):
         return StageOutcome(
             VERDICT_BLOCKED,
             StagePayload(
-                error="1 borderline collision(s) require human sign-off",
+                error="a pending repair adjudication requires human sign-off",
                 data={"blocked_on": "human", "pending": "1"},
             ),
         )
@@ -432,13 +432,13 @@ class TestBlockedSpendsNoRounds(RepairBudgetTestCase):
             return StageOutcome(VERDICT_PASS, StagePayload(detail="released"))
 
         engine = self.make_engine(
-            {"audit": self._blocked_audit, "release": release}, max_repair_rounds=3
+            {"select": self._blocked_select, "release": release}, max_repair_rounds=3
         )
         engine.register(self.task)
         engine.run(self.task_id)
 
         self.assertEqual(engine.repair_rounds_used(self.task_id), 0)
-        row = engine.latest_report(self.task_id, "audit")
+        row = engine.latest_report(self.task_id, "select")
         self.assertEqual(row.verdict, "blocked")
         self.assertEqual(
             engine._con.execute(
@@ -451,21 +451,21 @@ class TestBlockedSpendsNoRounds(RepairBudgetTestCase):
         self.assertEqual(release_calls, [], "downstream must not run past a block")
         blocked = engine.blocked_stage(self.task_id)
         self.assertIsNotNone(blocked)
-        self.assertEqual(blocked.stage, "audit")
+        self.assertEqual(blocked.stage, "select")
 
     def test_blocked_stage_resumes_when_the_condition_clears(self):
-        engine = self.make_engine({"audit": self._blocked_audit})
+        engine = self.make_engine({"select": self._blocked_select})
         engine.register(self.task)
         engine.run(self.task_id)
         self.assertIsNotNone(engine.blocked_stage(self.task_id))
 
         engine.set_stage_runner(
-            "audit",
-            lambda e, t: StageOutcome(VERDICT_PASS, StagePayload(detail="signed off")),
+            "select",
+            lambda e, t: StageOutcome(VERDICT_PASS, StagePayload(detail="adjudicated")),
         )
         engine.run(self.task_id)
         self.assertEqual(
-            engine.latest_report(self.task_id, "audit").verdict, VERDICT_PASS
+            engine.latest_report(self.task_id, "select").verdict, VERDICT_PASS
         )
         self.assertIsNone(engine.blocked_stage(self.task_id))
         self.assertEqual(engine.repair_rounds_used(self.task_id), 0)
@@ -518,7 +518,7 @@ class TestBlockedSpendsNoRounds(RepairBudgetTestCase):
         self.assertEqual(engine.repair_rounds_used(self.task_id), 0)
 
     def test_blocked_never_shadows_the_accepting_batteries(self):
-        engine = self.make_engine({"audit": self._blocked_audit})
+        engine = self.make_engine({"select": self._blocked_select})
         engine.register(self.task)
         engine.run(self.task_id)
         # The batteries passed before the block; a wait must not un-accept them.

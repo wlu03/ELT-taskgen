@@ -748,7 +748,7 @@ class ProposalMatrixTest(_CriticCase):
         self.assertTrue(set(CV.CRITIC_VALIDATOR_NAMES).isdisjoint(CV.POST_SESSION_PROJECTION_NAMES))
         forbidden = set(CV.POST_SESSION_PROJECTION_NAMES)
         roles = sorted({r.value for r in CouncilRole} | {"repair_proposer", "independent_implementer",
-                                                          "independent_loader", "audit_triage"})
+                                                          "independent_loader"})
         enabled = _doc(**{role: {"enabled": True} for role in _roles_with_session_block()})
         enabled["roles"][POP]["session"]["measured_match_bit"] = True
         enabled["roles"][POP]["session"]["max_oracle_bits"] = 7

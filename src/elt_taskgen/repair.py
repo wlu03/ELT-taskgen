@@ -134,7 +134,6 @@ _STAGE_FALLBACK: dict[str, RepairRoute] = {
     "calibrate": RepairRoute.SPECIFICATION,
     "contamination_post": RepairRoute.FATAL,
     "select": RepairRoute.SPECIFICATION,
-    "audit": RepairRoute.SPECIFICATION,
     "release": RepairRoute.RUNTIME,
 }
 
@@ -238,7 +237,6 @@ RERUN_STAGES: dict[RepairRoute, tuple[str, ...]] = {
         "calibrate",
         "contamination_post",
         "select",
-        "audit",
         "release",
     ),
     RepairRoute.POPULATION: (
@@ -251,7 +249,6 @@ RERUN_STAGES: dict[RepairRoute, tuple[str, ...]] = {
         "calibrate",
         "contamination_post",
         "select",
-        "audit",
         "release",
     ),
     # RUNTIME leads with `generate`: it re-derives populations and rewrites only
@@ -266,7 +263,6 @@ RERUN_STAGES: dict[RepairRoute, tuple[str, ...]] = {
         "calibrate",
         "contamination_post",
         "select",
-        "audit",
         "release",
     ),
     RepairRoute.REFERENCE: (
@@ -278,7 +274,6 @@ RERUN_STAGES: dict[RepairRoute, tuple[str, ...]] = {
         "calibrate",
         "contamination_post",
         "select",
-        "audit",
         "release",
     ),
     RepairRoute.FATAL: (),

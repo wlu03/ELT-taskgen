@@ -400,12 +400,12 @@ not participate in selection.
   task is invalidated. Do not update the literal only to match new output;
   resolve the change that moved the hash. It was unchanged when this runbook
   was verified.
-* The pipeline has **15** ledger stages (`engine.STAGE_ORDER`: intake,
+* The pipeline has **14** ledger stages (`engine.STAGE_ORDER`: intake,
   contamination_pre, generate, reference, author, review, attack, gates,
   gates_extract_load, gates_transform, calibrate, contamination_post, select,
-  audit, release). An earlier revision of this document asserted 13, which
-  predated the two per-unit gate stages. The ledger is the authority; a literal
-  in prose is not.
+  release). Earlier revisions asserted 13 (predating the two per-unit gate
+  stages) and 15 (predating the removal of `audit`). The ledger is the
+  authority; a literal in prose is not.
 * The shared acceptance battery has **13** gates (`gates.GATE_NAMES`:
   trusted-solution, determinism, degenerate-zero, required-mutants,
   shortcut-probes, data-sensitivity, info-content, populations-load,
@@ -1207,7 +1207,8 @@ Every ingest command runs
 lists (`eltbench` 100 families, `spider2_dbt` 16, `ade_bench` 4) when the index
 is unarmed. `family:`, `schema:`, `shape:`, `sql:`,
 `fixture:` and `data:` matches are fatal and cause refusal; `schema-table:`,
-`shape-table:`, `deps:` and `text:` matches are borderline (human audit queue).
+`shape-table:`, `deps:` and `text:` matches are borderline: recorded on the
+task, never a refusal.
 
 `schema:` is an exact hash of the sorted (table, column, TYPE) shape of a whole
 schema and `schema-table:` the same per table; `shape:` / `shape-table:` are the
@@ -1568,7 +1569,7 @@ the avoided cost, and the fact that
 Run the suite with nothing else writing to `src/`: several
 tests `ast.parse(inspect.getsource(cli.<fn>))`, and a concurrent edit to
 `cli.py` mid-run makes `linecache` return a mis-sliced span and raises
-`IndentationError` in `tests/test_filters_batch_triage.py`. That error is an
+`IndentationError` in `tests/test_filters_batch.py`. That error is an
 artifact of concurrent editing, not a defect.
 
 The anchor-relocation changes (§R) added 7 tests in

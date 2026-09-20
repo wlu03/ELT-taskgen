@@ -27,7 +27,7 @@ flowchart LR
     L -->|reject/fail/block| O[Precise retained outcome]
     T -. optional .-> D[Empirical calibration]
     D -. optional .-> C1[Post-contamination]
-    C1 -. optional .-> Z[Selection + audit + release]
+    C1 -. optional .-> Z[Selection + release]
     Z -. separate operator process .-> RC[Real-runtime certification<br/>certified difficulty]
 ```
 
@@ -39,7 +39,7 @@ The profiles define different evidence boundaries:
 | `local-ready` | all stages through independent EL and T acceptance |
 | `packaged` | local-ready plus a standalone verified public/private package |
 | `calibrated` | local-ready plus a current empirical solver campaign |
-| `release-ready` | calibrated, post-contamination, selection, and audit |
+| `release-ready` | calibrated, post-contamination, and selection |
 | `release` | release-ready plus a verified immutable corpus release |
 
 Real Airbyte/warehouse/dbt runtime certification is a separate,
@@ -200,7 +200,7 @@ Use `--agent-harness headless` (or
 `ELT_TASKGEN_AGENT_HARNESS=headless`) routes every agentic role, one that
 runs a tool session, to a harness: the author and the repair proposer run
 through Claude Code, and the implementer and loader run through Codex. The
-one-shot seats, the four council critics and audit triage, stay on the API
+one-shot seats, the four council critics, stay on the API
 in both modes. A critic does not call a tool; it answers one forced,
 strict-schema `report_findings` call, which the API sends and a coding-agent
 harness cannot. `--agent-harness api` pins the direct transports. The flag

@@ -282,13 +282,6 @@ roles:
         usd: 0.20
         wall_clock_s: 600
 
-  # Labels audit evidence for a human reviewer; this role cannot approve.
-  audit_triage:
-    provider: anthropic
-    model: claude-sonnet-5
-    max_tokens: 4096
-    effort: medium
-
   # Proposes route-scoped patches. Field allowlists and trial revalidation—not
   # the model—control what may reach the real workspace.
   repair_proposer:

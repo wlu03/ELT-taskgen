@@ -57,7 +57,6 @@ from elt_taskgen.engine import (
 )
 from elt_taskgen.models import (
     AttackKind,
-    AuditApproval,
     CouncilRole,
     DifficultyMeasurement,
     Finding,
@@ -461,20 +460,6 @@ def _workspace_rel(engine: Engine, path: Path) -> str:
     return path.relative_to(engine.workspace).as_posix()
 
 
-def _audit_dir(engine: Engine) -> Path:
-    """Workspace-level human audit queue state, OUTSIDE the per-task reports tree
-    so a repair sweep never clobbers approvals."""
-    return engine.workspace / "audit"
-
-
-def _approval_path(engine: Engine, task_id: str) -> Path:
-    return _audit_dir(engine) / f"{task_id}.approval.json"
-
-
-def _rejection_path(engine: Engine, task_id: str) -> Path:
-    return _audit_dir(engine) / f"{task_id}.rejection.json"
-
-
 def _collision_fingerprint(collision: dict) -> str:
     """Stable id of ONE recorded contamination collision: sha256 over the canonical
     {kind, against, detail}. Approvals bind to these ids, so sign-off coverage is
@@ -488,38 +473,6 @@ def _collision_fingerprint(collision: dict) -> str:
             }
         )
     )
-
-
-def _pending_borderline(
-    engine: Engine, task: TaskIR
-) -> tuple[dict[str, str], str | None]:
-    """Pending borderline (non-fatal) collisions from the recorded post-scan.
-
-    Returns ({fingerprint: detail}, problem). Missing or stale evidence is a
-    problem string: the queue is only trustworthy while the recorded scan is bound
-    to the CURRENT task content hash (fail closed)."""
-    # OBSERVE/OFF: collisions are still detected and recorded; there is
-    # simply nobody to sign off, so nothing queues.
-    from elt_taskgen.verification import contamination as _cont
-    if not _cont.enforcing():
-        return {}, None
-    path = _evidence_dir(engine, task) / "contamination_post.json"
-    if not path.is_file():
-        return {}, "no post-generation contamination evidence (fail closed)"
-    recorded = json.loads(path.read_text(encoding="utf-8"))
-    current = task.content_hash()
-    if recorded.get("task_content_hash") != current:
-        return {}, (
-            "post-generation contamination evidence is stale (bound to "
-            f"{str(recorded.get('task_content_hash'))[:12]}, task is {current[:12]}) "
-            "— re-run gates (fail closed)"
-        )
-    pending = {
-        _collision_fingerprint(c): str(c.get("detail", ""))
-        for c in recorded.get("collisions", [])
-        if not c.get("fatal")
-    }
-    return pending, None
 
 
 def _coverage_payload(engine: Engine, coverage) -> dict:
@@ -3326,7 +3279,6 @@ STAGE_SUBCOMMANDS: dict[str, str] = {
     StageName.GATES_TRANSFORM.value: "validate-t",
     StageName.CALIBRATE.value: "calibrate",
     StageName.SELECT.value: "select",
-    StageName.AUDIT.value: "release",
     StageName.RELEASE.value: "release",
     StageName.CONTAMINATION_POST.value: "release",
 }
@@ -4200,148 +4152,6 @@ def run_select(engine: Engine, task: TaskIR) -> StageOutcome:
     return StageOutcome(VERDICT_PASS, result)
 
 
-def run_audit(engine: Engine, task: TaskIR) -> StageOutcome:
-    """Run audit, passing automatically only when no human review remains.
-
-    Approvals bind the current hash and exact pending collisions. Defects fail;
-    human waits block; current human rejection is fatal.
-    """
-    current = task.content_hash()
-    problems: list[str] = []
-    waiting: list[str] = []
-
-    rejection_path = _rejection_path(engine, task.task_id)
-    if rejection_path.is_file():
-        rejection = json.loads(rejection_path.read_text(encoding="utf-8"))
-        if rejection.get("task_content_hash") == current:
-            return StageOutcome(
-                VERDICT_FATAL,
-                StagePayload(
-                    error="human audit rejected this task: "
-                    + str(rejection.get("reason", "(no reason recorded)"))
-                ),
-            )
-        # A rejection of an earlier identity does not bind the repaired task, which
-        # re-enters the queue on its own merits.
-
-    if not task.license or task.license.lower() == "unspecified":
-        # "A human must resolve it" is a queue wait, not a defect the pipeline can
-        # repair. (It used to keyword-route FATAL off "licens" and reject the task.)
-        waiting.append(
-            "license is unresolved ('unspecified'); a human must resolve it "
-            "(record it on the task and re-ingest, or reject it)"
-        )
-
-    gates_row = engine.latest_report(task.task_id, StageName.TASK_INTEGRITY.value)
-    if (
-        gates_row is None
-        or gates_row.verdict != VERDICT_PASS
-        or gates_row.content_hash != current
-    ):
-        problems.append("no shared task-integrity pass at the current content hash")
-
-    from elt_taskgen.export import release as release_mod
-
-    unit_records = release_mod.variant_acceptance(engine, task)
-    for variant in RLVR_TASK_VARIANTS:
-        record = unit_records[variant.value]
-        if not record.accepted:
-            problems.append(
-                f"required {variant.value} unit is not accepted: "
-                f"{record.refusal_reason}"
-            )
-
-    pending, evidence_problem = _pending_borderline(engine, task)
-    if evidence_problem:
-        problems.append(evidence_problem)
-
-    reviewer = ""
-    approved_at = ""
-    approval_path = _approval_path(engine, task.task_id)
-    if pending:
-        if not approval_path.is_file():
-            waiting.append(
-                f"{len(pending)} borderline collision(s) require human sign-off "
-                f"(run: elt-taskgen audit approve {task.task_id} --reviewer NAME)"
-            )
-        else:
-            try:
-                approval = AuditApproval.model_validate_json(
-                    approval_path.read_text(encoding="utf-8")
-                )
-            except Exception as exc:
-                approval = None
-                waiting.append(f"approval record at {approval_path} is invalid: {exc}")
-            if approval is not None:
-                if approval.task_id != task.task_id:
-                    waiting.append(
-                        f"approval record is for task {approval.task_id!r}, "
-                        f"not {task.task_id!r}"
-                    )
-                elif approval.task_content_hash != current:
-                    waiting.append(
-                        "approval is STALE: bound to content hash "
-                        f"{approval.task_content_hash[:12]}, task is now {current[:12]} "
-                        "— a pre-repair sign-off never carries over; re-review and "
-                        f"re-approve (elt-taskgen audit approve {task.task_id})"
-                    )
-                else:
-                    approved = set(approval.approved_collision_fingerprints)
-                    unapproved = sorted(set(pending) - approved)
-                    extra = sorted(approved - set(pending))
-                    if unapproved:
-                        waiting.append(
-                            f"approval does not cover {len(unapproved)} pending "
-                            "borderline collision(s): "
-                            + ", ".join(fp[:12] for fp in unapproved)
-                        )
-                    if extra:
-                        waiting.append(
-                            f"approval covers {len(extra)} fingerprint(s) that are "
-                            "not pending: " + ", ".join(fp[:12] for fp in extra)
-                            + " — coverage must be exact; re-approve"
-                        )
-                    if not unapproved and not extra:
-                        reviewer = approval.reviewer
-                        approved_at = approval.approved_at
-
-    # DEFECTS OUTRANK THE QUEUE: a task that is not certified cannot be waiting for
-    # a signature, and parking it BLOCKED would hide a repairable defect. The queue
-    # items are still REPORTED in the same message.
-    if problems:
-        return StageOutcome(
-            VERDICT_FAIL, StagePayload(error="; ".join(problems + waiting))
-        )
-    if waiting:
-        return StageOutcome(
-            VERDICT_BLOCKED,
-            StagePayload(
-                error="; ".join(waiting),
-                data={
-                    BLOCKED_ON_KEY: BLOCKED_ON_HUMAN,
-                    "pending": str(len(pending)),
-                },
-            ),
-        )
-
-    data = {"borderline_collisions": str(len(pending)), "license": task.license}
-    if pending:
-        data.update(
-            {
-                "reviewer": reviewer,
-                "approved_at": approved_at,
-                "approval": _workspace_rel(engine, approval_path),
-            }
-        )
-        detail = (
-            f"{len(pending)} borderline collision(s) signed off by {reviewer} "
-            "at the current content hash; license resolved"
-        )
-    else:
-        detail = "audit queue empty: no borderline collisions pending, license resolved"
-    return StageOutcome(VERDICT_PASS, StagePayload(detail=detail, data=data))
-
-
 def _release_names_el_sources(recorded: dict, task: TaskIR) -> bool:
     """Does an existing release manifest carry this task's EL source roots?
 
@@ -5138,7 +4948,6 @@ def build_stage_runners(
         ),
         StageName.CONTAMINATION_POST: run_contamination_post,
         StageName.SELECT: run_select,
-        StageName.AUDIT: run_audit,
         StageName.RELEASE: run_release,
     }
     if echo is None:
@@ -7933,7 +7742,7 @@ def _cmd_pipeline_legacy(args) -> int:
 
     Agent-backed work happens per task through ``CONTAMINATION_POST``. The
     coordinator performs deterministic corpus-wide selection once, records that
-    common decision for selected tasks, audits them, and optionally cuts one
+    common decision for selected tasks, and optionally cuts one
     immutable release. No provider/session object or SQLite connection is shared
     between workers.
     """
@@ -8331,8 +8140,8 @@ def _cmd_pipeline_legacy(args) -> int:
             return 1
 
         # The tentative decision is not published globally until every selected
-        # audit passes and a lock-scoped re-derivation proves that none of its
-        # task/evidence inputs changed in the meantime.
+        # task's selection passes and a lock-scoped re-derivation proves that
+        # none of its task/evidence inputs changed in the meantime.
         selected_set = frozenset(selected)
 
         def run_global_selection(_engine: Engine, task: TaskIR) -> StageOutcome:
@@ -8348,37 +8157,35 @@ def _cmd_pipeline_legacy(args) -> int:
             return StageOutcome(VERDICT_PASS, selection)
 
         coordinator.set_stage_runner(StageName.SELECT, run_global_selection)
-        coordinator.set_stage_runner(StageName.AUDIT, run_audit)
-        audit_rejections: list[tuple[str, str]] = []
-        audit_blocks: list[tuple[str, str]] = []
+        selection_rejections: list[tuple[str, str]] = []
+        selection_blocks: list[tuple[str, str]] = []
         for task_id in selected:
             def locked_global_selection_pre_run(
                 locked_engine: Engine, task: TaskIR
             ) -> None:
-                # A fresh corpus decision must precede a fresh final audit.
-                # Shadow both together; otherwise an older AUDIT pass can sit
-                # before the new SELECT row and appear to approve a decision it
-                # never observed.
-                for stage in (StageName.SELECT, StageName.AUDIT):
-                    row = locked_engine.latest_report(task.task_id, stage.value)
-                    if row is not None and locked_engine.report_is_current(
-                        task, stage, row
-                    )[0]:
-                        _force_stage_rerun(
-                            locked_engine,
-                            task,
-                            stage,
-                            "re-derived by the corpus-wide pipeline selection",
-                        )
+                # A fresh corpus decision must be re-derived under the lock, so
+                # a stale SELECT row cannot appear to endorse a decision it never
+                # observed.
+                stage = StageName.SELECT
+                row = locked_engine.latest_report(task.task_id, stage.value)
+                if row is not None and locked_engine.report_is_current(
+                    task, stage, row
+                )[0]:
+                    _force_stage_rerun(
+                        locked_engine,
+                        task,
+                        stage,
+                        "re-derived by the corpus-wide pipeline selection",
+                    )
 
             try:
                 coordinator.run(
                     task_id,
-                    until=StageName.AUDIT.value,
+                    until=StageName.SELECT.value,
                     pre_run=locked_global_selection_pre_run,
                 )
             except InfrastructureFailure as exc:
-                audit_blocks.append((task_id, str(exc)))
+                selection_blocks.append((task_id, str(exc)))
                 continue
             task = coordinator.load_task(task_id)
             blocked = coordinator.blocked_stage(task_id)
@@ -8386,31 +8193,31 @@ def _cmd_pipeline_legacy(args) -> int:
                 try:
                     detail = str(json.loads(blocked.payload_json).get("error") or "")
                 except (TypeError, ValueError):
-                    detail = "audit is blocked with unreadable evidence"
-                audit_blocks.append((task_id, detail))
+                    detail = "selection is blocked with unreadable evidence"
+                selection_blocks.append((task_id, detail))
                 continue
-            audit = coordinator.latest_report(task_id, StageName.AUDIT.value)
+            select = coordinator.latest_report(task_id, StageName.SELECT.value)
             if coordinator.final_verdict(task_id) == FINAL_REJECTED:
-                detail = "audit rejected this candidate"
-                if audit is not None:
+                detail = "selection rejected this candidate"
+                if select is not None:
                     try:
                         detail = str(
-                            json.loads(audit.payload_json).get("error") or detail
+                            json.loads(select.payload_json).get("error") or detail
                         )
                     except (TypeError, ValueError):
                         pass
-                audit_rejections.append((task_id, detail))
-            elif not coordinator.report_is_current(task, StageName.AUDIT, audit)[0]:
-                audit_blocks.append(
-                    (task_id, "audit did not pass at the current content hash")
+                selection_rejections.append((task_id, detail))
+            elif not coordinator.report_is_current(task, StageName.SELECT, select)[0]:
+                selection_blocks.append(
+                    (task_id, "selection did not pass at the current content hash")
                 )
 
-        if audit_blocks:
-            for task_id, detail in audit_blocks:
+        if selection_blocks:
+            for task_id, detail in selection_blocks:
                 print(f"  {task_id}: {detail}")
             return 2
-        if audit_rejections:
-            for task_id, detail in audit_rejections:
+        if selection_rejections:
+            for task_id, detail in selection_rejections:
                 print(f"  {task_id}: {detail}")
             return 1
 
@@ -8427,8 +8234,9 @@ def _cmd_pipeline_legacy(args) -> int:
                     mode="json"
                 ):
                     raise CliUsageError(
-                        "pipeline selection inputs changed between audit and "
-                        "publication; nothing was published — re-run the pipeline"
+                        "pipeline selection inputs changed between selection "
+                        "and publication; nothing was published — re-run the "
+                        "pipeline"
                     )
 
                 locked_selected = tuple(locked_selection.train) + tuple(
@@ -8457,16 +8265,12 @@ def _cmd_pipeline_legacy(args) -> int:
                             seal_configured_stage,
                         )
 
-                        for configured_stage in (
+                        seal_configured_stage(
+                            coordinator,
+                            task,
                             StageName.SELECT,
-                            StageName.AUDIT,
-                        ):
-                            seal_configured_stage(
-                                coordinator,
-                                task,
-                                configured_stage,
-                                configured_readiness_spec,
-                            )
+                            configured_readiness_spec,
+                        )
 
                 selection = locked_selection
                 serialized_selection = (
@@ -12938,7 +12742,7 @@ def cmd_pipeline_status(args) -> int:
                 return task.empirically_calibrated
             if report.profile is ReadinessProfile.RELEASE_READY:
                 return task.release_ready
-            # RELEASE_READY stops at the audit gate. A release-profile status
+            # RELEASE_READY stops at the selection gate. A release-profile status
             # must additionally revalidate the immutable RELEASE ledger row;
             # runtime certification remains an independent, opt-in check.
             return task.release_ready and any(
@@ -14737,332 +14541,6 @@ def cmd_runtime_certify_difficulty(args) -> int:
     return 0
 
 
-def _parse_labels(pairs: list[str] | None) -> dict[str, str]:
-    labels: dict[str, str] = {}
-    for pair in pairs or []:
-        if "=" not in pair:
-            raise CliUsageError(
-                f"--labels entries must be key=value (got {pair!r})"
-            )
-        key, value = pair.split("=", 1)
-        labels[key] = value
-    return labels
-
-
-def cmd_audit_list(args) -> int:
-    """Print the pending human audit queue: every registered task with borderline
-    collisions recorded at its current hash, with the fingerprints a reviewer would
-    be signing off on."""
-    engine = _open_engine(Path(args.workspace).resolve())
-    try:
-        tasks_root = engine.workspace / "tasks"
-        rows = 0
-        task_dirs = sorted(tasks_root.iterdir()) if tasks_root.is_dir() else []
-        for tdir in task_dirs:
-            if not (tdir / "task_ir.json").is_file():
-                continue
-            task = engine.load_task(tdir.name)
-            current = task.content_hash()
-            pending, problem = _pending_borderline(engine, task)
-            if problem:
-                pending = {}
-            # Dual-build disagreements queue for human adjudication too
-            # (reference/independent.py records them bound to a hash).
-            from elt_taskgen.reference import independent
-
-            adjudication = independent.load_adjudication(
-                engine.workspace, task.task_id
-            )
-            adj_pending = (
-                adjudication is not None
-                and adjudication.get("task_content_hash") == current
-            )
-            # A repair the proposer ABSTAINED on queues for a human too
-            # (review/repair_proposer.py `queue_adjudication`, bound to a hash).
-            repair_pending = _pending_repair_adjudication(engine, task)
-            # A REJECTED council proposal at the current hash is listed for
-            # humans too (roadmap Phase 3 item 2; SoT T3 `project_proposal_
-            # matrix`; A24): its post-session matrix projection — booleans
-            # only — is rendered here and nowhere a model reads.
-            rejected_matrices = _rejected_proposal_matrices(engine, task)
-            if (
-                not pending
-                and not adj_pending
-                and repair_pending is None
-                and not rejected_matrices
-            ):
-                continue
-            approval_path = _approval_path(engine, task.task_id)
-            status = "none"
-            if _rejection_path(engine, task.task_id).is_file():
-                rejection = json.loads(
-                    _rejection_path(engine, task.task_id).read_text(encoding="utf-8")
-                )
-                if rejection.get("task_content_hash") == current:
-                    status = "rejected"
-            if status == "none" and approval_path.is_file():
-                try:
-                    approval = AuditApproval.model_validate_json(
-                        approval_path.read_text(encoding="utf-8")
-                    )
-                    status = (
-                        "current"
-                        if approval.task_content_hash == current
-                        and set(approval.approved_collision_fingerprints) == set(pending)
-                        else "stale"
-                    )
-                except Exception:
-                    status = "invalid"
-            rows += 1
-            print(
-                f"{task.task_id}  hash={current[:12]}  pending={len(pending)}  "
-                f"approval={status}"
-            )
-            for fp in sorted(pending):
-                print(f"  {fp[:16]}  {pending[fp]}")
-            if adj_pending:
-                # NOT A PENDING SIGN-OFF: a dual-build disagreement is a hard GATE
-                # failure that no AuditApproval clears and no verb adjudicates.
-                # Listing it beside sign-off items told operators to wait for a
-                # decision they had no way to record.
-                print(
-                    "  DUAL-BUILD DISAGREEMENT (not a sign-off item — no "
-                    "approval can clear it; the gates refuse this task until "
-                    "the trusted reference or the independent build is fixed): "
-                    + str(adjudication.get("detail", "(no detail recorded)"))
-                )
-            if repair_pending is not None:
-                for line in _repair_adjudication_lines(repair_pending):
-                    print(line)
-            for line in _rejected_proposal_matrix_lines(rejected_matrices):
-                print(line)
-            triage = _load_triage(engine, task.task_id)
-            if triage is not None and triage.get("task_content_hash") == current:
-                labels = triage.get("per_axis_labels") or {}
-                print(
-                    "  TRIAGE (advisory, NOT an approval)  flag_for_human="
-                    f"{str(bool(triage.get('flag_for_human'))).lower()}  "
-                    + "  ".join(f"{k}={labels[k]}" for k in sorted(labels))
-                )
-        if rows == 0:
-            print(
-                "audit queue empty: no task has pending borderline collisions, "
-                "dual-build adjudications or repair adjudications"
-            )
-        return 0
-    finally:
-        engine.close()
-
-
-def _rejected_proposal_matrices(engine: Engine, task: TaskIR) -> list[tuple[str, dict]]:
-    """`(case_name, projection_matrix)` for every `rejected_proposal.json`
-    under the task's `attacks/` tree bound to the task's CURRENT content
-    hash (`verification/attacks._record_rejected_proposal`), in case-name
-    order. The matrix is the POST-SESSION `project_proposal_matrix` record
-    (booleans only); a record written before the field existed is rendered
-    from its `projection` sibling. Never the raw `measured` rewards."""
-    from elt_taskgen.verification import attacks as attacks_mod
-
-    attacks_root = engine.task_dir(task.task_id) / "attacks"
-    if not attacks_root.is_dir():
-        return []
-    current = task.content_hash()
-    out: list[tuple[str, dict]] = []
-    for case_dir in sorted(attacks_root.iterdir()):
-        path = case_dir / attacks_mod.REJECTED_PROPOSAL_FILENAME
-        if not path.is_file():
-            continue
-        try:
-            record = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError, ValueError):
-            continue
-        if not isinstance(record, dict) or record.get("task_content_hash") != current:
-            continue
-        matrix = record.get("projection_matrix")
-        if not isinstance(matrix, dict):
-            projection = record.get("projection")
-            if not isinstance(projection, dict):
-                continue
-            matrix = {
-                str(projection.get("finding_id", "")): {
-                    "promoted": bool(projection.get("promoted", False)),
-                    "per_population": dict(projection.get("per_population") or {}),
-                    "fidelity_ok": bool(projection.get("fidelity_ok", False)),
-                }
-            }
-        out.append((case_dir.name, matrix))
-    return out
-
-
-def _rejected_proposal_matrix_lines(matrices: list[tuple[str, dict]]) -> list[str]:
-    """The `audit list` rendering of the post-session proposal matrix: one
-    line per rejected proposal naming the case, the finding, the promoted
-    and fidelity booleans and, per population, the adversary's own
-    prediction beside the measured pass boolean. Booleans and public names
-    only — no reward, no reason sentence."""
-    lines: list[str] = []
-    for case_name, matrix in matrices:
-        for finding_id in sorted(matrix):
-            entry = matrix[finding_id] if isinstance(matrix[finding_id], dict) else {}
-            per_population = entry.get("per_population") or {}
-            cells = "  ".join(
-                f"{pop}=predicted:{str(bool(cell.get('predicted'))).lower()}/"
-                f"measured_pass:{str(bool(cell.get('measured_pass'))).lower()}"
-                for pop, cell in sorted(per_population.items())
-                if isinstance(cell, dict)
-            )
-            lines.append(
-                "  REJECTED PROPOSAL (not a sign-off item; the post-session matrix "
-                f"projection for humans)  case={case_name}  finding={finding_id}  "
-                f"promoted={str(bool(entry.get('promoted'))).lower()}  "
-                f"fidelity_ok={str(bool(entry.get('fidelity_ok'))).lower()}"
-                + (f"  {cells}" if cells else "")
-            )
-    return lines
-
-
-# Audit triage writes advisory labels only. It cannot create or modify approval
-# records, and its vocabulary contains no acceptance state.
-
-TRIAGE_ADVISORY_NOTE = (
-    "ADVISORY ONLY — audit triage never approves. A sign-off exists only when "
-    "a named human runs 'elt-taskgen audit approve', which writes an "
-    "AuditApproval bound to the task content hash; this record is not read by "
-    "that command or by the audit stage."
-)
-
-
-def _triage_path(engine: Engine, task_id: str) -> Path:
-    return _audit_dir(engine) / f"{task_id}.triage.json"
-
-
-def _load_triage(engine: Engine, task_id: str) -> dict | None:
-    path = _triage_path(engine, task_id)
-    if not path.is_file():
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, ValueError):
-        return None
-
-
-def _pending_repair_adjudication(engine: Engine, task: TaskIR) -> dict | None:
-    """The repair proposer's NEEDS_ADJUDICATION entry for `task`
-    (`<ws>/audit/<task>.repair_adjudication.json`, written by
-    `review.repair_proposer.queue_adjudication` when every proposal abstained),
-    if one is bound to the task's CURRENT content hash and has not been retired.
-    Sequence-bound records remain visible from their triggering FAIL (including
-    a crash before BLOCKED is appended) until a later same-hash PASS or FATAL;
-    legacy unbound records retain the latest-BLOCKED rule.  A moved identity or
-    rejected task also retires the entry without deleting append-only history."""
-    from elt_taskgen.review import repair_proposer as proposer_mod
-
-    record = proposer_mod.load_repair_adjudication(engine.workspace, task.task_id)
-    if record is None or record.get("task_content_hash") != task.content_hash():
-        return None
-    if task.status is TaskStatus.REJECTED:
-        return None
-    stage = record.get("stage")
-    if not isinstance(stage, str) or not stage:
-        return None
-    try:
-        latest = engine.latest_report(task.task_id, stage)
-    except ValueError:
-        # The adjudication reader is intentionally raw/backward-compatible;
-        # malformed historical stage names are not live queue entries.
-        return None
-    source_report_id = record.get("source_report_id")
-    if isinstance(source_report_id, int) and not isinstance(source_report_id, bool):
-        # New records bind to the FAIL written immediately before proposer
-        # dispatch. The queue remains visible if the process dies before the
-        # subsequent BLOCKED append; only a demonstrably later same-hash PASS
-        # retires it.
-        history = tuple(
-            report
-            for report in engine.report_history(task.task_id, stage)
-            if report.content_hash == task.content_hash()
-        )
-        source = next(
-            (report for report in history if report.id == source_report_id), None
-        )
-        if source is None or source.verdict != VERDICT_FAIL:
-            return None
-        if any(
-            report.id > source_report_id
-            and report.verdict in (VERDICT_PASS, VERDICT_FATAL)
-            for report in history
-        ):
-            return None
-        return record
-    # Backward-compatible records predate sequence binding. They are live only
-    # at the explicit BLOCKED resume point, preserving their historical rule.
-    if latest is None or latest.content_hash != task.content_hash():
-        return None
-    if latest.verdict != VERDICT_BLOCKED:
-        return None
-    return record
-
-
-def _audit_queue(
-    engine: Engine, task_id: str | None = None, *, include_repair: bool = False
-) -> list[tuple]:
-    """Queue entries: (task, pending borderline collisions, adjudication|None).
-
-    Same predicate as `audit list`: borderline collisions recorded at the task's
-    current hash, or a dual-build adjudication bound to that hash. With
-    `include_repair`, a pending repair adjudication (`_pending_repair_adjudication`)
-    queues the task too and every entry gains a fourth element, the repair
-    record or None; the default keeps the three-tuple the triage reads."""
-    from elt_taskgen.reference import independent
-
-    tasks_root = engine.workspace / "tasks"
-    entries: list[tuple] = []
-    task_dirs = sorted(tasks_root.iterdir()) if tasks_root.is_dir() else []
-    for tdir in task_dirs:
-        if not (tdir / "task_ir.json").is_file():
-            continue
-        if task_id is not None and tdir.name != task_id:
-            continue
-        task = engine.load_task(tdir.name)
-        current = task.content_hash()
-        pending, problem = _pending_borderline(engine, task)
-        if problem:
-            pending = {}
-        adjudication = independent.load_adjudication(engine.workspace, task.task_id)
-        if adjudication is not None and adjudication.get("task_content_hash") != current:
-            adjudication = None
-        repair = _pending_repair_adjudication(engine, task) if include_repair else None
-        if not pending and adjudication is None and repair is None:
-            continue
-        entries.append(
-            (task, pending, adjudication, repair) if include_repair else (task, pending, adjudication)
-        )
-    return entries
-
-
-def _repair_adjudication_lines(record: dict) -> list[str]:
-    """`audit list` rendering of one pending repair adjudication: NOT a sign-off
-    item (no approval clears it; the engine already took its bounded round) —
-    the stage, route, sessions/attempts and their rejection codes, so the human
-    knows what the proposer could not repair and why."""
-    attempts = [a for a in (record.get("attempts") or ()) if isinstance(a, dict)]
-    codes = sorted(
-        {
-            str(a.get("rejection_code") or a.get("error_type") or "")
-            for a in attempts
-            if (a.get("rejection_code") or a.get("error_type"))
-        }
-    )
-    lines = [
-        "  REPAIR ADJUDICATION (not a sign-off item — the repair proposer "
-        f"abstained; status={record.get('status', '?')} stage={record.get('stage', '?')} "
-        f"route={record.get('route', '?')} attempts={len(attempts)}"
-        + (f" codes={','.join(codes)}" if codes else "")
-        + "): "
-        + str(record.get("detail") or "(no detail recorded)")
-    ]
-    return lines
-
 
 def _projected_gate_lines(task: TaskIR, payload: dict) -> list[str]:
     """The gate rows of the triage view: `{gate, passed, code}` and nothing else.
@@ -15099,233 +14577,6 @@ def _projected_adjudication_lines(task: TaskIR, adjudication: dict) -> list[str]
     wire = projection.serialize_for_transport(diag, task=task, package=None)
     projection.assert_value_free(wire.encode("utf-8"), task=task, route=None)
     return [f"  code: {diag.code}"]
-
-
-def _triage_view(engine: Engine, task: TaskIR, pending: dict, adjudication) -> str:
-    """The audit_triage user prompt: the full bundle + projected gate rows + findings.
-
-    Deterministic text (sorted, no wall clock) so the transcript key is stable and a
-    triage pass replays offline like any other role call. Gate evidence is
-    PROJECTED (`{gate, passed, code}` through `_projected_gate_lines`): the role
-    is not shown gold, counts, rewards or paths. A pending dual-build record is
-    likewise reduced to status plus one value-free code, and the prompt's claim
-    to that effect is true by construction."""
-    lines: list[str] = [
-        "AUDIT QUEUE ENTRY — advisory triage",
-        f"task_id: {task.task_id}",
-        f"content_hash: {task.content_hash()}",
-        f"family_id: {task.family_id}",
-        f"origin: {task.origin.value}",
-        f"license: {task.license}",
-        f"attribution: {task.attribution}",
-        "",
-        "SOLVER-VISIBLE PROSE:",
-        task.solver_prompt or "(none authored)",
-        "",
-        "SOURCE TABLES:",
-    ]
-    backends = {b.table: b.backend.value for b in task.backends}
-    for table in sorted(task.tables, key=lambda t: t.name):
-        cols = ", ".join(f"{c.name}:{c.type.value}" for c in table.columns)
-        lines.append(
-            f"  {table.name} [{backends.get(table.name, '?')}] ({cols})"
-        )
-    lines.append("")
-    lines.append("MARTS:")
-    for mart in sorted(task.marts, key=lambda m: m.name):
-        lines.append(f"  {mart.name} — grain: {mart.grain}")
-        lines.append(f"    keys: {', '.join(mart.key_columns)}")
-        for column in mart.columns:
-            lines.append(f"    {column.name}:{column.type.value} — {column.description}")
-        for i, op in enumerate(mart.plan.ops):
-            lines.append(f"    rule {i + 1} [{op.kind.value}]: {op.description}")
-
-    lines.append("")
-    lines.append("GATE EVIDENCE (latest recorded battery):")
-    gates_row = engine.latest_report(task.task_id, StageName.GATES.value)
-    if gates_row is None:
-        lines.append("  (no gates report recorded)")
-    else:
-        stale = "" if gates_row.content_hash == task.content_hash() else " STALE"
-        lines.append(f"  verdict: {gates_row.verdict}{stale}")
-        lines.extend(_projected_gate_lines(task, json.loads(gates_row.payload_json)))
-
-    lines.append("")
-    lines.append("COUNCIL FINDINGS (latest recorded review):")
-    review_row = engine.latest_report(task.task_id, StageName.REVIEW.value)
-    if review_row is None:
-        lines.append("  (no review report recorded)")
-    else:
-        findings = json.loads(review_row.payload_json).get("findings", [])
-        if not findings:
-            lines.append("  (none)")
-        for finding in findings:
-            lines.append(
-                f"  [{finding.get('severity')}] {finding.get('role')}: "
-                f"{finding.get('summary')}"
-            )
-
-    lines.append("")
-    lines.append("PENDING BORDERLINE CONTAMINATION COLLISIONS:")
-    if not pending:
-        lines.append("  (none)")
-    for fingerprint in sorted(pending):
-        lines.append(f"  {fingerprint[:16]}  {pending[fingerprint]}")
-
-    lines.append("")
-    lines.append("DUAL-BUILD ADJUDICATION:")
-    if adjudication is None:
-        lines.append("  (none)")
-    else:
-        lines.append(f"  status: {adjudication.get('status', '?')}")
-        lines.extend(_projected_adjudication_lines(task, adjudication))
-
-    lines.append("")
-    lines.append(
-        "Label every axis and say whether a human must look. You cannot "
-        "approve this task; nothing you write clears it."
-    )
-    return "\n".join(lines)
-
-
-def cmd_triage(args, provider=None) -> int:
-    """Advisory triage over the audit queue (labels only — never an approval)."""
-    from elt_taskgen.review import providers as providers_mod
-    from elt_taskgen.review.tools import projection as projection_mod
-
-    workspace = Path(args.workspace).resolve()
-    engine = _open_engine(workspace)
-    try:
-        if provider is None:
-            provider = _resolve_provider(args, workspace)
-        entries = _audit_queue(engine, getattr(args, "task_id", None) or None)
-        if not entries:
-            print(
-                "audit queue empty: nothing to triage (no pending borderline "
-                "collisions or dual-build adjudications)"
-            )
-            return 0
-        for task, pending, adjudication in entries:
-            try:
-                view = _triage_view(engine, task, pending, adjudication)
-            except projection_mod.DiagnosticTripwire as exc:
-                # A producer leaked into the view: nothing was sent. A harness
-                # fault — could not measure (2), never a task verdict.
-                print(f"triage could not measure {task.task_id}: {exc}")
-                return 2
-            try:
-                text = provider.complete(providers_mod.AUDIT_TRIAGE_ROLE, view)
-                advice = providers_mod.parse_triage_response(text)
-            except (
-                providers_mod.TranscriptMissingError,
-                providers_mod.MissingCredentialsError,
-                providers_mod.BudgetExceededError,
-            ) as exc:
-                print(f"triage unavailable for {task.task_id}: {exc}")
-                return 1
-            except providers_mod.ProviderProtocolError as exc:
-                # The measurement could not be TAKEN (malformed provider
-                # output): exit 2, not 1 — a protocol fault is not a verdict
-                # on the task, and nothing advisory is written.
-                print(f"triage could not measure {task.task_id}: {exc}")
-                return 2
-            record = {
-                "task_id": task.task_id,
-                "task_content_hash": task.content_hash(),
-                "role": providers_mod.AUDIT_TRIAGE_ROLE,
-                "advisory": True,
-                "approves": False,
-                # Same vocabulary as AuditApproval.per_axis_labels, so a human can
-                # carry a reading into 'audit approve' — the carrying is theirs.
-                "per_axis_labels": dict(sorted(advice.labels.items())),
-                "flag_for_human": bool(advice.flag_for_human),
-                "rationale": advice.rationale,
-                "pending_collision_fingerprints": sorted(pending),
-                "adjudication_pending": adjudication is not None,
-                "note": TRIAGE_ADVISORY_NOTE,
-            }
-            path = _triage_path(engine, task.task_id)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(readable_json(record), encoding="utf-8")
-            labels = "  ".join(
-                f"{axis}={record['per_axis_labels'][axis]}"
-                for axis in sorted(record["per_axis_labels"])
-            )
-            print(
-                f"{task.task_id}  hash={task.content_hash()[:12]}  "
-                f"flag_for_human={str(record['flag_for_human']).lower()}"
-            )
-            print(f"  labels: {labels}")
-            print(f"  advisory record: {path}")
-        print(
-            "\ntriage is ADVISORY: no approval was written. A human must run "
-            "'elt-taskgen audit approve' to sign anything off."
-        )
-        return 0
-    finally:
-        engine.close()
-
-
-def cmd_audit_approve(args) -> int:
-    """Write an AuditApproval BOUND to the task's current content hash and the
-    exact pending borderline collision set (computed here, never hand-typed)."""
-    from datetime import datetime, timezone
-
-    try:
-        labels = _parse_labels(args.labels)
-    except ValueError as exc:
-        # A malformed --labels pair is a USAGE error, not a rejected task.
-        print(f"error: {exc}")
-        return 2
-    engine = _open_engine(Path(args.workspace).resolve())
-    try:
-        task = engine.load_task(args.task_id)
-        pending, problem = _pending_borderline(engine, task)
-        if problem:
-            print(f"cannot approve: {problem}")
-            return 1
-        approval = AuditApproval(
-            task_id=task.task_id,
-            task_content_hash=task.content_hash(),
-            approved_collision_fingerprints=tuple(sorted(pending)),
-            per_axis_labels=labels,
-            reviewer=args.reviewer,
-            approved_at=args.approved_at
-            or datetime.now(timezone.utc).isoformat(),
-        )
-        path = _approval_path(engine, task.task_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(readable_json(approval.model_dump(mode="json")), encoding="utf-8")
-        _rejection_path(engine, task.task_id).unlink(missing_ok=True)
-        print(
-            f"approval written: {path}\n"
-            f"  reviewer={approval.reviewer}  bound_hash={approval.task_content_hash[:12]}  "
-            f"fingerprints={len(pending)}"
-        )
-        return 0
-    finally:
-        engine.close()
-
-
-def cmd_audit_reject(args) -> int:
-    """Record a human rejection bound to the current content hash; the audit
-    stage turns it into a fatal verdict (task rejected)."""
-    engine = _open_engine(Path(args.workspace).resolve())
-    try:
-        task = engine.load_task(args.task_id)
-        record = {
-            "task_id": task.task_id,
-            "task_content_hash": task.content_hash(),
-            "reason": args.reason,
-        }
-        path = _rejection_path(engine, task.task_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(readable_json(record), encoding="utf-8")
-        _approval_path(engine, task.task_id).unlink(missing_ok=True)
-        print(f"rejection recorded: {path}")
-        return 0
-    finally:
-        engine.close()
 
 
 def _stamped_records(transcripts: Path):
@@ -17216,21 +16467,6 @@ def build_parser() -> argparse.ArgumentParser:
     rp.set_defaults(func=cmd_runtime_certify_difficulty)
 
     p = sub.add_parser(
-        "triage",
-        parents=[common],
-        help=(
-            "ADVISORY audit triage: label queued tasks for a human reviewer "
-            "(never approves — only 'audit approve' signs anything off)"
-        ),
-    )
-    p.add_argument(
-        "--task-id",
-        default=None,
-        help="triage one task (default: every task in the audit queue)",
-    )
-    p.set_defaults(func=cmd_triage)
-
-    p = sub.add_parser(
         "admission",
         help="council admission records: audit what ran under a (revoked) admission",
     )
@@ -17257,48 +16493,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     pa.set_defaults(func=cmd_admission_audit, container_allow=("council",))
-
-    p = sub.add_parser(
-        "audit", help="human audit queue: list pending sign-offs, approve, reject"
-    )
-    audit_sub = p.add_subparsers(dest="audit_command", required=True)
-
-    pa = audit_sub.add_parser(
-        "list",
-        parents=[common],
-        help="pending borderline collisions per task, with fingerprints + hashes",
-    )
-    pa.set_defaults(func=cmd_audit_list)
-
-    pa = audit_sub.add_parser(
-        "approve",
-        parents=[common],
-        help="write an AuditApproval bound to the task's CURRENT content hash",
-    )
-    pa.add_argument("task_id")
-    pa.add_argument("--reviewer", required=True, help="human reviewer name (recorded)")
-    pa.add_argument(
-        "--labels",
-        nargs="*",
-        default=None,
-        metavar="K=V",
-        help="per-axis review labels, e.g. --labels license=ok risk=low",
-    )
-    pa.add_argument(
-        "--approved-at",
-        default=None,
-        help="ISO-8601 approval time (default: current UTC time)",
-    )
-    pa.set_defaults(func=cmd_audit_approve)
-
-    pa = audit_sub.add_parser(
-        "reject",
-        parents=[common],
-        help="record a human rejection bound to the CURRENT content hash (fatal)",
-    )
-    pa.add_argument("task_id")
-    pa.add_argument("--reason", required=True, help="why the task is rejected")
-    pa.set_defaults(func=cmd_audit_reject)
 
     # RE-INGEST IS AN OPERATOR DECISION, NOT A SIDE EFFECT: two extractions of one
     # source can share a task_id with different CONTENT, and overwriting left every

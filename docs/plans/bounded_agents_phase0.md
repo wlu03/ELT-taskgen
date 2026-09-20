@@ -142,7 +142,7 @@ reward on every population). Contract tests:
 `test_triage_protocol_error_exits_2_not_1`,
 `test_triage_sentinel_property_zero_private_sentinels`,
 `test_triage_sentinel_property_holds_on_demo_and_runs_drives`
-(tests/test_filters_batch_triage.py);
+(tests/test_filters_batch.py);
 `test_tripwire_halts_as_infrastructure_reward_none`
 (tests/test_engine_repair.py);
 `test_proposal_failure_route_ignores_critic_route_hint` (tests/test_cli.py).
@@ -201,7 +201,7 @@ tests: `test_taxonomy_names_match_the_sot`,
 `test_one_shot_proposer_harness_fault_is_a_pinned_c7_deviation`
 (tests/test_repair_proposer.py); `test_infra_marker_walks_cause_and_context`
 (tests/test_engine_repair.py); `test_triage_protocol_error_exits_2_not_1`
-(tests/test_filters_batch_triage.py);
+(tests/test_filters_batch.py);
 `test_infrastructure_failure_exits_2_and_rejects_nothing` (tests/test_cli.py)
 stays green.
 
@@ -338,7 +338,7 @@ tool path policy deny `runs/` and `*_credential.json`. `docs/experiments/`
 joined `CURRENT_DOCS` and the budget guidance is one number everywhere it is
 stated. Contract tests:
 `test_proposer_prompt_allowlists_match_code_both_directions`
-(tests/test_prompts_repair_triage.py);
+(tests/test_prompts_repair.py);
 `test_calibration_cache_misses_when_k_effort_max_tokens_or_instrument_change`,
 `test_one_definition_of_trivial`,
 `test_legacy_weakest_tier_trivial_flag_is_retired` (tests/test_calibration.py);
@@ -442,8 +442,10 @@ each is pinned by a test so it cannot drift silently.
 * **Finding 23 — `audit_triage` cut-over (roadmap 0.B).** The
   `AUDIT_TRIAGE_SYSTEM` text and `_triage_view` bytes changed (gate rows
   projected to codes, adjudication detail replaced by a code), so triage
-  transcripts recorded before it miss; `elt-taskgen triage` exits 2 on
-  `ProviderProtocolError` where the baseline let it propagate. Pinned by
+  transcripts recorded before it miss; the `triage` subcommand exited 2 on
+  `ProviderProtocolError` where the baseline let it propagate. (The
+  `audit_triage` role and that subcommand were removed with the audit stage;
+  this finding is a historical record.) Pinned by
   `test_triage_view_uses_projected_gate_rows` and
   `test_triage_protocol_error_exits_2_not_1`.
 * **Finding 24 — a custom `--agents-config` is the hashed document

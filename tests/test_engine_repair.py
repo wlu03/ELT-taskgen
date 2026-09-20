@@ -189,7 +189,6 @@ class TestLedger(EngineTestCase):
                 "calibrate",
                 "contamination_post",
                 "select",
-                "audit",
                 "release",
             ],
         )
@@ -679,7 +678,7 @@ class TestFailureRouting(unittest.TestCase):
 
     def test_licensing_evidence_is_fatal_anywhere(self):
         self.assertIs(
-            repair.route_for_failure("audit", self._p("license mismatch on source repo")),
+            repair.route_for_failure("select", self._p("license mismatch on source repo")),
             RepairRoute.FATAL,
         )
 
@@ -1006,7 +1005,6 @@ class TestApplyRepair(EngineTestCase):
             "calibrate",
             "contamination_post",
             "select",
-            "audit",
             "release",
         ):
             self.assertEqual(
