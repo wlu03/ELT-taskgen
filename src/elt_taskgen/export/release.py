@@ -1125,6 +1125,7 @@ def _ship_combined_task(
     public_sources = dst_public / "sources"
     if public_sources.is_dir():
         shutil.rmtree(public_sources)
+    _mirror_root_destination(dst_public)
     assert_public_runtime_shape(dst_public)
     assert_public_runtime_tree_clean(task, dst_public)
 
@@ -1134,6 +1135,36 @@ def _ship_combined_task(
             raise ValueError(f"task {tid!r}: duplicate private oracle destination")
         shutil.copytree(oracle_source, oracle_dest)
     return tuple(shipped), acceptance
+
+
+
+def _mirror_root_destination(public_dir: Path) -> None:
+    """Give the ROOT destination a `destinations/<name>/` directory too.
+
+    A package built before this rule ships the root destination only at the
+    bundle root, so `destinations/` lists the other two and a reader cannot
+    tell which warehouse the root uses. The release copies that tree and then
+    pins its own checksums, so the mirror is added here and covered by them.
+    Bundles that ship a single destination have no `destinations/` directory
+    and are left alone.
+    """
+    from elt_taskgen.export.eltbench import (
+        EXTRA_DESTINATIONS_DIRNAME,
+        write_root_destination,
+    )
+
+    extras = public_dir / EXTRA_DESTINATIONS_DIRNAME
+    if not extras.is_dir():
+        return
+    config_path = public_dir / "config.yaml"
+    if not config_path.is_file():
+        return
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    for name in ("snowflake", "databricks", "redshift"):
+        if name in config:
+            if not (extras / name).is_dir():
+                write_root_destination(public_dir, name, config)
+            return
 
 
 def _read_json(path: Path) -> Any:

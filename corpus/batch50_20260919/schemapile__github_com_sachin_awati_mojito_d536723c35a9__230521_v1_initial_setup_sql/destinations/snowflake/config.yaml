@@ -1,0 +1,113 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    snowflake_definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/asset_integrity_checker.jsonl
+    sync_mode: full_refresh_append
+    table: asset_integrity_checker
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/asset_integrity_checker_aud.jsonl
+    sync_mode: full_refresh_append
+    table: asset_integrity_checker_aud
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/asset_text_unit.jsonl
+    sync_mode: full_refresh_append
+    table: asset_text_unit
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/authority.jsonl
+    sync_mode: full_refresh_append
+    table: authority
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/drop.jsonl
+    sync_mode: full_refresh_append
+    table: drop
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/group_authorities.jsonl
+    sync_mode: full_refresh_append
+    table: group_authorities
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/groups.jsonl
+    sync_mode: full_refresh_append
+    table: groups
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/repository_locale_aud.jsonl
+    sync_mode: full_refresh_append
+    table: repository_locale_aud
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/translation_kit.jsonl
+    sync_mode: full_refresh_append
+    table: translation_kit
+  - path: s3://schemapile--github-com-sachin-awati-mojito-fcf8916701dc-bucket/user.jsonl
+    sync_mode: full_refresh_append
+    table: user
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - asset
+    - asset_extraction
+    - asset_text_unit_to_tm_text_unit
+    - group_members
+    - locale
+    - repository
+    - repository_aud
+    - revchanges
+    - revinfo
+    - tm_text_unit_current_variant
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_sachin_awati_mojito_fcf8916701dc/pollable_task.csv
+  sync_mode: full_refresh_append
+  table: pollable_task
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_sachin_awati_mojito_fcf8916701dc/tm.csv
+  sync_mode: full_refresh_append
+  table: tm
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_sachin_awati_mojito_fcf8916701dc/tm_text_unit.csv
+  sync_mode: full_refresh_append
+  table: tm_text_unit
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_sachin_awati_mojito_fcf8916701dc/tm_text_unit_variant.csv
+  sync_mode: full_refresh_append
+  table: tm_text_unit_variant
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_sachin_awati_mojito_fcf8916701dc
+    sync_mode: full_refresh_append
+    tables:
+    - repository_locale_statistic
+    - repository_statistic
+    - translation_kit_not_found_text_unit_ids
+postgres:
+  config:
+    database: schemapile__github_com_sachin_awati_mojito_fcf8916701dc
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - repository_locale
+    - tm_text_unit_current_variant_aud
+    - tm_text_unit_variant_comment
+    - translation_kit_text_unit
+    user: postgres
+snowflake:
+  config:
+    account: ''
+    database: schemapile__github_com_sachin_awati_mojito_fcf8916701dc
+    password: ''
+    role: ''
+    schema: AIRBYTE_SCHEMA
+    username: ''
+    warehouse: ''

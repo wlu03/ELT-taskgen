@@ -1867,6 +1867,38 @@ def write_extra_destinations(
     return written
 
 
+def write_root_destination(
+    public_dir: Path, selected: Destination | str, config: Mapping[str, Any]
+) -> None:
+    """Mirror the ROOT destination under `destinations/<name>/` as well.
+
+    The root already carries one destination's `config.yaml` and credential
+    template, so `destinations/` used to hold only the other two and a reader
+    could not tell which warehouse the root was. Every shipped destination now
+    has a directory of the same shape; the root files stay where they are, so
+    a solver that never opens `destinations/` is unaffected. A bundle that
+    ships ONE destination still has no `destinations/` directory at all.
+    """
+    selected = normalize_destination(selected)
+    contract = destination_contract(selected)
+    target = public_dir / EXTRA_DESTINATIONS_DIRNAME / selected.value
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "config.yaml").write_text(_dump_yaml(dict(config)))
+    (target / contract.credential_filename).write_text(
+        json.dumps(_DESTINATION_CREDENTIAL_TEMPLATES[selected], indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+    (target / "README.md").write_text(
+        f"# {selected.value} destination\n\n"
+        f"This task's destination: the bundle root already uses {selected.value}, "
+        "and this `config.yaml` and credential template are copies of the ones "
+        "there. It exists so every shipped destination has a directory of the "
+        "same shape.\n",
+        encoding="utf-8",
+    )
+
+
 def export_task(
     task: TaskIR,
     gold: GoldLike,
@@ -1933,6 +1965,8 @@ def export_task(
             [d for d in extra_destinations if normalize_destination(d) is not selected_destination],
             flat_files_base_url=resolved_base,
         )
+        if extra_configs:
+            write_root_destination(stage_public, selected_destination, config)
         schemas_dir = stage_public / "schemas"
         schemas_dir.mkdir()
         for table in task.tables:
@@ -2679,7 +2713,7 @@ def emit_variant(
                     destination=destination,
                 )
                 (stage_task / "config.yaml").write_text(_dump_yaml(config))
-                write_extra_destinations(
+                if write_extra_destinations(
                     stage_task,
                     task,
                     [
@@ -2687,7 +2721,8 @@ def emit_variant(
                         if normalize_destination(d) is not normalize_destination(destination)
                     ],
                     flat_files_base_url=flat_files_base_url,
-                )
+                ):
+                    write_root_destination(stage_task, destination, config)
                 (stage_task / EL_DOCUMENTATION_FILENAME).write_text(
                     el_documentation(task)
                 )

@@ -1,0 +1,34 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    snowflake_definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+    username: ''
+    workspace_id: ''
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - alleles
+    - measurement_sources
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: synsql__biological_data_analysis_specifical_f5849dc70415
+    sync_mode: full_refresh_append
+    tables:
+    - allele_peptide_measurements
+    - peptides
+snowflake:
+  config:
+    account: ''
+    database: synsql__biological_data_analysis_specifical_f5849dc70415
+    password: ''
+    role: ''
+    schema: AIRBYTE_SCHEMA
+    username: ''
+    warehouse: ''

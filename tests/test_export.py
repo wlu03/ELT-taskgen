@@ -934,8 +934,17 @@ class TestExportTask(ExportTaskBase):
                     contract,
                     eltbench.build_airbyte_connector_contract(config),
                 )
-        # The root destination is never duplicated below destinations/.
-        self.assertFalse((self.task_dir / "destinations" / "snowflake").exists())
+        # Every shipped destination has a directory of the same shape, the root
+        # one included, so a reader can tell which warehouse the root uses.
+        root_bundle = self.task_dir / "destinations" / "snowflake"
+        self.assertTrue(root_bundle.is_dir())
+        self.assertEqual(
+            yaml.safe_load((root_bundle / "config.yaml").read_text()), root
+        )
+        self.assertTrue((root_bundle / "snowflake_credential.json").is_file())
+        # The root's own files stay where a solver already reads them.
+        self.assertTrue((self.task_dir / "config.yaml").is_file())
+        self.assertTrue((self.task_dir / "snowflake_credential.json").is_file())
 
     def test_no_extra_destinations_writes_no_destinations_dir(self):
         eltbench.export_task(

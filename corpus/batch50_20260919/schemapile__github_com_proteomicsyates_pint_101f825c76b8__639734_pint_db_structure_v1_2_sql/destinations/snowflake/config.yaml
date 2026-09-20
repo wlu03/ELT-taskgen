@@ -1,0 +1,128 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    snowflake_definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_combination_type.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_combination_type
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_organism.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_organism
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_peptide.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_peptide
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_protein_has_ms_run.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_protein_has_ms_run
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_protein_score.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_protein_score
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_ptm_site.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_ptm_site
+  - path: s3://schemapile--github-com-proteomicsyates-pint-dc45b0bd1d00-bucket/interactome_db_sample_has_organism.jsonl
+    sync_mode: full_refresh_append
+    table: interactome_db_sample_has_organism
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - interactome_db_peptide_score
+    - interactome_db_protein_accession
+    - interactome_db_protein_ratio_value
+    - interactome_db_psm_amount
+    - interactome_db_psm_has_condition
+    - interactome_db_ptm
+    - interactome_db_ratio_descriptor
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_annotation_type.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_annotation_type
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_confidence_score_type.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_confidence_score_type
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_label.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_label
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_peptide_has_ms_run.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_peptide_has_ms_run
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_project.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_project
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_protein_amount.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_protein_amount
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_protein_threshold.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_protein_threshold
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_psm_score.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_psm_score
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00/interactome_db_threshold.csv
+  sync_mode: full_refresh_append
+  table: interactome_db_threshold
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00
+    sync_mode: full_refresh_append
+    tables:
+    - interactome_db_ms_run
+    - interactome_db_peptide_amount
+    - interactome_db_peptide_has_condition
+    - interactome_db_protein
+    - interactome_db_protein_has_condition
+    - interactome_db_protein_has_psm
+    - interactome_db_psm
+postgres:
+  config:
+    database: schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - interactome_db_operator_type
+    - interactome_db_peptide_ratio_value
+    - interactome_db_protein_annotation
+    - interactome_db_protein_has_peptide
+    - interactome_db_protein_has_protein_accession
+    - interactome_db_psm_ratio_value
+    - interactome_db_tissue
+    user: postgres
+snowflake:
+  config:
+    account: ''
+    database: schemapile__github_com_proteomicsyates_pint_dc45b0bd1d00
+    password: ''
+    role: ''
+    schema: AIRBYTE_SCHEMA
+    username: ''
+    warehouse: ''

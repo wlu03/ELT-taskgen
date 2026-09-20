@@ -1,0 +1,134 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    snowflake_definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://schemapile--github-com-common-coolteam-rang-557523a5f9c6-bucket/x_context_enricher_def.jsonl
+    sync_mode: full_refresh_append
+    table: x_context_enricher_def
+  - path: s3://schemapile--github-com-common-coolteam-rang-557523a5f9c6-bucket/x_enum_def.jsonl
+    sync_mode: full_refresh_append
+    table: x_enum_def
+  - path: s3://schemapile--github-com-common-coolteam-rang-557523a5f9c6-bucket/x_perm_map.jsonl
+    sync_mode: full_refresh_append
+    table: x_perm_map
+  - path: s3://schemapile--github-com-common-coolteam-rang-557523a5f9c6-bucket/x_policy_item_user_perm.jsonl
+    sync_mode: full_refresh_append
+    table: x_policy_item_user_perm
+  - path: s3://schemapile--github-com-common-coolteam-rang-557523a5f9c6-bucket/x_service.jsonl
+    sync_mode: full_refresh_append
+    table: x_service
+  - path: s3://schemapile--github-com-common-coolteam-rang-557523a5f9c6-bucket/xa_access_audit.jsonl
+    sync_mode: full_refresh_append
+    table: xa_access_audit
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - x_auth_sess
+    - x_enum_element_def
+    - x_policy_condition_def
+    - x_resource_def
+    - x_user_module_perm
+flat_files:
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_asset.csv
+  sync_mode: full_refresh_append
+  table: x_asset
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_data_hist.csv
+  sync_mode: full_refresh_append
+  table: x_data_hist
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_group.csv
+  sync_mode: full_refresh_append
+  table: x_group
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_policy_export_audit.csv
+  sync_mode: full_refresh_append
+  table: x_policy_export_audit
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_policy_item.csv
+  sync_mode: full_refresh_append
+  table: x_policy_item
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_policy_resource.csv
+  sync_mode: full_refresh_append
+  table: x_policy_resource
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_policy_resource_map.csv
+  sync_mode: full_refresh_append
+  table: x_policy_resource_map
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_portal_user.csv
+  sync_mode: full_refresh_append
+  table: x_portal_user
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_portal_user_role.csv
+  sync_mode: full_refresh_append
+  table: x_portal_user_role
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_service_config_map.csv
+  sync_mode: full_refresh_append
+  table: x_service_config_map
+- format: csv
+  path: http://elt-files:8080/schemapile__github_com_common_coolteam_rang_557523a5f9c6/x_user.csv
+  sync_mode: full_refresh_append
+  table: x_user
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: schemapile__github_com_common_coolteam_rang_557523a5f9c6
+    sync_mode: full_refresh_append
+    tables:
+    - x_db_base
+    - x_group_module_perm
+    - x_policy
+    - x_policy_item_condition
+    - x_policy_item_group_perm
+    - x_resource
+    - x_service_config_def
+    - x_trx_log
+postgres:
+  config:
+    database: schemapile__github_com_common_coolteam_rang_557523a5f9c6
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - x_access_type_def
+    - x_access_type_def_grants
+    - x_audit_map
+    - x_cred_store
+    - x_group_groups
+    - x_group_users
+    - x_modules_master
+    - x_policy_item_access
+    - x_service_def
+    user: postgres
+snowflake:
+  config:
+    account: ''
+    database: schemapile__github_com_common_coolteam_rang_557523a5f9c6
+    password: ''
+    role: ''
+    schema: AIRBYTE_SCHEMA
+    username: ''
+    warehouse: ''

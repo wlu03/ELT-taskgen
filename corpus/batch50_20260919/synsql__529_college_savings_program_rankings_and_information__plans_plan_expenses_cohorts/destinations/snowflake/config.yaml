@@ -1,0 +1,72 @@
+Airbyte:
+  config:
+    custom_api_definition_id: ''
+    files_definition_id: 778daa7c-feaf-4db6-96f3-70fd645acc77
+    mongodb_definition_id: b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e
+    namespace_definition: destination
+    password: ''
+    postgres_definition_id: decd338e-5647-4c0b-adf4-da0e75f5a750
+    s3_definition_id: 69589781-7828-43c5-9f63-8925b1c1ccc2
+    server_url: http://airbyte-abctl-control-plane:80/api/public/v1/
+    snowflake_definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+    username: ''
+    workspace_id: ''
+aws_s3:
+  AWS_ACCESS_KEY_ID: test
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_ENDPOINT_URL: http://elt-localstack:4566
+  AWS_SECRET_ACCESS_KEY: test
+  data:
+  - path: s3://synsql--529-college-savings-program-ranking-e18ee4401031-bucket/plan_investment_options.jsonl
+    sync_mode: full_refresh_append
+    table: plan_investment_options
+  - path: s3://synsql--529-college-savings-program-ranking-e18ee4401031-bucket/user_favorites.jsonl
+    sync_mode: full_refresh_append
+    table: user_favorites
+custom_api:
+  config:
+    configuration: {}
+    sync_mode: full_refresh_append
+    tables:
+    - reporting
+flat_files:
+- format: csv
+  path: http://elt-files:8080/synsql__529_college_savings_program_ranking_e18ee4401031/plan_performance.csv
+  sync_mode: full_refresh_append
+  table: plan_performance
+- format: csv
+  path: http://elt-files:8080/synsql__529_college_savings_program_ranking_e18ee4401031/plans.csv
+  sync_mode: full_refresh_append
+  table: plans
+- format: csv
+  path: http://elt-files:8080/synsql__529_college_savings_program_ranking_e18ee4401031/states.csv
+  sync_mode: full_refresh_append
+  table: states
+mongodb:
+  config:
+    connection_string: mongodb://elt-mongodb:27017/?directConnection=true
+    database: synsql__529_college_savings_program_ranking_e18ee4401031
+    sync_mode: full_refresh_append
+    tables:
+    - user_recommendations
+postgres:
+  config:
+    database: synsql__529_college_savings_program_ranking_e18ee4401031
+    host: elt-postgres
+    password: testelt
+    port: 5432
+    schema: public
+    sync_mode: full_refresh_append
+    tables:
+    - plan_expenses
+    - users
+    user: postgres
+snowflake:
+  config:
+    account: ''
+    database: synsql__529_college_savings_program_ranking_e18ee4401031
+    password: ''
+    role: ''
+    schema: AIRBYTE_SCHEMA
+    username: ''
+    warehouse: ''
