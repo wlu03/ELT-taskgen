@@ -72,7 +72,10 @@ DBT_DUCKDB_RUNTIME_MANIFEST_SHA256 = (
 #: and the text-rendering and Redshift boolean guards follow aliases through
 #: CTEs, subqueries and ref(). Measured natively in
 #: tests/fixtures/warehouse_differential/native_*.json.
-DBT_COMPATIBILITY_SUBSET_VERSION = "portable-dbt-sql-v5"
+#: v6: the text-rendering guard follows an alias only through operands that
+#: can become its value, so a CASE label, a comparison or a COUNT over a
+#: DOUBLE or TIMESTAMP column is no longer refused as that column's text.
+DBT_COMPATIBILITY_SUBSET_VERSION = "portable-dbt-sql-v6"
 DBT_PROFILE_NAME = "elt_taskgen"
 DBT_PROFILE_TARGET = "local"
 
@@ -1308,6 +1311,46 @@ def _carries_boolean(expression: exp.Expression, names: frozenset[str]) -> bool:
     return isinstance(operand, exp.Column) and operand.name.casefold() in names
 
 
+def _carries_text_value(expression: exp.Expression, names: frozenset[str]) -> bool:
+    """Whether an alias's value can be a destination-specific text rendering.
+
+    Used to follow values through aliases. Unlike `_carries_text_rendering`,
+    it skips operands that cannot become the value: a CASE or IF condition, a
+    comparison or other predicate (boolean), COUNT (an integer), and a
+    window's PARTITION BY and ORDER BY. So CASE WHEN n = 1 THEN 'unique' END
+    is a label, while CASE WHEN n = 1 THEN x END still carries x.
+    """
+    pending = [expression]
+    while pending:
+        node = pending.pop()
+        if isinstance(node, (*_BOOLEAN_VALUED_NODES, exp.Count)):
+            continue
+        if isinstance(node, exp.Case):
+            pending.extend(node.args.get("ifs") or ())
+            if node.args.get("default") is not None:
+                pending.append(node.args["default"])
+            continue
+        if isinstance(node, exp.If):
+            pending.extend(
+                node.args[key] for key in ("true", "false") if node.args.get(key) is not None
+            )
+            continue
+        if isinstance(node, exp.Window):
+            pending.append(node.this)
+            continue
+        if isinstance(node, exp.Cast):
+            target_type = node.args.get("to")
+            if (
+                isinstance(target_type, exp.DataType)
+                and target_type.this in _DESTINATION_SPECIFIC_TEXT_SOURCES
+            ):
+                return True
+        if isinstance(node, exp.Column) and node.name.casefold() in names:
+            return True
+        pending.extend(node.iter_expressions())
+    return False
+
+
 def _boolean_text_cast(
     node: exp.Expression,
     destination: Destination,
@@ -1640,7 +1683,7 @@ def rewrite_model_sql(
         raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
     # A CTE or subquery alias must not hide the operand type these guards read.
     text_unsafe_names = _alias_closure(
-        tree, normalized_unsafe_columns, _carries_text_rendering
+        tree, normalized_unsafe_columns, _carries_text_value
     )
     boolean_names = _alias_closure(tree, normalized_boolean_columns, _carries_boolean)
     if any(_unsafe_text_cast(node, text_unsafe_names) for node in tree.walk()):
@@ -1784,7 +1827,7 @@ def _project_alias_names(
     boolean_names = frozenset(name.casefold() for name in boolean)
     while True:
         next_text = text_names.union(
-            *(_alias_closure(tree, text_names, _carries_text_rendering) for tree in trees)
+            *(_alias_closure(tree, text_names, _carries_text_value) for tree in trees)
         )
         next_boolean = boolean_names.union(
             *(_alias_closure(tree, boolean_names, _carries_boolean) for tree in trees)

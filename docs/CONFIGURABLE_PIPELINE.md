@@ -81,6 +81,24 @@ deterministic validator checks the submitted prose against the same public
 requirements. Both author inputs exclude reference SQL, frozen gold, and
 private answers.
 
+A mart's columns are named after the chain they are built from, not after the
+role they play in the plan template: the key of a `studios` mart keyed on `id`
+is `studio_id`, the count of linked `films` rows is `films_count`, and the
+total of `runtime_minutes` is `total_runtime_minutes`. The name is rewritten
+through the plan's whole namespace — the ops, the compiled SQL, the mart
+contract and every description that states it — and it degrades to the template
+name whenever the chain does not supply a part, so a half-named column is never
+emitted. `BuiltPlan.column_named` maps a template name to what the mart calls
+it, which is how a wrapper shape names a column of the plan it wraps.
+
+The author view also carries example rows of the DEVELOPMENT population, the
+one a solver's own sources are seeded with, so prose describes the dataset in
+its own terms instead of the shape template's. The snapshot is bounded (three
+rows and twelve columns per table, truncated cells, a capped section),
+deterministic, and read only when the population is materialized; a graded
+population's rows never appear, and neither does any critic view, which is the
+public bundle exactly and is what the metrology view digest hashes.
+
 Actionable ambiguity/adversary findings use a typed critic-to-attack handoff.
 On the active provider wire, every finding has an explicit nullable
 `proposed_case`; an executable case contains exactly `kind`, JSON-string

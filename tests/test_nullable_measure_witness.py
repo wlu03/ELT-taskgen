@@ -167,7 +167,7 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         distinct_amount = next(
             column
             for column in built.columns
-            if column.name == "distinct_amount_count"
+            if column.name == built.column_named("distinct_amount_count")
         )
         # ZERO FOR TWO DIFFERENT CELLS. "0 for a no-activity absent cell"
         # named only one of them, so the absent cell of an entity whose rows
@@ -185,7 +185,9 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         # absent cell that holds real rows, and gold agrees — the expression
         # is COUNT(link_key), which is 0 only for the LEFT-join placeholder.
         row_count = next(
-            column for column in built.columns if column.name == "row_count"
+            column
+            for column in built.columns
+            if column.name == built.column_named("row_count")
         )
         self.assertEqual(
             row_count.description,
@@ -207,7 +209,9 @@ class NullableMeasureWitnessTest(unittest.TestCase):
             argmax_contract,
         )
         tied_count = next(
-            column for column in argmax.columns if column.name == "tied_count"
+            column
+            for column in argmax.columns
+            if column.name == argmax.column_named("tied_count")
         )
         self.assertIn(
             "0 when there are no rows or when none of the rows carries a amount value",
@@ -218,20 +222,23 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         # exists" read as two rules; the winner picked by the tie-break alone
         # is named and explicitly not counted as tied.
         self.assertIn("is not counted here", tied_count.description)
+        name = argmax.column_named
         tie_state = next(
-            column for column in argmax.columns if column.name == "tie_state"
+            column for column in argmax.columns if column.name == name("tie_state")
         )
         self.assertIn("never holds the maximum", tie_state.description)
-        self.assertIn("with tied_count 0", tie_state.description)
+        self.assertIn(f"with {name('tied_count')} 0", tie_state.description)
         named = {c.name for c in argmax.columns}
-        if "top_row_id" in named:
-            self.assertIn("top_label and top_row_id name", tie_state.description)
+        label, row_id = name("top_label"), name("top_row_id")
+        if row_id in named:
+            self.assertIn(f"{label} and {row_id} name", tie_state.description)
         else:
-            self.assertIn("top_label names", tie_state.description)
-            self.assertNotIn("top_row_id", tie_state.description)
+            self.assertIn(f"{label} names", tie_state.description)
+            self.assertNotIn(row_id, tie_state.description)
         self.assertNotIn("when the winner is unique", tied_count.description)
         self.assertIn(
-            "when no row carries a measure there is no maximum and tied_count is 0",
+            "when no row carries a measure there is no maximum and "
+            f"{name('tied_count')} is 0",
             argmax_contract,
         )
 
@@ -305,35 +312,36 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         )
         self.assertEqual(populations.validate_population_coverage(task), [])
 
-        rows = {row["parent_key"]: row for row in run_counterfactual(task)}
+        name = built.column_named
+        rows = {row[name("parent_key")]: row for row in run_counterfactual(task)}
         self.assertTrue({900, 901, 902, 903}.issubset(rows))
         self.assertEqual(
             (
-                rows[900]["top_measure"],
-                rows[900]["top_label"],
-                rows[900]["tied_count"],
-                rows[900]["child_count"],
-                rows[900]["tie_state"],
+                rows[900][name("top_measure")],
+                rows[900][name("top_label")],
+                rows[900][name("tied_count")],
+                rows[900][name("child_count")],
+                rows[900][name("tie_state")],
             ),
             (40, "beta", 1, 2, "unique"),
         )
         self.assertEqual(
             (
-                rows[901]["top_measure"],
-                rows[901]["top_label"],
-                rows[901]["tied_count"],
-                rows[901]["child_count"],
-                rows[901]["tie_state"],
+                rows[901][name("top_measure")],
+                rows[901][name("top_label")],
+                rows[901][name("tied_count")],
+                rows[901][name("child_count")],
+                rows[901][name("tie_state")],
             ),
             (0, "(none)", 0, 0, "empty"),
         )
         self.assertEqual(
             (
-                rows[902]["top_measure"],
-                rows[902]["top_label"],
-                rows[902]["tied_count"],
-                rows[902]["child_count"],
-                rows[902]["tie_state"],
+                rows[902][name("top_measure")],
+                rows[902][name("top_label")],
+                rows[902][name("tied_count")],
+                rows[902][name("child_count")],
+                rows[902][name("tie_state")],
             ),
             (25, "alpha", 2, 2, "tied"),
         )
@@ -341,11 +349,11 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         # real links: this is the branch the old counterfactual never reached.
         self.assertEqual(
             (
-                rows[903]["top_measure"],
-                rows[903]["top_label"],
-                rows[903]["tied_count"],
-                rows[903]["child_count"],
-                rows[903]["tie_state"],
+                rows[903][name("top_measure")],
+                rows[903][name("top_label")],
+                rows[903][name("tied_count")],
+                rows[903][name("child_count")],
+                rows[903][name("tie_state")],
             ),
             (0, "alpha", 0, 2, "empty"),
         )
@@ -360,18 +368,19 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         )
         self.assertEqual(populations.validate_population_coverage(task), [])
 
+        name = built.column_named
         rows = {
-            (row["entity_key"], row["measure_state"]): row
+            (row[name("entity_key")], row[name("measure_state")]): row
             for row in run_counterfactual(task)
         }
         childless = rows[(901, "absent")]
         all_null = rows[(902, "absent")]
-        self.assertEqual(childless["row_count"], 0)
-        self.assertEqual(all_null["row_count"], 2)
-        self.assertEqual(all_null["distinct_amount_count"], 0)
-        self.assertEqual(all_null["total_amount"], 0)
-        self.assertEqual(all_null["max_amount"], 0)
-        self.assertEqual(all_null["max_amount_share"], 0.0)
+        self.assertEqual(childless[name("row_count")], 0)
+        self.assertEqual(all_null[name("row_count")], 2)
+        self.assertEqual(all_null[name("distinct_amount_count")], 0)
+        self.assertEqual(all_null[name("total_amount")], 0)
+        self.assertEqual(all_null[name("max_amount")], 0)
+        self.assertEqual(all_null[name("max_amount_share")], 0.0)
 
     def test_measure_state_has_executable_distinct_measure_witness(self) -> None:
         tables, relationships, evidence = fixture(nullable=True)
@@ -405,17 +414,19 @@ class NullableMeasureWitnessTest(unittest.TestCase):
             AttackKind.NO_DEDUP, reference_sql, task.marts[0]
         )
         self.assertIsNotNone(mutant_sql)
+        name = built.column_named
         reference_rows = {
-            (row["entity_key"], row["measure_state"]): row
+            (row[name("entity_key")], row[name("measure_state")]): row
             for row in run_counterfactual_sql(task, reference_sql)
         }
         mutant_rows = {
-            (row["entity_key"], row["measure_state"]): row
+            (row[name("entity_key")], row[name("measure_state")]): row
             for row in run_counterfactual_sql(task, mutant_sql or "")
         }
         witness_key = (witness[0]["account_id"], "present")
-        self.assertEqual(reference_rows[witness_key]["distinct_amount_count"], 1)
-        self.assertEqual(mutant_rows[witness_key]["distinct_amount_count"], 2)
+        distinct = name("distinct_amount_count")
+        self.assertEqual(reference_rows[witness_key][distinct], 1)
+        self.assertEqual(mutant_rows[witness_key][distinct], 2)
 
     def test_nonnullable_measure_has_no_row_l_and_still_validates(self) -> None:
         tables, relationships, evidence = fixture(nullable=False)

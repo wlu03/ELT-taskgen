@@ -804,6 +804,46 @@ def _mart_sections(
     return sections, problems
 
 
+#: A line of heading decoration only ('=====', '-----'), never content.
+_DECORATION_LINE_RE = re.compile(r"^[\s=\-#*_~]+$")
+
+#: The labelled items a mart section states after its description.
+_SECTION_ITEM_RE = re.compile(
+    r"^[\s#*_>-]*(?:grain|key columns?|output columns?|columns|rules?)\b", re.I
+)
+
+
+def _declaration(section: str) -> str:
+    """The mart's heading line and the passage immediately under it.
+
+    The author prompt asks for the description on the heading line or in the
+    passage immediately under it. That passage is the first paragraph after the
+    heading (blank and decoration-only lines skipped), up to a blank line or a
+    list item, and it does not count when it opens one of the section's
+    labelled items, so grain and rule prose cannot supply the description.
+    """
+    lines = section.splitlines()
+    if not lines:
+        return ""
+    passage: list[str] = []
+    rest = iter(lines[1:])
+    for line in rest:
+        if not line.strip() or _DECORATION_LINE_RE.match(line):
+            continue
+        if not _SECTION_ITEM_RE.match(line):
+            passage.append(line)
+            for more in rest:
+                if (
+                    not more.strip()
+                    or _SECTION_ITEM_RE.match(more)
+                    or _BLOCK_START_RE.match(more.lstrip())
+                ):
+                    break
+                passage.append(more)
+        break
+    return "\n".join([lines[0], *passage])
+
+
 def _check_mart(
     mart: MartSpec,
     prose: str,
@@ -830,9 +870,10 @@ def _check_mart(
     description_terms = _significant_terms(mart.description)
     if description_terms:
         # `_mart_sections` guarantees the first line is the mart's labelled
-        # header.  Bind the description to that declaration: grain/rule prose
-        # later in the same section must not accidentally re-supply its words.
-        declaration = prose.splitlines()[0] if prose.splitlines() else ""
+        # header.  Bind the description to that declaration (the header and
+        # the passage under it): grain/rule prose later in the same section
+        # must not accidentally re-supply its words.
+        declaration = _declaration(prose)
         declaration_vocab = _vocabulary(declaration)
         best_description_missing = [
             term for term in description_terms

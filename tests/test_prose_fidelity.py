@@ -356,6 +356,40 @@ class FullTaskContractCoverageTest(unittest.TestCase):
         problems = self._problems(prose)
         self.assertTrue(any("description" in problem for problem in problems), problems)
 
+    def test_mart_description_under_a_decorated_heading_is_accepted(self):
+        """The author prompt allows the description on the heading line or in
+        the passage immediately under it. A decorated heading with the
+        description on the next line was rejected (wikidbs__c40096, batch50
+        2026-09-19), and the repair proposer could not clear it."""
+        prose = DECLARATIVE_PROSE.replace(
+            "Mart customer_summary: Per-customer order activity summary.",
+            "=== Mart customer_summary ===\n"
+            "This mart is a per-customer order activity summary.",
+        )
+        self.assertNotEqual(prose, DECLARATIVE_PROSE)
+        self.assertEqual(self._problems(prose), [])
+
+    def test_grain_or_later_prose_does_not_supply_the_mart_description(self):
+        heading = "Mart customer_summary: Per-customer order activity summary."
+        grain = "Grain: One row per customer, including customers with no orders."
+        described = "This mart is a per-customer order activity summary."
+        for label, replacement in (
+            # The passage under the heading is the grain item.
+            ("grain under the heading", f"=== Mart customer_summary ===\n{grain}"),
+            # The description comes only after the grain item.
+            (
+                "description after the grain",
+                f"=== Mart customer_summary ===\n{grain}\n{described}",
+            ),
+        ):
+            with self.subTest(label=label):
+                prose = DECLARATIVE_PROSE.replace(f"{heading}\n{grain}", replacement)
+                self.assertNotEqual(prose, DECLARATIVE_PROSE)
+                problems = self._problems(prose)
+                self.assertTrue(
+                    any("description" in problem for problem in problems), problems
+                )
+
     def _structured_task_and_prose(self):
         mart = self.task.marts[0]
         ops = list(mart.plan.ops)

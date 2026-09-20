@@ -77,29 +77,28 @@ class ArgmaxOrderWitnessTest(unittest.TestCase):
         sql = reference.compile_plan_sql(task, task.marts[0])
         order = '"f_label" ASC NULLS LAST'
         self.assertEqual(sql.count(order), 1)
-        correct = {
-            row["parent_key"]: row
-            for row in run_counterfactual_sql(task, sql)
-        }
+        key = built.column_named("parent_key")
+        label = built.column_named("top_label")
+        correct = {row[key]: row for row in run_counterfactual_sql(task, sql)}
         lower_mutant = {
-            row["parent_key"]: row
+            row[key]: row
             for row in run_counterfactual_sql(
                 task,
                 sql.replace(order, 'LOWER("f_label") ASC NULLS LAST'),
             )
         }
         nulls_first_mutant = {
-            row["parent_key"]: row
+            row[key]: row
             for row in run_counterfactual_sql(
                 task,
                 sql.replace(order, '"f_label" ASC NULLS FIRST'),
             )
         }
 
-        self.assertEqual(correct[case_parent]["top_label"], "Zeta")
-        self.assertEqual(lower_mutant[case_parent]["top_label"], "alpha")
-        self.assertEqual(correct[null_parent]["top_label"], "kept")
-        self.assertEqual(nulls_first_mutant[null_parent]["top_label"], "(none)")
+        self.assertEqual(correct[case_parent][label], "Zeta")
+        self.assertEqual(lower_mutant[case_parent][label], "alpha")
+        self.assertEqual(correct[null_parent][label], "kept")
+        self.assertEqual(nulls_first_mutant[null_parent][label], "(none)")
 
         scope = populations._witness_scope_prefix(built.shape)
         order_conditions = tuple(

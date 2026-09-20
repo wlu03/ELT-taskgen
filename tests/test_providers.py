@@ -3626,7 +3626,9 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 ), mock.patch.object(P, "RoutedProvider", factory), mock.patch.object(
                     cli, "_admission_gate", lambda provider, workspace: (None, {})
                 ), mock.patch.object(
-                    council, "author_prose", lambda task, provider: provider.complete("semantic_author", "v")
+                    council,
+                    "author_prose",
+                    lambda task, provider, **kwargs: provider.complete("semantic_author", "v"),
                 ), mock.patch.object(council, "run_council", lambda task, provider: []), mock.patch.object(
                     gold_mod, "load_gold", load_gold
                 ), mock.patch.object(eltbench_mod, "emit_variant", emit_variant), mock.patch.object(
@@ -3926,7 +3928,9 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 ), mock.patch.object(P, "RoutedProvider", factory), mock.patch.object(
                     cli, "_admission_gate", lambda provider, workspace: (None, {})
                 ), mock.patch.object(
-                    council, "author_prose", lambda task, provider: provider.complete("semantic_author", "v")
+                    council,
+                    "author_prose",
+                    lambda task, provider, **kwargs: provider.complete("semantic_author", "v"),
                 ), mock.patch.object(council, "run_council", lambda task, provider: []), mock.patch.object(
                     gold_mod, "load_gold", lambda path: gold_sentinel
                 ), mock.patch.object(eltbench_mod, "emit_variant", lambda *a, **k: None), mock.patch.object(

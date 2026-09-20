@@ -147,13 +147,18 @@ def _task(built: mp.BuiltPlan, task_id: str) -> TaskIR:
     )
 
 
-def _run(key: str, key_type: ColumnType) -> tuple[str, str, list[dict]]:
-    """(compiled SQL, top_row_id description, EXECUTED rows) for one key type."""
+def _run(key: str, key_type: ColumnType) -> tuple[str, str, list[dict], mp.BuiltPlan]:
+    """(compiled SQL, row-id description, EXECUTED rows, plan) for one key type.
+
+    The mart names its columns after the chain, so the plan comes back too:
+    `built.column_named("top_row_id")` is what this mart calls that column.
+    """
     evidence = dataclasses.replace(EVIDENCE, bridge_key=key, bridge_key_type=key_type)
     built = mp.argmax_profile(evidence, mart=f"argmax_{key_type.value}")
     task = _task(built, f"proof__argmax_{key_type.value}")
     sql = ref.compile_plan_sql(task, task.marts[0])
-    description = next(c.description for c in built.columns if c.name == "top_row_id")
+    row_id = built.column_named("top_row_id")
+    description = next(c.description for c in built.columns if c.name == row_id)
     con = duckdb.connect()
     # PRIMARY, not populations[0] (development): the empty-group literal is
     # only observable on a childless parent, and development's parent-first
@@ -166,7 +171,7 @@ def _run(key: str, key_type: ColumnType) -> tuple[str, str, list[dict]]:
             ref._insert_rows(con, table, rows[table.name])
     cur = con.execute(sql)
     cols = [d[0] for d in cur.description]
-    return sql, description, [dict(zip(cols, r)) for r in cur.fetchall()]
+    return sql, description, [dict(zip(cols, r)) for r in cur.fetchall()], built
 
 
 class ArgmaxKeyType(unittest.TestCase):
@@ -184,9 +189,8 @@ class ArgmaxKeyType(unittest.TestCase):
             bridge_key_type=ColumnType.TEXT,
         )
         built = mp.argmax_profile(evidence, mart="text_id_argmax")
-        top_label = next(
-            column for column in built.columns if column.name == "top_label"
-        )
+        label = built.column_named("top_label")
+        top_label = next(column for column in built.columns if column.name == label)
         extrema = next(
             op for op in built.plan.ops if op.kind.value == "extrema"
         )
@@ -233,7 +237,7 @@ class ArgmaxKeyType(unittest.TestCase):
         finally:
             con.close()
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["top_row_id"], "Zulu")
+        self.assertEqual(result[0][built.column_named("top_row_id")], "Zulu")
 
     def test_snapshot_text_key_publishes_its_exact_tie_break_order(self) -> None:
         evidence = dataclasses.replace(
@@ -243,8 +247,9 @@ class ArgmaxKeyType(unittest.TestCase):
             bridge_timestamp="signed_on",
         )
         built = mp.latest_snapshot(evidence, mart="text_snapshot")
+        latest_name = built.column_named("latest_row_id")
         latest = next(
-            column for column in built.columns if column.name == "latest_row_id"
+            column for column in built.columns if column.name == latest_name
         )
         self.assertIn(mp.TEXT_ORDER_PROSE, latest.description)
         extrema = next(
@@ -253,31 +258,37 @@ class ArgmaxKeyType(unittest.TestCase):
         self.assertIn(mp.TEXT_ORDER_PROSE, extrema.description)
 
     def test_a_text_bridge_key_binds_and_reports_the_literal_it_promises(self) -> None:
-        sql, description, rows = _run("subscription_ref", ColumnType.TEXT)
-        self.assertIn("COALESCE(\"top_row_id\", '(none)')", sql)
+        sql, description, rows, built = _run("subscription_ref", ColumnType.TEXT)
+        row_id = built.column_named("top_row_id")
+        count = built.column_named("child_count")
+        self.assertIn(f"COALESCE(\"{row_id}\", '(none)')", sql)
         self.assertIn("the literal '(none)' when there are no rows", description)
-        empty = [r for r in rows if r["child_count"] == 0]
+        empty = [r for r in rows if r[count] == 0]
         self.assertTrue(empty, "the population must contain a childless parent")
         for row in empty:
-            self.assertEqual(row["top_row_id"], "(none)")
+            self.assertEqual(row[row_id], "(none)")
 
     def test_a_decimal_bridge_key_emits_a_coalesce_instead_of_a_null(self) -> None:
-        sql, description, rows = _run("subscription_seq", ColumnType.DECIMAL)
-        self.assertIn('COALESCE("top_row_id", 0)', sql)
+        sql, description, rows, built = _run("subscription_seq", ColumnType.DECIMAL)
+        row_id = built.column_named("top_row_id")
+        count = built.column_named("child_count")
+        self.assertIn(f'COALESCE("{row_id}", 0)', sql)
         self.assertIn("0 when there are no rows", description)
-        empty = [r for r in rows if r["child_count"] == 0]
+        empty = [r for r in rows if r[count] == 0]
         self.assertTrue(empty, "the population must contain a childless parent")
         for row in empty:
-            self.assertIsNotNone(row["top_row_id"])
-            self.assertEqual(float(row["top_row_id"]), 0.0)
+            self.assertIsNotNone(row[row_id])
+            self.assertEqual(float(row[row_id]), 0.0)
 
     def test_the_numeric_key_still_reports_zero(self) -> None:
         """The pre-existing behaviour, pinned: the fix must not move it."""
-        sql, description, rows = _run("subscription_id", ColumnType.BIGINT)
-        self.assertIn('COALESCE("top_row_id", 0)', sql)
+        sql, description, rows, built = _run("subscription_id", ColumnType.BIGINT)
+        row_id = built.column_named("top_row_id")
+        count = built.column_named("child_count")
+        self.assertIn(f'COALESCE("{row_id}", 0)', sql)
         self.assertIn("0 when there are no rows", description)
-        for row in (r for r in rows if r["child_count"] == 0):
-            self.assertEqual(row["top_row_id"], 0)
+        for row in (r for r in rows if r[count] == 0):
+            self.assertEqual(row[row_id], 0)
 
     def test_the_declared_mart_column_type_is_the_bridge_keys_own_type(self) -> None:
         """What the solver is SHOWN, not only what the SQL binds.
@@ -295,7 +306,8 @@ class ArgmaxKeyType(unittest.TestCase):
                     EVIDENCE, bridge_key=key, bridge_key_type=key_type
                 )
                 built = mp.argmax_profile(evidence, mart="argmax_types")
-                column = next(c for c in built.columns if c.name == "top_row_id")
+                row_id = built.column_named("top_row_id")
+                column = next(c for c in built.columns if c.name == row_id)
                 self.assertEqual(column.type, key_type)
 
     def test_the_description_is_derived_from_the_emitted_default(self) -> None:
@@ -306,9 +318,10 @@ class ArgmaxKeyType(unittest.TestCase):
             ("subscription_id", ColumnType.BIGINT),
         ):
             with self.subTest(type=key_type.value):
-                sql, description, _rows = _run(key, key_type)
+                sql, description, _rows, built = _run(key, key_type)
                 literal = mp.extremum_default(key_type)
-                self.assertIn(f'COALESCE("top_row_id", {literal})', sql)
+                row_id = built.column_named("top_row_id")
+                self.assertIn(f'COALESCE("{row_id}", {literal})', sql)
                 self.assertIn(mp._default_prose(key_type), description)
 
     def test_a_key_type_with_no_declared_default_fails_closed(self) -> None:

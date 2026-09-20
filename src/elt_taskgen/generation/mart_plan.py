@@ -7,7 +7,7 @@ parsed SQL facts and succeeds exactly when plan compilation does.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
@@ -2075,6 +2075,15 @@ class BuiltPlan:
     #: leave it empty (their adapters mint MartColumns); every plan-library
     #: shape fills it, which is what makes the budget a contract, not a hope.
     columns: tuple[MartColumn, ...] = ()
+    #: template column name -> the dataset-specific name the mart gave it.
+    #: A wrapper shape (`aggregate_then_filter`) names one of the base mart's
+    #: columns after the base plan is built, and the template name it knows is
+    #: no longer the column's name.
+    renamed_columns: tuple[tuple[str, str], ...] = ()
+
+    def column_named(self, template: str) -> str:
+        """This mart's actual name for a template column name."""
+        return dict(self.renamed_columns).get(template, template)
 
     @property
     def computed_count(self) -> int:
@@ -3055,6 +3064,402 @@ def _witness_problems(
     return problems
 
 
+#: Longest derived mart column name. Warehouse limits are far higher
+#: (Redshift's 127 is the smallest); this keeps a name readable in prose.
+MAX_DATASET_COLUMN_CHARS = 52
+
+
+def _slug(value: str) -> str:
+    """A snake_case identifier fragment, or '' when nothing usable is left."""
+    text = re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower())
+    return re.sub(r"_+", "_", text).strip("_")
+
+
+def _dataset_name(template: str, parts: Sequence[str]) -> str:
+    """One dataset-specific name from `parts`, or '' when a part is missing.
+
+    A missing part means the shape does not carry that role for this chain, and
+    the template name stands: a half-named column reads worse than a plain one.
+    """
+    slugs = [_slug(part) for part in parts]
+    if not all(slugs):
+        return ""
+    name = "_".join(slugs)
+    if not name or name[0].isdigit() or len(name) > MAX_DATASET_COLUMN_CHARS:
+        return ""
+    return name if name != template else ""
+
+
+#: Source column names that say nothing about the dataset on their own. A mart
+#: keyed on `id` would be named `id` in every task that spells its key that
+#: way, so the table it identifies is prepended: `employees.id` -> employee_id.
+_GENERIC_KEY_COLUMNS = frozenset(
+    {"id", "key", "code", "uuid", "guid", "pk", "no", "num", "number", "index"}
+)
+_GENERIC_ATTR_COLUMNS = frozenset({"name", "title", "label", "description", "text"})
+
+
+def _singular(table: str) -> str:
+    """`employees` -> `employee`, for qualifying a generic column name."""
+    text = _slug(table)
+    if text.endswith("ies") and len(text) > 4:
+        return text[:-3] + "y"
+    if any(text.endswith(s) for s in ("ses", "xes", "zes", "ches", "shes")):
+        return text[:-2]
+    if text.endswith("s") and not text.endswith("ss") and len(text) > 3:
+        return text[:-1]
+    return text
+
+
+def _qualified(source: str, table: str, generic: frozenset[str]) -> str:
+    """`source`, or `<table-singular>_<source>` when `source` says nothing."""
+    column = _slug(source)
+    if not column or column not in generic:
+        return column
+    prefix = _singular(table)
+    return f"{prefix}_{column}" if prefix and not column.startswith(prefix) else column
+
+
+@dataclass(frozen=True)
+class _NameEvidence:
+    """The chain nouns a dataset-specific mart column name is built from."""
+
+    parent: str = ""
+    bridge: str = ""
+    child: str = ""
+    measure: str = ""
+    label: str = ""
+    status: str = ""
+    link_key: str = ""
+    key_source: str = ""
+    attr_source: str = ""
+
+
+#: template column name -> the parts its dataset-specific name is built from.
+#: Generic template names (`total_amount`, `link_count`, `parent_key`) made 50
+#: generated tasks share 81 column names over 1030 columns, 8% unique, against
+#: 65% in ELT-Bench, and the prose repeats followed the names (batch50,
+#: 2026-09-19). Every rule degrades to the template name when its parts are
+#: missing, so a shape that does not carry the role is unchanged.
+_DATASET_COLUMN_RULES: dict[str, Callable[[_NameEvidence], tuple[str, ...]]] = {
+    # grain and carried attributes: the source column the mart projects
+    "parent_key": lambda e: (_qualified(e.key_source, e.parent, _GENERIC_KEY_COLUMNS),),
+    "entity_key": lambda e: (_qualified(e.key_source, e.parent, _GENERIC_KEY_COLUMNS),),
+    "parent_name": lambda e: (
+        _qualified(e.attr_source, e.parent, _GENERIC_ATTR_COLUMNS),
+    ),
+    "entity_name": lambda e: (
+        _qualified(e.attr_source, e.parent, _GENERIC_ATTR_COLUMNS),
+    ),
+    "owner_name": lambda e: (
+        _qualified(e.attr_source, e.parent, _GENERIC_ATTR_COLUMNS),
+    ),
+    # counts over the linked rows
+    "link_count": lambda e: (e.bridge, "count"),
+    "event_count": lambda e: (e.bridge, "count"),
+    "child_count": lambda e: (e.bridge, "count"),
+    "matched_count": lambda e: ("matched", e.bridge, "count"),
+    "orphan_count": lambda e: ("orphan", e.bridge, "count"),
+    "distinct_child_count": lambda e: ("distinct", e.child, "count"),
+    "distinct_status_count": lambda e: ("distinct", e.status, "count"),
+    "distinct_amount_count": lambda e: ("distinct", e.measure, "count"),
+    "row_count": lambda e: (e.bridge, "count"),
+    "active_link_count": lambda e: (e.status, e.bridge, "count"),
+    "active_event_count": lambda e: (e.status, e.bridge, "count"),
+    "passing_count": lambda e: (e.status, "pass", "count"),
+    "failing_count": lambda e: (e.status, "fail", "count"),
+    "tied_count": lambda e: ("top", e.measure, "tie_count"),
+    # measure totals and extremes
+    "total_amount": lambda e: ("total", e.measure),
+    "total_measure": lambda e: ("total", e.measure),
+    "lifetime_amount": lambda e: ("lifetime", e.measure),
+    "period_amount": lambda e: ("period", e.measure),
+    "max_amount": lambda e: ("max", e.measure),
+    "active_amount": lambda e: (e.status, e.measure),
+    "matched_amount": lambda e: ("matched", e.measure),
+    "latest_amount": lambda e: ("latest", e.measure),
+    "top_measure": lambda e: ("top", e.measure),
+    "running_amount": lambda e: ("running", e.measure),
+    "prev_period_amount": lambda e: ("prev_period", e.measure),
+    # labels, ids and states carried from the winning row
+    "top_label": lambda e: (
+        "top", _qualified(e.label, e.bridge, _GENERIC_ATTR_COLUMNS),
+    ),
+    "top_row_id": lambda e: (
+        "top", _qualified(e.link_key, e.bridge, _GENERIC_KEY_COLUMNS),
+    ),
+    "latest_label": lambda e: (
+        "latest", _qualified(e.label, e.bridge, _GENERIC_ATTR_COLUMNS),
+    ),
+    "latest_row_id": lambda e: (
+        "latest", _qualified(e.link_key, e.bridge, _GENERIC_KEY_COLUMNS),
+    ),
+    "latest_status": lambda e: ("latest", e.status),
+    "parent_status": lambda e: (e.parent, e.status),
+    "status_group": lambda e: (e.status, "group"),
+    "cohort": lambda e: (e.status, "cohort"),
+    "measure_state": lambda e: (e.measure, "state"),
+    "has_links": lambda e: ("has", e.bridge),
+    "tie_state": lambda e: ("top", e.measure, "tie_state"),
+    # ratios and bands
+    "active_amount_ratio": lambda e: (e.status, e.measure, "share"),
+    "top_measure_share": lambda e: ("top", e.measure, "share"),
+    "max_amount_share": lambda e: ("max", e.measure, "share"),
+    "latest_amount_share": lambda e: ("latest", e.measure, "share"),
+    "period_share": lambda e: ("period", e.measure, "share"),
+    "passing_ratio": lambda e: (e.status, "pass", "share"),
+    "match_rate": lambda e: ("matched", e.bridge, "share"),
+    "size_band": lambda e: (e.bridge, "count_band"),
+    "adoption_band": lambda e: (e.status, "pass", "band"),
+    "coverage_band": lambda e: ("matched", e.bridge, "band"),
+    "trend": lambda e: (e.measure, "trend"),
+}
+
+
+def _dataset_column_names(
+    templates: Sequence[str], evidence: _NameEvidence, *, reserved: Iterable[str] = ()
+) -> dict[str, str]:
+    """template name -> dataset-specific name, for the names that can have one.
+
+    Skips a proposal that is unusable, that collides with another mart column,
+    or that a source column already answers to under a different role.
+    """
+    taken = {name.lower() for name in reserved} | set(templates)
+    out: dict[str, str] = {}
+    for template in templates:
+        rule = _DATASET_COLUMN_RULES.get(template)
+        if rule is None:
+            continue
+        proposed = _dataset_name(template, rule(evidence))
+        if not proposed or proposed in taken:
+            continue
+        out[template] = proposed
+        taken.add(proposed)
+    return out
+
+
+#: Template names that are ORDINARY WORDS in the shapes' own prose. The column
+#: is renamed like any other, but the word is left alone where it is written:
+#: "a cohort whose rows all lack one" is English, not a column reference.
+_PROSE_AMBIGUOUS_NAMES = frozenset({"cohort"})
+
+
+def _renamed_text(text: str, names: Mapping[str, str]) -> str:
+    """`text` with every whole-word template column name replaced.
+
+    This is the SQL-safe rewrite: a projection that aliases a column must move
+    with the column, so every name is replaced here.
+    """
+    if not text or not names:
+        return text
+    pattern = re.compile(r"\b(" + "|".join(map(re.escape, names)) + r")\b")
+    return pattern.sub(lambda m: names[m.group(1)], text)
+
+
+def _renamed_prose(text: str, names: Mapping[str, str]) -> str:
+    """`text` with the column names replaced, except the ordinary words.
+
+    Prose is where "cohort" means a cohort rather than the column; the SQL
+    that aliases the column still goes through `_renamed_text`.
+    """
+    return _renamed_text(
+        text,
+        {
+            template: name
+            for template, name in names.items()
+            if template not in _PROSE_AMBIGUOUS_NAMES
+        },
+    )
+
+
+def _dataset_rename_map(
+    *,
+    keys: tuple[KeyColumn, ...],
+    passthrough: tuple[Passthrough, ...],
+    measures: tuple[Measure, ...],
+    extrema: tuple[Extremum, ...],
+    post_windows: tuple[WindowExpr, ...],
+    derived: tuple[Derived, ...],
+    parent: str,
+    hops: tuple[StarJoin, ...],
+    windows: tuple[WindowExpr, ...],
+    roles: FactRoles,
+    child: str,
+) -> dict[str, str]:
+    """template column name -> the dataset-specific name this rollup gives it.
+
+    Empty when the chain names nothing usable, and every name the map leaves
+    out keeps its template spelling.
+    """
+    templates = [
+        *(k.column for k in keys),
+        *(p.column for p in passthrough),
+        *(m.column for m in measures),
+        *(x.column for x in extrema),
+        # POST-aggregate windows are mart columns. The pre-aggregate ones are
+        # plan-internal aliases, renamed only where a mart column shares the
+        # spelling, which the same map handles.
+        *(w.alias for w in post_windows),
+        *(d.column for d in derived),
+    ]
+    # A carried attribute states its source column on the hop that carries it.
+    hop_carry = {
+        hop.table: {alias: source for source, alias in hop.carry} for hop in hops
+    }
+    carried_source = ""
+    if passthrough:
+        first = passthrough[0]
+        carried_source = first.source or hop_carry.get(first.from_hop or "", {}).get(
+            first.column, ""
+        )
+    evidence = _NameEvidence(
+        parent=parent,
+        bridge=hops[0].table if hops else "",
+        child=child or (hops[1].table if len(hops) > 1 else ""),
+        measure=roles.measure,
+        label=roles.label,
+        status=roles.predicate_column,
+        link_key=roles.link_key,
+        key_source=keys[0].source if keys and not keys[0].expr else "",
+        attr_source=carried_source,
+    )
+    source_columns = {
+        *(k.source for k in keys if k.source),
+        *(p.source for p in passthrough if p.source),
+        *(x.source for x in extrema if x.source),
+        *(source for carry in hop_carry.values() for source in carry.values()),
+        *(right for hop in hops for _, right in hop.on_pairs),
+    }
+    # A source column that happens to be spelled like a template name shares
+    # the plan's string namespace, so renaming that name would rewrite the
+    # source reference too. Leave those names alone.
+    templates = [t for t in templates if t not in source_columns]
+    # What a new name must not shadow: the relation aliases the ops carry
+    # values under. A SOURCE column of a joined table is always referenced
+    # through its own table, so a mart column may share its spelling — that is
+    # how a key named `id` on `employees` becomes `employee_id`.
+    reserved = {
+        parent,
+        child,
+        *(h.table for h in hops),
+        *(alias for hop in hops for _, alias in hop.carry),
+        *(w.alias for w in windows),
+    }
+    return _dataset_column_names(templates, evidence, reserved=reserved)
+def _rename_built_plan(built: BuiltPlan, names: Mapping[str, str]) -> BuiltPlan:
+    """`built` with its template column names replaced throughout.
+
+    `build_rollup` renames its INPUTS, before it assembles anything. The two
+    union shapes assemble their ops directly, so the same map is applied to the
+    assembled plan: the ops carry the name through every intermediate relation,
+    and the final projection is what the mart column contract states. Relation
+    names are NOT columns and keep their spelling (`tables`, `details['name']`).
+    """
+    if not names:
+        return built
+
+    def named(column: str) -> str:
+        return names.get(column, column)
+
+    def says(text: str) -> str:
+        return _renamed_text(text, names)
+
+    def reads(text: str) -> str:
+        return _renamed_prose(text, names)
+
+    ops = tuple(
+        op.model_copy(
+            update={
+                "description": reads(op.description),
+                "columns": tuple(named(column) for column in op.columns),
+                "predicate": says(op.predicate),
+                # A GROUP BY op keys its details by the measure ALIAS, so the
+                # key is a column name too; `name` is the relation's.
+                "details": {
+                    named(key): value if key == "name" else says(value)
+                    for key, value in op.details.items()
+                },
+            }
+        )
+        for op in built.plan.ops
+    )
+    plan = built.plan.model_copy(
+        update={"ops": ops, "notes": reads(built.plan.notes)}
+    )
+    columns = tuple(
+        column.model_copy(
+            update={
+                "name": named(column.name),
+                "description": reads(column.description),
+            }
+        )
+        for column in built.columns
+    )
+    shape = replace(
+        built.shape,
+        **{
+            field: tuple(named(column) for column in getattr(built.shape, field))
+            for field in (
+                "key_columns",
+                "null_capable_measures",
+                "distinct_measures",
+                "filtered_measures",
+                "ratio_measures",
+                "constant_divisor_measures",
+                "ranked_measures",
+                "conditional_columns",
+                "window_measures",
+                "fanout_capable_measures",
+                "all_null_aggregate_witnesses",
+                "round_before_sum_witnesses",
+            )
+        },
+    )
+    return BuiltPlan(
+        plan=plan,
+        shape=shape,
+        columns=columns,
+        renamed_columns=tuple(sorted(names.items())),
+    )
+
+
+def _union_shape_names(
+    evidence: ChainEvidence, templates: Sequence[str]
+) -> dict[str, str]:
+    """The rename map for a shape assembled outside `build_rollup`."""
+    name_evidence = _NameEvidence(
+        parent=evidence.parent,
+        bridge=evidence.bridge,
+        child=evidence.child,
+        measure=evidence.bridge_amount,
+        label=evidence.bridge_label,
+        status=evidence.bridge_status,
+        link_key=evidence.bridge_key,
+        key_source=evidence.parent_key,
+        attr_source=evidence.parent_attr,
+    )
+    source_columns = {
+        evidence.parent_key,
+        evidence.parent_attr,
+        evidence.bridge_key,
+        evidence.bridge_parent_fk,
+        evidence.bridge_child_fk,
+        evidence.bridge_status,
+        evidence.bridge_amount,
+        evidence.bridge_label,
+        evidence.bridge_timestamp,
+        evidence.child_key,
+        evidence.child_label,
+    } - {""}
+    return _dataset_column_names(
+        [t for t in templates if t not in source_columns],
+        name_evidence,
+        # The aliases these shapes carry their joined values under.
+        reserved={evidence.parent, evidence.bridge, evidence.child}
+        | {"link_key", "link_status", "link_amount"},
+    )
+
+
 def build_rollup(
     *,
     mart: str,
@@ -3127,6 +3532,105 @@ def build_rollup(
             f"mart {mart!r}: a rollup needs at least one measure "
             "(a keys-only mart is SELECT DISTINCT, not a task)"
         )
+
+    # Name the mart's columns after THIS chain before anything reads them, so
+    # the ops, the compiled SQL, the gold header and every description agree.
+    # A template name is one string in the plan's namespace: it names the mart
+    # column, the relation column the ops carry it through, and the name the
+    # descriptions state, so the rename rewrites all three together.
+    renamed_columns = _dataset_rename_map(
+        keys=keys,
+        passthrough=passthrough,
+        measures=measures,
+        extrema=extrema,
+        post_windows=post_windows,
+        derived=derived,
+        parent=parent,
+        hops=hops,
+        windows=windows,
+        roles=roles,
+        child=child,
+    )
+    if renamed_columns:
+
+        def _named(column: str) -> str:
+            return renamed_columns.get(column, column)
+
+        def _says(text: str) -> str:
+            return _renamed_text(text, renamed_columns)
+
+        keys = tuple(
+            replace(
+                k,
+                column=_named(k.column),
+                expr=_says(k.expr),
+                description=_says(k.description),
+            )
+            for k in keys
+        )
+        passthrough = tuple(
+            replace(p, column=_named(p.column), description=_says(p.description))
+            for p in passthrough
+        )
+        measures = tuple(
+            replace(
+                m,
+                column=_named(m.column),
+                expr=_says(m.expr),
+                description=_says(m.description),
+            )
+            for m in measures
+        )
+        extrema = tuple(
+            replace(x, column=_named(x.column), description=_says(x.description))
+            for x in extrema
+        )
+        windows = tuple(
+            replace(
+                w, alias=_named(w.alias), expr=_says(w.expr),
+                description=_says(w.description),
+            )
+            for w in windows
+        )
+        post_windows = tuple(
+            replace(
+                w, alias=_named(w.alias), expr=_says(w.expr),
+                description=_says(w.description),
+            )
+            for w in post_windows
+        )
+        derived = tuple(
+            replace(
+                d,
+                column=_named(d.column),
+                # `expr` names mart columns in braces; the braces move with them.
+                expr=_says(d.expr),
+                description=_says(d.description),
+            )
+            for d in derived
+        )
+        # A hop joins ON the base relation's key column and carries its columns
+        # in under aliases the measures read; both live in the renamed namespace,
+        # while the right-hand side of a pair is the source table's own column.
+        hops = tuple(
+            replace(
+                hop,
+                on_pairs=tuple((_named(left), right) for left, right in hop.on_pairs),
+                carry=tuple((source, _named(alias)) for source, alias in hop.carry),
+                rel_columns=tuple(_named(column) for column in hop.rel_columns),
+                description=_says(hop.description),
+            )
+            for hop in hops
+        )
+        parent_carry = tuple(
+            (source, _named(alias)) for source, alias in parent_carry
+        )
+        extrema_order_by = _says(extrema_order_by)
+        extrema_tie_break = _says(extrema_tie_break)
+        extrema_tie_break_prose = _says(extrema_tie_break_prose)
+        aggregate_predicate = _says(aggregate_predicate)
+        grain_description = _says(grain_description)
+        notes = _says(notes)
 
     fact = hops[0].table if hops else ""
     witness_problems = _witness_problems(witnesses, roles, fact=fact, child=child)
@@ -3860,6 +4364,7 @@ def build_rollup(
     built = BuiltPlan(
         plan=plan,
         columns=tuple(columns),
+        renamed_columns=tuple(sorted(renamed_columns.items())),
         shape=StarShape(
             mart=mart,
             parent=parent,
@@ -4138,6 +4643,11 @@ def fan_out_rollup(
     # stated only on the op is one the solver never receives while gold is
     # graded on it. No-op when the bridge has a primary key.
     distinct_ = "DISTINCT " if e.bridge_needs_dedupe else ""
+    # Where "DISTINCT" would sit next to a table or column name, the prose
+    # gate rejects it as SQL mechanics (declarative_prose "distinct-operator"),
+    # and an author who copies the description inherits the rejection
+    # (wikidbs__c40096, batch50 2026-09-19). Those descriptions say it this way.
+    once = ", each counted once even if the row repeats" if e.bridge_needs_dedupe else ""
     return build_rollup(
         mart=mart,
         shape_name="fan_out_rollup",
@@ -4241,10 +4751,10 @@ def fan_out_rollup(
                 expr=f'COUNT(CASE WHEN {passes} THEN "link_key" END)',
                 type=ColumnType.BIGINT,
                 description=(
-                    f"Number of {distinct_}linked {e.bridge} rows whose "
-                    f"{e.bridge_status} is one of {list(e.bridge_status_pass)}. A "
-                    "parent whose links ALL fail that test reports 0, not a "
-                    "missing row."
+                    f"Number of linked {e.bridge} rows whose "
+                    f"{e.bridge_status} is one of {list(e.bridge_status_pass)}"
+                    f"{once}. A parent whose links ALL fail that test reports 0, "
+                    "not a missing row."
                 ),
             ),
             Measure(
@@ -4264,10 +4774,10 @@ def fan_out_rollup(
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"Sum of {e.bridge_amount} over {distinct_}links whose "
-                    f"{e.bridge_status} is one of {list(e.bridge_status_pass)}; "
-                    "0 when none qualify, and 0 when every qualifying row lacks a "
-                    f"{e.bridge_amount} value."
+                    f"Sum of {e.bridge_amount} over links whose "
+                    f"{e.bridge_status} is one of {list(e.bridge_status_pass)}"
+                    f"{once}; 0 when none qualify, and 0 when every qualifying "
+                    f"row lacks a {e.bridge_amount} value."
                 ),
             ),
             Measure(
@@ -4400,26 +4910,29 @@ def aggregate_then_filter(
     filtered_rel = _unique("mart_having", taken)
     threshold = 2
     mart_columns = tuple(column.name for column in base.columns)
+    # The rollup names its own columns after the chain, so the threshold names
+    # the count column this mart actually has.
+    link_count = base.column_named("link_count")
     body.append(
         MartOp(
             kind=MartOpKind.FILTER,
             description=(
-                f"Retain a grouped {evidence.parent} row only when link_count is "
-                f"at least {threshold}, inclusive. Apply this rule after the "
+                f"Retain a grouped {evidence.parent} row only when {link_count} "
+                f"is at least {threshold}, inclusive. Apply this rule after the "
                 "per-parent measures are computed: a parent with one linked row "
                 "does not appear, while a parent with exactly two does."
             ),
             tables=(current,),
             columns=mart_columns,
-            predicate=f'{quote("link_count")} >= {threshold}',
+            predicate=f'{quote(link_count)} >= {threshold}',
             details={"name": filtered_rel},
         )
     )
     body.append(base.plan.ops[-1])
 
     threshold_note = (
-        " This mart emits the column only for parent groups whose link_count is "
-        f"at least {threshold}; lower-count groups produce no output row."
+        f" This mart emits the column only for parent groups whose {link_count} "
+        f"is at least {threshold}; lower-count groups produce no output row."
     )
     columns = tuple(
         column.model_copy(
@@ -4453,7 +4966,12 @@ def aggregate_then_filter(
             "wrong_agg_stage@filter_before_aggregate",
         ),
     )
-    built = BuiltPlan(plan=plan, shape=shape, columns=columns)
+    built = BuiltPlan(
+        plan=plan,
+        shape=shape,
+        columns=columns,
+        renamed_columns=base.renamed_columns,
+    )
     faults = [
         problem
         for index, op in enumerate(plan.ops)
@@ -5481,6 +5999,11 @@ def status_cohort_union(
             witness_bridge_fk=e.bridge_parent_fk,
         ),
     )
+    # This shape assembles its own ops, so it renames the assembled plan.
+    built = _rename_built_plan(
+        built, _union_shape_names(e, tuple(column.name for column in built.columns))
+    )
+    plan = built.plan
     op_faults = [
         problem
         for index, op in enumerate(plan.ops)
@@ -5938,6 +6461,11 @@ def measure_state_distribution(
             witness_bridge_fk=e.bridge_parent_fk,
         ),
     )
+    # This shape assembles its own ops, so it renames the assembled plan.
+    built = _rename_built_plan(
+        built, _union_shape_names(e, tuple(column.name for column in built.columns))
+    )
+    plan = built.plan
     op_faults = [
         problem
         for index, op in enumerate(plan.ops)

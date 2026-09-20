@@ -147,14 +147,25 @@ def mart_data_model_prose(task: TaskIR, mart: MartSpec) -> str:
     return yaml.safe_dump(doc, sort_keys=True, default_flow_style=False, width=88)
 
 
-def _author_view(task: TaskIR) -> str:
-    """What the semantic author sees: IR + plan summaries. No reference SQL,
-    no attack mutations, no gold, no counterfactual literal rows."""
+def _author_view(task: TaskIR, dataset_snapshot: str = "") -> str:
+    """What the semantic author sees: IR + plan summaries, and example rows of
+    the development population when the caller measured them. No reference SQL,
+    no attack mutations, no gold, no counterfactual literal rows, and no graded
+    population's rows."""
     lines = [
         f"TASK: {task.title or task.task_id}",
         "",
         "SOURCE SCHEMA:",
         *_table_lines(task),
+    ]
+    if dataset_snapshot:
+        lines += [
+            "",
+            "DEVELOPMENT DATA (the population a solver's own sources are seeded "
+            "with; examples, not a rule about the data):",
+            *dataset_snapshot.splitlines(),
+        ]
+    lines += [
         "",
         "MART PLAN SUMMARIES:",
     ]
@@ -169,6 +180,12 @@ def _author_view(task: TaskIR) -> str:
         "Write solver-visible prose describing the project and each mart. "
         "Do not include any SQL implementation or any output values.",
     ]
+    if dataset_snapshot:
+        lines.append(
+            "Write about THIS dataset in its own terms. The example rows are "
+            "context for your wording only: never state one as a rule about "
+            "the data, as a domain of a column, or as an expected output."
+        )
     return "\n".join(lines)
 
 
@@ -284,16 +301,20 @@ def _population_adversary_view(task: TaskIR) -> str:
     )
 
 
-def render_view(role: CouncilRole, task: TaskIR) -> str:
+def render_view(
+    role: CouncilRole, task: TaskIR, dataset_snapshot: str = ""
+) -> str:
     """THE stimulus one role is sent for one task — the single renderer.
 
     ONE RENDERER ON PURPOSE: `metrology.view_digest()` must hash exactly what
     the critics read, and a digest taken from a second rendering path would
-    drift silently. Pure function of `(role, task)` — no paths, clock,
-    environment or unordered iteration.
+    drift silently. Pure function of `(role, task, dataset_snapshot)` — no
+    paths, clock, environment or unordered iteration; the caller measures the
+    snapshot. `dataset_snapshot` reaches the AUTHOR only: a critic view is the
+    public bundle exactly, which is what the view digest hashes.
     """
     if role == CouncilRole.SEMANTIC_AUTHOR:
-        return _author_view(task)
+        return _author_view(task, dataset_snapshot)
     if role == CouncilRole.POPULATION_ADVERSARY:
         return _population_adversary_view(task)
     return _critic_view(task)
@@ -1515,7 +1536,9 @@ def _has_status(finding: Finding, status: FindingScreenStatus) -> bool:
 
 # Public entry points
 
-def author_prose(task: TaskIR, provider: Provider) -> str:
+def author_prose(
+    task: TaskIR, provider: Provider, *, dataset_snapshot: str = ""
+) -> str:
     """Semantic authoring: IR + plan summaries -> solver-visible prose.
 
     The author's view carries no reference SQL, mutations, gold or literal rows,
@@ -1523,7 +1546,8 @@ def author_prose(task: TaskIR, provider: Provider) -> str:
     power: this returns prose and nothing else.
     """
     prose = provider.complete(
-        CouncilRole.SEMANTIC_AUTHOR, render_view(CouncilRole.SEMANTIC_AUTHOR, task)
+        CouncilRole.SEMANTIC_AUTHOR,
+        render_view(CouncilRole.SEMANTIC_AUTHOR, task, dataset_snapshot),
     )
     if not isinstance(prose, str) or not prose.strip():
         raise ValueError("semantic author produced empty prose")
@@ -1664,6 +1688,7 @@ def author_prose_session(
     clock=None,
     record: dict | None = None,
     session_salt: int | None = None,
+    dataset_snapshot: str = "",
 ) -> str:
     """Run one bounded, harness-validated prose revision session.
 
@@ -1704,7 +1729,7 @@ def author_prose_session(
         worker = author_tools.author_validator_worker()
     salt = int(getattr(policy, "session_salt", 0) or 0) if session_salt is None else int(session_salt)
     view = prompts.semantic_author_session_view(
-        render_view(CouncilRole.SEMANTIC_AUTHOR, task),
+        render_view(CouncilRole.SEMANTIC_AUTHOR, task, dataset_snapshot),
         max_revisions=limits.max_revisions,
         session_salt=salt,
     )

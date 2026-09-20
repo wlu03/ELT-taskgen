@@ -846,6 +846,13 @@ _TIE_WITNESS_CLAIMS: dict[str, frozenset[str]] = {
     "custom@wrong_boundary_else": frozenset({"argmax_profile"}),
 }
 
+#: Claim -> the shapes whose ELSE branches only a parent's LINK COUNT reaches:
+#: has_links is 'no' at 0 links and size_band is 'large' above the top size
+#: threshold. Real rows need contain neither, so the witness is measured.
+_LINK_COUNT_ELSE_CLAIMS: dict[str, frozenset[str]] = {
+    "custom@wrong_boundary_else": frozenset({"fan_out_rollup"}),
+}
+
 
 def _top_tie_rows(
     shape: StarShape,
@@ -992,6 +999,65 @@ def _tie_witness_population(
     return None
 
 
+def _link_count_else_parents(
+    shape: StarShape, rows: dict[str, tuple[Row, ...]]
+) -> int:
+    """Count parents whose link count reaches a roll-up ladder's ELSE branch.
+
+    That is a parent with no linked row (has_links 'no') or with more linked
+    rows than the top size threshold (size_band 'large'), counted the way the
+    reference plan counts: rows with a link key, each byte-identical row once
+    when the plan deduplicates the bridge.
+    """
+    if not (shape.parent_keys and shape.fact and shape.fact_link_columns):
+        return 0
+    parent_key = shape.parent_keys[0]
+    link = shape.fact_link_columns[0]
+    link_key = shape.roles.link_key
+    top = max(shape.thresholds) if shape.thresholds else None
+    fact_rows = rows.get(shape.fact, ())
+    if shape.fact_dedupe:
+        fact_rows = tuple({canonical_json(dict(r)): r for r in fact_rows}.values())
+    counts: dict[object, int] = {}
+    for row in fact_rows:
+        if link_key and row.get(link_key) is None:
+            continue
+        counts[row.get(link)] = counts.get(row.get(link), 0) + 1
+    witnesses = 0
+    for parent in rows.get(shape.parent, ()):
+        key = parent.get(parent_key)
+        # A missing parent key matches no link, so that parent has 0 links.
+        count = 0 if key is None else counts.get(key, 0)
+        if count == 0 or (top is not None and count > top):
+            witnesses += 1
+    return witnesses
+
+
+def _link_count_else_population(
+    shapes: tuple[StarShape, ...],
+    rows: dict[str, tuple[Row, ...]],
+    stress_rows: dict[str, tuple[Row, ...]],
+    counterfactual_rows: dict[str, tuple[Row, ...]],
+) -> PopulationName | None:
+    """Return the first shipped population with a parent a roll-up ELSE reaches.
+
+    Primary, then stress, then the counterfactual carve-out, which is where a
+    real pool gets its childless parents when the vendor rows have none.
+    """
+    ladders = _LINK_COUNT_ELSE_CLAIMS["custom@wrong_boundary_else"]
+    rollups = tuple(s for s in shapes if s.shape_name in ladders)
+    if not rollups:
+        return None
+    for population, population_rows in (
+        (PopulationName.PRIMARY, rows),
+        (PopulationName.STRESS, stress_rows),
+        (PopulationName.COUNTERFACTUAL, counterfactual_rows),
+    ):
+        if any(_link_count_else_parents(s, population_rows) for s in rollups):
+            return population
+    return None
+
+
 def _attack_cases(
     shapes: tuple[StarShape, ...],
     *,
@@ -1001,11 +1067,14 @@ def _attack_cases(
     backend_assignments: tuple[BackendAssignment, ...] = (),
     manufactured_childless: bool = False,
     tie_witness: PopulationName | None = None,
+    link_count_else_witness: PopulationName | None = None,
 ) -> tuple:
     """Point shared attacks at populations containing their measured witnesses.
 
     Manufactured childless cases remain counterfactual; tie cases use the
-    measured tie population. Missing witnesses are not silently removed.
+    measured tie population, and roll-up ELSE cases the measured population
+    with a parent at 0 links or above the top size threshold. Missing
+    witnesses are not silently removed.
     """
     plan_level = {
         AttackKind.CONSTANTS,
@@ -1024,6 +1093,12 @@ def _attack_cases(
     tie_only = {
         claim.replace("@", "__")
         for claim, ladders in _TIE_WITNESS_CLAIMS.items()
+        if claim.replace("@", "__") in claim_shapes
+        and claim_shapes[claim.replace("@", "__")] <= ladders
+    }
+    link_count_else_only = {
+        claim.replace("@", "__")
+        for claim, ladders in _LINK_COUNT_ELSE_CLAIMS.items()
         if claim.replace("@", "__") in claim_shapes
         and claim_shapes[claim.replace("@", "__")] <= ladders
     }
@@ -1049,6 +1124,24 @@ def _attack_cases(
                         "everywhere else. Witnessed on the "
                         f"{tie_witness.value} population, measured: it is the "
                         "one shipped population with a tied maximum."
+                    ),
+                }
+            )
+            continue
+        if case.name in link_count_else_only and link_count_else_witness is not None:
+            cases[case.name] = case.model_copy(
+                update={
+                    "expected_pass": {link_count_else_witness: False},
+                    # The shared catalogue text names synthetic row G; on real
+                    # rows the ELSE branches are reached only by link counts.
+                    "description": (
+                        "The mandatory ELSE dropped from every CASE ladder. On "
+                        "this shape the ELSE branches are has_links 'no', for a "
+                        "parent with no linked row, and size_band 'large', for "
+                        "a parent above the top size threshold, so the mutant "
+                        "reports NULL only for those parents. Witnessed on the "
+                        f"{link_count_else_witness.value} population, measured: "
+                        "it is the first shipped population with such a parent."
                     ),
                 }
             )
@@ -2294,18 +2387,23 @@ def to_task_ir(
     dangling_probe, _counter_restricted = _counterfactual_rows(
         converted.tables, converted.relationships, converted.rows
     )
-    _dangling_probe, manufactured_dangling = _counterfactual_optional_dangling(
+    counterfactual_rows, manufactured_dangling = _counterfactual_optional_dangling(
         converted.tables,
         converted.relationships,
         dangling_probe,
         shapes_out,
     )
+    stress_rows = _stress_rows(
+        converted.tables, converted.relationships, converted.rows
+    )
     # Same discipline for a TIED maximum: `None` means no shipped population
     # reaches the ladder's ELSE branch.
-    tie_witness = _tie_witness_population(
-        shapes_out,
-        converted.rows,
-        _stress_rows(converted.tables, converted.relationships, converted.rows),
+    tie_witness = _tie_witness_population(shapes_out, converted.rows, stress_rows)
+    # And for a roll-up's link-count ELSE branches, measured on the rows each
+    # population ships (the counterfactual is the carve-out real_populations
+    # materializes).
+    link_count_else_witness = _link_count_else_population(
+        shapes_out, converted.rows, stress_rows, counterfactual_rows
     )
     task_id = f"{selection.family_id}__{slugify_family(db_dir.name)}"
     title = re.sub(r"[_\s]+", " ", schema.database_name).strip().title()
@@ -2359,6 +2457,7 @@ def to_task_ir(
             manufactured_childless=manufactured or manufactured_dangling,
             # The boundary-ELSE claim is observable only on a TIED maximum.
             tie_witness=tie_witness,
+            link_count_else_witness=link_count_else_witness,
         ),
     )
     # attacks.py mutates TaskIR.reference and has nothing to mutate without it.

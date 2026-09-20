@@ -485,6 +485,24 @@ class PlanDescriptionContract(unittest.TestCase):
                             f"banned operator vocabulary: {problems}",
                         )
 
+    def test_no_mart_or_column_description_uses_banned_operator_vocabulary(self) -> None:
+        """The same scan over the mart and column descriptions. An author who
+        copies a column description word for word must not inherit a
+        rejection: 'Number of DISTINCT linked <bridge> rows whose ...' and
+        'over DISTINCT links whose ...' on a deduplicated fan_out_rollup did
+        exactly that (wikidbs__c40096, batch50 2026-09-19)."""
+        for label, task in self.cases:
+            identifiers = declarative_prose._task_identifiers(task)
+            for mart in task.marts:
+                texts = [("mart", mart.description)] + [
+                    (column.name, column.description) for column in mart.columns
+                ]
+                for item, text in texts:
+                    with self.subTest(case=label, mart=mart.name, item=item):
+                        self.assertEqual(
+                            [], declarative_prose.operator_problems(text, identifiers)
+                        )
+
     # -- clause 3b: an argmax only claims a row identifier it ships ---------
 
     def test_which_row_won_is_claimed_only_with_a_row_identifier(self) -> None:
@@ -497,7 +515,14 @@ class PlanDescriptionContract(unittest.TestCase):
             for mart in task.marts:
                 if not any(op.kind.value == "extrema" for op in mart.plan.ops):
                     continue
-                has_row_id = any(c.name == "top_row_id" for c in mart.columns)
+                # The mart names its columns after its own chain, so the
+                # row identifier is found where the plan carries it: the
+                # extrema op projects the winning row's id alias.
+                has_row_id = any(
+                    '"f_id" AS' in (op.details.get("select") or "")
+                    for op in mart.plan.ops
+                    if op.kind.value == "extrema"
+                )
                 texts = [c.description for c in mart.columns] + [
                     op.description for op in mart.plan.ops
                 ]
@@ -771,7 +796,8 @@ class BoundaryAndDefaultStatements(unittest.TestCase):
         from test_plan_library import EVIDENCE
 
         built = mp.fan_out_rollup(EVIDENCE, mart="rollup")
-        column = next(c for c in built.columns if c.name == "distinct_child_count")
+        name = built.column_named("distinct_child_count")
+        column = next(c for c in built.columns if c.name == name)
         if EVIDENCE.child_link_optional:
             self.assertIn("reaches no", column.description)
             self.assertIn("adds nothing to this count", column.description)
@@ -990,7 +1016,10 @@ class RunKStatements(unittest.TestCase):
             ("categorical_ladder", "link_count"),
         ):
             with self.subTest(shape=shape, column=column):
-                description = next(c.description for c in built[shape].columns if c.name == column)
+                name = built[shape].column_named(column)
+                description = next(
+                    c.description for c in built[shape].columns if c.name == name
+                )
                 self.assertIn("rows for this accounts row; 0 when there are none. ", description)
                 self.assertIn(
                     "An accounts row kept with no subscriptions row reports 0 here, "

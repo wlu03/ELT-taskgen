@@ -58,6 +58,35 @@ _UNPERTURBED_TYPES: frozenset[ColumnType] = frozenset(
 )
 
 
+def _sql_string_literals(task: TaskIR) -> frozenset[str]:
+    """Every string literal the task's reference SQL names.
+
+    A text value the SQL names (a filter such as IN ('black-and-white')) is
+    structure, like a boolean: relabeling it empties the filter instead of
+    testing whether the output depends on the data (wikidbs c40096 and c80113
+    cohort marts, batch50 2026-09-19).
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    reference = getattr(task, "reference", None)
+    if reference is None:
+        return frozenset()
+    literals: set[str] = set()
+    for sql in (reference.sql_by_mart or {}).values():
+        try:
+            statements = sqlglot.parse(sql, read=reference.dialect or "duckdb")
+        except Exception:  # noqa: BLE001 - an unparseable reference fails elsewhere
+            continue
+        for statement in statements:
+            if statement is None:
+                continue
+            for literal in statement.find_all(exp.Literal):
+                if literal.is_string:
+                    literals.add(literal.this)
+    return frozenset(literals)
+
+
 # Link classes: columns that must move together or referential integrity dies
 
 def link_classes(task: TaskIR) -> dict[tuple[str, str], tuple[tuple[str, str], ...]]:
@@ -131,11 +160,13 @@ def _class_value_map(
     ctype: ColumnType,
     enum_values: tuple[str, ...] | None,
     values: list[Any],
+    fixed: frozenset[str] = frozenset(),
 ) -> dict[Any, Any]:
     """Build a type-preserving bijection over one non-null link class.
 
     Shift numbers and dates, relabel text by rank, and rotate enum values within their
-    domain. Return an empty mapping when no value can move safely.
+    domain. Text values in `fixed` (the reference SQL's literals) map to
+    themselves. Return an empty mapping when no value can move safely.
     """
     if ctype in _UNPERTURBED_TYPES:
         return {}
@@ -168,7 +199,7 @@ def _class_value_map(
                 out[v] = shifted
         return out
     # TEXT: rank relabeling over the sorted distinct domain — injective, stable.
-    texts = sorted({v for v in values if isinstance(v, str)})
+    texts = sorted({v for v in values if isinstance(v, str) and v not in fixed})
     width = max(6, len(str(len(texts))))
     for i, v in enumerate(texts):
         out[v] = f"pv{i:0{width}d}"
@@ -184,9 +215,11 @@ def perturb_population(
     are never mutated; every returned row is a fresh dict.
     """
     classes = link_classes(task)
+    literals = _sql_string_literals(task)
     # One map per class representative, built from the union of member domains.
     reps: dict[tuple[tuple[str, str], ...], dict[Any, Any]] = {}
     unperturbed: list[str] = []
+    held: list[str] = []
 
     for key in sorted(classes):
         members = classes[key]
@@ -229,7 +262,16 @@ def perturb_population(
                 except TypeError:  # unhashable (json blobs) — not perturbed
                     continue
                 domain.append(v)
-        vmap = _class_value_map(ctype, enum_values, domain)
+        fixed = (
+            frozenset(v for v in domain if isinstance(v, str) and v in literals)
+            if ctype is ColumnType.TEXT and not enum_values
+            else frozenset()
+        )
+        if fixed:
+            held.append(
+                f"{'|'.join(f'{t}.{c}' for t, c in members)}:{len(fixed)}"
+            )
+        vmap = _class_value_map(ctype, enum_values, domain, fixed)
         reps[members] = vmap
         if not vmap:
             unperturbed.append(
@@ -265,6 +307,8 @@ def perturb_population(
         "perturbed_cells": cells,
         "perturbed_columns": sorted(touched),
         "unperturbed_classes": sorted(unperturbed),
+        # Classes with values the reference SQL names, held at their own value.
+        "sql_literal_classes": sorted(held),
         "link_classes": len(reps),
     }
     return out, report

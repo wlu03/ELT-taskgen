@@ -5,12 +5,12 @@ generator:
   name: elt-taskgen-five-source
   version: 0.2.0
   digest_kind: sha256-generator-tree-v1
-  sha256: c36fdac8837c56eedbf4738f4786c7ad48dc4415b8d6caf2b5b60430df926113
+  sha256: 0a0fc54283bf9dfa99d9f5dc3d2cbfcf5668c28519db78e6d958dc0642eafefa
   lock_sha256: 98019b431c8ae77134c44a5f16c5cf08a0e08b2da6c2d2ca3e169848ff6ea864
 catalog:
   path: package://config/sources.yaml
   digest_kind: sha256-file
-  sha256: 935b5a1286627b088794122d75cc5103d244d83bdfb5a47a7e4b7ee00f31e004
+  sha256: ac9c7bfb19d41f5032977386f101159a347b29b9b29b3ae9d3b2d3f5085df404
 sources:
   dbt:
   - selector: dbt_twitter
@@ -18,7 +18,7 @@ sources:
     upstream_url: https://github.com/fivetran/dbt_twitter
     upstream_revision: b610ac7661d788a5395520487925d9331603d254
     adapter_version: 0.2.0
-    adapter_digest: 09c4697dc24d59564fce031cb7899fdcba9438bd3628d087f9c0827fe9055361
+    adapter_digest: f6977c3a53ae1ab35dda434b6c865e37a7089b7bc81c4aab94300f07a2fe2a2f
     license: Apache-2.0
     license_evidence: repository:LICENSE@b610ac7661d788a5395520487925d9331603d254
     pool: dbt
@@ -33,7 +33,7 @@ sources:
     upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/personio
     upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
     adapter_version: 0.2.0
-    adapter_digest: ca1191a12ad74e4c71f17b813b8d9aa8a14d983a813029a2c088b294012087ed
+    adapter_digest: e0f14f22208d7838b0206853d1e88ae700fd469a9084ea65ad3458bc96cee772
     license: Apache-2.0
     license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
     pool: dlt
@@ -48,7 +48,7 @@ sources:
     upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/pipedrive
     upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
     adapter_version: 0.2.0
-    adapter_digest: ca1191a12ad74e4c71f17b813b8d9aa8a14d983a813029a2c088b294012087ed
+    adapter_digest: e0f14f22208d7838b0206853d1e88ae700fd469a9084ea65ad3458bc96cee772
     license: Apache-2.0
     license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
     pool: dlt
@@ -63,7 +63,7 @@ sources:
     upstream_url: https://github.com/dlt-hub/verified-sources/tree/3957506893a7da821dbcc6acd51c7ca4475d1f53/sources/workable
     upstream_revision: 3957506893a7da821dbcc6acd51c7ca4475d1f53
     adapter_version: 0.2.0
-    adapter_digest: ca1191a12ad74e4c71f17b813b8d9aa8a14d983a813029a2c088b294012087ed
+    adapter_digest: e0f14f22208d7838b0206853d1e88ae700fd469a9084ea65ad3458bc96cee772
     license: Apache-2.0
     license_evidence: repository:LICENSE@3957506893a7da821dbcc6acd51c7ca4475d1f53
     pool: dlt
@@ -79,7 +79,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -92,7 +92,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -105,7 +105,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -118,7 +118,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -131,7 +131,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -144,7 +144,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -157,7 +157,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -170,7 +170,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -183,7 +183,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -196,7 +196,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -209,7 +209,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -222,7 +222,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -235,7 +235,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -248,7 +248,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -261,7 +261,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -274,7 +274,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -287,7 +287,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -300,7 +300,7 @@ sources:
     upstream_url: https://huggingface.co/datasets/seeklhy/SynSQL-2.5M/tree/cca2c84cc3b41afa6b51534762a6a3a4a420baca
     upstream_revision: cca2c84cc3b41afa6b51534762a6a3a4a420baca
     adapter_version: 0.2.0
-    adapter_digest: 3ee005df549a3182620b41ca7dbc22f1bff19d4ad0cbc18b6cbee1f64dcafcdf
+    adapter_digest: 3c2f4f40c3378ccc140fe6586450a2b250db3e5293ee1c25b1d44ae4cfa541fc
     license: Apache-2.0
     license_evidence: dataset-card:README.md@cca2c84cc3b41afa6b51534762a6a3a4a420baca
     pool: synsql
@@ -314,7 +314,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -331,7 +331,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: BSD-3-CLAUSE
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -348,7 +348,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -365,7 +365,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -382,7 +382,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -399,7 +399,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -416,7 +416,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: BSD-3-CLAUSE
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -433,7 +433,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -450,7 +450,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -467,7 +467,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -484,7 +484,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -501,7 +501,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: CC0-1.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -518,7 +518,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -535,7 +535,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -552,7 +552,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -569,7 +569,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -586,7 +586,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: APACHE-2.0
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -603,7 +603,7 @@ sources:
     upstream_url: https://zenodo.org/records/12682521
     upstream_revision: zenodo-record-12682521-v0.2
     adapter_version: 0.2.0
-    adapter_digest: 04719b857842738656c7f78ca7c0a6711c3b497077050cabce3e635404939c8c
+    adapter_digest: 03ecdbd77b8969d15449ff5e124063b968b2d930530a1e21932a5372231ca110
     license: MIT
     license_evidence: selected-record:INFO.LICENSE
     pool: schemapile
@@ -621,7 +621,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -640,7 +640,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -659,7 +659,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -678,7 +678,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -697,7 +697,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -716,7 +716,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -735,7 +735,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -754,7 +754,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -773,7 +773,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs
@@ -792,7 +792,7 @@ sources:
     upstream_url: https://zenodo.org/records/11559814
     upstream_revision: zenodo-record-11559814
     adapter_version: 0.2.0
-    adapter_digest: 767860c1e37f633543683a26bb3105b5c864173496c88e190e251df7b4a6b83c
+    adapter_digest: 154086dd626dd381f1a4719b2badfc4e98beae18f996441441d1816aee9bec47
     license: CC-BY-4.0
     license_evidence: zenodo-record:11559814:license
     pool: wikidbs

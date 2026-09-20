@@ -18,7 +18,9 @@ WORKSPACE_RESULT_SCHEMA_VERSION = "workspace-result-v1"
 #: 0.2.3: the dbt rewrite moved to portable-dbt-sql-v5, which changes the
 #: result of a bare DECIMAL on Databricks and Redshift and refuses alias-hidden
 #: text casts the destinations render differently.
-WORKSPACE_SCORER_VERSION = "0.2.3"
+#: 0.2.4: portable-dbt-sql-v6 stops refusing a text cast of an alias whose
+#: value is a label, predicate or count computed from a DOUBLE or TIMESTAMP.
+WORKSPACE_SCORER_VERSION = "0.2.4"
 ARTIFACT_WORKFLOW_PROXY_CLAIM = "artifact_workflow_proxy"
 WORKSPACE_POPULATION_AGGREGATION = "minimum"
 WORKSPACE_PROFILE_OWNER = "harness"

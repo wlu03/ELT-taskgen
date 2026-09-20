@@ -555,5 +555,80 @@ class TestPerturbationProbe(BuiltWorkspaceTestCase):
         self.assertIn("primary-vs-resampled", result.details)
 
 
+class TestSqlLiteralsAreHeld(unittest.TestCase):
+    """A text value the reference SQL names is held at its own value.
+
+    batch50 2026-09-19: the wikidbs cohort marts filter on a real status value
+    (film_color IN ('black-and-white')) in a column with no declared enum, the
+    rank relabeling renamed that value, the cohort mart went empty, and the
+    probe reported INCONCLUSIVE on wikidbs__c40096 and __c80113. Needs no
+    built workspace: the demo task's SQL names 'completed'.
+    """
+
+    def setUp(self) -> None:
+        from elt_taskgen import demo_fixture
+
+        self.task = demo_fixture.demo_task()
+        # The same task with orders.status as plain text, as a real pool ships it.
+        self.plain = self.task.model_copy(
+            update={
+                "tables": tuple(
+                    t.model_copy(
+                        update={
+                            "columns": tuple(
+                                c.model_copy(update={"enum_values": None})
+                                if (t.name, c.name) == ("orders", "status")
+                                else c
+                                for c in t.columns
+                            )
+                        }
+                    )
+                    for t in self.task.tables
+                )
+            }
+        )
+        self.rows = {
+            "customers": [
+                {"customer_id": 1, "customer_name": "Ann"},
+                {"customer_id": 2, "customer_name": "Bob"},
+            ],
+            "orders": [
+                {"order_id": 10, "customer_id": 1, "status": "completed"},
+                {"order_id": 11, "customer_id": 2, "status": "cancelled"},
+            ],
+            "order_items": [{"order_id": 10, "quantity": 2, "unit_price": 3.5}],
+        }
+
+    def test_the_reference_literals_are_collected(self) -> None:
+        self.assertEqual(
+            perturbation._sql_string_literals(self.task), frozenset({"completed"})
+        )
+
+    def test_a_named_value_is_held_and_every_other_value_moves(self) -> None:
+        out, report = perturbation.perturb_population(self.plain, self.rows)
+        statuses = [row["status"] for row in out["orders"]]
+        self.assertEqual(statuses[0], "completed")
+        self.assertNotEqual(statuses[1], "cancelled")
+        self.assertNotEqual(out["customers"][0]["customer_name"], "Ann")
+        self.assertEqual(report["sql_literal_classes"], ["orders.status:1"])
+
+    def test_a_declared_enum_still_rotates(self) -> None:
+        out, report = perturbation.perturb_population(self.task, self.rows)
+        self.assertEqual([row["status"] for row in out["orders"]], ["cancelled", "completed"])
+        self.assertEqual(report["sql_literal_classes"], [])
+
+    def test_a_held_value_keeps_the_text_map_injective(self) -> None:
+        from elt_taskgen.models import ColumnType
+
+        vmap = perturbation._class_value_map(
+            ColumnType.TEXT, None, ["black-and-white", "color", "sepia"],
+            frozenset({"black-and-white"}),
+        )
+        self.assertNotIn("black-and-white", vmap)
+        self.assertEqual(set(vmap), {"color", "sepia"})
+        self.assertEqual(len(set(vmap.values())), 2)
+        self.assertNotIn("black-and-white", vmap.values())
+
+
 if __name__ == "__main__":
     unittest.main()

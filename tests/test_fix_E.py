@@ -38,7 +38,7 @@ P = PopulationName
 def _argmax_task():
     built = mp.argmax_profile(tpl.EVIDENCE, mart="argmax_case_mart")
     task = tpl.build_task(built, "proof__argmax_case")
-    return task, task.marts[0]
+    return task, task.marts[0], built
 
 
 class ArgmaxTieBreakCollation(unittest.TestCase):
@@ -59,20 +59,23 @@ class ArgmaxTieBreakCollation(unittest.TestCase):
         con.execute("INSERT INTO accounts VALUES (1, 'one', 'active'), (2, 'two', 'trial')")
         con.executemany("INSERT INTO subscriptions VALUES (?, ?, ?, ?, ?, ?, ?)", list(self.ROWS))
 
-    def _winners(self, con: duckdb.DuckDBPyConnection, task, mart, sql) -> dict:
+    def _winners(self, con: duckdb.DuckDBPyConnection, task, mart, sql, built) -> dict:
+        # The mart names its columns after the chain; ask it what it calls them.
+        key = built.column_named("parent_key")
+        label = built.column_named("top_label")
+        row_id = built.column_named("top_row_id")
         return {
-            r["parent_key"]: (r["top_label"], r["top_row_id"])
-            for r in ref.execute_mart(con, mart, sql)
+            r[key]: (r[label], r[row_id]) for r in ref.execute_mart(con, mart, sql)
         }
 
     def test_argmax_tie_break_is_case_sensitive_and_session_independent(self) -> None:
-        task, mart = _argmax_task()
+        task, mart, built = _argmax_task()
         sql = ref.compile_plan_sql(task, mart)
         pinned = runner_mod.open_reference_connection()
         try:
             self._load(pinned, task)
             self.assertEqual(
-                {1: ("Zulu", 1), 2: ("Van", 3)}, self._winners(pinned, task, mart, sql)
+                {1: ("Zulu", 1), 2: ("Van", 3)}, self._winners(pinned, task, mart, sql, built)
             )
         finally:
             pinned.close()
@@ -83,23 +86,24 @@ class ArgmaxTieBreakCollation(unittest.TestCase):
             raw.execute("SET default_collation = 'nocase'")
             self._load(raw, task)
             self.assertEqual(
-                {1: ("alpha", 2), 2: ("de Kleijn", 4)}, self._winners(raw, task, mart, sql)
+                {1: ("alpha", 2), 2: ("de Kleijn", 4)}, self._winners(raw, task, mart, sql, built)
             )
             runner_mod._pin_session(raw)
             self.assertEqual(
-                {1: ("Zulu", 1), 2: ("Van", 3)}, self._winners(raw, task, mart, sql)
+                {1: ("Zulu", 1), 2: ("Van", 3)}, self._winners(raw, task, mart, sql, built)
             )
         finally:
             raw.close()
         # And the shipped prose says so, in words the author must echo.
-        top_label = next(c for c in mart.columns if c.name == "top_label")
+        label = built.column_named("top_label")
+        top_label = next(c for c in mart.columns if c.name == label)
         self.assertIn("case-sensitive", top_label.description)
         self.assertIn("uppercase letter sorts before every lowercase", top_label.description)
 
 
 class CollationProseIsDeclarative(unittest.TestCase):
     def test_declarative_prose_accepts_the_case_sensitivity_qualifier(self) -> None:
-        task, mart = _argmax_task()
+        task, mart, built = _argmax_task()
         identifiers = declarative_prose._task_identifiers(task)
         self.assertEqual([], declarative_prose.operator_problems(mp.TEXT_ORDER_PROSE, identifiers))
         for column in mart.columns:
@@ -122,7 +126,7 @@ class NullLabelOnFilesBridge(unittest.TestCase):
     winner reports the documented '(none)' rather than ''."""
 
     def test_extremum_top_label_null_on_files_bridge(self) -> None:
-        task, mart = _argmax_task()
+        task, mart, built = _argmax_task()
         task = task.model_copy(
             update={
                 "tables": tpl._nullable(task.tables, "subscriptions", "sub_label"),
@@ -170,10 +174,13 @@ class NullLabelOnFilesBridge(unittest.TestCase):
                         # What generation/source_data.render_files does: None -> ''.
                         writer.writerow(["" if row[c] is None else row[c] for c in columns])
             result = runner_mod.run_reference(task, P.DEVELOPMENT, workspace)
-        by_key = {r["parent_key"]: r for r in result.mart_rows[mart.name]}
-        self.assertEqual("(none)", by_key[1]["top_label"])
-        self.assertEqual(1, by_key[1]["top_row_id"])
-        self.assertEqual("gamma", by_key[2]["top_label"])
+        key = built.column_named("parent_key")
+        label = built.column_named("top_label")
+        row_id = built.column_named("top_row_id")
+        by_key = {r[key]: r for r in result.mart_rows[mart.name]}
+        self.assertEqual("(none)", by_key[1][label])
+        self.assertEqual(1, by_key[1][row_id])
+        self.assertEqual("gamma", by_key[2][label])
         # And the loader agrees with every agent-side reader on the count.
         con = duckdb.connect(":memory:")
         try:

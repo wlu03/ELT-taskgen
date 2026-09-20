@@ -32,6 +32,7 @@ from elt_taskgen.models import (
     Origin,
     RLVR_TASK_VARIANTS,
     TaskIR,
+    TaskRevision,
     TaskVariant,
     task_to_json,
     variant_task_id,
@@ -40,6 +41,7 @@ from elt_taskgen.provenance import (
     IngestProvenance,
     ProvenanceArtifact,
     SourceIdentity,
+    lineage_root_hash,
     publish_or_confirm,
     release_provenance_rel,
 )
@@ -1593,12 +1595,15 @@ class _FreezeReleaseHarness(ExportTaskBase):
         """Give release fixtures the same immutable evidence as typed ingest."""
 
         self.task_root.mkdir(parents=True, exist_ok=True)
+        # The engine's task, which a test may have given an intake lineage:
+        # intake evidence binds to the lineage ROOT, not to the current hash.
+        task = self.engine.tasks.get(self.task.task_id, self.task)
         (self.task_root / "task_ir.json").write_text(
-            task_to_json(self.task), encoding="utf-8"
+            task_to_json(task), encoding="utf-8"
         )
         record = IngestProvenance(
             task_id=self.task.task_id,
-            task_content_hash=self.task.content_hash(),
+            task_content_hash=lineage_root_hash(task),
             source=SourceIdentity(
                 pool=self.task.origin.value,
                 origin=self.task.origin,
@@ -2580,6 +2585,40 @@ class TestReleaseSourceProvenance(_FreezeReleaseHarness):
         self.assertEqual(
             (self.out_dir / rel).read_bytes(), record.deterministic_bytes()
         )
+        result = release.verify_release(self.out_dir)
+        self.assertTrue(result.ok, result.failures)
+
+    def test_a_task_whose_hash_moved_after_intake_still_verifies(self) -> None:
+        """Intake evidence binds to the lineage ROOT, and authoring moves the
+        content hash away from it. The released private TaskIR therefore has to
+        carry its revisions: without them it read as its own lineage root and
+        every authored task failed its own freeze (batch50, 2026-09-19)."""
+        intake_hash = "a" * 64
+        moved = self.task.model_copy(
+            update={
+                "revisions": (
+                    TaskRevision(
+                        revision=1,
+                        reason="initial intake revision",
+                        content_hash=intake_hash,
+                    ),
+                )
+            }
+        )
+        # Revisions are not hashed, so only the lineage moves here.
+        self.assertNotEqual(intake_hash, moved.content_hash())
+        self.assertEqual(moved.content_hash(), self.task.content_hash())
+        self.engine.tasks[self.task.task_id] = moved
+        record = self.publish_source_provenance()
+        self.assertEqual(record.task_content_hash, intake_hash)
+
+        self.freeze()
+        released = TaskIR.model_validate_json(
+            (self.out_dir / "private" / self.task.task_id / release.SEMANTIC_TASK_IR_REL)
+            .read_text(encoding="utf-8")
+        )
+        self.assertEqual(lineage_root_hash(released), intake_hash)
+        self.assertEqual(released.content_hash(), moved.content_hash())
         result = release.verify_release(self.out_dir)
         self.assertTrue(result.ok, result.failures)
 

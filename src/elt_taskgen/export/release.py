@@ -1989,8 +1989,15 @@ def _freeze_release_locked(
             # checksum-pinned private TaskIR. Reference plans and SQL stay private.
             semantic_dir = private_root / tid / SEMANTIC_DIRNAME
             semantic_dir.mkdir(parents=True, exist_ok=True)
+            # The FULL dump, as the local evaluator package ships it: the
+            # canonical dump carries no revisions, so the released TaskIR read
+            # as its own lineage root and the source-provenance check below
+            # compared the intake hash against the current content hash. Every
+            # task whose hash moved after intake — every authored task — failed
+            # its own freeze (batch50, 2026-09-19). Revisions are not hashed,
+            # so the recorded task content hash is unchanged.
             (semantic_dir / SEMANTIC_TASK_IR_FILENAME).write_text(
-                readable_json(tasks[tid].canonical_dump()) + "\n",
+                readable_json(tasks[tid].model_dump(mode="json")) + "\n",
                 encoding="utf-8",
             )
             provenance = source_provenance.get(tid)

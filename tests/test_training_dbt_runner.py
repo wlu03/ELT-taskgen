@@ -416,12 +416,13 @@ class PortableSqlPolicyTests(unittest.TestCase):
                 with self.assertRaises(DbtPolicyFailure):
                     rewrite_model_sql(sql, destination)
 
-    def test_compatibility_subset_version_is_v5(self) -> None:
+    def test_compatibility_subset_version_is_v6(self) -> None:
         # v4 is the first version whose whole admitted surface was measured
         # against live destinations; see tests/test_warehouse_differential.py.
         # v5 adds the natively measured bare-DECIMAL defaults and alias-aware
-        # guards; see tests/test_warehouse_differential_compare.py.
-        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v5")
+        # guards; see tests/test_warehouse_differential_compare.py. v6 stops
+        # the alias-aware text guard at operands that cannot become the value.
+        self.assertEqual(DBT_COMPATIBILITY_SUBSET_VERSION, "portable-dbt-sql-v6")
 
     def test_the_constructs_a_destination_cannot_compile_are_refused(self) -> None:
         """Each refusal below was measured: the destination rejected the SQL
@@ -606,7 +607,8 @@ class CandidateYamlBoundaryTests(unittest.TestCase):
 
 class NativeCompatibilityRewriteTests(unittest.TestCase):
     """portable-dbt-sql-v5, from the native probes of 2026-09-18
-    (tests/fixtures/warehouse_differential/native_*.json)."""
+    (tests/fixtures/warehouse_differential/native_*.json), and the v6 limit on
+    which operands the alias-aware text guard follows."""
 
     SOURCE = "{{ source('raw', 'orders') }}"
     TEXT = {
@@ -671,6 +673,51 @@ class NativeCompatibilityRewriteTests(unittest.TestCase):
                     f"SELECT MD5(CAST(x AS {text})) AS h FROM s",
                     destination,
                 )
+
+    def test_alias_following_skips_operands_that_cannot_become_the_value(self) -> None:
+        """A label, count or rank computed from a DOUBLE is not the DOUBLE's text.
+
+        The first form is the shape of the canonical top-N marts (dlt personio
+        and pipedrive, 2026-09-19): a tie count over a DOUBLE measure, a CASE
+        label over the count, and a final cast of the label to text.
+        """
+        for destination in Destination:
+            text, double = self.TEXT[destination], self.DOUBLE[destination]
+            admitted = {
+                "case label over a count": (
+                    f"WITH a AS (SELECT CAST(v AS {double}) AS x FROM {self.SOURCE}), "
+                    "b AS (SELECT COUNT(CASE WHEN x = 0 THEN 1 END) AS n FROM a), "
+                    "c AS (SELECT CASE WHEN n = 0 THEN 'empty' WHEN n = 1 THEN 'unique' "
+                    "ELSE 'tied' END AS state FROM b) "
+                    f"SELECT CAST(state AS {text}) AS state FROM c"
+                ),
+                "rank ordered by a double": (
+                    f"WITH a AS (SELECT ROW_NUMBER() OVER (ORDER BY CAST(v AS {double})) "
+                    f"AS r FROM {self.SOURCE}) SELECT CAST(r AS {text}) AS h FROM a"
+                ),
+                "count of a double": (
+                    f"WITH a AS (SELECT COUNT(CAST(v AS {double})) AS n FROM {self.SOURCE}) "
+                    f"SELECT CAST(n AS {text}) AS h FROM a"
+                ),
+            }
+            refused = {
+                "case value": (
+                    f"WITH a AS (SELECT CASE WHEN v > 0 THEN CAST(v AS {double}) ELSE 0 END "
+                    f"AS x FROM {self.SOURCE}) SELECT CAST(x AS {text}) AS h FROM a"
+                ),
+                "window aggregate value": (
+                    f"WITH a AS (SELECT SUM(CAST(v AS {double})) OVER (PARTITION BY k) "
+                    f"AS x FROM {self.SOURCE}) SELECT CAST(x AS {text}) AS h FROM a"
+                ),
+            }
+            for label, sql in admitted.items():
+                with self.subTest(destination=destination.value, admitted=label):
+                    rewrite_model_sql(sql, destination)
+            for label, sql in refused.items():
+                with self.subTest(destination=destination.value, refused=label):
+                    with self.assertRaises(DbtPolicyFailure) as raised:
+                        rewrite_model_sql(sql, destination)
+                    self.assertEqual(raised.exception.code, DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
 
     def test_redshift_boolean_text_casts_follow_aliases_and_declared_columns(self) -> None:
         for destination in Destination:

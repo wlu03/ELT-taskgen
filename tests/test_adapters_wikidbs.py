@@ -2065,6 +2065,102 @@ class TestArgmaxWitnessMeasurement(unittest.TestCase):
         self.assertEqual(wikidbs._tie_witness_conditions((shape,), bare), ())
 
 
+class TestRollupElseWitnessMeasurement(unittest.TestCase):
+    """`custom@wrong_boundary_else` on a fan_out_rollup claims the population
+    whose rows reach one of its ELSE branches.
+
+    The roll-up's ladders are has_links ('no' at 0 links) and size_band
+    ('large' above the top threshold, 5). batch50 2026-09-19: every parent in
+    the vendor rows of wikidbs__c60265 and __c80113 had 1-4 links, so the
+    claim on PRIMARY measured 1.0 and both tasks were blocked; the
+    counterfactual carve-out holds manufactured childless parents and kills
+    the mutant there.
+    """
+
+    def _shape(self, *, dedupe=True):
+        from elt_taskgen.generation.mart_plan import FactRoles, StarShape
+
+        return StarShape(
+            mart="rollup", parent="teams", parent_keys=("team_name",),
+            key_columns=("parent_key",), fact="players",
+            fact_link_columns=("team_name",), fact_dedupe=dedupe,
+            shape_name="fan_out_rollup", thresholds=(2.0, 5.0),
+            roles=FactRoles(link_key="player_id"),
+            attack_claims=("custom@wrong_boundary_else",),
+        )
+
+    @staticmethod
+    def _players(team, count, start=0):
+        return tuple(
+            {"player_id": start + i, "team_name": team} for i in range(count)
+        )
+
+    def test_link_counts_that_reach_an_else_branch_are_measured(self):
+        shape = self._shape()
+        teams = ({"team_name": "Alpha"}, {"team_name": "Beta"})
+        players = self._players("Alpha", 1) + self._players("Beta", 5, 10)
+        within = {"teams": teams, "players": players}
+        self.assertEqual(wikidbs._link_count_else_parents(shape, within), 0)
+        childless = {"teams": teams + ({"team_name": "Gamma"},), "players": players}
+        self.assertEqual(wikidbs._link_count_else_parents(shape, childless), 1)
+        above = {
+            "teams": teams,
+            "players": players + ({"player_id": 99, "team_name": "Beta"},),
+        }
+        self.assertEqual(wikidbs._link_count_else_parents(shape, above), 1)
+        # A byte-identical replica counts once only on a deduplicated bridge.
+        replica = {"teams": teams, "players": players + (players[-1],)}
+        self.assertEqual(wikidbs._link_count_else_parents(shape, replica), 0)
+        self.assertEqual(
+            wikidbs._link_count_else_parents(self._shape(dedupe=False), replica), 1
+        )
+        # A row without a link key is not a link.
+        keyless = {
+            "teams": teams,
+            "players": players + ({"player_id": None, "team_name": "Beta"},),
+        }
+        self.assertEqual(wikidbs._link_count_else_parents(shape, keyless), 0)
+
+    def test_the_claim_follows_the_first_population_with_a_witness(self):
+        shape = self._shape()
+        teams = ({"team_name": "Alpha"}, {"team_name": "Beta"})
+        vendor = {
+            "teams": teams,
+            "players": self._players("Alpha", 2) + self._players("Beta", 3, 10),
+        }
+        carved = {"teams": teams, "players": self._players("Beta", 3, 10)}
+        self.assertIs(
+            wikidbs._link_count_else_population((shape,), vendor, vendor, carved),
+            PopulationName.COUNTERFACTUAL,
+        )
+        self.assertIs(
+            wikidbs._link_count_else_population((shape,), carved, vendor, vendor),
+            PopulationName.PRIMARY,
+        )
+        self.assertIsNone(
+            wikidbs._link_count_else_population((shape,), vendor, vendor, vendor)
+        )
+
+    def test_the_catalogue_case_follows_the_measured_population(self):
+        shape = self._shape()
+        measured = wikidbs._attack_cases(
+            (shape,),
+            backends=1,
+            policy=wikidbs.POLICY_PROVIDED_ROWS,
+            link_count_else_witness=PopulationName.COUNTERFACTUAL,
+        )
+        case = next(c for c in measured if c.name == "custom__wrong_boundary_else")
+        self.assertEqual(case.expected_pass, {PopulationName.COUNTERFACTUAL: False})
+        self.assertIn("has_links 'no'", case.description)
+        # With no witness anywhere the claim stays where it was, so the
+        # reference stage still refuses the task (never silently removed).
+        unmeasured = wikidbs._attack_cases(
+            (shape,), backends=1, policy=wikidbs.POLICY_PROVIDED_ROWS
+        )
+        case = next(c for c in unmeasured if c.name == "custom__wrong_boundary_else")
+        self.assertEqual(case.expected_pass, {PopulationName.PRIMARY: False})
+
+
 class TestRenderableDomains(unittest.TestCase):
     """An observed domain value becomes a SQL string literal in the library's
     predicates, and the library does not escape embedded quotes — measured on

@@ -1240,6 +1240,27 @@ def _persist_author_session(workspace: Path | None, task: TaskIR, record: dict) 
         return
 
 
+def _development_snapshot_for(engine: Engine, task: TaskIR) -> str:
+    """Example DEVELOPMENT rows for the author's view, or '' when unavailable.
+
+    Two tasks of one library shape were described in the same sentences while
+    the author saw no data; those repeats then queued as borderline collisions
+    between our own tasks (batch50, 2026-09-19). Duck-typed stand-ins without a
+    task directory, and stages that run before `generate`, simply get no rows.
+    """
+    from elt_taskgen.generation import dataset_context
+
+    task_dir = getattr(engine, "task_dir", None)
+    if not callable(task_dir):
+        return ""
+    try:
+        return dataset_context.development_snapshot(
+            task, Path(task_dir(task.task_id)) / "populations"
+        )
+    except OSError:
+        return ""
+
+
 def _author_prose_for(engine: Engine, task: TaskIR, provider) -> tuple[str, dict[str, str]]:
     """The author's prose and the ledger data its provenance adds: the
     unchanged `council.author_prose` (no data) unless the bounded revision
@@ -1250,9 +1271,10 @@ def _author_prose_for(engine: Engine, task: TaskIR, provider) -> tuple[str, dict
     from elt_taskgen.review import council
     from elt_taskgen.review.tools import validators as author_tools
 
+    snapshot = _development_snapshot_for(engine, task)
     block = _author_session_block(provider)
     if block is None:
-        return council.author_prose(task, provider), {}
+        return council.author_prose(task, provider, dataset_snapshot=snapshot), {}
 # Salt reruns from the current ledger count so each gets a distinct transcript.
     counter = getattr(engine, "session_limit_reruns", None)
     salt = int(counter(task.task_id, "author")) if callable(counter) else 0
@@ -1272,6 +1294,7 @@ def _author_prose_for(engine: Engine, task: TaskIR, provider) -> tuple[str, dict
             contamination_index=index,
             coverage_requirement=_required_firewall_coverage(),
             record=record,
+            dataset_snapshot=snapshot,
         )
     except council.AuthorSessionLimitStop as exc:
 # Persist capped sessions and return a salted BLOCKED result without a repair round.

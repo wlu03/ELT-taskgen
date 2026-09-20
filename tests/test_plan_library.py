@@ -409,10 +409,12 @@ class PlanLibraryShapes(unittest.TestCase):
             ("categorical_ladder", "link_count"),
         ):
             with self.subTest(shape=shape, column=column):
+                built = self.built[shape]
+                name = built.column_named(column)
                 description = next(
                     item.description
-                    for item in self.built[shape].columns
-                    if item.name == column
+                    for item in built.columns
+                    if item.name == name
                 )
                 self.assertIn("0 when there are none", description)
 
@@ -589,7 +591,8 @@ class PlanLibraryShapes(unittest.TestCase):
             for op in built.plan.ops
             if op.kind is MartOpKind.FILTER and "absent measure-state" in op.description
         )
-        state_column = next(c for c in built.columns if c.name == "measure_state")
+        state = built.column_named("measure_state")
+        state_column = next(c for c in built.columns if c.name == state)
         for text in (absent_filter.description, state_column.description):
             self.assertIn("belongs only to the present state", text)
             self.assertIn("never to", text)
@@ -780,8 +783,9 @@ class PlanLibraryDiscrimination(unittest.TestCase):
         finally:
             con.close()
 
-        gold_keys = {row["parent_key"] for row in gold}
-        mutant_keys = {row["parent_key"] for row in actual}
+        key_column = built.column_named("parent_key")
+        gold_keys = {row[key_column] for row in gold}
+        mutant_keys = {row[key_column] for row in actual}
         self.assertNotIn(below_key, gold_keys)
         self.assertIn(below_key, mutant_keys)
         self.assertIn(boundary_key, gold_keys)
@@ -879,9 +883,10 @@ class PlanLibraryDiscrimination(unittest.TestCase):
             gold = _fetch(con, sql)
         finally:
             con.close()
-        diverging = [
-            r for r in gold if r["link_count"] != r["distinct_child_count"]
-        ]
+        built = m["built"]
+        count = built.column_named("link_count")
+        distinct = built.column_named("distinct_child_count")
+        diverging = [r for r in gold if r[count] != r[distinct]]
         self.assertTrue(
             diverging,
             "no counterfactual row separates COUNT from COUNT(DISTINCT)",
@@ -1313,7 +1318,7 @@ class RoleDistinctness(unittest.TestCase):
         key_is_fk = dataclasses.replace(EVIDENCE, bridge_key="account_id")
         built = mp.argmax_profile(key_is_fk, mart="argmax_fk")
         names = [c.name for c in built.columns]
-        self.assertNotIn("top_row_id", names)
+        self.assertNotIn(built.column_named("top_row_id"), names)
         self.assertEqual([], mp.budget_problems(built))
         self.assertGreaterEqual(len(names), mp.MIN_MART_COLUMNS)
         extrema = [op for op in built.plan.ops if op.kind is MartOpKind.EXTREMA]
@@ -1328,10 +1333,12 @@ class RoleDistinctness(unittest.TestCase):
         flagged = mp.argmax_profile(
             dataclasses.replace(EVIDENCE, bridge_key_is_parent_fk=True), mart="argmax_flag"
         )
-        self.assertNotIn("top_row_id", [c.name for c in flagged.columns])
+        self.assertNotIn(
+            flagged.column_named("top_row_id"), [c.name for c in flagged.columns]
+        )
         # And the ordinary evidence still ships the row identifier + clause.
         full = mp.argmax_profile(EVIDENCE, mart="argmax_full")
-        self.assertIn("top_row_id", [c.name for c in full.columns])
+        self.assertIn(full.column_named("top_row_id"), [c.name for c in full.columns])
         self.assertTrue(
             any("WHICH row won" in c.description for c in full.columns)
         )
@@ -1441,24 +1448,29 @@ class CertifiedKinds(unittest.TestCase):
             built,
             columns=tuple(
                 c.model_copy(update={"kind": MartColumnKind.RANKED})
-                if c.name == "parent_name"
+                if c.name == built.column_named("parent_name")
                 else c
                 for c in built.columns
             ),
         )
         problems = mp.budget_problems(tampered)
         self.assertTrue(problems)
-        self.assertIn("parent_name", problems[0])
+        self.assertIn(built.column_named("parent_name"), problems[0])
         self.assertIn("declared kind 'ranked'", problems[0])
         undeclared = dataclasses.replace(
             built,
             columns=tuple(
-                c.model_copy(update={"kind": None}) if c.name == "top_label" else c
+                c.model_copy(update={"kind": None})
+                if c.name == built.column_named("top_label")
+                else c
                 for c in built.columns
             ),
         )
         problems = mp.budget_problems(undeclared)
-        self.assertTrue(any("top_label" in p and "declare no kind" in p for p in problems), problems)
+        label = built.column_named("top_label")
+        self.assertTrue(
+            any(label in p and "declare no kind" in p for p in problems), problems
+        )
         # Legacy build_star plans carry no column contract and are not judged.
         self.assertEqual([], mp.kind_certification_problems(
             mp.build_star(
@@ -1486,8 +1498,9 @@ class WindowsReadDeclaredDefaults(unittest.TestCase):
         self.assertGreater(window_idx[-1], derive_idx[-1], "WINDOW must follow the named DERIVE")
         window_select = ops[window_idx[-1]].details["select"]
         self.assertIsNone(re.search(r"\bm_\d+\b", window_select), window_select)
-        self.assertIn('SUM("period_amount") OVER', window_select)
-        self.assertIn('LAG("period_amount", 1, 0) OVER', window_select)
+        period = built.column_named("period_amount")
+        self.assertIn(f'SUM("{period}") OVER', window_select)
+        self.assertIn(f'LAG("{period}", 1, 0) OVER', window_select)
 
         task = build_task(built, "proof__temporal_defaults", tables=tables)
         sql = ref.compile_plan_sql(task, task.marts[0])
@@ -1505,19 +1518,20 @@ class WindowsReadDeclaredDefaults(unittest.TestCase):
                 "(5, 2, NULL, 'paid', 'e', NULL, DATE '2024-02-20'), "  # Feb: all NULL
                 "(6, 2, NULL, 'paid', 'f', 4, DATE '2024-03-05')"       # Mar: 4
             )
-            rows = {(r["entity_key"], str(r["period_start"])): r for r in _fetch(con, sql)}
+            key = built.column_named("entity_key")
+            rows = {(r[key], str(r["period_start"])): r for r in _fetch(con, sql)}
         finally:
             con.close()
         jan1 = rows[(1, "2024-01-01")]
         feb1 = rows[(1, "2024-02-01")]
-        self.assertEqual(0, jan1["period_amount"])
-        self.assertEqual(0, jan1["running_amount"])
-        self.assertEqual(0, feb1["prev_period_amount"])
-        self.assertEqual("up", feb1["trend"])
+        self.assertEqual(0, jan1[period])
+        self.assertEqual(0, jan1[built.column_named("running_amount")])
+        self.assertEqual(0, feb1[built.column_named("prev_period_amount")])
+        self.assertEqual("up", feb1[built.column_named("trend")])
         mar2 = rows[(2, "2024-03-01")]
-        self.assertEqual(0, mar2["prev_period_amount"])
-        self.assertEqual("up", mar2["trend"])
-        self.assertEqual(3, mar2["running_amount"] - 4)
+        self.assertEqual(0, mar2[built.column_named("prev_period_amount")])
+        self.assertEqual("up", mar2[built.column_named("trend")])
+        self.assertEqual(3, mar2[built.column_named("running_amount")] - 4)
 
 
 class TemporalGridGrain(unittest.TestCase):
@@ -1609,7 +1623,11 @@ class ProseStatesEveryReachableArm(unittest.TestCase):
             literal_by_key = {tuple(r[k] for k in key): r for r in literal_rows}
             descriptions = {c.name: c.description for c in mart.columns}
             count_col = next(
-                (c for c in ("child_count", "event_count", "link_count") if c in descriptions),
+                (
+                    built.column_named(c)
+                    for c in ("child_count", "event_count", "link_count")
+                    if built.column_named(c) in descriptions
+                ),
                 None,
             )
             for gold in gold_rows:
@@ -1643,7 +1661,8 @@ class TextTieBreakProse(unittest.TestCase):
 
     def test_argmax_text_tie_break_prose_states_case_sensitivity(self) -> None:
         built = mp.argmax_profile(EVIDENCE, mart="argmax_case")
-        top_label = next(c for c in built.columns if c.name == "top_label")
+        label = built.column_named("top_label")
+        top_label = next(c for c in built.columns if c.name == label)
         for text in (top_label.description,) + tuple(
             op.description for op in built.plan.ops if op.kind is MartOpKind.EXTREMA
         ):

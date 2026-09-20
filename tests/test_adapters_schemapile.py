@@ -596,7 +596,23 @@ class TaskIRTest(unittest.TestCase):
         )
         self.assertTrue(task.table("orders").column("created_at").nullable)
         snapshot = next(mart for mart in task.marts if mart.name.endswith("_snapshot"))
-        self.assertNotIn("latest_status", {column.name for column in snapshot.columns})
+        # Statusless: no status payload beside the latest row's own columns.
+        # The mart names its columns after the chain, and this chain's LABEL
+        # column is `orders.status` (its CHECK domain was removed above), so
+        # the label column is spelled `latest_status` and is the only one.
+        self.assertEqual(
+            {
+                "customer_id",
+                "customer_name",
+                "orders_count",
+                "lifetime_amount",
+                "latest_order_id",
+                "latest_status",
+                "latest_amount",
+                "latest_amount_share",
+            },
+            {column.name for column in snapshot.columns},
+        )
         extrema = next(op for op in snapshot.plan.ops if op.kind.value == "extrema")
         self.assertEqual(
             '"snapshot_at" DESC NULLS LAST, '
