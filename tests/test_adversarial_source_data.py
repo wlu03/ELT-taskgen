@@ -293,6 +293,35 @@ class TestBigintIdentityPortability(unittest.TestCase):
         parent_ids = {row["customer_id"] for row in rows["customers"]}
         self.assertLessEqual(max(parent_ids), 2**53)
 
+    def test_a_mongodb_table_carries_no_bigint_measure_above_the_boundary(self) -> None:
+        task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
+        task = self._on_backend(task, "orders", Backend.MONGODB)
+        rows = source_data.generate_rows(task, P.PRIMARY)
+        bigint_columns = [
+            column.name
+            for column in task.table("orders").columns
+            if column.type is ColumnType.BIGINT
+        ]
+        for column in bigint_columns:
+            values = [
+                row[column] for row in rows["orders"]
+                if isinstance(row.get(column), int)
+            ]
+            if values:
+                self.assertLessEqual(max(values), 2**53, column)
+
+    def test_an_exact_backend_still_carries_the_boundary_measure(self) -> None:
+        task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
+        task = self._on_backend(task, "orders", Backend.POSTGRES)
+        rows = source_data.generate_rows(task, P.PRIMARY)
+        values = [
+            value
+            for row in rows["orders"]
+            for key, value in row.items()
+            if isinstance(value, int)
+        ]
+        self.assertTrue(any(value > 2**53 for value in values))
+
     def test_a_mongodb_parent_keeps_its_own_identity_in_range(self) -> None:
         task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
         task = self._on_backend(task, "customers", Backend.MONGODB)

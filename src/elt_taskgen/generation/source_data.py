@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import os
+import dataclasses
 import random
 import re
 import tempfile
@@ -122,6 +123,7 @@ class _Policy:
     skew_frac: float = 0.0        # remainder children routed to hot parent(s)
     palette: bool = False         # small measure domains (ties)
     adversarial_values: bool = False  # portable boundary/value-shape coverage
+    exact_bigint_only: bool = False    # backend rounds integers above 2^53
     skew_weights: tuple[int, ...] = ()  # hot-parent weights, in pool order
     tie_run_length: int = 1       # consecutive synthesized values per tie
 
@@ -465,7 +467,11 @@ def _synth_value(
             )
         return stream.randint(1, 100)
     if t is ColumnType.BIGINT:
-        if policy.adversarial_values and sample_index < len(_ADVERSARIAL_BIGINT_VALUES):
+        if (
+            policy.adversarial_values
+            and not policy.exact_bigint_only
+            and sample_index < len(_ADVERSARIAL_BIGINT_VALUES)
+        ):
             return _variant_value(
                 _ADVERSARIAL_BIGINT_VALUES,
                 sample_index=sample_index,
@@ -979,8 +985,17 @@ def generate_rows(task: TaskIR, population: PopulationName) -> dict[str, list[Ro
             out[name] = [dict(r) for r in pop.literal_rows[name]]
             continue
         n = realized_row_count(task.task_id, name, pop.scale.get(name, 0))
+        # A table whose backend rounds integers above 2^53 cannot carry the
+        # boundary values, in keys or in measures.
+        table_policy = (
+            dataclasses.replace(policy, exact_bigint_only=True)
+            if _carried_by_an_inexact_backend(task, name)
+            else policy
+        )
         out[name] = (
-            _generate_table(task, pop, policy, task.table(name), n, out) if n > 0 else []
+            _generate_table(task, pop, table_policy, task.table(name), n, out)
+            if n > 0
+            else []
         )
     _assert_declared_keys_unique(task, out)
     return out
