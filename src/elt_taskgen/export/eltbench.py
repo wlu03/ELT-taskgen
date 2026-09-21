@@ -46,6 +46,7 @@ from elt_taskgen.airbyte_connector_config import (
     AIRBYTE_CONNECTOR_TFVARS_FILENAME,
     build_airbyte_connector_contract,
 )
+from elt_taskgen.package_resources import resource_path
 from elt_taskgen.destinations import (
     CUSTOM_API_MANIFEST_VERSION,
     DEFAULT_SYNC_MODE,
@@ -91,122 +92,36 @@ _AIRBYTE_BASE: dict[str, Any] = {
     "workspace_id": "",
 }
 
-_RUNTIME_DOCUMENTATION: dict[str, str] = {
-    "README.md": """# Generated runtime references
+#: The generated Terraform provider and Airbyte connector references, shipped
+#: verbatim from upstream ELT-Bench. This directory replaced hand-written
+#: summaries, which named none of the fields the Airbyte API rejects a source
+#: without: a solver run against the summaries hit "required property
+#: 'tunnel_method' not found, required property 'replication_method' not found"
+#: and recovered the schema by running `strings` on the provider binary. The
+#: generated references carry those fields, so the bundle answers the question
+#: the API asks.
+_DOCUMENTATION_RESOURCE_DIR = "documentation"
 
-The files in this directory mirror the shared Terraform and Airbyte references
-in the original ELT-Bench solver inputs. The task-specific specification is
-included below.
-""",
-    "airbyte_Provider.md": """# Airbyte Terraform provider
 
-Use the Airbyte server, username, password, and workspace ID injected into
-`config.yaml` by the benchmark installer. Define the provider and connector
-resources in `elt/main.tf`; do not hard-code credentials in submitted files.
-The task config carries the connector definition IDs used by the original
-ELT-Bench Terraform provider contract.
-""",
-    "connection.md": """# Airbyte connections
+def _documentation_resources() -> dict[str, str]:
+    """Read the vendored upstream reference set, keyed by filename.
 
-Create one Airbyte source for each source section in `config.yaml`, one
-destination from the single destination section, and connections selecting
-exactly the tables declared for that source. Use `full_refresh_append` and the
-destination namespace.
-""",
-    "source_postgres.md": """# PostgreSQL source
+    Fails loudly rather than returning an empty mapping: a bundle shipped
+    without references is the defect this directory exists to prevent, and it
+    would otherwise pass every structural check.
+    """
 
-When `postgres` is present in `config.yaml`, create an Airbyte PostgreSQL source
-from that block and select exactly its listed tables from the declared schema.
-""",
-    "source_mongodb_v2.md": """# MongoDB v2 source
-
-When `mongodb` is present, create an Airbyte MongoDB v2 source using its
-connection string and database, then select exactly the listed collections.
-""",
-    "source_custom_api.md": """# Custom API source
-
-When `custom_api` is present, use the custom connector definition ID injected
-into the Airbyte config and select exactly the declared streams.
-""",
-    "source_s3.md": """# S3 source
-
-For every `aws_s3.data` entry, configure the Airbyte S3 source with the given
-endpoint, single-object bucket path, credentials, table name, and sync mode.
-""",
-    "source_file.md": """# File source
-
-For every `flat_files` entry, configure the Airbyte Files source with its HTTP
-URL and format. The benchmark file service, not the solver workspace, hosts
-the source records.
-""",
-    "trigger_job.md": """# Trigger and monitor syncs
-
-After `terraform apply`, retrieve each Airbyte connection ID, trigger a sync,
-and wait until every job succeeds. `check_job_status.py` can monitor the
-connections recorded in `elt/terraform.tfstate`.
-""",
-    "databricks_authentication.md": """# Databricks authentication
-
-The original ELT-Bench Databricks input uses the `client_id` and `secret`
-fields in `databricks.config`. Obtain those values from the benchmark-provided
-credential file and do not commit live credentials.
-""",
-}
-
-_DESTINATION_DOCUMENTATION: dict[Destination, tuple[str, str]] = {
-    Destination.SNOWFLAKE: (
-        "destination_snowflake.md",
-        """# Snowflake destination
-
-Configure Airbyte with the Snowflake database, schema, role, warehouse, user,
-password, and account supplied at installation. Raw streams must land in the
-task database under `AIRBYTE_SCHEMA`.
-""",
-    ),
-    Destination.DATABRICKS: (
-        "destination_databricks.md",
-        """# Databricks destination
-
-Configure the Airbyte Databricks Lakehouse destination with the injected SQL
-Warehouse hostname, HTTP path, Unity Catalog, and authentication.
-The task name in `databricks.config.schema` is the isolated Unity Catalog
-schema. Use the human-facing `database`, `hostname`, `client_id`, `secret`, and
-`http_path` values supplied by the benchmark installer.
-""",
-    ),
-    Destination.REDSHIFT: (
-        "destination_redshift.md",
-        """# Amazon Redshift destination
-
-Configure the Airbyte Redshift destination with the injected cluster,
-database, user, and flat S3 staging fields. The task name in
-`redshift.config.schema` is the isolated schema inside that database. Use it as
-the destination namespace; Airbyte writes final stream tables directly there.
-
-With the pinned `airbytehq/airbyte` Terraform provider `0.6.5`, translate the
-flat task fields into the provider's discriminated upload-strategy shape:
-
-```hcl
-configuration = {
-  # database, host, password, port, schema, and username omitted here
-  uploading_method = {
-    awss3_staging = {
-      access_key_id      = local.config.redshift.config.access_key_id
-      secret_access_key  = local.config.redshift.config.secret_access_key
-      s3_bucket_name     = local.config.redshift.config.s3_bucket_name
-      s3_bucket_path     = "elt-bench/${local.config.redshift.config.schema}"
-      s3_bucket_region   = local.config.redshift.config.s3_bucket_region
-      purge_staging_data = true
+    root = resource_path(_DOCUMENTATION_RESOURCE_DIR)
+    if not root.is_dir():
+        raise RuntimeError(f"packaged documentation directory is missing: {root}")
+    files = {
+        path.name: path.read_text(encoding="utf-8")
+        for path in sorted(root.iterdir())
+        if path.is_file() and path.suffix == ".md"
     }
-  }
-}
-```
-
-Do not put `method = "S3 Staging"` in the nested provider object. That string
-is part of the connector API payload, not the provider `0.6.5` HCL schema.
-""",
-    ),
-}
+    if not files:
+        raise RuntimeError(f"packaged documentation directory is empty: {root}")
+    return files
 
 _TERRAFORM_MAIN = """terraform {
   required_providers {
@@ -430,11 +345,7 @@ def _runtime_documentation(destination: Destination | str) -> dict[str, str]:
     # input, including references for all three warehouses. Keep the argument
     # for API compatibility while validating it as before.
     normalize_destination(destination)
-    destination_docs = {
-        filename: content
-        for filename, content in _DESTINATION_DOCUMENTATION.values()
-    }
-    return _RUNTIME_DOCUMENTATION | destination_docs
+    return _documentation_resources()
 
 
 def runtime_documentation_filenames(

@@ -2855,9 +2855,13 @@ class TestLayeredIdentities(_FreezeReleaseHarness):
     def test_public_runtime_bytes_move_runtime_and_certification_not_semantic(self):
         first = self.freeze()
         tid = self.task.task_id
-        doc = self.task_root / "task" / "documentation" / "README.md"
-        doc.write_text(
-            doc.read_text(encoding="utf-8") + "\nOne more overview line.\n",
+        # documentation/ is packaged reference material the release regenerates,
+        # so perturb a public file the release copies verbatim instead.
+        schema = next(
+            (self.task_root / "task" / "schemas").glob("*.csv")
+        )
+        schema.write_text(
+            schema.read_text(encoding="utf-8") + "extra_column,one more note\n",
             encoding="utf-8",
         )
         second = self.freeze_again()

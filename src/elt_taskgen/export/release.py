@@ -1123,6 +1123,7 @@ def _ship_combined_task(
     if public_sources.is_dir():
         shutil.rmtree(public_sources)
     _mirror_root_destination(dst_public)
+    _refresh_runtime_documentation(task, dst_public)
     assert_public_runtime_shape(dst_public)
     assert_public_runtime_tree_clean(task, dst_public)
 
@@ -1133,6 +1134,40 @@ def _ship_combined_task(
         shutil.copytree(oracle_source, oracle_dest)
     return tuple(shipped), acceptance
 
+
+
+def _refresh_runtime_documentation(task: TaskIR, public_dir: Path) -> None:
+    """Rewrite `documentation/` from the packaged upstream reference set.
+
+    A package built before the references were vendored ships short summaries
+    that name none of the connector fields the Airbyte API requires, so a
+    solver cannot learn the schema from its own bundle. The release copies the
+    package's public tree and then pins its own checksums, so the refresh
+    happens here and is covered by them. The task specification stays appended
+    to README.md, which is where the bundle has always carried it.
+    """
+    from elt_taskgen.export.eltbench import (
+        _runtime_documentation,
+        public_documentation,
+    )
+
+    documentation = public_dir / "documentation"
+    if not documentation.is_dir():
+        return
+    config_path = public_dir / "config.yaml"
+    if not config_path.is_file():
+        return
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    destination = next(
+        (name for name in ("snowflake", "databricks", "redshift") if name in config),
+        None,
+    )
+    if destination is None:
+        return
+    for name, content in sorted(_runtime_documentation(destination).items()):
+        if name == "README.md":
+            content = content.rstrip() + "\n\n" + public_documentation(task)
+        (documentation / name).write_text(content, encoding="utf-8")
 
 
 def _mirror_root_destination(public_dir: Path) -> None:
