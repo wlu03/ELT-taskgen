@@ -286,21 +286,50 @@ def _variant_value(values: tuple, *, sample_index: int, variant_offset: int):
     return values[(variant_offset + sample_index) % len(values)]
 
 
+#: Backends whose connector cannot carry an integer above 2^53 exactly.
+#:
+#: `source-mongodb-v2` types a BSON Int64 as JSON Schema `number`, not
+#: `integer`, with or without `schema_enforced`, and the warehouse destinations
+#: map `number` to a float. Every id above 2^53 is then rounded to an even
+#: neighbour: a measured run collapsed 276 distinct parent ids to 139, so no
+#: solver SQL could reconstruct the join. Tables on these backends keep the
+#: small identity range; the boundary is still exercised everywhere the
+#: transport preserves it.
+_INEXACT_BIGINT_BACKENDS = frozenset({Backend.MONGODB})
+
+
+def _carried_by_an_inexact_backend(task: TaskIR, table: str) -> bool:
+    """Is ``table`` served from a backend that rounds ids above 2^53?"""
+    try:
+        assignment = task.backend_for(table)
+    except KeyError:
+        # A table with no assignment is not rendered through any connector.
+        return False
+    return assignment.backend in _INEXACT_BIGINT_BACKENDS
+
+
 def _bigint_identity_is_portable(task: TaskIR, table: str, column: str) -> bool:
     """Can ``table.column`` and every referencing child carry >2^53 exactly?
 
-    Some imported schemas preserve a numeric relationship while narrowing its
-    child from BIGINT to INTEGER.  Such a relationship was safe with the old,
-    small minted ids but would overflow if the parent alone crossed 2^53.  A
-    standalone BIGINT or a BIGINT-to-BIGINT link is portable across all five
-    renderers; every other linked type keeps the original small identity range.
+    Two things can make it unportable. Some imported schemas preserve a numeric
+    relationship while narrowing its child from BIGINT to INTEGER, which was
+    safe with the old small ids but overflows if the parent alone crosses 2^53.
+    And some backends round the value in transport, which corrupts the id
+    itself rather than the solver's arithmetic. Either case keeps the original
+    small identity range.
     """
+    if _carried_by_an_inexact_backend(task, table):
+        return False
     for rel in task.relationships:
         if rel.parent_table != table:
             continue
         for position, parent_column in enumerate(rel.parent_columns):
             if parent_column != column:
                 continue
+            # The child carries this id through its own backend, so an inexact
+            # one there breaks the join even when the parent's is exact.
+            if _carried_by_an_inexact_backend(task, rel.child_table):
+                return False
             child = task.table(rel.child_table).column(rel.child_columns[position])
             if child.type is not ColumnType.BIGINT:
                 return False

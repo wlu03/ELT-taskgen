@@ -262,8 +262,22 @@ class TestBigintIdentityPortability(unittest.TestCase):
             tables.append(table)
         return task.model_copy(update={"tables": tuple(tables)})
 
+    def _on_backend(self, task, table: str, backend: Backend):
+        """Move one table onto another backend, leaving the rest alone."""
+        backends = tuple(
+            assignment.model_copy(update={"backend": backend})
+            if assignment.table == table
+            else assignment
+            for assignment in task.backends
+        )
+        return task.model_copy(update={"backends": backends})
+
     def test_bigint_to_bigint_identity_crosses_json_exactness_boundary(self) -> None:
         task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
+        # The demo fixture puts the child on MongoDB, which rounds the id in
+        # transport; this case is about the link itself, so move it to a
+        # backend that carries the value exactly.
+        task = self._on_backend(task, "orders", Backend.POSTGRES)
         rows = source_data.generate_rows(task, P.PRIMARY)
         parent_ids = {row["customer_id"] for row in rows["customers"]}
         child_ids = {
@@ -273,6 +287,24 @@ class TestBigintIdentityPortability(unittest.TestCase):
         }
         self.assertGreater(min(parent_ids), 2**53)
         self.assertLessEqual(child_ids, parent_ids)
+
+    def test_a_mongodb_child_keeps_the_parent_in_its_safe_range(self) -> None:
+        """source-mongodb-v2 types a BSON Int64 as JSON `number`, so an id above
+        2**53 reaches the warehouse rounded and the join cannot be rebuilt. The
+        parent therefore stays inside the exactly representable range."""
+        task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
+        task = self._on_backend(task, "orders", Backend.MONGODB)
+        rows = source_data.generate_rows(task, P.PRIMARY)
+        parent_ids = {row["customer_id"] for row in rows["customers"]}
+        self.assertLessEqual(max(parent_ids), 2**53)
+
+    def test_a_mongodb_parent_keeps_its_own_identity_in_range(self) -> None:
+        task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
+        task = self._on_backend(task, "customers", Backend.MONGODB)
+        rows = source_data.generate_rows(task, P.PRIMARY)
+        self.assertLessEqual(
+            max(row["customer_id"] for row in rows["customers"]), 2**53
+        )
 
     def test_narrow_child_keeps_the_parent_in_its_safe_range(self) -> None:
         task = self._customer_types(ColumnType.BIGINT, ColumnType.INTEGER)
