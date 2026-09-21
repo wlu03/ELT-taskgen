@@ -219,12 +219,7 @@ def serve(
     certfile: Path | None = None,
     keyfile: Path | None = None,
 ) -> None:
-    """Serve the rendered population, over TLS when a certificate is supplied.
-
-    The flat-file backend is served over TLS because the Airbyte `source-file`
-    connector discards the URL scheme and always fetches `https://<host>`; a
-    plain-HTTP server is unreachable for it at any port.
-    """
+    """Serve the rendered population, over TLS when a certificate is supplied."""
     routes = load_routes(manifest_path, rendered_root, mode=mode)
     server = ThreadingHTTPServer((host, int(port)), make_handler(routes))
     if certfile is not None or keyfile is not None:

@@ -93,19 +93,12 @@ _AIRBYTE_BASE: dict[str, Any] = {
 }
 
 #: The generated Terraform provider and Airbyte connector references, shipped
-#: verbatim from upstream ELT-Bench. This directory replaced hand-written
-#: summaries, which named none of the fields the Airbyte API rejects a source
-#: without: a solver run against the summaries hit "required property
-#: 'tunnel_method' not found, required property 'replication_method' not found"
-#: and recovered the schema by running `strings` on the provider binary. The
-#: generated references carry those fields, so the bundle answers the question
-#: the API asks.
+#: verbatim from upstream ELT-Bench. They carry the nested connector fields the
+#: Airbyte API requires; a summary of them does not.
 _DOCUMENTATION_RESOURCE_DIR = "documentation"
 
 
-#: Which reference each config section requires. A bundle that cannot use a
-#: connector does not carry its reference: shipping a Databricks reference in a
-#: Snowflake bundle describes a warehouse the task cannot reach.
+#: The reference each config section requires.
 _SECTION_DOCUMENTATION = {
     "postgres": ("source_postgres.md",),
     "mongodb": ("source_mongodb_v2.md",),
@@ -114,16 +107,14 @@ _SECTION_DOCUMENTATION = {
     "flat_files": ("source_file.md",),
 }
 
-#: The destination reference is chosen per bundle because the alternates
-#: describe warehouses the task has no credentials for.
+#: The reference for the destination the bundle targets.
 _DESTINATION_DOCUMENTATION_FILES = {
     "snowflake": ("destination_snowflake.md",),
     "databricks": ("destination_databricks.md", "databricks_authentication.md"),
     "redshift": ("destination_redshift.md",),
 }
 
-#: Carried by every bundle because they describe the steps every task performs:
-#: the index, the provider block, creating connections, and running jobs.
+#: Carried by every bundle: index, provider, connections, job runs.
 _SHARED_DOCUMENTATION = (
     "README.md",
     "airbyte_Provider.md",
@@ -135,12 +126,7 @@ _SHARED_DOCUMENTATION = (
 def documentation_filenames_for(
     config: Mapping[str, Any], destination: Destination | str
 ) -> tuple[str, ...]:
-    """The reference set one bundle carries.
-
-    Derived from the bundle's own config so a task ships documentation only
-    for connectors it declares. A reference for an absent connector is
-    material the solver cannot act on.
-    """
+    """The reference set one bundle carries, from its own config sections."""
 
     names = set(_SHARED_DOCUMENTATION)
     names.update(_DESTINATION_DOCUMENTATION_FILES[normalize_destination(destination).value])
@@ -151,12 +137,7 @@ def documentation_filenames_for(
 
 
 def _documentation_resources() -> dict[str, str]:
-    """Read the vendored upstream reference set, keyed by filename.
-
-    Fails loudly rather than returning an empty mapping: a bundle shipped
-    without references is the defect this directory exists to prevent, and it
-    would otherwise pass every structural check.
-    """
+    """Read the vendored upstream reference set, keyed by filename."""
 
     root = resource_path(_DOCUMENTATION_RESOURCE_DIR)
     if not root.is_dir():
@@ -477,10 +458,8 @@ def assert_public_runtime_shape(public_dir: Path) -> None:
     actual_docs = {
         path.name for path in documentation.iterdir() if path.is_file()
     } if documentation.is_dir() else set()
-    # Every reference this bundle needs must be present, and nothing outside
-    # the upstream set may appear. A bundle built before the references were
-    # trimmed per connector still carries all of them; the release trims it,
-    # and this check runs before that, so known extras are tolerated here.
+    # Needed references must be present; extras from the upstream set are
+    # tolerated because this runs before the release trims them.
     known_docs = set(_documentation_resources())
     missing_docs = sorted(expected_docs - actual_docs)
     foreign_docs = sorted(actual_docs - known_docs)

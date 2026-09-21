@@ -274,9 +274,7 @@ class TestBigintIdentityPortability(unittest.TestCase):
 
     def test_bigint_to_bigint_identity_crosses_json_exactness_boundary(self) -> None:
         task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
-        # The demo fixture puts the child on MongoDB, which rounds the id in
-        # transport; this case is about the link itself, so move it to a
-        # backend that carries the value exactly.
+        # This case is about the link, so put the child on an exact backend.
         task = self._on_backend(task, "orders", Backend.POSTGRES)
         rows = source_data.generate_rows(task, P.PRIMARY)
         parent_ids = {row["customer_id"] for row in rows["customers"]}
@@ -289,9 +287,6 @@ class TestBigintIdentityPortability(unittest.TestCase):
         self.assertLessEqual(child_ids, parent_ids)
 
     def test_a_mongodb_child_keeps_the_parent_in_its_safe_range(self) -> None:
-        """source-mongodb-v2 types a BSON Int64 as JSON `number`, so an id above
-        2**53 reaches the warehouse rounded and the join cannot be rebuilt. The
-        parent therefore stays inside the exactly representable range."""
         task = self._customer_types(ColumnType.BIGINT, ColumnType.BIGINT)
         task = self._on_backend(task, "orders", Backend.MONGODB)
         rows = source_data.generate_rows(task, P.PRIMARY)

@@ -287,14 +287,8 @@ def _variant_value(values: tuple, *, sample_index: int, variant_offset: int):
 
 
 #: Backends whose connector cannot carry an integer above 2^53 exactly.
-#:
-#: `source-mongodb-v2` types a BSON Int64 as JSON Schema `number`, not
-#: `integer`, with or without `schema_enforced`, and the warehouse destinations
-#: map `number` to a float. Every id above 2^53 is then rounded to an even
-#: neighbour: a measured run collapsed 276 distinct parent ids to 139, so no
-#: solver SQL could reconstruct the join. Tables on these backends keep the
-#: small identity range; the boundary is still exercised everywhere the
-#: transport preserves it.
+#: `source-mongodb-v2` types a BSON Int64 as JSON Schema `number`, which the
+#: destinations map to a float, so ids above 2^53 arrive rounded.
 _INEXACT_BIGINT_BACKENDS = frozenset({Backend.MONGODB})
 
 
@@ -326,8 +320,7 @@ def _bigint_identity_is_portable(task: TaskIR, table: str, column: str) -> bool:
         for position, parent_column in enumerate(rel.parent_columns):
             if parent_column != column:
                 continue
-            # The child carries this id through its own backend, so an inexact
-            # one there breaks the join even when the parent's is exact.
+            # The child carries this id through its own backend too.
             if _carried_by_an_inexact_backend(task, rel.child_table):
                 return False
             child = task.table(rel.child_table).column(rel.child_columns[position])

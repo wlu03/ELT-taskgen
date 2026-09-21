@@ -36,13 +36,11 @@ _SAFE_BUCKET = re.compile(r"[a-z0-9][a-z0-9-]*[a-z0-9]")
 _SAFE_S3_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
 _SAFE_PROJECT = re.compile(r"[^a-z0-9_-]+")
 _SAFE_CONTAINER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,254}")
-#: The flat-file service listens on TLS here. The Airbyte source-file connector
-#: rewrites every URL to https://<host>, so the port carries a TLS listener
-#: rather than the plain HTTP the other source services speak.
+#: TLS port for the flat-file service: the Airbyte source-file connector
+#: rewrites every URL to https://<host>.
 FLAT_FILES_PORT = 8443
 
-#: Certificate material for that listener, shipped with the package because the
-#: connector image trusts this authority and nothing generates one per run.
+#: Certificate material for that listener.
 SOURCE_TLS_RESOURCE_DIR = "source_tls"
 
 _SOURCE_SERVICES = (
@@ -340,9 +338,6 @@ def _compose_document(
                     "retries": 30,
                 },
             },
-            # Served over TLS on FLAT_FILES_PORT: the Airbyte source-file
-            # connector discards the URL scheme and always fetches
-            # https://<host>, so a plain-HTTP file server is unreachable for it.
             "elt-files": {
                 "image": SOURCE_SERVICE_IMAGES["elt-files"],
                 "command": [

@@ -1139,12 +1139,9 @@ def _ship_combined_task(
 def _refresh_runtime_documentation(task: TaskIR, public_dir: Path) -> None:
     """Rewrite `documentation/` from the packaged upstream reference set.
 
-    A package built before the references were vendored ships short summaries
-    that name none of the connector fields the Airbyte API requires, so a
-    solver cannot learn the schema from its own bundle. The release copies the
-    package's public tree and then pins its own checksums, so the refresh
-    happens here and is covered by them. The task specification stays appended
-    to README.md, which is where the bundle has always carried it.
+    Runs before the release pins its checksums, so a package built with the
+    older summaries ships the current references. The task specification stays
+    appended to README.md.
     """
     from elt_taskgen.export.eltbench import (
         _runtime_documentation,
