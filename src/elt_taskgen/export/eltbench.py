@@ -1103,6 +1103,11 @@ def _transformation_specification_markdown(task: TaskIR) -> list[str]:
         "null handling, and deterministic tie behavior; they do not prescribe",
         "a particular SQL implementation.",
         "",
+        "Create every mart in the same database and schema the raw source",
+        "tables are loaded into: the destination namespace named in",
+        "`config.yaml`. A mart built in any other schema is not found and does",
+        "not count, so do not route marts to a separate schema.",
+        "",
     ]
     for mart in task.marts:
         lines += [
