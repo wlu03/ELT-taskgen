@@ -709,7 +709,9 @@ FLAT_FILES_BASE_URL_ENV = "ELT_TASKGEN_FLAT_FILES_BASE_URL"
 
 #: Deterministic default: a static file server on the harness docker network,
 #: serving the active population's rendered `files/` directory at /<db>/.
-DEFAULT_FLAT_FILES_BASE_URL = "http://elt-files:8080"
+#: TLS, because the Airbyte source-file connector discards the scheme and
+#: fetches https://<host>; a plain-HTTP server is unreachable for it.
+DEFAULT_FLAT_FILES_BASE_URL = "https://elt-files:8443"
 
 #: Environment variable that overrides the REST (custom_api) serving base URL.
 REST_BASE_URL_ENV = "ELT_TASKGEN_REST_BASE_URL"

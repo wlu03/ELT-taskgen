@@ -11,6 +11,7 @@ import argparse
 import json
 import mimetypes
 import posixpath
+import ssl
 import urllib.parse
 from dataclasses import dataclass
 from http import HTTPStatus
@@ -215,9 +216,23 @@ def serve(
     host: str,
     port: int,
     mode: BackendMode,
+    certfile: Path | None = None,
+    keyfile: Path | None = None,
 ) -> None:
+    """Serve the rendered population, over TLS when a certificate is supplied.
+
+    The flat-file backend is served over TLS because the Airbyte `source-file`
+    connector discards the URL scheme and always fetches `https://<host>`; a
+    plain-HTTP server is unreachable for it at any port.
+    """
     routes = load_routes(manifest_path, rendered_root, mode=mode)
     server = ThreadingHTTPServer((host, int(port)), make_handler(routes))
+    if certfile is not None or keyfile is not None:
+        if certfile is None or keyfile is None:
+            raise ValueError("TLS needs both a certificate and a private key")
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(str(certfile), str(keyfile))
+        server.socket = context.wrap_socket(server.socket, server_side=True)
     server.serve_forever()
 
 
@@ -228,6 +243,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--backend", choices=("rest", "files", "both"), default="both")
+    parser.add_argument("--certfile", type=Path, default=None)
+    parser.add_argument("--keyfile", type=Path, default=None)
     args = parser.parse_args(argv)
     serve(
         args.manifest,
@@ -235,6 +252,8 @@ def main(argv: list[str] | None = None) -> int:
         host=args.host,
         port=args.port,
         mode=args.backend,
+        certfile=args.certfile,
+        keyfile=args.keyfile,
     )
     return 0
 

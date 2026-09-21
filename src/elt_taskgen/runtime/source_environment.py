@@ -26,6 +26,7 @@ from elt_taskgen.export.release import (
     ReleaseManifest,
 )
 from elt_taskgen.runtime.process import ProcessFailure, Runner, SubprocessRunner
+from elt_taskgen.package_resources import resource_path
 from elt_taskgen.runtime.source_images import SOURCE_SERVICE_IMAGES
 from elt_taskgen.runtime.source_server import load_routes
 
@@ -35,6 +36,15 @@ _SAFE_BUCKET = re.compile(r"[a-z0-9][a-z0-9-]*[a-z0-9]")
 _SAFE_S3_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
 _SAFE_PROJECT = re.compile(r"[^a-z0-9_-]+")
 _SAFE_CONTAINER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,254}")
+#: The flat-file service listens on TLS here. The Airbyte source-file connector
+#: rewrites every URL to https://<host>, so the port carries a TLS listener
+#: rather than the plain HTTP the other source services speak.
+FLAT_FILES_PORT = 8443
+
+#: Certificate material for that listener, shipped with the package because the
+#: connector image trusts this authority and nothing generates one per run.
+SOURCE_TLS_RESOURCE_DIR = "source_tls"
+
 _SOURCE_SERVICES = (
     "elt-postgres",
     "elt-mongodb",
@@ -244,6 +254,12 @@ def _release_manifest(release_dir: Path) -> ReleaseManifest:
 def _compose_document(
     *, rendered_root: Path, manifest_path: Path, server_script: Path, network: str
 ) -> dict[str, Any]:
+    tls_dir = resource_path(SOURCE_TLS_RESOURCE_DIR)
+    for name in ("ca.crt", "server.crt", "server.key"):
+        if not (tls_dir / name).is_file():
+            raise SourceEnvironmentError(
+                f"source TLS material is missing: {tls_dir / name}"
+            )
     common_mounts = [
         f"{server_script.resolve()}:/app/source_server.py:ro",
         f"{manifest_path.resolve()}:/config/sources_serving.json:ro",
@@ -324,6 +340,9 @@ def _compose_document(
                     "retries": 30,
                 },
             },
+            # Served over TLS on FLAT_FILES_PORT: the Airbyte source-file
+            # connector discards the URL scheme and always fetches
+            # https://<host>, so a plain-HTTP file server is unreachable for it.
             "elt-files": {
                 "image": SOURCE_SERVICE_IMAGES["elt-files"],
                 "command": [
@@ -336,11 +355,24 @@ def _compose_document(
                     "--backend",
                     "files",
                     "--port",
-                    "8080",
+                    str(FLAT_FILES_PORT),
+                    "--certfile",
+                    "/tls/server.crt",
+                    "--keyfile",
+                    "/tls/server.key",
                 ],
-                "volumes": common_mounts,
+                "volumes": [*common_mounts, f"{tls_dir.resolve()}:/tls:ro"],
                 "healthcheck": {
-                    "test": [value % "8080" if "%s" in value else value for value in server_health],
+                    "test": [
+                        "CMD",
+                        "python",
+                        "-c",
+                        "import ssl, urllib.request; "
+                        "urllib.request.urlopen("
+                        f"'https://localhost:{FLAT_FILES_PORT}/healthz', timeout=2, "
+                        "context=ssl.create_default_context(cafile='/tls/ca.crt')"
+                        ").read()",
+                    ],
                     "interval": "2s",
                     "timeout": "5s",
                     "retries": 30,

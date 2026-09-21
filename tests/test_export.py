@@ -447,7 +447,7 @@ class TestExportTask(ExportTaskBase):
         # Files connector downloads them); a bundle-relative path is a defect.
         self.assertEqual(
             config["flat_files"][0]["path"],
-            "http://elt-files:8080/demo__customer_summary/order_items.csv",
+            "https://elt-files:8443/demo__customer_summary/order_items.csv",
         )
         # Upstream carries a definition id for exactly the source connectors
         # present in the task's config (never for absent ones, e.g. no
@@ -1251,7 +1251,7 @@ class TestSourcesServing(ExportTaskBase):
         )
         db = eltbench.database_name(task)
         manifest = eltbench._sources_serving_manifest(
-            task, db, flat_base="http://elt-files:8080", rest_base="http://elt-api:5005"
+            task, db, flat_base="https://elt-files:8443", rest_base="http://elt-api:5005"
         )
         entry = manifest["tables"]["order_items"]
         config = eltbench.build_config(task)
@@ -1280,7 +1280,7 @@ class TestSourcesServing(ExportTaskBase):
         )
         db = eltbench.database_name(task)
         entry = eltbench._sources_serving_manifest(
-            task, db, flat_base="http://elt-files:8080", rest_base="http://elt-api:5005"
+            task, db, flat_base="https://elt-files:8443", rest_base="http://elt-api:5005"
         )["tables"]["orders"]
         self.assertEqual(entry["route"], f"/{db}/orders")
         self.assertEqual(entry["records_key"], "data")
@@ -1389,7 +1389,7 @@ class TestFlatFilesHosting(ExportTaskBase):
     def test_default_base_url_is_absolute_http(self):
         url = eltbench.flat_files_url("demo__customer_summary", "order_items", "csv")
         self.assertEqual(
-            url, "http://elt-files:8080/demo__customer_summary/order_items.csv"
+            url, "https://elt-files:8443/demo__customer_summary/order_items.csv"
         )
 
     def test_env_var_overrides_base(self):
@@ -1422,7 +1422,7 @@ class TestFlatFilesHosting(ExportTaskBase):
             (self.answer_key_dir / "flat_files_serving.json").read_text()
         )
         config = yaml.safe_load((self.task_dir / "config.yaml").read_text())
-        self.assertEqual(manifest["base_url"], "http://elt-files:8080")
+        self.assertEqual(manifest["base_url"], "https://elt-files:8443")
         self.assertEqual(
             manifest["base_url_env"], "ELT_TASKGEN_FLAT_FILES_BASE_URL"
         )
