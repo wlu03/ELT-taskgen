@@ -103,6 +103,53 @@ _AIRBYTE_BASE: dict[str, Any] = {
 _DOCUMENTATION_RESOURCE_DIR = "documentation"
 
 
+#: Which reference each config section requires. A bundle that cannot use a
+#: connector does not carry its reference: shipping a Databricks reference in a
+#: Snowflake bundle describes a warehouse the task cannot reach.
+_SECTION_DOCUMENTATION = {
+    "postgres": ("source_postgres.md",),
+    "mongodb": ("source_mongodb_v2.md",),
+    "custom_api": ("source_custom_api.md",),
+    "aws_s3": ("source_s3.md",),
+    "flat_files": ("source_file.md",),
+}
+
+#: The destination reference is chosen per bundle because the alternates
+#: describe warehouses the task has no credentials for.
+_DESTINATION_DOCUMENTATION_FILES = {
+    "snowflake": ("destination_snowflake.md",),
+    "databricks": ("destination_databricks.md", "databricks_authentication.md"),
+    "redshift": ("destination_redshift.md",),
+}
+
+#: Carried by every bundle because they describe the steps every task performs:
+#: the index, the provider block, creating connections, and running jobs.
+_SHARED_DOCUMENTATION = (
+    "README.md",
+    "airbyte_Provider.md",
+    "connection.md",
+    "trigger_job.md",
+)
+
+
+def documentation_filenames_for(
+    config: Mapping[str, Any], destination: Destination | str
+) -> tuple[str, ...]:
+    """The reference set one bundle carries.
+
+    Derived from the bundle's own config so a task ships documentation only
+    for connectors it declares. A reference for an absent connector is
+    material the solver cannot act on.
+    """
+
+    names = set(_SHARED_DOCUMENTATION)
+    names.update(_DESTINATION_DOCUMENTATION_FILES[normalize_destination(destination).value])
+    for section, docs in _SECTION_DOCUMENTATION.items():
+        if config.get(section):
+            names.update(docs)
+    return tuple(sorted(names))
+
+
 def _documentation_resources() -> dict[str, str]:
     """Read the vendored upstream reference set, keyed by filename.
 
@@ -348,6 +395,19 @@ def _runtime_documentation(destination: Destination | str) -> dict[str, str]:
     return _documentation_resources()
 
 
+def runtime_documentation_for(
+    config: Mapping[str, Any], destination: Destination | str
+) -> dict[str, str]:
+    """The reference contents for one bundle, keyed by filename."""
+
+    wanted = set(documentation_filenames_for(config, destination))
+    return {
+        name: content
+        for name, content in _documentation_resources().items()
+        if name in wanted
+    }
+
+
 def runtime_documentation_filenames(
     destination: Destination | str = Destination.SNOWFLAKE,
 ) -> tuple[str, ...]:
@@ -413,16 +473,21 @@ def assert_public_runtime_shape(public_dir: Path) -> None:
     if not schemas.is_dir() or not any(schemas.glob("*.csv")):
         raise ValueError("public runtime contract: schemas/ has no CSV declarations")
     documentation = public_dir / "documentation"
-    expected_docs = set(_runtime_documentation(selected))
+    expected_docs = set(documentation_filenames_for(config, selected))
     actual_docs = {
         path.name for path in documentation.iterdir() if path.is_file()
     } if documentation.is_dir() else set()
-    if actual_docs != expected_docs:
-        missing_docs = sorted(expected_docs - actual_docs)
-        extra_docs = sorted(actual_docs - expected_docs)
+    # Every reference this bundle needs must be present, and nothing outside
+    # the upstream set may appear. A bundle built before the references were
+    # trimmed per connector still carries all of them; the release trims it,
+    # and this check runs before that, so known extras are tolerated here.
+    known_docs = set(_documentation_resources())
+    missing_docs = sorted(expected_docs - actual_docs)
+    foreign_docs = sorted(actual_docs - known_docs)
+    if missing_docs or foreign_docs:
         raise ValueError(
             "public runtime contract: documentation/ does not match the "
-            f"original shared set (missing {missing_docs}; extra {extra_docs})"
+            f"original shared set (missing {missing_docs}; foreign {foreign_docs})"
         )
     try:
         terraform_main = (public_dir / "elt" / "main.tf").read_text(
@@ -1353,7 +1418,10 @@ def _write_runtime_scaffold(
     contract = destination_contract(selected)
     documentation = public_dir / "documentation"
     documentation.mkdir()
-    for name, content in sorted(_runtime_documentation(selected).items()):
+    bundle_config = build_config(task, destination=selected)
+    for name, content in sorted(
+        runtime_documentation_for(bundle_config, selected).items()
+    ):
         if name == "README.md":
             content = content.rstrip() + "\n\n" + public_documentation(task)
         (documentation / name).write_text(content, encoding="utf-8")

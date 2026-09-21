@@ -778,7 +778,11 @@ class TestExportTask(ExportTaskBase):
                 for path in (self.task_dir / "documentation").iterdir()
                 if path.is_file()
             },
-            set(eltbench.RUNTIME_DOCUMENTATION_FILENAMES),
+            set(
+                eltbench.documentation_filenames_for(
+                    eltbench.build_config(self.task), "snowflake"
+                )
+            ),
         )
         self.assertEqual(
             (self.task_dir / "elt" / "main.tf").read_text(),
@@ -2309,6 +2313,9 @@ class TestFreezeRelease(_FreezeReleaseHarness):
                 }
             ]
         }
+        (self.task_root / "task" / "documentation" / "source_s3.md").write_text(
+            eltbench._documentation_resources()["source_s3.md"], encoding="utf-8"
+        )
         payload["Airbyte"]["config"]["s3_definition_id"] = (
             "69589781-7828-43c5-9f63-8925b1c1ccc2"
         )

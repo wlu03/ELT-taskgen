@@ -900,7 +900,9 @@ class ReleaseVariantAcceptanceTests(unittest.TestCase):
         for table in self.task.tables:
             rel = f"schemas/{table.name}.csv"
             self.assertTrue((public_task / rel).is_file(), rel)
-        for name in eltbench.RUNTIME_DOCUMENTATION_FILENAMES:
+        for name in eltbench.documentation_filenames_for(
+            eltbench.build_config(self.task), "snowflake"
+        ):
             rel = f"documentation/{name}"
             self.assertTrue((public_task / rel).is_file(), rel)
         self.assertFalse((public_task / "documentation.md").exists())
