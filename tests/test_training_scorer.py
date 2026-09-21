@@ -143,7 +143,7 @@ resource "airbyte_source_file" "items" {
     dataset_name = "order_items"
     format = "csv"
     provider = { https_public_web = {} }
-    url = "http://elt-files:8080/gate__five_backend_probe/order_items.csv"
+    url = "https://elt-files:8443/gate__five_backend_probe/order_items.csv"
   }
 }
 

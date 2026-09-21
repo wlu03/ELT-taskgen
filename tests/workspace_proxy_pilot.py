@@ -339,7 +339,7 @@ resource "airbyte_source_file" "payments" {{
     dataset_name = "payments"
     format = "csv"
     provider = {{ https_public_web = {{}} }}
-    url = "http://elt-files:8080/{PILOT_TASK_ID}/payments.csv"
+    url = "https://elt-files:8443/{PILOT_TASK_ID}/payments.csv"
   }}
 }}
 

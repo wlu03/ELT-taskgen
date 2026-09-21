@@ -28,7 +28,7 @@ custom_api:
     - events
 flat_files:
 - format: csv
-  path: http://elt-files:8080/gate__five_backend_probe/order_items.csv
+  path: https://elt-files:8443/gate__five_backend_probe/order_items.csv
   sync_mode: full_refresh_append
   table: order_items
 mongodb:
