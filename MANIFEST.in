@@ -54,3 +54,5 @@ prune tests
 prune runtime-images/dbt-duckdb/.venv
 global-exclude .DS_Store
 global-exclude *.py[cod]
+recursive-include documentation *.md
+recursive-include source_tls *

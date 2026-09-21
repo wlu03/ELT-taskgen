@@ -171,6 +171,17 @@ def _resource_files() -> tuple[tuple[Path, Path], ...]:
     files.extend(
         (ROOT / "tools" / name, Path("tools") / name) for name in TOOLS
     )
+    # The exporter reads these when it builds a task bundle, so a wheel without
+    # them would ship bundles with no connector references and no certificate
+    # for the file service, failing only at export time.
+    files.extend(
+        (path, Path("documentation") / path.name)
+        for path in sorted((ROOT / "documentation").glob("*.md"))
+    )
+    files.extend(
+        (ROOT / "source_tls" / name, Path("source_tls") / name)
+        for name in ("README.md", "ca.crt", "ca.key", "server.crt", "server.key")
+    )
     for source, _ in files:
         _require_regular_resource(source)
     destinations = [destination.as_posix() for _, destination in files]

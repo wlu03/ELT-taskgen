@@ -124,6 +124,8 @@ class PackageResourceTests(unittest.TestCase):
             ):
                 shutil.copy2(ROOT / name, source / name)
             shutil.copytree(ROOT / "config", source / "config")
+            shutil.copytree(ROOT / "documentation", source / "documentation")
+            shutil.copytree(ROOT / "source_tls", source / "source_tls")
             shutil.copytree(
                 ROOT / "runtime-images",
                 source / "runtime-images",
@@ -170,6 +172,10 @@ class PackageResourceTests(unittest.TestCase):
             sdist = next(output.glob("*.tar.gz"))
 
             required = {
+                "elt_taskgen/_resources/documentation/source_postgres.md",
+                "elt_taskgen/_resources/source_tls/ca.crt",
+                "elt_taskgen/_resources/source_tls/server.crt",
+                "elt_taskgen/_resources/source_tls/server.key",
                 "elt_taskgen/_resources/uv.lock",
                 "elt_taskgen/_resources/config/agents.yaml",
                 "elt_taskgen/_resources/config/five_source_ingest.example.yaml",
