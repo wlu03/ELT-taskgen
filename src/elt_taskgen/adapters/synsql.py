@@ -28,6 +28,7 @@ from elt_taskgen.generation.difficulty_profiles import (
 )
 from elt_taskgen.generation.populations import derive_populations_and_attacks
 from elt_taskgen.reference.solution import attach_reference
+from elt_taskgen.adapters import reassign_unsafe_file_tables
 from elt_taskgen.models import (
     Backend,
     BackendAssignment,
@@ -560,7 +561,7 @@ def to_task_ir_with_schema_atoms(
         title=title,
         tables=tables,
         relationships=rels,
-        backends=backends,
+        backends=reassign_unsafe_file_tables(backends, tables),
         marts=marts,
         populations=populations,
         attack_cases=attacks,

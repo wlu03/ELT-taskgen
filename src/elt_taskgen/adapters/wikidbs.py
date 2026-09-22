@@ -46,6 +46,7 @@ from elt_taskgen.generation.populations import (
 )
 from elt_taskgen.reference.solution import attach_reference
 from elt_taskgen.package_resources import resource_path
+from elt_taskgen.adapters import reassign_unsafe_file_tables
 from elt_taskgen.models import (
     AttackKind,
     Backend,
@@ -2439,7 +2440,7 @@ def to_task_ir(
         title=title,
         tables=converted.tables,
         relationships=converted.relationships,
-        backends=backends,
+        backends=reassign_unsafe_file_tables(backends, converted.tables),
         marts=marts,
         populations=populations,
         # Real rows, but the attack catalogue is the SAME shared derivation

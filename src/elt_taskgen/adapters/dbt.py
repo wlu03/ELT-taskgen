@@ -34,6 +34,7 @@ from elt_taskgen.generation.mart_plan import (
 from elt_taskgen.generation.populations import derive_populations_and_attacks
 from elt_taskgen.adapters.dbt_joins import recover_join_relationships
 from elt_taskgen.reference.solution import attach_reference
+from elt_taskgen.adapters import reassign_unsafe_file_tables
 from elt_taskgen.models import (
     Backend,
     BackendAssignment,
@@ -5013,7 +5014,7 @@ def extract_candidates(spec: CandidateSpec, *, pool: str = "dbt") -> ExtractionR
                 title=by_id[kept_marts[0]].name.replace("_", " ").strip().capitalize(),
                 tables=tables,
                 relationships=relationships,
-                backends=backends,
+                backends=reassign_unsafe_file_tables(backends, tables),
                 marts=tuple(marts),
                 populations=populations,
                 attack_cases=attacks,

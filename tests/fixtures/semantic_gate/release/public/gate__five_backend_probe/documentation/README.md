@@ -1,3 +1,15 @@
+# Generated runtime references
+
+The files in this directory are Terraform and Airbyte field references copied
+into solver input bundles. Example values, connector definition IDs, and
+credential shapes are illustrative. The task's installed `config.yaml` and
+the benchmark harness are the runtime sources of truth.
+
+Presence of a destination reference does not establish that a connector
+version or warehouse has passed real-runtime certification. In the maintainer
+checkout, current status, known limitations, and required evidence are recorded
+in `docs/RUNTIME_STATUS.md`.
+
 # Five-backend semantic gate probe
 
 ## Transformation specification
@@ -6,6 +18,11 @@ Build every mart below using the ordered semantic rules. The rules
 define required source inputs, matching behavior, filters, aggregates,
 null handling, and deterministic tie behavior; they do not prescribe
 a particular SQL implementation.
+
+Create every mart in the same database and schema the raw source
+tables are loaded into: the destination namespace named in
+`config.yaml`. A mart built in any other schema is not found and does
+not count, so do not route marts to a separate schema.
 
 ### `customer_rollup`
 

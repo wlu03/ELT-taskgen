@@ -1,5 +1,15 @@
-# Trigger and monitor syncs
+# Trigger a sync
 
-After `terraform apply`, retrieve each Airbyte connection ID, trigger a sync,
-and wait until every job succeeds. `check_job_status.py` can monitor the
-connections recorded in `elt/terraform.tfstate`.
+```
+curl --request POST \
+     --url http://<airbyte-server>/api/public/v1/jobs \
+     --header 'accept: application/json' \
+     -u '<username>:password' \
+     --header 'content-type: application/json' \
+     --data '
+{
+  "jobType": "sync",
+  "connectionId": "<connection_id>"
+}
+'
+```

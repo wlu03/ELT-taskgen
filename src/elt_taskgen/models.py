@@ -1434,6 +1434,7 @@ class TaskIR(CanonicalModel):
         if unassigned:
             raise ValueError(f"tables without a backend assignment: {unassigned}")
 
+
         mart_names = [m.name for m in self.marts]
         if len(mart_names) != len(set(mart_names)):
             raise ValueError("duplicate mart names")

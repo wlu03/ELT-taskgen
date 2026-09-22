@@ -33,6 +33,7 @@ from elt_taskgen.adapters.evidence import (
 )
 from elt_taskgen.generation.populations import derive_populations_and_attacks
 from elt_taskgen.reference.solution import attach_reference
+from elt_taskgen.adapters import reassign_unsafe_file_tables
 from elt_taskgen.models import (
     Backend,
     BackendAssignment,
@@ -1308,7 +1309,9 @@ def to_task_ir(
         title=f"dlt extraction: {manifest.connector}",
         tables=table_specs,
         relationships=rel_specs,
-        backends=tuple(sorted(backends, key=lambda b: b.table)),
+        backends=reassign_unsafe_file_tables(
+            tuple(sorted(backends, key=lambda b: b.table)), table_specs
+        ),
         marts=marts,
         populations=populations,
         attack_cases=attacks,

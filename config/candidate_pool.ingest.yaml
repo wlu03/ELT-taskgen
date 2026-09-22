@@ -5,7 +5,7 @@ generator:
   name: elt-taskgen-five-source
   version: 0.2.0
   digest_kind: sha256-generator-tree-v1
-  sha256: 0a0fc54283bf9dfa99d9f5dc3d2cbfcf5668c28519db78e6d958dc0642eafefa
+  sha256: 49ee29c80b818fc03ae9cbf8c9f6d72e0b988febc9bb7013b7e86021b39766c9
   lock_sha256: 98019b431c8ae77134c44a5f16c5cf08a0e08b2da6c2d2ca3e169848ff6ea864
 catalog:
   path: package://config/sources.yaml

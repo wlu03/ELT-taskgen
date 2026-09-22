@@ -38,6 +38,7 @@ from elt_taskgen.generation.populations import (
     schema_scale_hint,
 )
 from elt_taskgen.reference.solution import attach_reference
+from elt_taskgen.adapters import reassign_unsafe_file_tables
 from elt_taskgen.models import (
     AttackCase,
     Backend,
@@ -1297,7 +1298,7 @@ def to_task_ir(
         title=f"SchemaPile schema: {title}",
         tables=tables,
         relationships=rels,
-        backends=backends,
+        backends=reassign_unsafe_file_tables(backends, tables),
         marts=marts,
         populations=populations,
         attack_cases=attacks,
