@@ -258,10 +258,10 @@ resource "airbyte_destination_snowflake" "arbitrary_dest" {{
     schema = "AIRBYTE_SCHEMA"
     warehouse = var.destination_warehouse
     role = var.destination_role
+    username = var.destination_username
     number_data_type = "NUMBER(38,9)"
     credentials = {{
       username_and_password = {{
-        username = var.destination_username
         password = var.destination_password
       }}
     }}
@@ -865,7 +865,6 @@ resource "airbyte_source_postgres" "renamed_pg" {{
                 Destination.SNOWFLAKE,
                 "    credentials = {\n"
                 "      username_and_password = {\n"
-                "        username = var.destination_username\n"
                 "        password = var.destination_password\n"
                 "      }\n"
                 "    }\n",
@@ -1035,6 +1034,43 @@ resource "airbyte_source_postgres" "renamed_pg" {{
                     logical_namespace="task_db",
                 )
             )
+
+
+class GenericMongoResourceTest(unittest.TestCase):
+    """A Mongo source declared as `airbyte_source_custom` with a JSON body is
+    the shape that applies on the pinned control plane (the typed resource
+    cannot express the connector's `databases` list), so it is accepted as
+    the mongodb source it names by definition id."""
+
+    def test_generic_resource_with_json_body_is_the_mongodb_source(self) -> None:
+        typed = _valid_hcl(Destination.SNOWFLAKE)
+        start = typed.index('resource "airbyte_source_mongodb_v2" "renamed_mongo"')
+        end = typed.index("}\n", typed.index("configuration = {", start))
+        end = typed.index("\n}\n", start) + len("\n}\n")
+        generic = (
+            'resource "airbyte_source_custom" "renamed_mongo" {\n'
+            '  name = "mongodb"\n'
+            "  workspace_id = var.workspace_id\n"
+            f'  definition_id = "{SOURCE_DEFINITIONS["mongodb"]}"\n'
+            "  configuration = jsonencode({\n"
+            "    database_config = {\n"
+            '      cluster_type = "SELF_MANAGED_REPLICA_SET"\n'
+            '      connection_string = "mongodb://elt-mongodb:27017/"\n'
+            '      databases = ["fixture"]\n'
+            "    }\n"
+            "  })\n"
+            "}\n"
+        )
+        text = (typed[:start] + generic + typed[end:]).replace(
+            "airbyte_source_mongodb_v2.renamed_mongo.source_id",
+            "airbyte_source_custom.renamed_mongo.source_id",
+        )
+        root = Path(tempfile.mkdtemp())
+        path = root / "main.tf"
+        path.write_text(text, encoding="utf-8")
+        result = evaluate_terraform_intent(_package(Destination.SNOWFLAKE), path)
+        self.assertEqual(result.error_codes, ())
+        self.assertEqual(result.reward, 1.0)
 
 
 class TerraformIntentExecutionBoundsTest(unittest.TestCase):

@@ -8,6 +8,8 @@ return stable public codes.
 
 from __future__ import annotations
 
+import json
+
 import atexit
 import io
 import os
@@ -1040,7 +1042,9 @@ def _validate_source_configuration(
     if kind == "custom_api":
         _validate_custom_api_configuration(configuration, expected_config)
         return
-    config = _mapping(configuration, TerraformIntentErrorCode.SOURCE_CONTRACT)
+    config = _mapping(
+        _decode_jsonencode(configuration), TerraformIntentErrorCode.SOURCE_CONTRACT
+    )
     if not _SOURCE_REQUIRED_CONFIGURATION[kind].issubset(config):
         _candidate_error(TerraformIntentErrorCode.SOURCE_CONTRACT)
     stream_names = {name for name, _ in streams}
@@ -1132,6 +1136,29 @@ def _validate_custom_api_configuration(
     _candidate_error(TerraformIntentErrorCode.SOURCE_CONTRACT)
 
 
+_JSONENCODE_PREFIX = "${jsonencode("
+_JSONENCODE_SUFFIX = ")}"
+
+
+def _decode_jsonencode(value: Any) -> Any:
+    """The mapping a ``jsonencode({...})`` body encodes, or ``value`` itself.
+
+    The HCL parser keeps the call as the text ``${jsonencode(<json>)}`` with
+    the object already serialized as JSON, so the body is recovered by
+    decoding that JSON. Anything else is returned unchanged.
+    """
+    if (
+        isinstance(value, str)
+        and value.startswith(_JSONENCODE_PREFIX)
+        and value.endswith(_JSONENCODE_SUFFIX)
+    ):
+        try:
+            return json.loads(value[len(_JSONENCODE_PREFIX) : -len(_JSONENCODE_SUFFIX)])
+        except ValueError:
+            return value
+    return value
+
+
 def _mongodb_route(config: Mapping[str, Any]) -> tuple[Any, tuple[Any, ...]]:
     database_config = _mapping(
         config.get("database_config"), TerraformIntentErrorCode.SOURCE_CONTRACT
@@ -1218,6 +1245,7 @@ def _candidate_destination(
                     "schema",
                     "number_data_type",
                     "credentials",
+                    "username",
                 }
             ),
             TerraformIntentErrorCode.DESTINATION_CONTRACT,
@@ -1226,7 +1254,12 @@ def _candidate_destination(
             _candidate_error(TerraformIntentErrorCode.NAMESPACE_CONTRACT)
         if config.get("number_data_type") != expected_config.get("number_data_type"):
             _candidate_error(TerraformIntentErrorCode.DESTINATION_CONTRACT)
-        for field in ("host", "role", "warehouse"):
+        # Provider 0.6.5 (ELT-Bench's pinned version, see its
+        # documentation/destination_snowflake.md and example/retails/main.tf)
+        # takes `username` as a required top-level configuration attribute;
+        # only the password sits under `credentials.username_and_password`.
+        # A submission that nests the username there fails `terraform apply`.
+        for field in ("host", "role", "warehouse", "username"):
             _runtime_variable(
                 config.get(field), variables, TerraformIntentErrorCode.DESTINATION_CONTRACT
             )
@@ -1249,15 +1282,14 @@ def _candidate_destination(
         )
         _exact_keys(
             username_password,
-            frozenset({"username", "password"}),
+            frozenset({"password"}),
             TerraformIntentErrorCode.DESTINATION_CONTRACT,
         )
-        for field in ("username", "password"):
-            _runtime_variable(
-                username_password.get(field),
-                variables,
-                TerraformIntentErrorCode.DESTINATION_CONTRACT,
-            )
+        _runtime_variable(
+            username_password.get("password"),
+            variables,
+            TerraformIntentErrorCode.DESTINATION_CONTRACT,
+        )
         return expected
     if expected.kind == "databricks":
         _exact_keys(
@@ -1437,10 +1469,17 @@ def _compile_candidate_graph(
     expected_by_signature: dict[
         tuple[str, tuple[tuple[str, str], ...]], list[TerraformSourceIntent]
     ] = {}
+    definition_kinds: dict[str, str] = {}
     for source in expected.sources:
         expected_by_signature.setdefault(
             (source.connector_kind, source.streams), []
         ).append(source)
+        if source.connector_kind != "custom_api":
+            private_definition = private_sources.get(source.source_key, {}).get(
+                "definition_id"
+            )
+            if isinstance(private_definition, str) and private_definition:
+                definition_kinds[private_definition] = source.connector_kind
 
     matched_sources: list[TerraformSourceIntent] = []
     matched_connections: list[TerraformConnectionIntent] = []
@@ -1465,6 +1504,15 @@ def _compile_candidate_graph(
         streams = _candidate_streams(body)
         source_resource = source_resources[source_address]
         kind = _SOURCE_TYPE_TO_KIND[source_resource.resource_type]
+        if kind == "custom_api":
+            # The generic resource is also the only shape that applies for a
+            # connector whose current spec the provider's typed resource
+            # cannot express (source-mongodb-v2 takes a `databases` list the
+            # typed resource lacks). Such a source names the connector by its
+            # literal definition id, which the private contract also carries.
+            kind = definition_kinds.get(
+                str(source_resource.body.get("definition_id")), kind
+            )
         matches = [
             item
             for item in expected_by_signature.get((kind, streams), [])

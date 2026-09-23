@@ -353,10 +353,10 @@ resource "airbyte_destination_snowflake" "warehouse" {{
     schema = "AIRBYTE_SCHEMA"
     warehouse = var.destination_warehouse
     role = var.destination_role
+    username = var.destination_username
     number_data_type = "NUMBER(38,9)"
     credentials = {{
       username_and_password = {{
-        username = var.destination_username
         password = var.destination_password
       }}
     }}
