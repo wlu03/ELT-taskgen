@@ -1330,11 +1330,12 @@ def _candidate_destination(
         )
         _exact_keys(
             authentication,
-            frozenset({"oauth"}),
+            frozenset({"o_auth2_recommended"}),
             TerraformIntentErrorCode.DESTINATION_CONTRACT,
         )
         oauth = _mapping(
-            authentication.get("oauth"), TerraformIntentErrorCode.DESTINATION_CONTRACT
+            authentication.get("o_auth2_recommended"),
+            TerraformIntentErrorCode.DESTINATION_CONTRACT,
         )
         _exact_keys(
             oauth,

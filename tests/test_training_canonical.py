@@ -21,6 +21,7 @@ from pathlib import Path
 import duckdb
 
 from elt_taskgen.destinations import Destination
+from elt_taskgen.models import ColumnType
 from elt_taskgen.training import canonical
 from elt_taskgen.training.dbt_runner import (
     DBT_COMPATIBILITY_SUBSET_VERSION,
@@ -45,6 +46,31 @@ FIXTURE_RELEASE = Path(__file__).resolve().parent / "fixtures" / "semantic_gate"
 TASK_ID = "gate__five_backend_probe"
 DBT_RUNTIME_ROOT = Path(__file__).resolve().parents[1] / "runtime-images" / "dbt-duckdb"
 _RUNTIME_PRESENT = (DBT_RUNTIME_ROOT / ".venv" / "bin" / "python").is_file()
+
+
+class CanonicalDialectDefaultsTests(unittest.TestCase):
+    """The reference SQL leans on DuckDB defaults the warehouses do not share;
+    the rendered model states them."""
+
+    def test_null_ordering_and_text_date_trunc_are_explicit(self) -> None:
+        sql = (
+            "SELECT t.k AS k, FIRST_VALUE(t.v) OVER (PARTITION BY t.k ORDER BY t.v DESC, t.k ASC) AS top_v, "
+            "date_trunc('day', t.d) AS day FROM t ORDER BY t.k"
+        )
+        types = {"t": {"d": ColumnType.TIMESTAMP, "v": ColumnType.FLOAT, "k": ColumnType.TEXT}}
+        rendered = canonical.render_canonical_model(
+            sql, {"t"}, Destination.SNOWFLAKE, column_types=types
+        )
+        self.assertIn("DESC NULLS LAST", rendered)
+        # Every physical read is cast to its declared type: the warehouse
+        # column is whatever the connector inferred.
+        self.assertIn("CAST(T.D AS TIMESTAMP)", rendered.upper())
+        self.assertIn("CAST(T.V AS DOUBLE)", rendered.upper())
+        rendered = canonical.render_canonical_model(
+            sql, {"t"}, Destination.DATABRICKS, column_types=types
+        )
+        # Databricks puts NULLs first on ASC by default, so ASC keys get the clause there.
+        self.assertIn("AS STRING) ASC NULLS LAST", rendered)
 
 
 class CanonicalDerivationTests(unittest.TestCase):

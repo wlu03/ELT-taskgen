@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlglot import exp
 
 from elt_taskgen.destinations import Destination
+from elt_taskgen.models import ColumnType
 from elt_taskgen.export import eltbench
 from elt_taskgen.export.eltbench import PRIVATE_AIRBYTE_CONNECTOR_CONTRACT
 from elt_taskgen.models import PopulationName, TaskIR, canonical_json, readable_json
@@ -271,7 +272,10 @@ def render_canonical_main_tf(contract: Mapping[str, Any]) -> str:
             "{\n"
             f"    accept_terms = {_hcl_literal(destination_config['accept_terms'])}\n"
             "    authentication = {\n"
-            "      oauth = {\n"
+            # Provider 0.6.5 names the OAuth branch `o_auth2_recommended`
+            # (ELT-Bench documentation/destination_databricks.md); `oauth`
+            # is refused at apply ("must have exactly one child attribute").
+            "      o_auth2_recommended = {\n"
             f"        client_id = {var('databricks_client_id')}\n"
             f"        secret = {var('databricks_secret')}\n"
             "      }\n"
@@ -376,8 +380,123 @@ def _is_cte_reference(table: exp.Table) -> bool:
     return False
 
 
+#: SQL type a physical column is cast to at the read boundary, by declared
+#: ColumnType. JSON is left as the destination stores it.
+_READ_CAST_TYPES: Mapping[ColumnType, str] = {
+    ColumnType.INTEGER: "INTEGER",
+    ColumnType.BIGINT: "BIGINT",
+    ColumnType.FLOAT: "DOUBLE",
+    ColumnType.DECIMAL: "DOUBLE",
+    ColumnType.TEXT: "VARCHAR",
+    ColumnType.BOOLEAN: "BOOLEAN",
+    ColumnType.DATE: "DATE",
+    ColumnType.TIMESTAMP: "TIMESTAMP",
+}
+
+
+def _cast_physical_reads(
+    tree: exp.Expression,
+    table_names: frozenset[str] | set[str],
+    column_types: Mapping[str, Mapping[str, ColumnType]],
+    destination: Destination,
+) -> None:
+    """Cast every read of a physical column to its declared type.
+
+    The reference SQL assumes the declared types, but a warehouse column is
+    whatever the connector inferred: a timestamp that travelled as JSON text
+    arrives VARCHAR, a Mongo field whose first document was null arrives
+    VARIANT. On those, DATE_TRUNC is refused and a window over the measure
+    orders JSON values, not numbers. Casting at the read boundary is what a
+    correct submission does; on the reference engine, where the types already
+    hold, it changes nothing.
+    """
+    # Resolve a column's table within its own SELECT: the same alias names
+    # different physical tables across the branches of a UNION.
+    scopes: dict[int, tuple[dict[str, str], str | None]] = {}
+    for select in tree.find_all(exp.Select):
+        local: dict[str, str] = {}
+        sources = [
+            source
+            for source in select.find_all(exp.Table)
+            if source.find_ancestor(exp.Select) is select
+        ]
+        physical = []
+        for source in sources:
+            if source.name in table_names and not _is_cte_reference(source):
+                physical.append(source.name)
+                local[source.alias_or_name] = source.name
+                local.setdefault(source.name, source.name)
+        # An unqualified column resolves to the one physical table its SELECT
+        # reads (the dbt-lifted SQL reads `date`, not `promoted_tweet_report.date`).
+        sole = physical[0] if len(sources) == 1 and len(physical) == 1 else None
+        scopes[id(select)] = (local, sole)
+    for column in list(tree.find_all(exp.Column)):
+        scope = column.find_ancestor(exp.Select)
+        local, sole = scopes.get(id(scope), ({}, None)) if scope is not None else ({}, None)
+        physical = local.get(column.table) if column.table else sole
+        if physical is None:
+            continue
+        declared = column_types.get(physical, {}).get(column.name)
+        sql_type = _READ_CAST_TYPES.get(declared) if declared is not None else None
+        if sql_type is None:
+            continue
+        if sql_type == "BOOLEAN" and destination is Destination.REDSHIFT:
+            # Redshift casts neither VARCHAR -> BOOLEAN nor BOOLEAN -> VARCHAR,
+            # and a boolean that travelled as text (file and S3 sources)
+            # arrives VARCHAR there while one from Postgres arrives BOOLEAN.
+            # Comparing the column to string literals works for both: a
+            # boolean column coerces the literal, a text column compares text.
+            def _in(values):
+                return exp.In(this=column.copy(), expressions=[exp.Literal.string(v) for v in values])
+            cast = exp.Case(
+                ifs=[
+                    exp.If(this=_in(("true", "True", "TRUE", "t", "T", "1")), true=exp.true()),
+                    exp.If(this=_in(("false", "False", "FALSE", "f", "F", "0")), true=exp.false()),
+                ]
+            )
+        elif destination is Destination.DATABRICKS and sql_type in ("VARCHAR", "DATE", "BOOLEAN"):
+            # The Databricks destination stores an untyped field as its JSON
+            # text, quotes included ('"2024-02-29"'), which no cast accepts.
+            # A quoted value is unwrapped with functions the portable subset
+            # admits (the grader replays this model on DuckDB, where the
+            # value is typed and the branch never fires); a plain value is
+            # left alone. Timestamps arrive typed (measured on the probe) and
+            # a text cast of a declared timestamp is what the subset refuses,
+            # so they take the plain cast below.
+            text = exp.cast(column.copy(), "VARCHAR")
+            inner = exp.Substring(
+                this=text.copy(),
+                start=exp.Literal.number(2),
+                length=exp.Sub(this=exp.Length(this=text.copy()), expression=exp.Literal.number(2)),
+            )
+            unescaped = exp.RegexpReplace(
+                this=inner, expression=exp.Literal.string('\\\\"'), replacement=exp.Literal.string('"')
+            )
+            unwrapped = exp.Case(
+                ifs=[exp.If(this=exp.Like(this=text.copy(), expression=exp.Literal.string('"%"')), true=unescaped)],
+                default=text.copy(),
+            )
+            cast = exp.cast(unwrapped, sql_type)
+        elif destination is Destination.DATABRICKS and sql_type == "TIMESTAMP":
+            # Databricks' TIMESTAMP carries a zone (the grader replays it as
+            # TIMESTAMPTZ and every value picks up the session offset); the
+            # destination lands timestamps as TIMESTAMP_NTZ, which is also
+            # what the declared type means.
+            cast = exp.cast(column.copy(), "TIMESTAMP_NTZ")
+        else:
+            cast = exp.cast(column.copy(), sql_type)
+        parent = column.parent
+        if isinstance(parent, exp.Select) and column.arg_key == "expressions":
+            # A bare projection keeps its name; a cast alone would rename it.
+            cast = exp.alias_(cast, column.name, quoted=column.this.quoted)
+        column.replace(cast)
+
+
 def render_canonical_model(
-    reference_sql: str, table_names: frozenset[str] | set[str], destination: Destination
+    reference_sql: str,
+    table_names: frozenset[str] | set[str],
+    destination: Destination,
+    column_types: Mapping[str, Mapping[str, ColumnType]] | None = None,
 ) -> str:
     """Render a destination-dialect dbt model from trusted reference SQL.
 
@@ -392,6 +511,9 @@ def render_canonical_model(
         and tree.args.get("offset") is None
     ):
         tree.set("order", None)
+    # Cast before the physical tables are renamed to placeholders: the cast
+    # resolves a column's table by the name the reference SQL still uses.
+    _cast_physical_reads(tree, table_names, column_types or {}, destination)
     for table in list(tree.find_all(exp.Table)):
         if _is_cte_reference(table):
             continue
@@ -403,6 +525,15 @@ def render_canonical_model(
             "this",
             exp.Identifier(this=f"{_SOURCE_PLACEHOLDER_PREFIX}{table.name}", quoted=False),
         )
+    # The reference SQL was authored against DuckDB and leans on a default the
+    # warehouses do not share: an ORDER BY without a nulls clause puts NULLs
+    # last in both directions on DuckDB, while Snowflake and Redshift put them
+    # first on DESC and Databricks first on ASC, so a "top row" window picked
+    # a NULL and its mart lost rows. Making every key explicit renders each
+    # dialect's clause only where its default differs.
+    for ordered in tree.find_all(exp.Ordered):
+        if ordered.args.get("nulls_first") is None:
+            ordered.set("nulls_first", False)
     if destination is Destination.SNOWFLAKE:
         # Airbyte's Snowflake destination creates upper-case column names and
         # a quoted identifier is case-sensitive there, so the reference SQL's
@@ -490,12 +621,16 @@ def render_canonical_project(package: WorkspacePackage) -> dict[str, str]:
         ),
     }
     reference = dict(task.reference.sql_by_mart)
+    column_types = {
+        table.name: {column.name: column.type for column in table.columns}
+        for table in task.tables
+    }
     for mart in task.marts:
         sql = reference.get(mart.name)
         if not sql:
             raise CanonicalArtifactError(f"mart {mart.name!r} has no reference SQL")
         files[f"models/{mart.name}.sql"] = render_canonical_model(
-            sql, table_names, package.destination
+            sql, table_names, package.destination, column_types=column_types
         )
     return files
 

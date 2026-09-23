@@ -58,7 +58,17 @@ def _wide_task():
         else population
         for population in task.populations
     )
-    return task.model_copy(update={"tables": tuple(tables), "populations": specs})
+    # order_items carries the oversized BIGINT family, which only the Postgres
+    # transport delivers exactly; every other backend rounds it at 2**53.
+    backends = tuple(
+        assignment.model_copy(update={"backend": Backend.POSTGRES})
+        if assignment.table == "order_items"
+        else assignment
+        for assignment in task.backends
+    )
+    return task.model_copy(
+        update={"tables": tuple(tables), "populations": specs, "backends": backends}
+    )
 
 
 def _with_backend(task, backend: Backend):
@@ -82,8 +92,25 @@ class TestAdversarialSourceValues(unittest.TestCase):
         cls.stress = source_data.generate_rows(cls.task, P.STRESS)
 
     def test_policy_version_is_reexported(self) -> None:
-        self.assertEqual(source_data.GENERATION_POLICY_VERSION, 8)
-        self.assertEqual(populations.GENERATION_POLICY_VERSION, 8)
+        self.assertEqual(source_data.GENERATION_POLICY_VERSION, 9)
+        self.assertEqual(populations.GENERATION_POLICY_VERSION, 9)
+
+    def test_oversized_bigints_stay_off_the_rounding_transports(self) -> None:
+        # Measured on the type probe: REST, file, S3 and Mongo all deliver
+        # 2**53 + 1 as 9007199254740992, so those tables keep small ids.
+        for backend in (Backend.FILES, Backend.REST, Backend.S3, Backend.MONGODB):
+            with self.subTest(backend=backend.value):
+                task = _wide_task()
+                backends = tuple(
+                    a.model_copy(update={"backend": backend, "options": ({"page_size": "7"} if backend is Backend.REST else {})})
+                    if a.table == "order_items" else a
+                    for a in task.backends
+                )
+                rows = source_data.generate_rows(
+                    task.model_copy(update={"backends": backends}), P.PRIMARY
+                )["order_items"]
+                self.assertTrue(rows)
+                self.assertTrue(all(row["large_count"] <= 2**53 for row in rows))
 
     def test_primary_contains_every_portable_adversarial_family(self) -> None:
         rows = self.primary["order_items"]
@@ -116,10 +143,11 @@ class TestAdversarialSourceValues(unittest.TestCase):
         self.assertTrue(
             any(len(repr(value).partition(".")[2]) == 9 for value in decimals)
         )
-        # A float is still finer than a 32-bit float, so a narrowing in
-        # transport shows up.
+        # A float fits the nine fractional digits Redshift's numeric storage
+        # keeps (Databricks keeps ten), so every destination carries it back
+        # unchanged.
         self.assertTrue(
-            any(struct.unpack("f", struct.pack("f", value))[0] != value for value in floats)
+            all(len(repr(value).partition(".")[2]) <= 9 for value in floats)
         )
 
         booleans = {row["is_active"] for row in rows}

@@ -166,8 +166,9 @@ _DANGLING_FRAC = 0.05
 #: P, the period-ordered mirror of row A, on every latest_snapshot
 #: counterfactual; 8 = values the warehouse can carry back unchanged -- text
 #: without edge whitespace the destination would trim, and FLOAT/DECIMAL on an
-#: exact-summation grid).
-GENERATION_POLICY_VERSION = 8
+#: exact-summation grid; 9 = the FLOAT grid coarsened to 2**-9 so a value
+#: also fits Redshift's numeric(.,9) and Databricks' decimal(38,10) storage).
+GENERATION_POLICY_VERSION = 9
 
 #: Durable evidence written beside every materialized population.  The manifest
 #: inventories ``rows/`` and ``rendered/`` but never itself; its own bytes are
@@ -245,11 +246,15 @@ _ADVERSARIAL_BIGINT_VALUES: tuple[int, ...] = (
 #: the last digits of the same total -- DuckDB compensates its SUM over DOUBLE
 #: and Snowflake does not, so a reference total of 1951.1000000000001 arrives
 #: from the warehouse as 1951.1.
-#: FLOAT uses 2**-24, finer than a 32-bit float's resolution at these
-#: magnitudes, so a narrowing anywhere in transport still changes the value.
-#: DECIMAL uses 2**-9: a multiple of it has at most nine fractional decimal
-#: digits, which is what the DECIMAL(38,9) column convention admits.
-_FLOAT_GRID = 2**24
+#: The step also has to survive every destination's storage: Airbyte's
+#: Redshift destination lands every number as numeric with nine fractional
+#: digits and Databricks' as decimal(38,10) (measured on the type probe,
+#: 2026-09-23), so a value needs at most nine fractional decimal digits. A
+#: multiple of 2**-k has exactly k of them, so FLOAT and DECIMAL both use
+#: 2**-9, the DECIMAL(38,9) column convention. Both are representable in a
+#: 32-bit float too, so a narrowing in transport no longer changes them --
+#: which also makes it harmless.
+_FLOAT_GRID = 2**9
 _DECIMAL_GRID = 2**9
 _FRACTION_CEILING = 500
 _ADVERSARIAL_DECIMAL_VALUES: tuple[float, ...] = (
@@ -308,10 +313,14 @@ def _variant_value(values: tuple, *, sample_index: int, variant_offset: int):
     return values[(variant_offset + sample_index) % len(values)]
 
 
-#: Backends whose connector cannot carry an integer above 2^53 exactly.
-#: `source-mongodb-v2` types a BSON Int64 as JSON Schema `number`, which the
-#: destinations map to a float, so ids above 2^53 arrive rounded.
-_INEXACT_BIGINT_BACKENDS = frozenset({Backend.MONGODB})
+#: Backends whose transport cannot carry an integer above 2^53 exactly.
+#: Every backend but Postgres moves the value as a JSON number or a CSV cell
+#: read into a float64 (source-mongodb-v2 types a BSON Int64 as `number`; the
+#: REST, file and S3 sources parse the text into a double), so 2^53 + 1
+#: arrives as 9007199254740992 on all four. Measured on the type probe.
+_INEXACT_BIGINT_BACKENDS = frozenset(
+    {Backend.MONGODB, Backend.REST, Backend.FILES, Backend.S3}
+)
 
 
 def _carried_by_an_inexact_backend(task: TaskIR, table: str) -> bool:

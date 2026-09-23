@@ -1612,6 +1612,25 @@ def _compatibility_transform(
     return node
 
 
+def _apply_destination_null_ordering(tree: exp.Expression, destination: Destination) -> None:
+    """Make every ORDER BY key's NULL placement explicit, as the destination
+    would have ordered it, so DuckDB reproduces the warehouse's result.
+
+    An ORDER BY without a nulls clause puts NULLs last in both directions on
+    DuckDB. Snowflake and Redshift put them first on DESC, Databricks first
+    on ASC; a "top row" window over a nullable measure therefore picks a
+    different row on the warehouse than the grader would on DuckDB.
+    """
+    for ordered in tree.find_all(exp.Ordered):
+        if ordered.args.get("nulls_first") is not None:
+            continue
+        descending = bool(ordered.args.get("desc"))
+        if destination is Destination.DATABRICKS:
+            ordered.set("nulls_first", not descending)
+        else:
+            ordered.set("nulls_first", descending)
+
+
 def rewrite_model_sql(
     sql: str,
     destination: Destination,
@@ -1766,6 +1785,7 @@ def rewrite_model_sql(
             raise DbtPolicyFailure(DbtErrorCode.COMPATIBILITY_UNSUPPORTED)
     _apply_bare_decimal_defaults(tree, resolved_destination)
     _validate_decimal_casts(tree)
+    _apply_destination_null_ordering(tree, resolved_destination)
     try:
         rewritten = tree.transform(
             lambda node: _compatibility_transform(

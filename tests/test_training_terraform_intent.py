@@ -283,7 +283,7 @@ resource "airbyte_destination_databricks" "arbitrary_dest" {{
     accept_terms = true
     purge_staging_data = true
     authentication = {{
-      oauth = {{ client_id = var.databricks_client_id, secret = var.databricks_secret }}
+      o_auth2_recommended = {{ client_id = var.databricks_client_id, secret = var.databricks_secret }}
     }}
   }}
 }}
@@ -872,7 +872,7 @@ resource "airbyte_source_postgres" "renamed_pg" {{
             (
                 Destination.DATABRICKS,
                 "    authentication = {\n"
-                "      oauth = { client_id = var.databricks_client_id, secret = var.databricks_secret }\n"
+                "      o_auth2_recommended = { client_id = var.databricks_client_id, secret = var.databricks_secret }\n"
                 "    }\n",
             ),
             (Destination.REDSHIFT, "    username = var.redshift_username\n"),

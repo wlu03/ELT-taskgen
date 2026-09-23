@@ -745,6 +745,20 @@ class NativeCompatibilityRewriteTests(unittest.TestCase):
                     )
 
 
+class DestinationNullOrderingTests(unittest.TestCase):
+    """An ORDER BY without a nulls clause means different things on the
+    warehouse and on DuckDB; the rewrite states the warehouse's meaning."""
+
+    def test_rewrite_states_the_destination_null_placement(self) -> None:
+        sql = "SELECT k, v, ROW_NUMBER() OVER (PARTITION BY k ORDER BY v DESC, k ASC) AS rn FROM {{ source('raw', 't') }}"
+        snowflake = rewrite_model_sql(sql, Destination.SNOWFLAKE)
+        self.assertIn("v DESC NULLS FIRST", snowflake)
+        self.assertNotIn("k ASC NULLS FIRST", snowflake)
+        databricks = rewrite_model_sql(sql, Destination.DATABRICKS)
+        self.assertIn("k ASC NULLS FIRST", databricks)
+        self.assertNotIn("v DESC NULLS FIRST", databricks)
+
+
 class DbtRunnerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
