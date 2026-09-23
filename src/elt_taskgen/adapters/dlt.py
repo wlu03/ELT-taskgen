@@ -33,7 +33,7 @@ from elt_taskgen.adapters.evidence import (
 )
 from elt_taskgen.generation.populations import derive_populations_and_attacks
 from elt_taskgen.reference.solution import attach_reference
-from elt_taskgen.adapters import reassign_unsafe_file_tables
+from elt_taskgen.adapters import file_backend_is_safe, reassign_unsafe_file_tables
 from elt_taskgen.models import (
     Backend,
     BackendAssignment,
@@ -1271,6 +1271,30 @@ def to_task_ir(
         )
 
     table_specs = tuple(tables[name] for name in sorted(tables))
+    # A table with no NOT NULL column cannot ride FILES or REST (an all-null
+    # record is dropped in transit), so those move to POSTGRES here, before
+    # the load-side attack catalogue reads the assignments. If that took the
+    # only REST seat, the first paginated table that can carry it takes over:
+    # a dlt task keeps a paginated REST resource.
+    backends = list(
+        reassign_unsafe_file_tables(
+            tuple(sorted(backends, key=lambda b: b.table)), table_specs
+        )
+    )
+    if not any(b.backend is Backend.REST for b in backends):
+        carriers = sorted(
+            ep.name
+            for ep in endpoints
+            if ep.paginated and file_backend_is_safe(tables[ep.name].columns)
+        )
+        if carriers:
+            backends = [
+                b.model_copy(update={"backend": Backend.REST})
+                if b.table == carriers[0]
+                else b
+                for b in backends
+            ]
+    backends = tuple(backends)
     rel_specs = tuple(
         sorted(relationships, key=lambda r: (r.child_table, r.parent_table))
     )
@@ -1309,9 +1333,7 @@ def to_task_ir(
         title=f"dlt extraction: {manifest.connector}",
         tables=table_specs,
         relationships=rel_specs,
-        backends=reassign_unsafe_file_tables(
-            tuple(sorted(backends, key=lambda b: b.table)), table_specs
-        ),
+        backends=backends,
         marts=marts,
         populations=populations,
         attack_cases=attacks,

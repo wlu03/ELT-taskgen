@@ -2419,6 +2419,9 @@ def to_task_ir(
         )
         for t in converted.tables
     )
+    # Reassigned BEFORE the catalogue reads the assignments: a table with no
+    # NOT NULL column cannot ride FILES or REST.
+    backends = reassign_unsafe_file_tables(backends, converted.tables)
     populations = (
         real_populations(
             task_id,
@@ -2440,7 +2443,7 @@ def to_task_ir(
         title=title,
         tables=converted.tables,
         relationships=converted.relationships,
-        backends=reassign_unsafe_file_tables(backends, converted.tables),
+        backends=backends,
         marts=marts,
         populations=populations,
         # Real rows, but the attack catalogue is the SAME shared derivation

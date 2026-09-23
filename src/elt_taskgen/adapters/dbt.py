@@ -5004,7 +5004,9 @@ def extract_candidates(spec: CandidateSpec, *, pool: str = "dbt") -> ExtractionR
         first_mart = _slug(by_id[kept_marts[0]].name)
         task_id = f"{family_id}__{first_mart}_{comp_hash}"
 
-        backends = _assign_backends(family_id, table_names)
+        # Reassigned BEFORE the catalogue reads the assignments: a table with
+        # no NOT NULL column cannot ride FILES or REST.
+        backends = reassign_unsafe_file_tables(_assign_backends(family_id, table_names), tables)
         populations, attacks = derive_populations_and_attacks(
             task_id=task_id,
             tables=tables,
@@ -5033,7 +5035,7 @@ def extract_candidates(spec: CandidateSpec, *, pool: str = "dbt") -> ExtractionR
                 title=by_id[kept_marts[0]].name.replace("_", " ").strip().capitalize(),
                 tables=tables,
                 relationships=relationships,
-                backends=reassign_unsafe_file_tables(backends, tables),
+                backends=backends,
                 marts=tuple(marts),
                 populations=populations,
                 attack_cases=attacks,

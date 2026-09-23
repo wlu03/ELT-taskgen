@@ -1278,6 +1278,9 @@ def to_task_ir(
         )
         for t in tables
     )
+    # Reassigned BEFORE the catalogue reads the assignments: a table with no
+    # NOT NULL column cannot ride FILES or REST.
+    backends = reassign_unsafe_file_tables(backends, tables)
     populations, attacks = _synthetic_populations(
         task_id,
         tables,
@@ -1298,7 +1301,7 @@ def to_task_ir(
         title=f"SchemaPile schema: {title}",
         tables=tables,
         relationships=rels,
-        backends=reassign_unsafe_file_tables(backends, tables),
+        backends=backends,
         marts=marts,
         populations=populations,
         attack_cases=attacks,

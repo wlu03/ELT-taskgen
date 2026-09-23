@@ -534,6 +534,9 @@ def to_task_ir_with_schema_atoms(
         )
         for t in tables
     )
+    # Reassigned BEFORE the catalogue reads the assignments: a table with no
+    # NOT NULL column cannot ride FILES or REST.
+    backends = reassign_unsafe_file_tables(backends, tables)
     populations, attacks = derive_populations_and_attacks(
         task_id=task_id,
         tables=tables,
@@ -561,7 +564,7 @@ def to_task_ir_with_schema_atoms(
         title=title,
         tables=tables,
         relationships=rels,
-        backends=reassign_unsafe_file_tables(backends, tables),
+        backends=backends,
         marts=marts,
         populations=populations,
         attack_cases=attacks,
