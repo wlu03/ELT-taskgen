@@ -1095,8 +1095,10 @@
       "required": true
     }
   ],
+  "revisions": [],
   "schema_version": "1.0.0",
   "solver_prompt": "",
+  "status": "draft",
   "tables": [
     {
       "business_key": [],

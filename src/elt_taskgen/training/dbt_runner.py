@@ -2611,7 +2611,9 @@ def _fetch_bounded_rows(
             if total_bytes > limits.max_result_bytes_per_mart:
                 raise DbtPolicyFailure(DbtErrorCode.OUTPUT_LIMIT)
             normalized = tuple(
-                value.isoformat()
+                # str(), not isoformat(): frozen gold spells a timestamp the
+                # way str() does, with a space between date and time.
+                str(value)
                 if isinstance(value, (dt.datetime, dt.date, dt.time))
                 else value
                 for value in raw

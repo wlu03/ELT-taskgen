@@ -2194,7 +2194,9 @@ def _fetch_rows(
             if isinstance(value, decimal.Decimal):
                 value = float(value)
             elif isinstance(value, (datetime.datetime, datetime.date)):
-                value = value.isoformat()
+                # str(), not isoformat(): frozen gold spells a timestamp the
+                # way str() does, with a space between date and time.
+                value = str(value)
             row[name] = value
         if max_bytes is not None:
             total_bytes += sum(

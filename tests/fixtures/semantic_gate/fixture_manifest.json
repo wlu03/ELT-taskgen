@@ -1,6 +1,6 @@
 {
   "census_version": "2",
-  "created_utc": "2026-09-02T22:27:21+00:00",
+  "created_utc": "2026-09-23T00:53:49+00:00",
   "destination": "snowflake",
   "environment": {
     "duckdb": "1.5.5",
@@ -11,28 +11,28 @@
   "expected_gold_sha256": {
     "counterfactual": {
       "customer_rollup": "c0156c303ade4dd08a012f3d98883122b5543c42ebc31da3cde9a9482222b387",
-      "event_wide": "f49082bc75975ad0fdd9a189160037fe6b2facd3ca31a6b1132f55ffe22dad5b"
+      "event_wide": "c15b0d98131e5e4f91d8da317364a90883be189872549f3e5c8ceb1bcf8e6720"
     },
     "development": {
       "customer_rollup": "4a2cb48a8bc34269d28661e6f95a66117d972a070baf8b2988da4f6cfa8b74d6",
-      "event_wide": "b0e38cc9cc4395e7d997fcd31b62c8eae34d8af9cbdb2492f143f63f117061a0"
+      "event_wide": "faa8213dd1e3205e91f0ff7463aeee2fd3b31c9dbfd7c05c79c6c2239a352387"
     },
     "primary": {
       "customer_rollup": "5b9a43cbfc8d824196129a817728e13ef1d5fe46d8cb2fa940955bbf141f69b0",
-      "event_wide": "68dff5e04854fab218df4cd6231bf0b5298ae7374f528e3c1271c6b742dad3de"
+      "event_wide": "5b452a752a8ca1862a376b7f4080d46365b48823822d73b5739591735e899da9"
     },
     "resampled": {
       "customer_rollup": "8a59fa6cd992408d37a5bf06201691d0d3fa8c29f7d64e58eac7ce1eb1763e54",
-      "event_wide": "bb28f85e2e31122353104e41de508b2d8c8fd9d8f171b5c0737f33ff112bf542"
+      "event_wide": "3451b8864208dbe9d0c86dd2f867778ff93bf5bcb57a911a9b748a957af2c8a0"
     },
     "stress": {
       "customer_rollup": "3d97798dcdb88f5d70c45f9ae3bd7d007cc0f3e70bdd6ae1c2dcac4032e99460",
-      "event_wide": "1bd5244c1d0b58a9f19d1bbfeb354b2791f61b02b1b6c9f54b40b48d27d3c5e9"
+      "event_wide": "ef6ce1d8e8ebcf495eefabc91c25a55702530bd0fd753dabda688155fd096a0e"
     }
   },
-  "reference_result_digest": "71739329e37a5e2df0e893f3c7565b4b356abf26945934d9cd400be86022918a",
-  "release_id": "release-29649f6a99c6d739",
-  "schema_version": "3.3",
+  "reference_result_digest": "c286b7912bae8f42f737cbf9d5e2d6a43a1f417ffd5de0282e1453d7a2221b14",
+  "release_id": "release-363d515e796cb44c",
+  "schema_version": "3.5",
   "semantic_scorer_version": "1.0.0",
   "task_id": "gate__five_backend_probe"
 }

@@ -5117,8 +5117,13 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     # digest, the tool surface and the fingerprint moved; policy digests, pool
     # and view did not. The committed admission predates this and is stale
     # until an authorized re-earn.
-    PHASE4_FINGERPRINT = "f1d45af9847ae888c0f0e5125c4b9c9569936fbde15160a321d0c4d9bb9fc603"
-    PHASE3_TOOL_SURFACE = "59e90d9b66de2e70cfd68ee76d169e4301148ef43ad54f9dcbed98491c82ee24"
+    # Re-pinned 2026-09-22: `verification.attacks` now renders a result
+    # timestamp with str() so attack rewards read the same spelling frozen
+    # gold does; that module is a critic-wired validator, so its code digest,
+    # the tool surface and the fingerprint moved. Pool, view, roles and
+    # binaries did not. The admission record is re-earned under this value.
+    PHASE4_FINGERPRINT = "cd23050e429bb9751df01f27094c1944fdbdee86a4d2dbff636be199dd3279d7"
+    PHASE3_TOOL_SURFACE = "739e591e372967e4f3dab4a090b8f1b8612f23a59a50d87a7cd19224349a60fc"
     PHASE3_CRITIC_DIGESTS = {
         # role: (role_behavior_sha256, policy_sha256)
         "ambiguity_critic": (
@@ -5240,7 +5245,9 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
 
     #: Digest of the harness-6 fingerprint with protocol fields replaced by a
     #: sentinel. The legacy name remains for the Phase-3 decomposition.
-    PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS = "d45280df6279b1399058738dae3b25cee47958ad4f9fda3246d57e6bd993d1c4"
+    # Re-pinned 2026-09-22 with PHASE4_FINGERPRINT: the validators' code
+    # digest is a non-protocol term and `verification.attacks` changed.
+    PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS = "593e2b118e49346ab972c5b7d12676891e0fba1a9800c038a8c5fa669bfd3313"
     PROTOCOL_TERMS = ("harness_version", "pool_sha256", "view_sha256", "observable_state_sha256")
     #: SoT T1.1: the declared blocks, hashed verbatim (`loop_limits`).
     SOT_T1_1_BLOCKS = {

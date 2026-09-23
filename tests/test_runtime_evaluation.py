@@ -1078,7 +1078,7 @@ class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
             ),
             _Response(
                 self._mart_sql("m_tz"),
-                [(1, aware)],  # str() form matches gold; isoformat does not
+                [(1, aware)],  # str() form: what gold and every path spell
                 description=(("ID", 0), ("SEEN_AT", 7)),
             ),
         ]
@@ -1101,9 +1101,12 @@ class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
         self.assertEqual(
             result.column_fingerprints["m_tz"], (("ID", "0"), ("SEEN_AT", "7"))
         )
-        # Every erasure class carries its exact stable strict code.
+        # Every erasure class carries its exact stable strict code. A UTC
+        # timestamp is not an erasure: strict spells it as str() does, which
+        # is how gold was frozen, so the aware value matches exactly.
         self.assertEqual(
-            result.strict_mart_scores, {name: False for name in gold}
+            result.strict_mart_scores,
+            {name: name == "m_tz" for name in gold},
         )
         self.assertEqual(
             result.strict_mismatch_codes,
@@ -1112,7 +1115,7 @@ class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
                 "m_bigint": "values:total",
                 "m_null": "values:note",
                 "m_case": "values:note",
-                "m_tz": "values:seen_at",
+                "m_tz": "",
             },
         )
         # Logical canonicalization still catches every real value erasure, but

@@ -194,6 +194,17 @@ deliberately, in this log, as the pinning test demands: `PHASE4_FINGERPRINT`
 under the previous value — the owner's harness-6 re-earn has not been run —
 so the move costs nothing. `docs/INTERFACES.md` carries the new value.
 
+Re-pinned 2026-09-22, deliberately, in this log: `PHASE4_FINGERPRINT`
+`f1d45af9847a…` -> `cd23050e429b…` and `PHASE3_TOOL_SURFACE`
+`59e90d9b66de…` -> `739e591e3729…`, both through the code digest of
+`elt_taskgen.verification.attacks` alone. That module now renders a result
+timestamp with `str()` instead of `isoformat()`, so an attack's reward reads
+the same spelling frozen gold does (`2024-03-10 00:00:00`, not
+`2024-03-10T00:00:00`); before this every timestamp mart column scored 0 on
+both sides of an attack. Pool, view, role behaviour digests and pinned
+binaries did not move. The admission record is re-earned fresh-live under
+the new fingerprint.
+
 ## 5. Engineering follow-ups
 
 - `metrology.build_prose` hard-codes an overview sentence naming three

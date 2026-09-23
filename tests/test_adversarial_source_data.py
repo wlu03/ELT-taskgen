@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import tempfile
 import unittest
 from collections import Counter
@@ -81,8 +82,8 @@ class TestAdversarialSourceValues(unittest.TestCase):
         cls.stress = source_data.generate_rows(cls.task, P.STRESS)
 
     def test_policy_version_is_reexported(self) -> None:
-        self.assertEqual(source_data.GENERATION_POLICY_VERSION, 7)
-        self.assertEqual(populations.GENERATION_POLICY_VERSION, 7)
+        self.assertEqual(source_data.GENERATION_POLICY_VERSION, 8)
+        self.assertEqual(populations.GENERATION_POLICY_VERSION, 8)
 
     def test_primary_contains_every_portable_adversarial_family(self) -> None:
         rows = self.primary["order_items"]
@@ -92,18 +93,34 @@ class TestAdversarialSourceValues(unittest.TestCase):
         self.assertTrue(all(value <= 2**63 - 1 for value in bigints))
 
         decimals = {row["precise_amount"] for row in rows}
-        self.assertIn(123456.123456789, decimals)
-        self.assertIn(987654.987654321, decimals)
-        self.assertTrue(
-            any(
-                len(format(value, ".9f").partition(".")[2]) == 9
-                for value in decimals
-            )
-        )
+        for value in source_data._ADVERSARIAL_DECIMAL_VALUES[:2]:
+            self.assertIn(value, decimals)
 
         floats = {row["ratio"] for row in rows}
         self.assertTrue(floats)
         self.assertTrue(all(isinstance(value, float) for value in floats))
+
+        # Exact binary fractions, so SUM over the column returns the same total
+        # from the reference engine and from the warehouse.
+        for column, grid in ((decimals, source_data._DECIMAL_GRID), (floats, source_data._FLOAT_GRID)):
+            self.assertTrue(
+                all(
+                    (value * grid).is_integer() and abs(value) < source_data._FRACTION_CEILING
+                    for value in column
+                )
+            )
+        # A decimal keeps to the nine fractional digits DECIMAL(38,9) admits.
+        self.assertTrue(
+            all(len(repr(value).partition(".")[2]) <= 9 for value in decimals)
+        )
+        self.assertTrue(
+            any(len(repr(value).partition(".")[2]) == 9 for value in decimals)
+        )
+        # A float is still finer than a 32-bit float, so a narrowing in
+        # transport shows up.
+        self.assertTrue(
+            any(struct.unpack("f", struct.pack("f", value))[0] != value for value in floats)
+        )
 
         booleans = {row["is_active"] for row in rows}
         self.assertEqual(booleans, {False, True})
@@ -111,10 +128,15 @@ class TestAdversarialSourceValues(unittest.TestCase):
         texts = {row["label"] for row in rows}
         self.assertIn("MiXeD_Case", texts)
         self.assertIn("nUlL", texts)
-        self.assertIn(" Null ", texts)
+        self.assertIn("Null", texts)
         self.assertIn("München 東京 Δ", texts)
         self.assertIn("Cafe\u0301", texts)
         self.assertNotIn("", texts)
+        # The Snowflake destination trims a loaded string, so a padded value
+        # could never arrive intact.
+        self.assertTrue(
+            all(v == v.strip() for v in source_data._ADVERSARIAL_TEXT_VALUES)
+        )
 
         dates = {row["event_date"] for row in rows}
         self.assertIn("2024-02-29", dates)

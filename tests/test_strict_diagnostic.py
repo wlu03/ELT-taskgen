@@ -100,7 +100,10 @@ class StrictCellMatrixTests(unittest.TestCase):
         aware = datetime.datetime(2020, 1, 1, tzinfo=UTC)
         self.assertEqual(sd.strict_cell(naive)[0], "timestamp")
         self.assertEqual(sd.strict_cell(aware)[0], "timestamptz")
-        self.assertEqual(sd.strict_cell(aware)[1], "2020-01-01T00:00:00+00:00")
+        # The space matches str(datetime), which is how frozen CSV gold and
+        # the reward comparator both spell a timestamp.
+        self.assertEqual(sd.strict_cell(aware)[1], "2020-01-01 00:00:00+00:00")
+        self.assertEqual(sd.strict_cell(naive)[1], upstream_eval.cell_text(naive))
         self.assertEqual(sd.strict_cell(datetime.date(2020, 1, 2)), ("date", "2020-01-02"))
 
     def test_bool_text_matches_the_legacy_cell_text_convention(self):

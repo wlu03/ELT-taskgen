@@ -771,7 +771,11 @@ def to_scalar(value: Any) -> Scalar:
     if isinstance(value, decimal.Decimal):
         return float(value)
     if isinstance(value, (datetime.datetime, datetime.date, datetime.time)):
-        return value.isoformat()
+        # str(), not isoformat(): a submission's cell reaches the comparator as
+        # str(value), which separates a timestamp's date and time with a space.
+        # Gold has to spell it the same way or every timestamp column
+        # mismatches as text.
+        return str(value)
     if isinstance(value, (bytes, bytearray)):
         return bytes(value).hex()
     if isinstance(value, (list, dict)):

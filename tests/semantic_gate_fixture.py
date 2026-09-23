@@ -218,7 +218,7 @@ def _gold_for(population: P, base: int, b2_total: str) -> dict[str, str]:
         EMPTY field, so the literal strings "null" and "None" and the empty
         string all freeze as empty cells; "MiXeD Case" and "ok" survive.
       occurred_at: DuckDB parses "2024-03-01 10:00:00" as a naive TIMESTAMP;
-        gold records datetime.isoformat() -> "2024-03-01T10:00:00".
+        gold records str(datetime) -> "2024-03-01 10:00:00".
       tz_stamp: TEXT — ISO strings with distinct UTC offsets survive verbatim.
       metric_value: the scale-9 boundary decimal survives as its exact repr; events
         without a metric row get NULL (empty cell).
@@ -236,13 +236,13 @@ def _gold_for(population: P, base: int, b2_total: str) -> dict[str, str]:
     )
     wide = (
         "event_id,big_count,label,occurred_at,tz_stamp,metric_value,big_note\n"
-        f"{base + 1},9007199254740993,MiXeD Case,2024-03-01T10:00:00,"
+        f"{base + 1},9007199254740993,MiXeD Case,2024-03-01 10:00:00,"
         f"2024-03-01T10:00:00+00:00,{PRECISE_DECIMAL_TEXT},"
         f"{big_text(population)}\n"
-        f"{base + 2},1,,2024-03-02T11:30:00,2024-03-02T13:30:00+02:00,,short\n"
+        f"{base + 2},1,,2024-03-02 11:30:00,2024-03-02T13:30:00+02:00,,short\n"
         f"{base + 3},-9007199254740993,,,2024-03-03T05:15:00-05:00,,\n"
-        f"{base + 4},0,,2024-03-04T00:00:00,,,\n"
-        f"{base + 5},42,ok,2024-03-05T23:59:59,2024-03-05T23:59:59+00:00,2.5,\n"
+        f"{base + 4},0,,2024-03-04 00:00:00,,,\n"
+        f"{base + 5},42,ok,2024-03-05 23:59:59,2024-03-05T23:59:59+00:00,2.5,\n"
     )
     return {ROLLUP_MART: rollup, WIDE_MART: wide}
 

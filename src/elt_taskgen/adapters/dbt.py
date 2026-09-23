@@ -1295,9 +1295,28 @@ def staging_expression_map(
                 if _rename_ref(body) is not None:
                     continue  # a rename, not a definition: `staging_alias_map` owns it
                 out.setdefault(alias, {}).setdefault(
-                    table, (body.sql(dialect="duckdb"), refs)
+                    table, (_widen_float_casts(body).sql(dialect="duckdb"), refs)
                 )
     return out
+
+
+def _widen_float_casts(body: exp.Expression) -> exp.Expression:
+    """Rewrite a lifted 32-bit float cast to DOUBLE.
+
+    DuckDB's FLOAT (rendered REAL) holds 4 bytes; the same text on Snowflake
+    holds 8. Leaving it narrow rounds the reference result and not the
+    submission's, so every mart column built from it mismatches.
+    """
+
+    def _widen(node: exp.Expression) -> exp.Expression:
+        if (
+            isinstance(node, (exp.Cast, exp.TryCast))
+            and node.to.this is exp.DataType.Type.FLOAT
+        ):
+            node.set("to", exp.DataType.build("DOUBLE"))
+        return node
+
+    return body.transform(_widen)
 
 
 def _cast_of(body: exp.Expression) -> exp.Cast | None:
@@ -1751,7 +1770,7 @@ def recover_projections(
             out.append(
                 _Projection(
                     column=alias,
-                    expr=body.sql(dialect="duckdb"),
+                    expr=_widen_float_casts(body).sql(dialect="duckdb"),
                     refs=refs,
                     kind=kind,
                     is_aggregate=is_aggregate,

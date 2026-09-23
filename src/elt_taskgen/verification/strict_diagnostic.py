@@ -96,7 +96,9 @@ def strict_cell(value: object) -> tuple[str, str]:
         return ("decimal", str(value))  # scale preserved: '1.50' != '1.5'
     if isinstance(value, datetime.datetime):
         tag = "timestamptz" if value.tzinfo is not None else "timestamp"
-        return (tag, value.isoformat())  # tz offset survives
+        # str(), not isoformat(): this text is compared against frozen CSV
+        # gold, which spells a timestamp with a space. The tz offset survives.
+        return (tag, str(value))
     if isinstance(value, datetime.date):
         return ("date", value.isoformat())
     if isinstance(value, datetime.time):
