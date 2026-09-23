@@ -78,6 +78,19 @@ class _Connection:
         case.assertEqual(self.responses, [])
 
 
+class QuotedColumnFoldingTests(unittest.TestCase):
+    """A reserved-word mart column is stored quoted lower-case; the rendered
+    query must name it the way the warehouse folded it."""
+
+    def test_quoted_reserved_column_folds_to_the_destination_case(self) -> None:
+        stored = 'select * from task_db.mart order by pictureid, "format";'
+        snowflake = prepare_evaluation_sql(stored, "task_db", expected_mart="mart", destination=Destination.SNOWFLAKE)
+        self.assertIn('"FORMAT"', snowflake)
+        self.assertNotIn('"format"', snowflake)
+        redshift = prepare_evaluation_sql(stored, "task_db", expected_mart="mart", destination=Destination.REDSHIFT)
+        self.assertIn('"format"', redshift)
+
+
 class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
     TASK = "demo_task"
     DATABASE = "demo_database"

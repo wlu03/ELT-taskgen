@@ -1129,6 +1129,18 @@ def prepare_evaluation_sql(
 
     if not references:
         raise EvaluationError("evaluation SQL contains no database.table relation")
+    # A column the exporter had to quote (a reserved word such as `format`)
+    # is stored lower-case; a quoted identifier is case-sensitive on the
+    # warehouse, whose unquoted names fold upper on Snowflake and lower on
+    # Redshift. Fold it the way the relation parts are folded so the query
+    # names the column a submission actually created.
+    for column in tree.find_all(exp.Column):
+        identifier = column.this
+        if isinstance(identifier, exp.Identifier) and identifier.quoted:
+            if resolved_destination is Destination.SNOWFLAKE:
+                identifier.set("this", identifier.this.upper())
+            elif resolved_destination is Destination.REDSHIFT:
+                identifier.set("this", identifier.this.lower())
     if expected_mart is not None:
         _validate_identifier(
             expected_mart,
