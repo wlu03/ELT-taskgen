@@ -878,6 +878,24 @@ class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
         )
         connection.assert_consumed(self)
 
+    def test_release_destination_accepts_a_shipped_extra_destination(self) -> None:
+        # A multi-destination release keeps every extra destination's config
+        # under destinations/<name>/; naming one is not a mismatch.
+        self._write_stage1_key({"customers": 1})
+        shipped = self.public / "destinations" / "redshift" / "config.yaml"
+        shipped.parent.mkdir(parents=True)
+        shipped.write_text("redshift:\n  config:\n    schema: x\n", encoding="utf-8")
+        try:
+            evaluate_stage1_release(
+                self.root, self.TASK, _Connection(), destination=Destination.REDSHIFT
+            )
+        except EvaluationError as exc:
+            self.assertNotIn("does not match", str(exc))
+        with self.assertRaisesRegex(EvaluationError, "does not match"):
+            evaluate_stage1_release(
+                self.root, self.TASK, _Connection(), destination=Destination.DATABRICKS
+            )
+
     def test_release_destination_is_inferred_and_explicit_mismatch_is_rejected(
         self,
     ) -> None:

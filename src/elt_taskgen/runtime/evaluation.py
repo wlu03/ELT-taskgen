@@ -1593,9 +1593,16 @@ def _release_destination(
         return inferred
     resolved = _evaluation_destination(explicit)
     if resolved is not inferred:
-        raise EvaluationError(
-            "explicit evaluation destination does not match the public task config"
+        # A multi-destination release keeps the bundle root's config at the
+        # top and every other shipped destination's under destinations/<name>/;
+        # an explicit destination the release ships is a valid selection.
+        shipped = (
+            Path(release_dir) / "public" / task_id / "destinations" / resolved.value / "config.yaml"
         )
+        if not shipped.is_file():
+            raise EvaluationError(
+                "explicit evaluation destination does not match the public task config"
+            )
     return resolved
 
 

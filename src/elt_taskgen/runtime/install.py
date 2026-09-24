@@ -461,6 +461,7 @@ def install_task(
     destination: Destination | str | None = None,
     custom_api_definition_id: str | None = None,
     airbyte_server_url: str | None = None,
+    shipped_destination_config: Path | None = None,
 ) -> Path:
     """Install a public task and inject scoped runtime credentials.
 
@@ -472,10 +473,20 @@ def install_task(
 
     source = Path(public_task_dir)
     install_dir = Path(work_dir)
+    # A multi-destination bundle keeps the root's config at the top and each
+    # other shipped destination's under destinations/<name>/config.yaml; the
+    # caller names that file to install the task for that destination.
+    shipped_config = (
+        Path(shipped_destination_config) if shipped_destination_config is not None else None
+    )
     if _exists(install_dir):
         raise FileExistsError("runtime work directory already exists")
 
     config = _validate_uninstalled_source(source)
+    if shipped_config is not None:
+        if shipped_config.is_symlink() or not shipped_config.is_file():
+            raise ValueError("shipped destination config does not exist")
+        config = _load_yaml_mapping(shipped_config, label="shipped destination config.yaml")
     selected = destination_from_config(config)
     if destination is not None:
         explicit_destination = normalize_destination(destination)
@@ -599,6 +610,11 @@ def install_task(
         # is attempt state: credentials must be injectable and solver-owned
         # files under elt/ must be editable without mutating the release.
         os.chmod(staged_config_path, 0o600)
+        if shipped_config is not None:
+            # The selected destination's config replaces the bundle root's.
+            staged_config_path.write_text(
+                shipped_config.read_text(encoding="utf-8"), encoding="utf-8"
+            )
         staged_config = _load_yaml_mapping(
             staged_config_path, label="staged config.yaml"
         )
@@ -617,6 +633,9 @@ def install_task(
         os.chmod(staged_config_path, 0o600)
 
         staged_destination_credential = stage / contract.credential_filename
+        if not staged_destination_credential.exists():
+            # The root tree carries only the root destination's credential file.
+            staged_destination_credential.touch(mode=0o600)
         os.chmod(staged_destination_credential, 0o600)
         staged_destination_credential.write_text(
             json.dumps(destination_file_values, indent=2) + "\n",

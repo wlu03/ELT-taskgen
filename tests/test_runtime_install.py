@@ -221,6 +221,29 @@ class RuntimeInstallTests(unittest.TestCase):
         values.update(updates)
         return values
 
+    def test_installs_a_shipped_extra_destination_from_its_own_config(self) -> None:
+        # A multi-destination bundle: Snowflake at the root, Databricks under
+        # destinations/databricks/; naming that config installs the task for
+        # Databricks even though the root config is Snowflake's.
+        source = self.make_bundle(destination="snowflake")
+        extra_source = self.make_bundle(destination="databricks", name="databricks-projection")
+        shipped = source / "destinations" / "databricks" / "config.yaml"
+        shipped.parent.mkdir(parents=True)
+        shipped.write_text((extra_source / "config.yaml").read_text(), encoding="utf-8")
+        destination = self.root / "extra-attempt"
+        install_task(
+            source,
+            destination,
+            airbyte_credentials=self.airbyte_credentials(),
+            destination_credentials=self.databricks_credentials(),
+            destination="databricks",
+            shipped_destination_config=shipped,
+        )
+        config = yaml.safe_load((destination / "config.yaml").read_text())
+        self.assertNotIn("snowflake", config)
+        self.assertEqual(config["databricks"]["config"]["client_id"], "solver-client")
+        self.assertTrue((destination / "databricks_credential.json").is_file())
+
     def test_installs_databricks_oauth_destination(self) -> None:
         source = self.make_bundle(destination="databricks")
         destination = self.root / "databricks-attempt"

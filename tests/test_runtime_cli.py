@@ -1220,6 +1220,61 @@ class RuntimeCliTests(unittest.TestCase):
                 self.assertEqual(parsed.runtime_command, command)
                 self.assertTrue(callable(parsed.func))
 
+    def test_prepare_installs_a_shipped_extra_destination(self) -> None:
+        """A multi-destination release keeps the root's config at the top and
+        every other shipped destination's under destinations/<name>/. Naming
+        one of those with --destination installs it; naming one the release
+        does not ship is still a mismatch."""
+        from elt_taskgen import cli
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            release = root / "release"
+            public = release / "public" / "task"
+            public.mkdir(parents=True)
+            (release / "release_manifest.json").write_text("{}", encoding="utf-8")
+            (public / "config.yaml").write_text(
+                "snowflake:\n  config:\n    database: task\n    schema: AIRBYTE_SCHEMA\n",
+                encoding="utf-8",
+            )
+            shipped = public / "destinations" / "databricks" / "config.yaml"
+            shipped.parent.mkdir(parents=True)
+            shipped.write_text(
+                "databricks:\n  config:\n    database: ''\n    schema: task\n",
+                encoding="utf-8",
+            )
+            credential = root / "databricks.json"
+            credential.write_text("{}", encoding="utf-8")
+
+            def args(destination: str) -> SimpleNamespace:
+                return SimpleNamespace(
+                    release=release,
+                    task_id="task",
+                    population="primary",
+                    work_dir=root / "attempt" / "task",
+                    environment_dir=root / "env",
+                    airbyte_credential=root / "airbyte.json",
+                    destination=destination,
+                    destination_credential=credential,
+                    snowflake_credential=None,
+                    custom_api_definition_id=None,
+                    airbyte_server_url=None,
+                )
+
+            install = mock.Mock(return_value=root / "attempt" / "task")
+            with mock.patch.object(cli, "_require_runtime_release", lambda release: None), mock.patch.object(
+                cli, "_runtime_json", lambda path, label: {"hostname": "h", "http_path": "/p", "client_id": "c", "secret": "s", "workspace_id": "w"}
+            ), mock.patch(
+                "elt_taskgen.runtime.source_environment.prepare_source_environment", mock.Mock()
+            ), mock.patch("elt_taskgen.runtime.install.install_task", install):
+                cli.cmd_runtime_prepare(args("databricks"))
+                kwargs = install.call_args.kwargs
+                self.assertEqual(kwargs["shipped_destination_config"], shipped)
+                self.assertEqual(str(getattr(kwargs["destination"], "value", kwargs["destination"])), "databricks")
+                with self.assertRaises(cli.CliUsageError) as ctx:
+                    cli.cmd_runtime_prepare(args("redshift"))
+                self.assertIn("does not match", str(ctx.exception))
+
     def test_destination_neutral_prepare_and_verifier_flags_parse(self) -> None:
         parser = build_parser()
         prepare = parser.parse_args(

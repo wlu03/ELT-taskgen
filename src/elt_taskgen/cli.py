@@ -13448,13 +13448,24 @@ def cmd_runtime_prepare(args) -> int:
         release / "public" / args.task_id / "config.yaml",
         label="public task config",
     )
+    shipped_destination_config: Path | None = None
     try:
         selected = destination_from_config(public_config)
         if (
             args.destination is not None
             and normalize_destination(args.destination) is not selected
         ):
-            raise ValueError("--destination does not match the public task config")
+            # Every other destination the release ships keeps its own public
+            # config under destinations/<name>/; select it when asked for.
+            candidate = (
+                release / "public" / args.task_id / "destinations"
+                / normalize_destination(args.destination).value / "config.yaml"
+            )
+            if not candidate.is_file():
+                raise ValueError("--destination does not match the public task config")
+            shipped_destination_config = candidate
+            public_config = _runtime_yaml(candidate, label="shipped destination config")
+            selected = destination_from_config(public_config)
         credential_paths = [
             path
             for path in (args.destination_credential, args.snowflake_credential)
@@ -13490,6 +13501,8 @@ def cmd_runtime_prepare(args) -> int:
             airbyte_credentials=airbyte,
             destination_credentials=destination_values,
             destination=selected,
+            shipped_destination_config=shipped_destination_config,
+
             custom_api_definition_id=args.custom_api_definition_id,
             airbyte_server_url=args.airbyte_server_url,
         )
@@ -14136,9 +14149,18 @@ def _runtime_verify(args, *, stage: int) -> int:
         if args.destination is not None:
             explicit = normalize_destination(args.destination)
             if explicit is not selected:
-                raise ValueError(
-                    "--destination does not match the public task config"
+                # Every other destination the release ships keeps its own
+                # public config under destinations/<name>/; verify against it.
+                candidate = (
+                    release / "public" / args.task_id / "destinations"
+                    / explicit.value / "config.yaml"
                 )
+                if not candidate.is_file():
+                    raise ValueError(
+                        "--destination does not match the public task config"
+                    )
+                public_config = _runtime_yaml(candidate, label="shipped destination config")
+                selected = destination_from_config(public_config)
         credential_paths = [
             path
             for path in (args.destination_credential, args.snowflake_credential)
