@@ -73,6 +73,21 @@ class CanonicalDialectDefaultsTests(unittest.TestCase):
         self.assertIn("AS STRING) ASC NULLS LAST", rendered)
 
 
+class RedshiftRoundingTests(unittest.TestCase):
+    """Redshift's ROUND over a DOUBLE quotient returns 0.5877999999999999 where
+    the other engines return 0.5878; the rendered model rounds a DECIMAL
+    quotient there so the digits agree everywhere."""
+
+    def test_redshift_rounds_a_decimal_quotient(self) -> None:
+        sql = "SELECT t.k AS k, ROUND(CAST(t.top AS DOUBLE) / NULLIF(t.total, 0), 4) AS share FROM a AS t"
+        types = {"a": {"k": ColumnType.TEXT, "top": ColumnType.INTEGER, "total": ColumnType.INTEGER}}
+        redshift = canonical.render_canonical_model(sql, {"a"}, Destination.REDSHIFT, column_types=types)
+        self.assertIn("AS DECIMAL(38, 9)) / NULLIF", redshift)
+        self.assertNotIn("AS DOUBLE PRECISION) / NULLIF", redshift)
+        snowflake = canonical.render_canonical_model(sql, {"a"}, Destination.SNOWFLAKE, column_types=types)
+        self.assertIn("AS DOUBLE) / NULLIF", snowflake)
+
+
 class CanonicalDerivationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

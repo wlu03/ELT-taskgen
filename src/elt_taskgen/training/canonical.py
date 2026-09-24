@@ -534,6 +534,17 @@ def render_canonical_model(
     for ordered in tree.find_all(exp.Ordered):
         if ordered.args.get("nulls_first") is None:
             ordered.set("nulls_first", False)
+    if destination is Destination.REDSHIFT:
+        # Redshift's ROUND over a DOUBLE quotient returns the double it
+        # computed, not the double nearest the rounded decimal: 0.5877999999999999
+        # where DuckDB and Snowflake return 0.5878. The reward's tolerance
+        # hides it; canonical certification compares digits. Rounding a
+        # DECIMAL quotient is exact on every engine, and the mart's final cast
+        # back to DOUBLE then yields the same double everywhere.
+        for rounded in tree.find_all(exp.Round):
+            for cast in rounded.find_all(exp.Cast):
+                if cast.to.this is exp.DataType.Type.DOUBLE:
+                    cast.set("to", exp.DataType.build("DECIMAL(38, 9)"))
     if destination is Destination.SNOWFLAKE:
         # Airbyte's Snowflake destination creates upper-case column names and
         # a quoted identifier is case-sensitive there, so the reference SQL's
