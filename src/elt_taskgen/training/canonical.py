@@ -545,6 +545,12 @@ def render_canonical_model(
             for cast in rounded.find_all(exp.Cast):
                 if cast.to.this is exp.DataType.Type.DOUBLE:
                     cast.set("to", exp.DataType.build("DECIMAL(38, 9)"))
+            for div in list(rounded.find_all(exp.Div)):
+                # The divisor is a DOUBLE column (a SUM); a decimal numerator
+                # over a double divisor is still a double division.
+                divisor = div.expression
+                if not (isinstance(divisor, exp.Cast) and divisor.to.this is exp.DataType.Type.DECIMAL):
+                    div.set("expression", exp.cast(divisor.copy(), "DECIMAL(38, 9)"))
     if destination is Destination.SNOWFLAKE:
         # Airbyte's Snowflake destination creates upper-case column names and
         # a quoted identifier is case-sensitive there, so the reference SQL's

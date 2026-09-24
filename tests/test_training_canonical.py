@@ -82,7 +82,10 @@ class RedshiftRoundingTests(unittest.TestCase):
         sql = "SELECT t.k AS k, ROUND(CAST(t.top AS DOUBLE) / NULLIF(t.total, 0), 4) AS share FROM a AS t"
         types = {"a": {"k": ColumnType.TEXT, "top": ColumnType.INTEGER, "total": ColumnType.INTEGER}}
         redshift = canonical.render_canonical_model(sql, {"a"}, Destination.REDSHIFT, column_types=types)
-        self.assertIn("AS DECIMAL(38, 9)) / NULLIF", redshift)
+        # Both operands are decimal: a decimal numerator over a double
+        # divisor would still be a double division.
+        self.assertIn("AS DECIMAL(38, 9)) / CAST(NULLIF(", redshift)
+        self.assertIn("AS DECIMAL(38, 9)), 4)", redshift)
         self.assertNotIn("AS DOUBLE PRECISION) / NULLIF", redshift)
         snowflake = canonical.render_canonical_model(sql, {"a"}, Destination.SNOWFLAKE, column_types=types)
         self.assertIn("AS DOUBLE) / NULLIF", snowflake)
