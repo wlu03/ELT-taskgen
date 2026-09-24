@@ -84,8 +84,10 @@ class RedshiftRoundingTests(unittest.TestCase):
         redshift = canonical.render_canonical_model(sql, {"a"}, Destination.REDSHIFT, column_types=types)
         # Both operands are decimal: a decimal numerator over a double
         # divisor would still be a double division.
-        self.assertIn("AS DECIMAL(38, 9)) / CAST(NULLIF(", redshift)
-        self.assertIn("AS DECIMAL(38, 9)), 4)", redshift)
+        # DECIMAL(20,9), not (38,9): the wider operands overflow the quotient
+        # and Redshift truncates instead of rounding.
+        self.assertIn("AS DECIMAL(20, 9)) / CAST(NULLIF(", redshift)
+        self.assertIn("AS DECIMAL(20, 9)), 4)", redshift)
         self.assertNotIn("AS DOUBLE PRECISION) / NULLIF", redshift)
         snowflake = canonical.render_canonical_model(sql, {"a"}, Destination.SNOWFLAKE, column_types=types)
         self.assertIn("AS DOUBLE) / NULLIF", snowflake)

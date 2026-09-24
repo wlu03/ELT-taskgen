@@ -540,17 +540,19 @@ def render_canonical_model(
         # where DuckDB and Snowflake return 0.5878. The reward's tolerance
         # hides it; canonical certification compares digits. Rounding a
         # DECIMAL quotient is exact on every engine, and the mart's final cast
-        # back to DOUBLE then yields the same double everywhere.
+        # back to DOUBLE then yields the same double everywhere. Both operands
+        # must be decimal (a decimal over a double is still a double division),
+        # and the operand precision must leave room for the quotient's scale:
+        # DECIMAL(38,9)/DECIMAL(38,9) overflows 38 digits, Redshift cuts the
+        # result scale and truncates (0.2601 -> 0.26); DECIMAL(20,9) keeps it.
         for rounded in tree.find_all(exp.Round):
             for cast in rounded.find_all(exp.Cast):
                 if cast.to.this is exp.DataType.Type.DOUBLE:
-                    cast.set("to", exp.DataType.build("DECIMAL(38, 9)"))
+                    cast.set("to", exp.DataType.build("DECIMAL(20, 9)"))
             for div in list(rounded.find_all(exp.Div)):
-                # The divisor is a DOUBLE column (a SUM); a decimal numerator
-                # over a double divisor is still a double division.
                 divisor = div.expression
                 if not (isinstance(divisor, exp.Cast) and divisor.to.this is exp.DataType.Type.DECIMAL):
-                    div.set("expression", exp.cast(divisor.copy(), "DECIMAL(38, 9)"))
+                    div.set("expression", exp.cast(divisor.copy(), "DECIMAL(20, 9)"))
     if destination is Destination.SNOWFLAKE:
         # Airbyte's Snowflake destination creates upper-case column names and
         # a quoted identifier is case-sensitive there, so the reference SQL's
