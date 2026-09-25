@@ -13429,6 +13429,97 @@ def cmd_runtime_bootstrap_task(args) -> int:
     return 0
 
 
+def _task_workspace_id(credentials: dict, *, label: str) -> str:
+    workspace_id = credentials.get("workspace_id")
+    if not isinstance(workspace_id, str) or not workspace_id:
+        raise CliUsageError(f"{label} JSON carries no workspace_id")
+    return workspace_id
+
+
+def cmd_runtime_teardown_task(args) -> int:
+    """Delete the Airbyte workspace one task run bootstrapped.
+
+    A shared-instance credential lets a later agent list an earlier run's
+    connector configuration and stream selection for the same task, which is a
+    stage-1 reference.  Deleting the workspace after scoring removes it.
+    """
+    from elt_taskgen.runtime.airbyte import AirbyteError
+
+    credentials = _runtime_json(args.airbyte_credential, label="task Airbyte credential")
+    workspace_id = _task_workspace_id(credentials, label="task Airbyte credential")
+    if args.base_credential is not None:
+        base = _runtime_json(args.base_credential, label="base Airbyte credential")
+        if base.get("workspace_id") == workspace_id:
+            raise CliUsageError("refusing to delete the base Airbyte workspace")
+    client = _airbyte_client_from_credentials(args.airbyte_url, credentials)
+    try:
+        client.delete_workspace(workspace_id)
+        state = "deleted"
+    except AirbyteError as exc:
+        if "HTTP 404" not in str(exc):
+            raise CliUsageError(str(exc)) from None
+        state = "already absent"
+    except ValueError as exc:
+        raise CliUsageError(str(exc)) from None
+    if args.remove_credential:
+        try:
+            Path(args.airbyte_credential).unlink()
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            raise CliUsageError(f"could not remove {args.airbyte_credential}: {exc}") from None
+    print(f"airbyte workspace {workspace_id}: {state}")
+    return 0
+
+
+def cmd_runtime_purge_workspaces(args) -> int:
+    """List (default) or delete stale task workspaces on a shared instance."""
+    from elt_taskgen.runtime.airbyte import AirbyteError
+
+    credentials = _runtime_json(args.airbyte_credential, label="base Airbyte credential")
+    base_workspace = credentials.get("workspace_id")
+    client = _airbyte_client_from_credentials(args.airbyte_url, credentials)
+    import glob as _glob
+
+    keep_ids = set()
+    for pattern in args.keep_credentials or ():
+        for path in sorted(Path(match) for match in _glob.glob(pattern)):
+            try:
+                keep_ids.add(_task_workspace_id(_runtime_json(path, label="kept credential"), label=str(path)))
+            except CliUsageError:
+                continue
+    try:
+        workspaces = client.iter_workspaces()
+    except AirbyteError as exc:
+        raise CliUsageError(str(exc)) from None
+    targets = []
+    for workspace in workspaces:
+        workspace_id = workspace.get("workspaceId")
+        name = workspace.get("name")
+        if not isinstance(workspace_id, str) or not isinstance(name, str):
+            continue
+        if workspace_id == base_workspace or workspace_id in keep_ids:
+            continue
+        if not name.startswith(args.name_prefix):
+            continue
+        if name in set(args.keep_name or ()):
+            continue
+        targets.append((workspace_id, name))
+    mode = "deleting" if args.apply else "would delete (pass --apply)"
+    print(f"{len(workspaces)} workspaces; {mode} {len(targets)}")
+    failures = 0
+    for workspace_id, name in targets:
+        if args.apply:
+            try:
+                client.delete_workspace(workspace_id)
+            except (AirbyteError, ValueError) as exc:
+                failures += 1
+                print(f"  FAILED {workspace_id} {name}: {exc}")
+                continue
+        print(f"  {workspace_id} {name}")
+    return 1 if failures else 0
+
+
 def cmd_runtime_prepare(args) -> int:
     from elt_taskgen.destinations import (
         destination_from_config,
@@ -16017,6 +16108,35 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_source_environment_args(rp)
     rp.set_defaults(func=cmd_runtime_source_down)
+
+
+    rp = runtime_sub.add_parser(
+        "teardown-task",
+        help="delete the Airbyte workspace one task run bootstrapped",
+    )
+    rp.add_argument("--airbyte-url", required=True)
+    rp.add_argument("--airbyte-credential", required=True, type=Path,
+                    help="the per-task credential bootstrap-task wrote")
+    rp.add_argument("--base-credential", default=None, type=Path,
+                    help="refuse to delete this credential's workspace")
+    rp.add_argument("--remove-credential", action="store_true",
+                    help="delete the per-task credential file after the workspace")
+    rp.set_defaults(func=cmd_runtime_teardown_task)
+
+    rp = runtime_sub.add_parser(
+        "purge-workspaces",
+        help="list (or with --apply delete) stale task workspaces on a shared instance",
+    )
+    rp.add_argument("--airbyte-url", required=True)
+    rp.add_argument("--airbyte-credential", required=True, type=Path,
+                    help="the base instance credential; its workspace is kept")
+    rp.add_argument("--name-prefix", default="ELT-Bench ",
+                    help="only workspaces whose name starts with this are candidates")
+    rp.add_argument("--keep-name", action="append", default=[])
+    rp.add_argument("--keep-credentials", action="append", default=[],
+                    help="glob of per-task credential files whose workspaces are kept")
+    rp.add_argument("--apply", action="store_true", help="delete instead of listing")
+    rp.set_defaults(func=cmd_runtime_purge_workspaces)
 
     rp = runtime_sub.add_parser(
         "provision-snowflake",

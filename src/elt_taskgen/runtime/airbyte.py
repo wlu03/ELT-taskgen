@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import time
 import urllib.error
 import urllib.parse
@@ -34,6 +35,9 @@ class AirbyteSyncReceipt:
 
     job_ids: dict[str, int]
     statuses: dict[str, str]
+
+
+_WORKSPACE_ID = re.compile(r"^[0-9a-fA-F-]{36}$")
 
 
 def _items(payload: Any) -> list[dict[str, Any]]:
@@ -234,6 +238,26 @@ class AirbyteClient:
 
     def list_workspaces(self) -> list[dict[str, Any]]:
         return _items(self.request("GET", "workspaces"))
+
+    def iter_workspaces(self, *, page_size: int = 100) -> list[dict[str, Any]]:
+        """Every workspace on the instance, following the public API's paging."""
+        if not isinstance(page_size, int) or page_size < 1:
+            raise ValueError("page_size must be a positive integer")
+        workspaces: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            query = urllib.parse.urlencode({"limit": page_size, "offset": offset})
+            page = _items(self.request("GET", f"workspaces?{query}"))
+            workspaces.extend(page)
+            if len(page) < page_size:
+                return workspaces
+            offset += page_size
+
+    def delete_workspace(self, workspace_id: str) -> None:
+        """Delete one workspace and everything it owns (sources, connections)."""
+        if not isinstance(workspace_id, str) or not _WORKSPACE_ID.match(workspace_id):
+            raise ValueError("workspace_id must be a UUID")
+        self.request("DELETE", f"workspaces/{workspace_id}")
 
     def create_workspace(self, name: str) -> str:
         result = self.request("POST", "workspaces", {"name": str(name)})
