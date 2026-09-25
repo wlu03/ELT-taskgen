@@ -549,21 +549,40 @@ class SourceEnvironment:
                     )
                 path = self._artifact_file(raw, "rendered_file", table)
                 if path.stat().st_size:
-                    runner.run(
-                        self._compose(
-                            "exec",
-                            "--no-TTY",
-                            "elt-mongodb",
-                            "mongoimport",
-                            "--uri",
-                            "mongodb://localhost:27017/?directConnection=true",
-                            "--db",
-                            database,
-                            "--collection",
-                            collection,
-                        ),
-                        stdin_path=path,
+                    # Insert the documents as ELT-Bench's setup/mongo.py does:
+                    # without their null-valued fields.
+                    documents = self.environment_dir / (
+                        ".mongo-import-"
+                        + hashlib.sha256(table.encode("utf-8")).hexdigest()[:12]
+                        + ".jsonl"
                     )
+                    if documents.exists():
+                        raise SourceEnvironmentError(
+                            f"temporary Mongo import already exists: {documents}"
+                        )
+                    try:
+                        with documents.open("x", encoding="utf-8") as handle:
+                            handle.write(
+                                mongo_import_documents(path.read_text(encoding="utf-8"))
+                            )
+                        documents.chmod(0o600)
+                        runner.run(
+                            self._compose(
+                                "exec",
+                                "--no-TTY",
+                                "elt-mongodb",
+                                "mongoimport",
+                                "--uri",
+                                "mongodb://localhost:27017/?directConnection=true",
+                                "--db",
+                                database,
+                                "--collection",
+                                collection,
+                            ),
+                            stdin_path=documents,
+                        )
+                    finally:
+                        documents.unlink(missing_ok=True)
                 else:
                     runner.run(
                         self._compose(
@@ -754,6 +773,38 @@ class SourceEnvironment:
         if path != root and root not in path.parents:
             raise SourceEnvironmentError(f"table {table!r} artifact escapes its population")
         return path
+
+
+def mongo_import_documents(text: str) -> str:
+    """Re-encode a rendered Mongo jsonl the way ELT-Bench inserts its rows.
+
+    ELT-Bench's ``setup/mongo.py`` drops every null-valued field from a record
+    before ``insert_many``, so its collections never store a JSON null.
+    Airbyte's MongoDB discovery types a field from the documents that carry
+    it: an integer field missing from some documents lands INTEGER with SQL
+    NULLs, while a stored JSON null makes the field VARIANT, where ``IS NULL``
+    is false and ``MAX`` orders JSON values. A field that is null in every
+    document is kept as JSON null so the column still exists downstream.
+    """
+    documents = [json.loads(line) for line in text.splitlines() if line.strip()]
+    keys = {key for document in documents for key in document}
+    all_null = {
+        key for key in keys if all(document.get(key) is None for document in documents)
+    }
+    return "".join(
+        json.dumps(
+            {
+                key: value
+                for key, value in document.items()
+                if value is not None or key in all_null
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        + "\n"
+        for document in documents
+    )
 
 
 def prepare_source_environment(

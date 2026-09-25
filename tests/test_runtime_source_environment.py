@@ -284,12 +284,43 @@ class RuntimeSourceEnvironmentTests(unittest.TestCase):
             b"order_id,quantity\n1,2\n",
         )
         self.assertEqual(
-            sorted(name for name in stdin_names if not name.startswith(".s3-upload-")),
-            ["logs.jsonl", "order_items.csv", "users.sql"],
+            sorted(
+                name
+                for name in stdin_names
+                if not name.startswith((".s3-upload-", ".mongo-import-"))
+            ),
+            ["order_items.csv", "users.sql"],
         )
         self.assertEqual(
             sum(name.startswith(".s3-upload-") for name in stdin_names), 1
         )
+        self.assertEqual(
+            sum(name.startswith(".mongo-import-") for name in stdin_names), 1
+        )
+
+    def test_seed_inserts_mongo_documents_without_null_fields(self) -> None:
+        release, task_id = _release(self.root)
+        logs = next(release.rglob("mongodb/logs.jsonl"))
+        logs.write_text(
+            '{"id":1,"level":"info","score":null,"note":null}\n'
+            '{"id":2,"level":null,"score":3,"note":null}\n',
+            encoding="utf-8",
+        )
+        environment = prepare_source_environment(
+            release, task_id, "primary", self.root / "environment"
+        )
+        runner = FakeRunner()
+        environment.seed(runner)
+        index = next(
+            index
+            for index, call in enumerate(runner.calls)
+            if "mongoimport" in " ".join(call[0])
+        )
+        self.assertEqual(
+            runner.stdin_bytes[index].decode("utf-8"),
+            '{"id":1,"level":"info","note":null}\n{"id":2,"note":null,"score":3}\n',
+        )
+        self.assertFalse(any((self.root / "environment").glob(".mongo-import-*")))
 
     def test_seed_refuses_flat_file_compatibility_key_collision(self) -> None:
         release, task_id = _release(self.root)

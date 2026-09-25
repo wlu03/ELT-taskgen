@@ -1525,7 +1525,11 @@ def _sources_serving_manifest(
                 ),
                 "database": db,
                 "rendered_file": f"{backend.value}/{table}.jsonl",
-                "load": "mongoimport the rendered file (one JSON document per line)",
+                "load": (
+                    "mongoimport the rendered file (one JSON document per "
+                    "line) with null-valued fields dropped from each document, "
+                    "as ELT-Bench's setup/mongo.py inserts its rows"
+                ),
             }
         elif backend is Backend.S3:
             tables[table] = {
