@@ -13520,6 +13520,78 @@ def cmd_runtime_purge_workspaces(args) -> int:
     return 1 if failures else 0
 
 
+def cmd_runtime_verify_process(args) -> int:
+    """Report whether an agent run followed the process rules the reward does not check."""
+    from elt_taskgen.destinations import destination_from_config, normalize_destination
+    from elt_taskgen.runtime.airbyte import AirbyteError
+    from elt_taskgen.runtime.evaluation import EvaluationError, _load_stage1_counts
+    from elt_taskgen.runtime.process_compliance import (
+        DEFAULT_IGNORED_TOP_LEVEL,
+        ProcessComplianceError,
+        evaluate_process_compliance,
+        terraform_intent_report,
+        workspace_connection_streams,
+    )
+
+    release = Path(args.release).resolve()
+    _require_runtime_release(release)
+    agent_dir = Path(args.agent_dir).resolve()
+    inputs_dir = Path(args.inputs_dir).resolve()
+    if not agent_dir.is_dir():
+        raise CliUsageError(f"agent dir is not a directory: {agent_dir}")
+    if not inputs_dir.is_dir():
+        raise CliUsageError(f"inputs dir is not a directory: {inputs_dir}")
+    public_config = _runtime_yaml(
+        release / "public" / args.task_id / "config.yaml", label="public task config"
+    )
+    try:
+        selected = destination_from_config(public_config)
+        if args.destination is not None:
+            explicit = normalize_destination(args.destination)
+            if explicit is not selected:
+                candidate = (
+                    release / "public" / args.task_id / "destinations"
+                    / explicit.value / "config.yaml"
+                )
+                if not candidate.is_file():
+                    raise ValueError("--destination does not match the public task config")
+                selected = explicit
+        answer_key = release / "private" / args.task_id / "answer_key"
+        _, expected_counts = _load_stage1_counts(
+            answer_key, None, args.population, selected
+        )
+    except (EvaluationError, ValueError) as exc:
+        raise CliUsageError(str(exc)) from None
+    credentials = _runtime_json(args.airbyte_credential, label="task Airbyte credential")
+    workspace_id = _task_workspace_id(credentials, label="task Airbyte credential")
+    client = _airbyte_client_from_credentials(args.airbyte_url, credentials)
+    try:
+        listed = client.list_connections(workspace_id)
+    except AirbyteError as exc:
+        raise CliUsageError(str(exc)) from None
+    intent = None
+    if not args.skip_terraform_intent:
+        intent = terraform_intent_report(
+            release, args.task_id, agent_dir / "elt", destination=selected.value
+        )
+    ignore = tuple(args.ignore) if args.ignore else DEFAULT_IGNORED_TOP_LEVEL
+    try:
+        result = evaluate_process_compliance(
+            agent_dir=agent_dir,
+            inputs_dir=inputs_dir,
+            expected_tables=expected_counts,
+            workspace_connections=workspace_connection_streams(listed),
+            terraform_intent=intent,
+            ignore_top_level=ignore,
+        )
+    except ProcessComplianceError as exc:
+        raise CliUsageError(str(exc)) from None
+    payload = result.to_json()
+    payload["task_id"] = args.task_id
+    payload["workspace_id"] = workspace_id
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 1 if (args.strict and not result.compliant) else 0
+
 def cmd_runtime_prepare(args) -> int:
     from elt_taskgen.destinations import (
         destination_from_config,
@@ -16137,6 +16209,30 @@ def build_parser() -> argparse.ArgumentParser:
                     help="glob of per-task credential files whose workspaces are kept")
     rp.add_argument("--apply", action="store_true", help="delete instead of listing")
     rp.set_defaults(func=cmd_runtime_purge_workspaces)
+
+    rp = runtime_sub.add_parser(
+        "verify-process",
+        help=(
+            "report Terraform/Airbyte/elt-only process compliance of one agent run "
+            "(the reward is unchanged)"
+        ),
+    )
+    rp.add_argument("--release", required=True, type=Path)
+    rp.add_argument("--task-id", required=True)
+    rp.add_argument("--population", default="primary")
+    rp.add_argument("--destination", choices=("snowflake", "databricks", "redshift"), default=None)
+    rp.add_argument("--agent-dir", required=True, type=Path,
+                    help="the agent's mount directory (contains elt/)")
+    rp.add_argument("--inputs-dir", required=True, type=Path,
+                    help="the served task directory the runner copied into the mount")
+    rp.add_argument("--airbyte-url", required=True)
+    rp.add_argument("--airbyte-credential", required=True, type=Path,
+                    help="the per-task credential bootstrap-task wrote")
+    rp.add_argument("--ignore", action="append", default=[],
+                    help="top-level mount entries owned by the runner (default: known runner dirs)")
+    rp.add_argument("--skip-terraform-intent", action="store_true")
+    rp.add_argument("--strict", action="store_true", help="exit 1 when not compliant")
+    rp.set_defaults(func=cmd_runtime_verify_process)
 
     rp = runtime_sub.add_parser(
         "provision-snowflake",
