@@ -80,7 +80,7 @@ class AirbyteConnectorConfigTests(unittest.TestCase):
         )
 
         mongodb = sources["mongodb"]
-        self.assertEqual(mongodb["connector_version"], "2.0.7")
+        self.assertEqual(mongodb["connector_version"], "1.5.19")
         self.assertEqual(
             mongodb["configuration"]["database_config"],
             {
@@ -88,7 +88,7 @@ class AirbyteConnectorConfigTests(unittest.TestCase):
                 "connection_string": (
                     "mongodb://elt-mongodb:27017/?directConnection=true"
                 ),
-                "databases": ["demo__customer_summary"],
+                "database": "demo__customer_summary",
                 "schema_enforced": True,
             },
         )

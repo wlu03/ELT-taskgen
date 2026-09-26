@@ -169,24 +169,27 @@ def render_canonical_main_tf(contract: Mapping[str, Any]) -> str:
                 )
             elif key == "mongodb":
                 database_config = _mapping(config.get("database_config"), "mongodb database_config")
-                databases = database_config.get("databases")
-                if not isinstance(databases, (list, tuple)) or len(databases) != 1:
-                    raise CanonicalArtifactError("mongodb contract must name one database")
-                # The pinned connector (source-mongodb-v2 2.x) takes
-                # `databases`, a list, and a `cluster_type` discriminator; the
-                # provider's typed mongodb_v2 resource still speaks the older
-                # single-`database` spec and is refused by the control plane
-                # (422). The generic resource with a JSON body is the shape
-                # that applies, so it is the shape rendered here.
-                resource_type = "airbyte_source_custom"
+                # Releases frozen against source-mongodb-v2 2.x carry a
+                # one-element `databases` list; the pinned 1.5.19 connector
+                # and the provider's typed resource take a single `database`.
+                database = database_config.get("database")
+                if database is None:
+                    databases = database_config.get("databases")
+                    if not isinstance(databases, (list, tuple)) or len(databases) != 1:
+                        raise CanonicalArtifactError("mongodb contract must name one database")
+                    database = databases[0]
+                # The typed resource in the shape ELT-Bench's own example uses
+                # (example/retails/main.tf): the self-managed block carries the
+                # connection string and the database name.
                 configuration = (
-                    "jsonencode({\n"
+                    "{\n"
                     "    database_config = {\n"
-                    '      cluster_type = "SELF_MANAGED_REPLICA_SET"\n'
-                    f"      connection_string = {_hcl_literal(database_config['connection_string'])}\n"
-                    f"      databases = [{_hcl_literal(databases[0])}]\n"
+                    "      self_managed_replica_set = {\n"
+                    f"        connection_string = {_hcl_literal(database_config['connection_string'])}\n"
+                    f"        database = {_hcl_literal(database)}\n"
+                    "      }\n"
                     "    }\n"
-                    "  })"
+                    "  }"
                 )
             elif key == "aws_s3":
                 streams: list[str] = []

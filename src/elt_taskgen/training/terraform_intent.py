@@ -1072,10 +1072,17 @@ def _validate_source_configuration(
             expected_config.get("database_config")
         )
         expected_connection = expected_database_config.get("connection_string")
-        expected_databases = expected_database_config.get("databases")
+        # Contracts frozen against source-mongodb-v2 2.x name a `databases`
+        # list; the pinned 1.5.19 contract names one `database`.
+        if "databases" in expected_database_config:
+            expected_databases = tuple(
+                _private_sequence(expected_database_config.get("databases"))
+            )
+        else:
+            expected_databases = (expected_database_config.get("database"),)
         if (
             actual_connection != expected_connection
-            or actual_databases != tuple(_private_sequence(expected_databases))
+            or actual_databases != expected_databases
         ):
             _candidate_error(TerraformIntentErrorCode.SOURCE_CONTRACT)
         return

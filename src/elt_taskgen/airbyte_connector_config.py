@@ -203,13 +203,11 @@ def _mongodb_source(config: Mapping[str, Any], airbyte: Mapping[str, Any]) -> di
                 label="mongodb connection_string",
                 allow_empty=False,
             ),
-            "databases": [
-                _text(
-                    values.get("database"),
-                    label="mongodb database",
-                    allow_empty=False,
-                )
-            ],
+            "database": _text(
+                values.get("database"),
+                label="mongodb database",
+                allow_empty=False,
+            ),
             "schema_enforced": True,
         }
     }

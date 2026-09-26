@@ -90,7 +90,11 @@ SOURCE_CONNECTOR_CONTRACTS: dict[str, SourceConnectorContract] = {
         config_section="mongodb",
         definition_key="mongodb_definition_id",
         definition_id="b2e713cd-cc36-4c0a-b5bd-b47cb8a0561e",
-        connector_version="2.0.7",
+        # 1.5.19 is the last source-mongodb-v2 whose spec (`database`, one
+        # name) the pinned provider 0.6.5 typed resource can express; 2.0.0
+        # switched to a `databases` list the provider rejects, which ELT-Bench's
+        # reference environment never had.
+        connector_version="1.5.19",
     ),
     "postgres": SourceConnectorContract(
         config_section="postgres",
