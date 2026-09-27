@@ -105,10 +105,13 @@ class AirbyteGatewayTests(unittest.TestCase):
         self.assertEqual(payload, {"method": "POST", "path": "/api/public/v1/jobs?x=1", "body": '{"jobType":"sync"}'})
         self.assertEqual(self.upstream.requests[-1]["auth"], "Bearer token-1")
 
-    def test_missing_or_wrong_basic_pair_is_refused_without_reaching_airbyte(self) -> None:
-        self.assertEqual(self._call("GET", "/api/public/v1/workspaces", user=None)[0], 401)
+    def test_wrong_basic_pair_is_refused_without_reaching_airbyte(self) -> None:
         self.assertEqual(self._call("GET", "/api/public/v1/workspaces", user=("airbyte", "no"))[0], 401)
         self.assertEqual(self.upstream.requests, [])
+
+    def test_request_without_credentials_reaches_airbyte_unchanged(self) -> None:
+        self.assertEqual(self._call("GET", "/api/public/v1/workspaces", user=None)[0], 401)
+        self.assertEqual(self.upstream.requests[-1]["auth"], "")
 
     def test_token_is_reused_and_replaced_after_airbyte_refuses_it(self) -> None:
         self._call("GET", "/api/public/v1/workspaces")

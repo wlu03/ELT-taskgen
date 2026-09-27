@@ -10,7 +10,9 @@ with Basic authentication that hook is not used.
 
 The gateway accepts one Basic username/password pair, replaces it with a Bearer
 token obtained from the client-credential pair, and forwards the request to the
-control plane unchanged otherwise.
+control plane unchanged otherwise. A request without an Authorization header is
+forwarded as sent, so Airbyte answers it as it would answer the agent directly
+(200 for its health endpoints, 401 for everything that requires a login).
 """
 
 from __future__ import annotations
@@ -201,16 +203,31 @@ class AirbyteGateway:
             result = self._send(method, path, outbound, body, self._tokens.token(force=True))
         return result
 
+    def forward_unauthenticated(
+        self,
+        method: str,
+        path: str,
+        headers: Mapping[str, str],
+        body: bytes,
+    ) -> ForwardResult:
+        outbound = {
+            name: value
+            for name, value in headers.items()
+            if name.lower() not in HOP_BY_HOP_HEADERS
+        }
+        return self._send(method, path, outbound, body, None)
+
     def _send(
         self,
         method: str,
         path: str,
         headers: Mapping[str, str],
         body: bytes,
-        token: str,
+        token: str | None,
     ) -> ForwardResult:
         outbound = dict(headers)
-        outbound["Authorization"] = f"Bearer {token}"
+        if token is not None:
+            outbound["Authorization"] = f"Bearer {token}"
         if body or method in {"POST", "PUT", "PATCH"}:
             outbound["Content-Length"] = str(len(body))
         connection = http.client.HTTPConnection(self._host, self._port, timeout=self._timeout)
@@ -267,11 +284,16 @@ def make_handler(gateway: AirbyteGateway, *, log: Callable[[str], None] | None =
 
         def _handle(self) -> None:
             body = _read_request_body(self)
-            if not gateway.authorized(self.headers.get("Authorization")):
+            headers = dict(self.headers.items())
+            supplied = self.headers.get("Authorization")
+            if supplied is not None and not gateway.authorized(supplied):
                 self._json_error(401, "Unauthorized", (("WWW-Authenticate", 'Basic realm="airbyte"'),))
                 return
             try:
-                result = gateway.forward(self.command, self.path, dict(self.headers.items()), body)
+                if supplied is None:
+                    result = gateway.forward_unauthenticated(self.command, self.path, headers, body)
+                else:
+                    result = gateway.forward(self.command, self.path, headers, body)
             except (OSError, GatewayError, http.client.HTTPException) as exc:
                 self._json_error(502, f"airbyte gateway: {exc}")
                 return
