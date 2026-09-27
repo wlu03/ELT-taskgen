@@ -1275,6 +1275,60 @@ class RuntimeCliTests(unittest.TestCase):
                     cli.cmd_runtime_prepare(args("redshift"))
                 self.assertIn("does not match", str(ctx.exception))
 
+    def test_prepare_writes_the_gateway_basic_pair_instead_of_client_credentials(self) -> None:
+        from elt_taskgen import cli
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            release = root / "release"
+            public = release / "public" / "task"
+            public.mkdir(parents=True)
+            (release / "release_manifest.json").write_text("{}", encoding="utf-8")
+            (public / "config.yaml").write_text(
+                "snowflake:\n  config:\n    database: task\n    schema: AIRBYTE_SCHEMA\n",
+                encoding="utf-8",
+            )
+            files = {
+                root / "airbyte.json": {
+                    "workspace_id": "w",
+                    "client_id": "c",
+                    "client_secret": "s",
+                    "custom_api_definition_id": "d",
+                },
+                root / "gateway.json": {"username": "airbyte", "password": "p"},
+                root / "snowflake.json": {"account": "a"},
+            }
+            args = SimpleNamespace(
+                release=release,
+                task_id="task",
+                population="primary",
+                work_dir=root / "attempt" / "task",
+                environment_dir=root / "env",
+                airbyte_credential=root / "airbyte.json",
+                airbyte_basic_credential=root / "gateway.json",
+                destination=None,
+                destination_credential=root / "snowflake.json",
+                snowflake_credential=None,
+                custom_api_definition_id=None,
+                airbyte_server_url="http://host.docker.internal:8006/api/public/v1/",
+            )
+            install = mock.Mock(return_value=root / "attempt" / "task")
+            with mock.patch.object(cli, "_require_runtime_release", lambda release: None), mock.patch.object(
+                cli, "_runtime_json", lambda path, label: dict(files[Path(path)])
+            ), mock.patch(
+                "elt_taskgen.runtime.source_environment.prepare_source_environment", mock.Mock()
+            ), mock.patch("elt_taskgen.runtime.install.install_task", install):
+                cli.cmd_runtime_prepare(args)
+            self.assertEqual(
+                install.call_args.kwargs["airbyte_credentials"],
+                {
+                    "workspace_id": "w",
+                    "custom_api_definition_id": "d",
+                    "username": "airbyte",
+                    "password": "p",
+                },
+            )
+
     def test_destination_neutral_prepare_and_verifier_flags_parse(self) -> None:
         parser = build_parser()
         prepare = parser.parse_args(

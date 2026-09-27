@@ -13436,6 +13436,43 @@ def _task_workspace_id(credentials: dict, *, label: str) -> str:
     return workspace_id
 
 
+def cmd_runtime_airbyte_gateway(args) -> int:
+    """Serve the Airbyte API with Basic authentication until interrupted."""
+    from elt_taskgen.runtime.airbyte_gateway import (
+        AirbyteGateway,
+        GatewayError,
+        TokenSource,
+        load_basic_credential,
+        log_to_stderr,
+        serve,
+    )
+
+    upstream_credential = _runtime_json(args.airbyte_credential, label="Airbyte credential")
+    host, _, port_text = str(args.listen).rpartition(":")
+    if not host or not port_text.isdigit():
+        raise CliUsageError("--listen must be host:port")
+    try:
+        basic = load_basic_credential(args.gateway_credential, create=args.create_credential)
+        tokens = TokenSource(
+            args.upstream,
+            str(upstream_credential.get("client_id") or ""),
+            str(upstream_credential.get("client_secret") or ""),
+        )
+        tokens.token()
+        gateway = AirbyteGateway(args.upstream, tokens, basic)
+        server = serve(gateway, host, int(port_text), log=None if args.quiet else log_to_stderr)
+    except (GatewayError, OSError) as exc:
+        raise CliUsageError(str(exc)) from None
+    print(f"airbyte gateway on {host}:{port_text} -> {args.upstream}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
+
 def cmd_runtime_teardown_task(args) -> int:
     """Delete the Airbyte workspace one task run bootstrapped.
 
@@ -13607,6 +13644,16 @@ def cmd_runtime_prepare(args) -> int:
     work_dir_target = _refuse_confined_work_dir(args.work_dir, release)
     _require_runtime_release(release)
     airbyte = _runtime_json(args.airbyte_credential, label="Airbyte credential")
+    basic_credential_path = getattr(args, "airbyte_basic_credential", None)
+    if basic_credential_path is not None:
+        basic = _runtime_json(basic_credential_path, label="Airbyte gateway credential")
+        airbyte = {
+            key: value
+            for key, value in airbyte.items()
+            if key not in ("client_id", "client_secret", "username", "email", "password")
+        }
+        airbyte["username"] = basic.get("username")
+        airbyte["password"] = basic.get("password")
     public_config = _runtime_yaml(
         release / "public" / args.task_id / "config.yaml",
         label="public task config",
@@ -16123,7 +16170,36 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Airbyte URL reachable from the solver/provider runtime",
     )
+    rp.add_argument(
+        "--airbyte-basic-credential",
+        default=None,
+        type=Path,
+        help=(
+            "write this username/password pair into the task config in place of the "
+            "client-credential pair; serve it with runtime airbyte-gateway and pass "
+            "the gateway's URL as --airbyte-server-url"
+        ),
+    )
     rp.set_defaults(func=cmd_runtime_prepare)
+
+    rp = runtime_sub.add_parser(
+        "airbyte-gateway",
+        help=(
+            "serve Airbyte to agents with the username/password interface ELT-Bench "
+            "configures, forwarding with a client-credential token"
+        ),
+    )
+    rp.add_argument("--listen", default="0.0.0.0:8006", help="host:port to bind")
+    rp.add_argument("--upstream", default="http://localhost:8000",
+                    help="Airbyte control plane URL reachable from this host")
+    rp.add_argument("--airbyte-credential", required=True, type=Path,
+                    help="client_id/client_secret file used against the control plane")
+    rp.add_argument("--gateway-credential", required=True, type=Path,
+                    help="username/password file agents use; see --create-credential")
+    rp.add_argument("--create-credential", action="store_true",
+                    help="write a random username/password file when it does not exist")
+    rp.add_argument("--quiet", action="store_true", help="do not log each request")
+    rp.set_defaults(func=cmd_runtime_airbyte_gateway)
 
     def add_source_environment_args(parser):
         parser.add_argument("--release", required=True, type=Path)
