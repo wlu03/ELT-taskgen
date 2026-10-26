@@ -2367,7 +2367,7 @@ def _declared_witness_scopes(
     Legacy/manual tasks retain the old unscoped two-line representation. The
     latter can describe only one edge, so it is returned as one scope.
     """
-    from elt_taskgen.generation.mart_plan import WITNESS_CHILDLESS, WITNESS_ORDER
+    from elt_taskgen.generation.witness import WITNESS_CHILDLESS, WITNESS_ORDER
     from elt_taskgen.generation.populations import (
         _LEGACY_CHILDLESS_PROSE,
         _WITNESS_PROSE,
@@ -2442,7 +2442,7 @@ def _declared_witnesses(task: TaskIR) -> tuple[tuple[str, ...], str, str, str]:
     and the first scope's tables.
     """
 
-    from elt_taskgen.generation.mart_plan import WITNESS_ORDER
+    from elt_taskgen.generation.witness import WITNESS_ORDER
 
     scopes = _declared_witness_scopes(task)
     if not scopes:

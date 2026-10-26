@@ -90,6 +90,19 @@ _COMMON_PROVIDER_IMPLEMENTATION_MODULES = (
     "elt_taskgen.review.providers",
     "elt_taskgen.review.session",
 )
+_MART_PLAN_IMPLEMENTATION_MODULES = (
+    "elt_taskgen.generation.mart_plan",
+    "elt_taskgen.generation.witness.constants",
+    "elt_taskgen.generation.shapes.aggregate_then_filter",
+    "elt_taskgen.generation.shapes.argmax_profile",
+    "elt_taskgen.generation.shapes.categorical_ladder",
+    "elt_taskgen.generation.shapes.fan_out_rollup",
+    "elt_taskgen.generation.shapes.latest_snapshot",
+    "elt_taskgen.generation.shapes.measure_state_distribution",
+    "elt_taskgen.generation.shapes.orphan_coverage",
+    "elt_taskgen.generation.shapes.status_cohort_union",
+    "elt_taskgen.generation.shapes.temporal_grid",
+)
 _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
     StageName.INTAKE: (
         "elt_taskgen.adapters.dbt",
@@ -104,13 +117,13 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
     StageName.GENERATE: (
         "elt_taskgen.generation.challenging_policy",
         "elt_taskgen.generation.lineage",
-        "elt_taskgen.generation.mart_plan",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.generation.populations",
         "elt_taskgen.generation.source_data",
         "elt_taskgen.sql_identifiers",
     ),
     StageName.REFERENCE: (
-        "elt_taskgen.generation.mart_plan",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.duckdb_sandbox",
         "elt_taskgen.reference.gold",
         "elt_taskgen.reference.runner",
@@ -134,7 +147,7 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.verification.attacks",
     ),
     StageName.ATTACK: (
-        "elt_taskgen.generation.mart_plan",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.generation.source_data",
         "elt_taskgen.reference.runner",
         "elt_taskgen.runtime.evaluation",
@@ -143,7 +156,7 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.sql_identifiers",
     ),
     StageName.TASK_INTEGRITY: (
-        "elt_taskgen.generation.mart_plan",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.adjudication",
         "elt_taskgen.reference.gold",
         "elt_taskgen.reference.independent",
@@ -159,7 +172,7 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.verification.variant_battery",
     ),
     StageName.GATES_EXTRACT_LOAD: (
-        "elt_taskgen.generation.mart_plan",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.adjudication",
         "elt_taskgen.reference.gold",
         "elt_taskgen.reference.independent",
@@ -177,7 +190,7 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
     StageName.GATES_TRANSFORM: (
         "elt_taskgen.airbyte_connector_config",
         "elt_taskgen.destinations",
-        "elt_taskgen.generation.mart_plan",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.adjudication",
         "elt_taskgen.reference.gold",
         "elt_taskgen.reference.independent",

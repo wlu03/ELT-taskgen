@@ -735,6 +735,24 @@ class GenerateReadinessTests(unittest.TestCase):
                     "elt_taskgen.cli", seal.inputs["module_source_sha256"]
                 )
 
+    def test_mart_plan_seals_include_every_shape_builder_module(self) -> None:
+        mart_modules = set(readiness_mod._MART_PLAN_IMPLEMENTATION_MODULES)
+        self.assertIn(
+            "elt_taskgen.generation.witness.constants",
+            mart_modules,
+        )
+        shape_modules = {
+            module
+            for module in mart_modules
+            if module.startswith("elt_taskgen.generation.shapes.")
+        }
+        self.assertEqual(9, len(shape_modules))
+        for stage, modules in readiness_mod._CONFIGURED_STAGE_MODULES.items():
+            if "elt_taskgen.generation.mart_plan" not in modules:
+                continue
+            with self.subTest(stage=stage.value):
+                self.assertTrue(mart_modules.issubset(modules))
+
     def test_attack_seal_changes_when_compiler_implementation_changes(self) -> None:
         spec = _spec()
         seal = readiness_mod._configured_seal(

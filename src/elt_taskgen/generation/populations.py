@@ -15,6 +15,15 @@ from itertools import islice, product
 from elt_taskgen.generation import source_data
 from elt_taskgen.generation.difficulty_profiles import GenerationDifficultyProfile
 from elt_taskgen.generation.mart_plan import (
+    AGGREGATE_FAMILY_KINDS,
+    AllNullAggregateWitness,
+    FactRoles,
+    RoundBeforeSumWitness,
+    StarShape,
+    TEXT_ORDER_PROSE,
+    guard_literals,
+)
+from elt_taskgen.generation.witness import (
     WITNESS_ALL_FAIL,
     WITNESS_ARGMAX_CASE_ORDER,
     WITNESS_ARGMAX_NULL_ORDER,
@@ -22,8 +31,8 @@ from elt_taskgen.generation.mart_plan import (
     WITNESS_BRIDGE_NO_CHILD,
     WITNESS_CHILDLESS,
     WITNESS_CONTROL,
-    WITNESS_DUPLICATE,
     WITNESS_DISTINCT_MEASURE,
+    WITNESS_DUPLICATE,
     WITNESS_LATEST_FIRST,
     WITNESS_NULL_MEASURE,
     WITNESS_ON_THRESHOLD,
@@ -32,13 +41,6 @@ from elt_taskgen.generation.mart_plan import (
     WITNESS_SAME_CHILD,
     WITNESS_SECOND_PERIOD,
     WITNESS_TIE,
-    AGGREGATE_FAMILY_KINDS,
-    AllNullAggregateWitness,
-    FactRoles,
-    RoundBeforeSumWitness,
-    StarShape,
-    TEXT_ORDER_PROSE,
-    guard_literals,
 )
 from elt_taskgen.models import (
     AttackCase,
