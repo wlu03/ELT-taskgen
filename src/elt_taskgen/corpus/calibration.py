@@ -135,7 +135,7 @@ FLAG_IMPOSSIBLE = "empirically_impossible"
 FLAG_TRIVIAL = "trivial"
 
 #: Version of the solver prompt, submission contract, and scoring instrument.
-INSTRUMENT_VERSION = "1"
+INSTRUMENT_VERSION = "2"
 
 #: Endpoint a provider resolves to when its config carries no `base_url`
 #: (mirrors providers.RoutedProvider._backend; openai_compat has no default).
@@ -429,17 +429,13 @@ def _source_tree_section(listing: Sequence[str]) -> list[str]:
 
 
 def _mart_section(task: TaskIR) -> list[str]:
-    lines = ["--- TARGET MARTS ---"]
-    for mart in task.marts:
-        lines.append(f"mart {mart.name}")
-        if mart.description:
-            lines.append(f"  {mart.description}")
-        lines.append(f"  grain: {mart.grain}")
-        lines.append(f"  key columns: {', '.join(mart.key_columns)}")
-        for col in mart.columns:
-            lines.append(f"  - {col.name}: {col.type.value} — {col.description}")
-    lines.append("")
-    return lines
+    from elt_taskgen.export.eltbench import _dump_yaml, build_data_model
+
+    return [
+        "--- TARGET MARTS (data_model.yaml) ---",
+        _dump_yaml(build_data_model(task), sort_keys=False).rstrip(),
+        "",
+    ]
 
 
 def _load_plan_format_section(task: TaskIR) -> list[str]:
@@ -596,8 +592,6 @@ def solver_view(
     lines: list[str] = [_SOLVER_PREAMBLE]
     if task.title:
         lines += [f"Project: {task.title}", ""]
-    if task.solver_prompt:
-        lines += ["--- TASK DESCRIPTION ---", task.solver_prompt, ""]
 
     lines += list(_VARIANT_SCOPE[variant])
     lines += _source_section(task)

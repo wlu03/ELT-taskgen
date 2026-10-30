@@ -7,6 +7,43 @@ Each task covers extract/load (EL) and transform (T), with separate scores.
 DuckDB evaluates local submissions. Snowflake, Databricks, and Amazon Redshift
 are supported through separate real-runtime adapters.
 
+Public `data_model.yaml` files follow the original ELT-Bench format: models
+have a `name`, `description`, and `columns`; columns have a `name` and
+`description`. Descriptions define the output records and values, including
+business scope, duplicate identity, defaults, and tie-breaks where needed.
+The files do not include ordered transformation steps, join types, intermediate
+fields, or SQL recipes. Source schema relationships remain available as source
+documentation. Expanded authoring notes and executable plans stay internal.
+Solver calibration uses the same public YAML (instrument version 2); previous
+calibration results need to be measured again under this specification.
+The revised author/reviewer instructions also invalidate the previous council
+admission fingerprint; earn a fresh live admission before releasing new tasks.
+These changes apply when exporting tasks; existing frozen releases are not
+rewritten in place.
+
+The `public_model_author` role now rewrites the actual model and column
+descriptions with the tested `balanced` prompt in
+[`review/model_specification.py`](src/elt_taskgen/review/model_specification.py).
+It preserves names, eligibility rules, defaults, precision, and tie order while
+removing template language and implementation explanations. A separate review
+call checks for semantic changes. This review does not replace executable
+verification. Authored descriptions are stored in `TaskIR.public_specification`
+and bound to a source fingerprint; changing requirements invalidates them.
+Custom routings without this role retain the deterministic compact renderer.
+
+[`testing/compare_model_spec_prompts.py`](testing/compare_model_spec_prompts.py)
+compares prompt variants on development tasks, freezes a winner, checks held-out
+tasks, and runs matched SQL recovery checks against three populations. Results,
+prompts, responses, and the comparison report are under
+`testing/results/model-spec-prompts-business/`. The prompts describe the desired
+writing style directly and never name the benchmark. Run `--phase report` to
+rebuild the report locally; `--phase dev` and
+`--phase holdout --winner balanced --solve` make metered API calls for missing
+responses. Preparation requires the frozen pilot case bank (`--case-bank`) and
+reference models (`--bench-root`); an existing campaign validates its saved inputs
+instead. A compact [measured evidence snapshot](testing/model-spec-evidence/report.md)
+is included for review. This small experiment is not a full benchmark evaluation.
+
 ## Environment setup
 
 Requires Python >= 3.11 and `uv`.

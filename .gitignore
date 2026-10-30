@@ -15,3 +15,6 @@ constraints.txt
 *_credential.json
 .env
 .env.*
+
+# Metered prompt-test runs stay local.
+/testing/results/

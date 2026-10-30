@@ -49,10 +49,8 @@ def aggregate_then_filter(
         MartOp(
             kind=MartOpKind.FILTER,
             description=(
-                f"Retain a grouped {evidence.parent} row only when {link_count} "
-                f"is at least {threshold}, inclusive. Apply this rule after the "
-                "per-parent measures are computed: a parent with one linked row "
-                "does not appear, while a parent with exactly two does."
+                f"Include only {evidence.parent} records whose {link_count} "
+                f"is at least {threshold}."
             ),
             tables=(current,),
             columns=mart_columns,
@@ -62,16 +60,9 @@ def aggregate_then_filter(
     )
     body.append(base.plan.ops[-1])
 
-    threshold_note = (
-        f" This mart emits the column only for parent groups whose {link_count} "
-        f"is at least {threshold}; lower-count groups produce no output row."
-    )
-    columns = tuple(
-        column.model_copy(
-            update={"description": column.description + threshold_note}
-        )
-        for column in base.columns
-    )
+    # This is a model-wide scope rule; the public renderer includes it in the
+    # model description once, rather than repeating it on every column.
+    columns = base.columns
     plan = base.plan.model_copy(
         update={
             "ops": tuple(body),

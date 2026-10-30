@@ -160,8 +160,7 @@ def demo_mart_plan() -> MartPlan:
                 # Only this op may name a status; SpecimenPoolTest removes it to
                 # create the ambiguity-no-filter case.
                 description=(
-                    "Keep only orders with status = 'completed'; these are the "
-                    "orders in scope for every rule below."
+                    "Only orders with status = 'completed' are in scope."
                 ),
                 tables=("orders",),
                 columns=("status",),

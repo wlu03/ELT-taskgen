@@ -1,0 +1,26 @@
+models:
+- name: studio_activity
+  description: Film activity and release performance for each studio. One record per studio, including studios with no films.
+  columns:
+  - name: studio_id
+    description: Identifier of the studios row. One row per value.
+  - name: studio_name
+    description: name of the studios row, copied unchanged.
+  - name: films_count
+    description: Number of films rows associated with this studios row; 0 when there are none.
+  - name: distinct_genres_count
+    description: Number of unique genres records associated through films; 0 when there are none. Missing genres records do not count.
+  - name: release_state_films_count
+    description: Number of associated films rows whose release_state is one of ['released']; 0 when none qualify.
+  - name: total_runtime_minutes
+    description: Total non-missing runtime_minutes across associated films rows; 0 when there are no values.
+  - name: release_state_runtime_minutes
+    description: Total non-missing runtime_minutes for associated films rows whose release_state is one of ['released']; 0 when there are no qualifying values.
+  - name: max_runtime_minutes
+    description: Largest non-missing runtime_minutes across associated films rows; 0 when there are no values.
+  - name: release_state_runtime_minutes_share
+    description: release_state_runtime_minutes divided by total_runtime_minutes, as a fraction rounded to 4 decimal places; 0.0 when total_runtime_minutes is 0.
+  - name: films_count_band
+    description: 'Size band of films_count: ''none'' for 0, ''small'' for 1–2, ''medium'' for 3–5, and ''large'' for more than 5.'
+  - name: has_films
+    description: '''yes'' when this parent has at least one link, ''no'' otherwise. Never NULL.'

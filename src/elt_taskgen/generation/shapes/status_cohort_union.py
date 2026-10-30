@@ -146,21 +146,14 @@ def status_cohort_union(
                 kind=MartOpKind.FILTER,
                 description=(
                     (
-                        f"Keep rows whose {e.bridge_status} belongs to the {label} "
-                        f"cohort values {list(values)}."
+                        f"The {label} cohort contains {e.bridge} rows whose "
+                        f"{e.bridge_status} is one of {list(values)}."
                     )
                     if values
                     else (
-                        # "no linked activity" read as "no cohort-bearing
-                        # activity" gave a parent whose rows all lack a status
-                        # a placeholder it does not get (the predicate is
-                        # link_key IS NULL). Say "no linked row at all" and
-                        # name the excluded case (batch10 2026-09-11).
-                        f"Keep the placeholder row for a {e.parent} entity with "
-                        f"no linked {e.bridge} row at all; a {e.parent} entity "
-                        f"that has linked {e.bridge} rows gets no placeholder, "
-                        f"even when every one of those rows lacks a "
-                        f"{e.bridge_status} value."
+                        f"The no_activity cohort contains {e.parent} records "
+                        f"with no associated {e.bridge} rows. Missing "
+                        f"{e.bridge_status} values do not belong to a cohort."
                     )
                 ),
                 tables=(joined_rel,),

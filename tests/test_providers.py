@@ -2722,6 +2722,7 @@ class PromptCacheGateTest(unittest.TestCase):
         # Only critics, author/proposer, and witnesses declare disabled loop
         # limits; no role enables prompt caching.
         declared_caps = {
+            "public_model_author": 0.75,
             "ambiguity_critic": 1.00,
             "population_adversary": 1.00,
             "shortcut_attacker": 1.00,
@@ -2893,13 +2894,13 @@ class PromptCacheGateTest(unittest.TestCase):
                 for _ in range(1 + P.SCHEMA_RETRIES):
                     enabled.charge(usage=maxed, rates=rates)
             self.assertEqual(ctx.exception.scope, "role")
-            # The repository profile enables the six useful bounded roles;
-            # only the two advisory readers remain one-shot.  Thus all eight
-            # caps are declared and the active six are enforced.
+            # Six bounded roles plus the public model author's explicit
+            # one-shot cap are enforced; the advisory readers remain disabled.
             live = P.load_role_routing(None)
             self.assertEqual(
                 live.usd_caps(),
                 {
+                    "public_model_author": 0.75,
                     "independent_implementer": 0.5,
                     "independent_loader": 0.2,
                     "population_adversary": 1.0,
@@ -2912,7 +2913,7 @@ class PromptCacheGateTest(unittest.TestCase):
                 set(live.declared_usd_caps()),
                 {"ambiguity_critic", "population_adversary", "shortcut_attacker",
                  "feasibility_reviewer", "semantic_author", "repair_proposer",
-                 "independent_implementer", "independent_loader"},
+                 "independent_implementer", "independent_loader", "public_model_author"},
             )
             for role_name in ("ambiguity_critic", "feasibility_reviewer"):
                 self.assertTrue(live.for_role(role_name).cap_declared_but_disabled, role_name)
@@ -3592,6 +3593,11 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 self.calls.append(name)
                 if name == "semantic_author":
                     return "Solver-visible prose recorded by the stub."
+                if name == "public_model_author":
+                    if prompt.startswith("Audit two output specifications"):
+                        return json.dumps({"semantic_issues": [], "business_language": 5,
+                                           "concise_output_spec": 5, "style_reason": "Fixture."})
+                    return prompt.split("OUTPUT REQUIREMENTS:\n", 1)[1]
                 if name.startswith("independent"):
                     return "{}"
                 return json.dumps({"findings": []})
@@ -3878,6 +3884,11 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 self.calls.append(name)
                 if name == "semantic_author":
                     return "Solver-visible prose recorded by the stub."
+                if name == "public_model_author":
+                    if prompt.startswith("Audit two output specifications"):
+                        return json.dumps({"semantic_issues": [], "business_language": 5,
+                                           "concise_output_spec": 5, "style_reason": "Fixture."})
+                    return prompt.split("OUTPUT REQUIREMENTS:\n", 1)[1]
                 if name.startswith("independent"):
                     return "{}"
                 return json.dumps({"findings": []})

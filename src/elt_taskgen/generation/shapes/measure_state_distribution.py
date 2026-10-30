@@ -138,34 +138,16 @@ def measure_state_distribution(
             MartOp(
                 kind=MartOpKind.FILTER,
                 description=(
-                    f"Keep the {label} measure-state rows: "
-                    + (
-                        (
-                            f"a real {e.bridge} row whose {e.bridge_amount} has "
-                            "a value."
-                            if amount_may_be_missing
-                            else (
-                                f"a real {e.bridge} row; {e.bridge_amount} is "
-                                "required on every such row."
-                            )
-                        )
-                        if label == "present"
-                        else (
-                            (
-                                f"{e.bridge_amount} is missing, including the "
-                                f"retained placeholder for a {e.parent} row with "
-                                f"no {e.bridge} rows. A real {e.bridge} row whose "
-                                f"{e.bridge_amount} has a value belongs only to "
-                                "the present state and never to this absent state."
-                                if amount_may_be_missing
-                                else (
-                                    f"the retained placeholder for a {e.parent} "
-                                    f"row with no {e.bridge} rows; no real row can "
-                                    f"enter this state because {e.bridge_amount} "
-                                    "is required."
-                                )
-                            )
-                        )
+                    (
+                        f"The present state contains {e.bridge} rows with a "
+                        f"{e.bridge_amount} value."
+                        + (f" {e.bridge_amount} is required on every source row."
+                           if not amount_may_be_missing else "")
+                    ) if label == "present" else (
+                        "The absent state contains "
+                        + (f"{e.bridge} rows with missing {e.bridge_amount}, and "
+                           if amount_may_be_missing else "")
+                        + f"{e.parent} records with no associated {e.bridge} rows."
                     )
                 ),
                 tables=(joined_rel,),
@@ -314,20 +296,14 @@ def measure_state_distribution(
             name="measure_state",
             type=ColumnType.TEXT,
             description=(
+                        (
                 (
-                    f"'present' for a linked {e.bridge} row whose "
-                    f"{e.bridge_amount} has a value; 'absent' when "
-                    f"{e.bridge_amount} is missing, including a {e.parent} row "
-                    f"with no linked {e.bridge} row. A linked {e.bridge} row "
-                    f"whose {e.bridge_amount} has a value belongs only to the "
-                    "present state and never to the absent state."
-                    if amount_may_be_missing
-                    else (
-                        f"'present' for a linked {e.bridge} row; 'absent' only "
-                        f"for a {e.parent} row with no linked {e.bridge} row. "
-                        f"{e.bridge_amount} is required on every real "
-                        f"{e.bridge} row."
-                    )
+                    f"'present' when {e.bridge_amount} has a value; 'absent' when "
+                    f"it is missing or the {e.parent} row has no associated {e.bridge} rows."
+                ) if amount_may_be_missing else (
+                    f"'present' for associated {e.bridge} rows; 'absent' only "
+                    f"when the {e.parent} row has no associated {e.bridge} rows."
+                )
                 )
             ),
             kind=MartColumnKind.DERIVED,
@@ -342,18 +318,9 @@ def measure_state_distribution(
             name="row_count",
             type=ColumnType.BIGINT,
             description=(
-                f"Number of linked {e.bridge} rows in this entity/state cell; "
-                + (
-                    # An absent cell with linked NULL-valued rows counts those
-                    # rows; only the no-activity placeholder reports zero.
-                    f"{_article(e.bridge, capitalized=False)} absent cell "
-                    f"holding real {e.bridge} rows whose {e.bridge_amount} is "
-                    "missing COUNTS those rows, and only the placeholder cell "
-                    f"of {_article(e.parent)} {e.parent} row with no linked "
-                    f"{e.bridge} row at all reports 0."
-                    if amount_may_be_missing
-                    else "0 for a no-activity absent cell."
-                )
+                f"Number of {e.bridge} rows in this entity/state combination"
+                + (", including rows with missing measures" if amount_may_be_missing else "")
+                + "; 0 when there are none."
             ),
             kind=MartColumnKind.AGGREGATED,
         ),
@@ -361,21 +328,8 @@ def measure_state_distribution(
             name="distinct_amount_count",
             type=ColumnType.BIGINT,
             description=(
-                f"Number of unique "
-                + ("non-missing " if amount_may_be_missing else "")
-                + f"{e.bridge_amount} values in this cell; each unique "
-                + ("non-missing " if amount_may_be_missing else "")
-                + "value is counted once, however many rows repeat it; "
-                + (
-                    # Zero for TWO different cells, and saying only
-                    # "no-activity" names one of them.
-                    f"0 whenever the cell holds no {e.bridge_amount} value "
-                    f"at all — both for {_article(e.parent)} {e.parent} row "
-                    f"with no linked {e.bridge} row and for an absent cell "
-                    f"whose rows all have a missing {e.bridge_amount}."
-                    if amount_may_be_missing
-                    else "0 for a no-activity absent cell."
-                )
+                f"Number of unique non-missing {e.bridge_amount} values in this "
+                "entity/state combination; 0 when there are none."
             ),
             kind=MartColumnKind.AGGREGATED,
         ),
@@ -383,14 +337,8 @@ def measure_state_distribution(
             name="total_amount",
             type=e.bridge_amount_type,
             description=(
-                f"Sum of {e.bridge_amount} in this cell; "
-                + (
-                    f"0 for a no-activity cell that has no rows at all, "
-                    f"and 0 when none of the cell's rows carries an "
-                    f"{e.bridge_amount} value."
-                    if amount_may_be_missing
-                    else "0 for a no-activity absent cell."
-                )
+                f"Total non-missing {e.bridge_amount} in this entity/state "
+                "combination; 0 when there are no values."
             ),
             kind=MartColumnKind.AGGREGATED,
         ),
@@ -398,14 +346,8 @@ def measure_state_distribution(
             name="max_amount",
             type=e.bridge_amount_type,
             description=(
-                f"Largest {e.bridge_amount} in this cell; "
-                + (
-                    f"0 for a no-activity cell that has no rows at all, "
-                    f"and 0 when none of the cell's rows carries an "
-                    f"{e.bridge_amount} value."
-                    if amount_may_be_missing
-                    else "0 for a no-activity absent cell."
-                )
+                f"Largest non-missing {e.bridge_amount} in this entity/state "
+                "combination; 0 when there are no values."
             ),
             kind=MartColumnKind.AGGREGATED,
         ),

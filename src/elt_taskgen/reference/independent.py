@@ -568,46 +568,21 @@ def _assert_view_clean(task: TaskIR, view: str) -> None:
 
 
 def _implementer_material_lines(task: TaskIR) -> list[str]:
-    """The public task material of the implementer views (one-shot and
-    session alike): title, authored prose, source schemas, mart specs."""
+    """Use the same public source and output definitions as task exports."""
+    from elt_taskgen.export.eltbench import (
+        _dump_yaml, _source_schema_markdown, build_data_model,
+    )
+
     lines: list[str] = []
     if task.title:
         lines += [f"Project: {task.title}", ""]
-    if task.solver_prompt:
-        lines += ["--- TASK DESCRIPTION ---", task.solver_prompt, ""]
-
     lines.append("--- SOURCE TABLES (already loaded into DuckDB under these exact names) ---")
-    for table in task.tables:
-        backend = task.backend_for(table.name).backend.value
-        lines.append(f"table {table.name} (source backend: {backend})")
-        if table.description:
-            lines.append(f"  {table.description}")
-        for col in table.columns:
-            null = "NULL" if col.nullable else "NOT NULL"
-            desc = f" — {col.description}" if col.description else ""
-            lines.append(f"  - {col.name}: {col.type.value} {null}{desc}")
-        if table.primary_key:
-            lines.append(f"  primary key: {', '.join(table.primary_key)}")
-    if task.relationships:
-        lines.append("relationships:")
-        for rel in task.relationships:
-            opt = "required" if rel.required else "optional (may be NULL/dangling)"
-            lines.append(
-                f"  - {rel.child_table}({', '.join(rel.child_columns)}) -> "
-                f"{rel.parent_table}({', '.join(rel.parent_columns)}) [{opt}]"
-            )
-    lines.append("")
-
-    lines.append("--- TARGET MARTS ---")
-    for mart in task.marts:
-        lines.append(f"mart {mart.name}")
-        if mart.description:
-            lines.append(f"  {mart.description}")
-        lines.append(f"  grain: {mart.grain}")
-        lines.append(f"  key columns: {', '.join(mart.key_columns)}")
-        for col in mart.columns:
-            lines.append(f"  - {col.name}: {col.type.value} — {col.description}")
-    lines.append("")
+    lines += _source_schema_markdown(task)
+    lines += [
+        "--- TARGET MARTS (data_model.yaml) ---",
+        _dump_yaml(build_data_model(task), sort_keys=False).rstrip(),
+        "",
+    ]
     return lines
 
 
@@ -637,7 +612,7 @@ def _implementer_response_format_lines(task: TaskIR) -> list[str]:
 def implementer_view(task: TaskIR) -> str:
     """The prompt: STRICTLY the public solver bundle, nothing answer-side.
 
-    Authored prose, source schemas and mart specs only. NO reference SQL, gold,
+    Output definitions and source schemas only. NO reference SQL, gold,
     council findings, attack cases or population internals — a leak trips
     `_assert_view_clean` and raises. The preamble says nothing about how anyone
     else implemented these marts: independence from the reference is the only

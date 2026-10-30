@@ -60,10 +60,9 @@ from elt_taskgen.destinations import (
     normalize_sync_mode,
 )
 from elt_taskgen.generation.mart_plan import (
-    solver_safe_mart_requirements,
     solver_safe_plan_requirements,
-    solver_safe_plan_summary,
 )
+from elt_taskgen.specification import data_model
 from elt_taskgen.models import (
     Backend,
     MartSpec,
@@ -1008,26 +1007,18 @@ def build_config(
 
 
 def solver_visible_plan(task: TaskIR, mart: MartSpec) -> dict[str, object]:
-    """Return the public declarative transform contract.
+    """Legacy diagnostic projection used by internal authoring tools.
 
     Include source inputs, output fields, joins, conditions, and semantic
-    parameters. Exclude compiler details, SQL, gold rows, and result values.
+    parameters. This is not included in public exports or solver prompts.
     """
 
     return solver_safe_plan_requirements(task, mart)
 
 
 def build_data_model(task: TaskIR) -> dict[str, Any]:
-    """Build one ``data_model.yaml`` entry per mart.
-
-    Include the grain, key columns, types, and transformation rules used during
-    calibration.
-    """
-    return {
-        "models": [
-            solver_safe_mart_requirements(task, mart) for mart in task.marts
-        ]
-    }
+    """Build the ELT-Bench-style outcome specification used by solvers."""
+    return data_model(task)
 
 
 #: Documentation filename used by split EL/T task-unit exports. The combined
@@ -1073,14 +1064,14 @@ def _source_schema_markdown(task: TaskIR) -> list[str]:
 
 
 def _transformation_specification_markdown(task: TaskIR) -> list[str]:
-    """Plan-derived public specification shared by combined and T exports."""
-    lines = [
+    """Point to the target contract without duplicating its implementation."""
+    return [
         "## Transformation specification",
         "",
-        "Build every mart below using the ordered semantic rules. The rules",
-        "define required source inputs, matching behavior, filters, aggregates,",
-        "null handling, and deterministic tie behavior; they do not prescribe",
-        "a particular SQL implementation.",
+        "Build the models described in `data_model.yaml`. Each model description",
+        "defines the records to report, and each column description defines",
+        "the required value. Use the source schemas to determine how to produce",
+        "those outputs.",
         "",
         "Create every mart in the same database and schema the raw source",
         "tables are loaded into: the destination namespace named in",
@@ -1088,31 +1079,15 @@ def _transformation_specification_markdown(task: TaskIR) -> list[str]:
         "not count, so do not route marts to a separate schema.",
         "",
     ]
-    for mart in task.marts:
-        lines += [
-            f"### `{mart.name}`",
-            "",
-            f"- Grain: {mart.grain}",
-            f"- Unique key: {', '.join(mart.key_columns)}",
-            "- Required columns: " + ", ".join(col.name for col in mart.columns),
-            "",
-            "```text",
-            solver_safe_plan_summary(task, mart),
-            "```",
-            "",
-        ]
-    return lines
 
 
 def public_documentation(task: TaskIR) -> str:
     """Build the public task specification.
 
-    Retain authored text and add a plan-derived section without predicates,
-    expressions, aliases, SQL, or gold output.
+    The expanded authoring prose is an internal review artifact. Exporting it
+    here would reintroduce the transformation walkthrough removed from YAML.
     """
     lines = [f"# {task.title or task.task_id}", ""]
-    if task.solver_prompt.strip():
-        lines += ["## Specification", "", task.solver_prompt.strip(), ""]
     lines += _transformation_specification_markdown(task)
     lines += _source_schema_markdown(task)
     return "\n".join(lines) + "\n"
@@ -1387,10 +1362,10 @@ def assert_public_runtime_tree_clean(task: TaskIR, public_dir: Path) -> None:
 # Export
 # ---------------------------------------------------------------------------
 
-def _dump_yaml(data: Any) -> str:
-    """Canonical YAML: sorted mapping keys, block style, stable line width."""
+def _dump_yaml(data: Any, *, sort_keys: bool = True) -> str:
+    """Stable YAML; model files preserve the original benchmark's field order."""
     return yaml.safe_dump(
-        data, sort_keys=True, default_flow_style=False, allow_unicode=True, width=1000
+        data, sort_keys=sort_keys, default_flow_style=False, allow_unicode=True, width=1000
     )
 
 
@@ -1926,7 +1901,9 @@ def export_task(
             destination=selected_destination,
         )
         (stage_public / "config.yaml").write_text(_dump_yaml(config))
-        (stage_public / "data_model.yaml").write_text(_dump_yaml(build_data_model(task)))
+        (stage_public / "data_model.yaml").write_text(
+            _dump_yaml(build_data_model(task), sort_keys=False)
+        )
         _write_runtime_scaffold(stage_public, task, selected_destination)
         extra_configs = write_extra_destinations(
             stage_public,
@@ -2204,9 +2181,6 @@ def el_documentation(task: TaskIR) -> str:
         "exists in the warehouse with exactly the expected row count, else 0.0.",
         "",
     ]
-    # Match the specification and schema used during calibration.
-    if task.solver_prompt.strip():
-        lines += ["## Project specification", "", task.solver_prompt.strip(), ""]
     lines += _source_schema_markdown(task)
     return "\n".join(lines) + "\n"
 
@@ -2248,7 +2222,7 @@ def t_documentation(task: TaskIR, populations: Any = ()) -> str:
         "done and are NOT scored.",
         "",
         f"Build every mart declared in `data_model.yaml` ({marts}) with the",
-        "columns, types and grain it declares.",
+        "columns and record definitions it describes.",
         "",
         "## Submission",
         "",
@@ -2268,9 +2242,8 @@ def t_documentation(task: TaskIR, populations: Any = ()) -> str:
         "all-or-nothing across them.",
         "",
     ]
-    if task.solver_prompt.strip():
-        lines += ["## Project specification", "", task.solver_prompt.strip(), ""]
-    lines += _transformation_specification_markdown(task)
+    # The starting warehouse/submission contract above is specific to T; the
+    # combined-task destination-namespace instructions do not apply here.
     lines += _source_schema_markdown(task)
     return "\n".join(lines) + "\n"
 
@@ -2721,7 +2694,7 @@ def emit_variant(
                         shutil.copytree(rendered_dev, stage_task / "sources")
             else:  # TRANSFORM
                 (stage_task / "data_model.yaml").write_text(
-                    _dump_yaml(build_data_model(task))
+                    _dump_yaml(build_data_model(task), sort_keys=False)
                 )
                 # Include the transform unit's complete objective and scoring rule.
                 (stage_task / T_DOCUMENTATION_FILENAME).write_text(

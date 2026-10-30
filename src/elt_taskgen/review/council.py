@@ -126,15 +126,16 @@ def _table_lines(task: TaskIR) -> list[str]:
 
 
 def _author_plan_summary(task: TaskIR, mart: MartSpec) -> str:
-    """The shared solver-safe projection used by prompts and public exports."""
+    """Detailed internal authoring requirements; not the solver export."""
 
     return solver_safe_plan_summary(task, mart)
 
 
 def mart_data_model_prose(task: TaskIR, mart: MartSpec) -> str:
-    """data_model.yaml-style prose description of one mart.
+    """Expanded review representation of one mart.
 
-    Derived ONLY from MartSpec fields, never from reference SQL.
+    Derived from MartSpec, never reference SQL. Public data_model.yaml is the
+    smaller outcome contract in specification.data_model.
     """
     requirements = solver_safe_mart_requirements(task, mart)
     doc = {
@@ -265,11 +266,18 @@ def _public_source_schema_lines(task: TaskIR) -> list[str]:
 def _critic_view(task: TaskIR) -> str:
     """What ambiguity critic / shortcut attacker / feasibility reviewer see.
 
-    PARITY: exactly the shipped public bundle. No more (a barrier leak) and no
-    less (that rejects sound tasks)."""
+    The author draft and typed output definitions are internal review material.
+    Source schemas match the public bundle; solver exports omit the expanded
+    author draft and use specification.data_model for the target definitions.
+    """
+    from elt_taskgen.specification import data_model
+
     return "\n".join(
         [
-            "PUBLIC SOLVER PROSE:",
+            "PUBLIC MODEL DEFINITIONS (exactly what solvers receive):",
+            json.dumps(data_model(task), ensure_ascii=False),
+            "",
+            "INTERNAL AUTHORING SPECIFICATION (not exported to solvers):",
             task.solver_prompt or "(no prose authored yet)",
             "",
             "PUBLIC SOURCE SCHEMAS (exactly what the solver's bundle publishes):",
@@ -866,6 +874,13 @@ def leak_findings(task: TaskIR) -> list[Finding]:
     source columns, functions and literals — which catches copies sharing no
     query SHAPE at all.
     """
+    if task.public_specification is not None:
+        public = "\n\n".join(
+            item.description
+            for model in task.public_specification.models
+            for item in (model, *model.columns)
+        )
+        task = task.model_copy(update={"solver_prompt": task.solver_prompt + "\n\n" + public})
     prose = _normalize(task.solver_prompt)
     if not prose:
         return []

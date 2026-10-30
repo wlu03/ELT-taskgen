@@ -175,11 +175,8 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         # dlt__personio: the ambiguity critic filed it as a graded fork).
         self.assertEqual(
             distinct_amount.description,
-            "Number of unique non-missing amount values in this cell; each unique "
-            "non-missing value is counted once, however many rows repeat it; 0 "
-            "whenever the cell holds no amount value at all — both for an "
-            "accounts row with no linked events row and for an absent cell "
-            "whose rows all have a missing amount.",
+            "Number of unique non-missing amount values in this entity/state "
+            "combination; 0 when there are none.",
         )
         # row_count is the one the fork actually bit: it COUNTS the rows of an
         # absent cell that holds real rows, and gold agrees — the expression
@@ -191,10 +188,8 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         )
         self.assertEqual(
             row_count.description,
-            "Number of linked events rows in this entity/state cell; an absent "
-            "cell holding real events rows whose amount is missing COUNTS "
-            "those rows, and only the placeholder cell of an accounts row "
-            "with no linked events row at all reports 0.",
+            "Number of events rows in this entity/state combination, "
+            "including rows with missing measures; 0 when there are none.",
         )
 
     def test_nullable_contract_retains_real_row_missing_measure_branches(self) -> None:
@@ -203,38 +198,28 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         argmax_contract = argmax.plan.model_dump_json() + " ".join(
             column.description for column in argmax.columns
         )
-        self.assertIn("no amount value", argmax_contract)
-        self.assertIn(
-            "none of its rows carries a amount value",
-            argmax_contract,
-        )
+        self.assertIn("non-missing amount", argmax_contract)
+        self.assertIn("If all measures are missing, the same tie-break selects the row", argmax_contract)
         tied_count = next(
             column
             for column in argmax.columns
             if column.name == argmax.column_named("tied_count")
         )
         self.assertIn(
-            "0 when there are no rows or when none of the rows carries a amount value",
+            "largest non-missing amount; 0 when there are no such values",
             tied_count.description,
         )
         # batch10 run F 2026-09-11 (dlt__workable, dlt__personio): "'empty'
         # = no row holds a maximum" beside "every row ranks, so a winner
         # exists" read as two rules; the winner picked by the tie-break alone
         # is named and explicitly not counted as tied.
-        self.assertIn("is not counted here", tied_count.description)
         name = argmax.column_named
         tie_state = next(
             column for column in argmax.columns if column.name == name("tie_state")
         )
-        self.assertIn("never holds the maximum", tie_state.description)
-        self.assertIn(f"with {name('tied_count')} 0", tie_state.description)
-        named = {c.name for c in argmax.columns}
-        label, row_id = name("top_label"), name("top_row_id")
-        if row_id in named:
-            self.assertIn(f"{label} and {row_id} name", tie_state.description)
-        else:
-            self.assertIn(f"{label} names", tie_state.description)
-            self.assertNotIn(row_id, tie_state.description)
+        self.assertIn(f"'empty' when {name('tied_count')} is 0", tie_state.description)
+        self.assertIn("'unique' when it is 1", tie_state.description)
+        self.assertIn("'tied' when it is greater than 1", tie_state.description)
         self.assertNotIn("when the winner is unique", tied_count.description)
         self.assertIn(
             "when no row carries a measure there is no maximum and "
@@ -248,9 +233,9 @@ class NullableMeasureWitnessTest(unittest.TestCase):
         distribution_contract = distribution.plan.model_dump_json() + " ".join(
             column.description for column in distribution.columns
         )
-        self.assertIn("amount is missing", distribution_contract)
+        self.assertIn("missing amount", distribution_contract)
         self.assertIn(
-            "none of the cell's rows carries an amount value",
+            "non-missing amount in this entity/state combination; 0 when there are no values",
             distribution_contract,
         )
 
@@ -481,7 +466,7 @@ class NullableMeasureWitnessTest(unittest.TestCase):
                     self.assertIn("no matching rows", contract)
                 else:
                     self.assertIn("amount is required", contract)
-                    self.assertIn("no-activity absent cell", contract)
+                    self.assertIn("no associated events rows", contract)
 
                 sql = reference.compile_plan_sql(task, task.marts[0])
                 if builder is mart_plan.argmax_profile:

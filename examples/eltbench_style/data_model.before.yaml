@@ -1,0 +1,184 @@
+models:
+- name: studio_activity
+  description: Film activity and release performance for each studio.
+  grain: One record per studio, including studios with no films.
+  key_columns:
+  - studio_id
+  columns:
+  - name: studio_id
+    type: bigint
+    description: Identifier of the studios row. One row per value.
+  - name: studio_name
+    type: text
+    description: name of the studios row, copied unchanged.
+  - name: films_count
+    type: bigint
+    description: Number of films rows linked to this studios row. 0 when there are none.
+  - name: distinct_genres_count
+    type: bigint
+    description: Number of DISTINCT genres rows reached through those links. Two links pointing at the same child count ONCE. 0 when there are no links. A link whose genres row is missing reaches no genres row and adds nothing to this count.
+  - name: release_state_films_count
+    type: bigint
+    description: Number of linked films rows whose release_state is one of ['released']. A parent whose links ALL fail that test reports 0, not a missing row.
+  - name: total_runtime_minutes
+    type: integer
+    description: Sum of runtime_minutes over every linked row; 0 when there are no links, and 0 when none of the linked rows carries a runtime_minutes value.
+  - name: release_state_runtime_minutes
+    type: integer
+    description: Sum of runtime_minutes over links whose release_state is one of ['released']; 0 when none qualify, and 0 when every qualifying row lacks a runtime_minutes value.
+  - name: max_runtime_minutes
+    type: integer
+    description: Largest runtime_minutes among the linked rows; 0 when there are no links, and 0 when none of the linked rows carries a runtime_minutes value.
+  - name: release_state_runtime_minutes_share
+    type: float
+    description: release_state_runtime_minutes divided by total_runtime_minutes, expressed as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimal places, and reported as 0.0 when total_runtime_minutes is 0.
+  - name: films_count_band
+    type: text
+    description: 'Size band of films_count: ''none'' at exactly 0, ''small'' for 1-2 INCLUSIVE of 2, ''medium'' for 3-5 INCLUSIVE of 5, ''large'' above 5. Every value falls in exactly one band.'
+  - name: has_films
+    type: text
+    description: '''yes'' when this parent has at least one link, ''no'' otherwise. Never NULL.'
+  transformation:
+    steps:
+    - order: 1
+      operation: source
+      description: Read source table studios.
+      source_inputs:
+      - studios
+    - order: 2
+      operation: source
+      description: Read source table films.
+      source_inputs:
+      - films
+    - order: 3
+      operation: source
+      description: Read source table genres.
+      source_inputs:
+      - genres
+    - order: 4
+      operation: derive
+      description: One row per studios row, keyed by id.
+      source_inputs:
+      - studios
+      carried_fields:
+      - studio_id
+      - studio_name
+    - order: 5
+      operation: join
+      description: 'Hop 1: bring in films against the grain. One studios row may have many films rows, and a studios row with no films rows at all is RETAINED.'
+      source_inputs:
+      - films
+      carried_fields:
+      - studio_id
+      - id
+      join_preservation: left
+      condition:
+        public_identifiers:
+        - films
+        - studio_id
+    - order: 6
+      operation: join
+      description: 'Hop 2: bring in genres, matching each linked films row''s genre_id to the genre_id of a genres row. A films row whose genres row is missing still counts as a link and is RETAINED.'
+      source_inputs:
+      - genres
+      carried_fields:
+      - genre_id
+      join_preservation: left
+      condition:
+        public_identifiers:
+        - genres
+        - genre_id
+    - order: 7
+      operation: filtered_aggregate
+      description: 'One output row per studio_id, carrying studio_name beside the keys: a key value identifies one source row for the carried columns, so they take one value per key and never split a group, reporting films_count, distinct_genres_count, release_state_films_count, total_runtime_minutes, release_state_runtime_minutes, max_runtime_minutes for that row''s matching rows. A group with no qualifying rows still appears, reporting 0; a retained row with no matching rows has nothing to count, so its counts are 0, never 1.'
+      carried_fields:
+      - studio_id
+      - studio_name
+      - films_count
+      - distinct_genres_count
+      - release_state_films_count
+      - total_runtime_minutes
+      - release_state_runtime_minutes
+      - max_runtime_minutes
+    - order: 8
+      operation: derive
+      description: Name the mart columns; total_runtime_minutes, release_state_runtime_minutes, max_runtime_minutes report their declared defaults — never NULL — for a group with no matching rows. For total_runtime_minutes, release_state_runtime_minutes, max_runtime_minutes, the default also applies to a group none of whose real rows carries an input value.
+      carried_fields:
+      - studio_id
+      - studio_name
+      - films_count
+      - distinct_genres_count
+      - release_state_films_count
+      - total_runtime_minutes
+      - release_state_runtime_minutes
+      - max_runtime_minutes
+    - order: 9
+      operation: ratio
+      description: 'Guarded ratios: release_state_runtime_minutes_share — release_state_runtime_minutes divided by total_runtime_minutes, expressed as a FRACTION between 0 and 1 (not a percentage), rounded to 4 decimal places, and reported as 0.0 when total_runtime_minutes is 0.'
+      carried_fields:
+      - studio_id
+      - studio_name
+      - films_count
+      - distinct_genres_count
+      - release_state_films_count
+      - total_runtime_minutes
+      - release_state_runtime_minutes
+      - max_runtime_minutes
+      - release_state_runtime_minutes_share
+      semantic_parameters:
+        null_result: 0.0 when the denominator is 0 or NULL
+        rounding: ROUND to 4 decimal places
+        units: fraction
+    - order: 10
+      operation: conditional
+      description: 'films_count_band — Size band of films_count: ''none'' at exactly 0, ''small'' for 1-2 INCLUSIVE of 2, ''medium'' for 3-5 INCLUSIVE of 5, ''large'' above 5. Every value falls in exactly one band.'
+      carried_fields:
+      - studio_id
+      - studio_name
+      - films_count
+      - distinct_genres_count
+      - release_state_films_count
+      - total_runtime_minutes
+      - release_state_runtime_minutes
+      - max_runtime_minutes
+      - release_state_runtime_minutes_share
+      - films_count_band
+      semantic_parameters:
+        boundary: a value exactly at 2 is 'small'; a value exactly at 5 is 'medium'
+    - order: 11
+      operation: conditional
+      description: has_films — 'yes' when this parent has at least one link, 'no' otherwise. Never NULL.
+      carried_fields:
+      - studio_id
+      - studio_name
+      - films_count
+      - distinct_genres_count
+      - release_state_films_count
+      - total_runtime_minutes
+      - release_state_runtime_minutes
+      - max_runtime_minutes
+      - release_state_runtime_minutes_share
+      - films_count_band
+      - has_films
+      semantic_parameters:
+        boundary: a value exactly at 0 is 'no'
+    - order: 12
+      operation: tie_break
+      description: 'Deterministic output order: sort by studio_id.'
+      carried_fields:
+      - studio_id
+  source_relationships:
+  - child_table: films
+    child_columns:
+    - studio_id
+    parent_table: studios
+    parent_columns:
+    - id
+    required: false
+  - child_table: films
+    child_columns:
+    - genre_id
+    parent_table: genres
+    parent_columns:
+    - genre_id
+    required: false

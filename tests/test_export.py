@@ -517,55 +517,24 @@ class TestExportTask(ExportTaskBase):
         parsed = yaml.safe_load(eltbench._dump_yaml(eltbench.build_data_model(task)))
         self.assertEqual(parsed["models"][0]["columns"][0]["description"], prose)
 
-    def test_data_model_exports_ordered_plan_semantics(self):
-        """Reference-stage tasks need a complete T contract even before an
-        optional semantic-author pass populates solver_prompt."""
+    def test_data_model_exports_outcomes_without_a_transformation_recipe(self):
+        """The business contract survives even with no authored prompt."""
         self.assertEqual(self.task.solver_prompt, "")
         model = eltbench.build_data_model(self.task)["models"][0]
-        transformation = model["transformation"]
-        steps = transformation["steps"]
-
-        self.assertEqual(
-            [step["order"] for step in steps],
-            list(range(1, len(self.task.marts[0].plan.ops) + 1)),
-        )
-        filter_step = next(step for step in steps if step["operation"] == "filter")
-        self.assertEqual(filter_step["source_inputs"], ["orders"])
-        self.assertNotIn("predicate", filter_step)
-        self.assertEqual(
-            filter_step["condition"],
-            {
-                "public_identifiers": ["status"],
-                "literal_values": ["completed"],
-            },
-        )
-        self.assertIn("status = 'completed'", filter_step["description"])
-
-        item_total = next(
-            step
-            for step in steps
-            if step["operation"] == "aggregate"
-            and step.get("source_inputs") == ["order_items"]
-        )
-        self.assertNotIn("semantic_parameters", item_total)
-        self.assertIn("SUM(quantity * unit_price)", item_total["description"])
-
-        joins = [step for step in steps if step["operation"] == "join"]
-        self.assertTrue(joins)
-        self.assertTrue(all(step["join_preservation"] == "left" for step in joins))
-        self.assertIn("COALESCE both measures to 0", str(transformation))
-        self.assertEqual(steps[-1]["operation"], "tie_break")
-        self.assertEqual(steps[-1]["carried_fields"], ["customer_id"])
-        self.assertEqual(
-            model["source_relationships"][0],
-            {
-                "child_table": "orders",
-                "child_columns": ["customer_id"],
-                "parent_table": "customers",
-                "parent_columns": ["customer_id"],
-                "required": False,
-            },
-        )
+        self.assertEqual(set(model), {"name", "description", "columns"})
+        self.assertIn(self.task.marts[0].grain, model["description"])
+        self.assertIn("status = 'completed'", model["description"])
+        self.assertIn("order_id, customer_id", model["description"])
+        self.assertIn("count once", model["description"])
+        for column in model["columns"]:
+            self.assertEqual(set(column), {"name", "description"})
+        text = yaml.safe_dump(model)
+        for hint in ("transformation:", "source_inputs:", "carried_fields:",
+                     "join_preservation:", "source_relationships:", "operation:",
+                     "SUM(quantity * unit_price)", "COALESCE", "LEFT JOIN",
+                     "Deterministic output order"):
+            self.assertNotIn(hint, text)
+        self.assertIn("0 if none", text)
 
     def test_plan_export_withholds_compiler_only_implementation_fields(self):
         plan = self.task.marts[0].plan
@@ -597,7 +566,7 @@ class TestExportTask(ExportTaskBase):
         self.assertNotIn("private_plan_note", serialized)
 
     def test_shared_solver_projection_protects_every_public_and_author_surface(self):
-        """One information barrier feeds data_model, docs, T, and author prompts."""
+        """Author diagnostics may see plans; solver surfaces must not."""
 
         from elt_taskgen.review.council import _author_view
 
@@ -657,54 +626,36 @@ class TestExportTask(ExportTaskBase):
                     "private_join_alias.private_answer_key = orders.customer_id",
                     surface,
                 )
-                self.assertIn("qualified", surface)
-                if label != "data_model":
-                    self.assertIn(
-                        "literal specification values: qualified", surface
-                    )
-                self.assertIn(mart.grain, surface)
-                self.assertIn("completed_order_count", surface)
-                self.assertIn("customers without in-scope orders", surface)
                 self.assertIn("orders", surface)
                 self.assertIn("customers", surface)
+                if label == "author_view":
+                    self.assertIn("literal specification values: qualified", surface)
+                else:
+                    self.assertNotIn("qualified", surface)
+                    self.assertNotIn("join_preservation", surface)
+                    self.assertNotIn("carried_fields", surface)
 
         model = eltbench.build_data_model(task)["models"][0]
-        self.assertEqual(model["source_relationships"][0]["required"], False)
-        join = next(
-            step
-            for step in model["transformation"]["steps"]
-            if step["operation"] == "join"
-        )
-        self.assertEqual(join["join_preservation"], "left")
-        self.assertIn("customer_id", join["carried_fields"])
-        self.assertEqual(
-            join["condition"],
-            {
-                "public_identifiers": ["orders", "customer_id"],
-                "literal_values": ["qualified"],
-            },
-        )
+        self.assertNotIn("transformation", model)
+        self.assertIn(mart.grain, model["description"])
 
-    def test_empty_authored_prompt_still_exports_a_complete_transform_spec(self):
-        self.assertEqual(self.task.solver_prompt, "")
-        text = eltbench.public_documentation(self.task)
+    def test_public_documentation_points_to_the_output_contract(self):
+        for text in (eltbench.public_documentation(self.task),
+                     eltbench.t_documentation(self.task)):
+            self.assertIn("data_model.yaml", text)
+            self.assertNotIn("declared semantic rules", text)
+            self.assertNotIn("COALESCE both measures to 0", text)
+            self.assertNotIn("WITH completed_orders AS", text)
+        # A T-only task submits queries against main, not config.yaml's namespace.
+        self.assertNotIn("config.yaml", eltbench.t_documentation(self.task))
 
-        self.assertNotIn("## Specification\n", text)
-        self.assertIn("## Transformation specification", text)
-        self.assertIn("Mart 'customer_summary' has", text)
-        self.assertIn("public source tables: customers, orders", text)
-        self.assertNotIn("predicate: orders.customer_id = customers.customer_id", text)
-        self.assertIn("COALESCE both measures to 0", text)
-        self.assertNotIn("WITH completed_orders AS", text)
-
-    def test_transform_variant_uses_the_same_plan_derived_specification(self):
-        combined = eltbench.public_documentation(self.task)
-        transform = eltbench.t_documentation(self.task)
-        marker = "Mart 'customer_summary' has"
-
-        self.assertIn("## Transformation specification", transform)
-        self.assertEqual(combined.count(marker), 1)
-        self.assertEqual(transform.count(marker), 1)
+    def test_legacy_author_walkthrough_is_not_reintroduced_in_documentation(self):
+        marker = "PRIVATE AUTHOR WALKTHROUGH: preaggregate, then join and rank"
+        task = self.task.model_copy(update={"solver_prompt": marker})
+        for text in (eltbench.public_documentation(task), eltbench.t_documentation(task),
+                     eltbench.el_documentation(task),
+                     yaml.safe_dump(eltbench.build_data_model(task))):
+            self.assertNotIn(marker, text)
 
     def test_evaluation_artifacts(self):
         self.export()

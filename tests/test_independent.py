@@ -146,9 +146,9 @@ class TestImplementerView(IndependentTestCase):
                 self.assertNotIn(independent._normalize(case.mutation), norm)
         self.assertNotIn("answer_key", norm)
 
-    def test_view_raises_when_prose_leaks_reference_sql(self) -> None:
+    def test_view_raises_when_public_title_leaks_reference_sql(self) -> None:
         leaky = self.task.model_copy(
-            update={"solver_prompt": "Here is the answer:\n" + REFERENCE_SQL}
+            update={"title": "Here is the answer:\n" + REFERENCE_SQL}
         )
         with self.assertRaises(ValueError):
             independent.implementer_view(leaky)
@@ -353,7 +353,7 @@ class TestImplementerPromptContract(IndependentTestCase):
             self.assertNotIn(marker, session_norm, f"answer-side marker in session view: {marker!r}")
         self.assertNotIn(independent._normalize(REFERENCE_SQL), session_norm)
         leaky = self.task.model_copy(
-            update={"solver_prompt": "Here is the answer:\n" + REFERENCE_SQL}
+            update={"title": "Here is the answer:\n" + REFERENCE_SQL}
         )
         with self.assertRaises(ValueError):
             independent.implementer_session_view(leaky, 0)

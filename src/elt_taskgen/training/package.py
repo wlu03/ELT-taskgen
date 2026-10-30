@@ -162,11 +162,6 @@ def _validate_public_semantics(public_dir: Path, semantic: SemanticPackage) -> P
         raise WorkspacePackageError("public documentation/README.md is missing") from None
     except (OSError, UnicodeError) as exc:
         raise WorkspacePackageError("public documentation/README.md is unreadable") from exc
-    expected_documentation = public_documentation(semantic.task)
-    if expected_documentation not in documentation:
-        raise WorkspacePackageError(
-            "public documentation/README.md does not contain the TaskIR specification"
-        )
 
     schemas_dir = public_dir / "schemas"
     if not schemas_dir.is_dir() or schemas_dir.is_symlink():
@@ -189,8 +184,20 @@ def _validate_public_semantics(public_dir: Path, semantic: SemanticPackage) -> P
             )
 
     actual_model = _read_yaml_object(public_dir / "data_model.yaml", "data_model.yaml")
-    if actual_model != build_data_model(semantic.task):
-        raise WorkspacePackageError("public data_model.yaml does not match the private TaskIR")
+    if actual_model == build_data_model(semantic.task):
+        expected_documentation = public_documentation(semantic.task)
+    else:
+        # Frozen artifacts retain their original specification; validate the
+        # complete old contract rather than rewriting them or relaxing checks.
+        from elt_taskgen.export import legacy_specification
+
+        if actual_model != legacy_specification.data_model(semantic.task):
+            raise WorkspacePackageError("public data_model.yaml does not match the private TaskIR")
+        expected_documentation = legacy_specification.public_documentation(semantic.task)
+    if expected_documentation not in documentation:
+        raise WorkspacePackageError(
+            "public documentation/README.md does not contain the TaskIR specification"
+        )
     return documentation_path
 
 
