@@ -36,7 +36,7 @@ DECLARATIVE_PROSE = (FIXTURES / "declarative_prose.txt").read_text(encoding="utf
 #: These maps restore its prompt-era contract so fidelity is measured honestly;
 #: never rewrite or re-key the historical fixture.
 _RECIPE_ERA_RULES: dict[str, str] = {
-    "Keep only orders with status": (
+    "Only orders with status": (
         "Keep only orders with status = 'completed'."
     ),
     "Deduplicate exact-duplicate": (

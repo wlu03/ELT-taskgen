@@ -132,21 +132,11 @@ def latest_snapshot(
                     # The independent implementer counted the LEFT-join
                     # placeholder itself (COUNT(*) = 1 for a childless jobs
                     # row; dlt__workable, batch10 run K, 2026-09-11).
-                    f"Number of {e.bridge} rows for this {e.parent} row; "
-                    "0 when there are none. "
-                    # With reasoning the witness moved from COUNT(*) to
-                    # COUNT(*) FILTER (WHERE measure IS NOT NULL): a linked
-                    # row with no measure value is still a row (dlt__workable
-                    # probe, 2026-09-11).
+                    f"Number of associated {e.bridge} rows; 0 when there are none."
                     + (
-                        f"Every linked {e.bridge} row counts, whether or not it "
-                        f"carries {_article(e.bridge_amount)} {e.bridge_amount} value. "
-                        if amount_may_be_missing
-                        else ""
+                        " Identical repeated source rows count once."
+                        if e.bridge_needs_dedupe else ""
                     )
-                    + f"{_article(e.parent, capitalized=True)} {e.parent} row kept with no "
-                    f"{e.bridge} row reports 0 here, never 1: its placeholder "
-                    f"holds no {e.bridge} row to count."
                 ),
             ),
             Measure(
@@ -155,21 +145,12 @@ def latest_snapshot(
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"Sum of {e.bridge_amount} over all matching {e.bridge} rows; "
-                    "0 when there are no rows"
+                    f"Total non-missing {e.bridge_amount} across associated "
+                    f"{e.bridge} rows; 0 when there are no values."
                     + (
-                        # A MIXED group was unstated: "over all matching rows"
-                        # read as NULL propagating to the default (lefty02w,
-                        # batch10 run G, 2026-09-11). The sibling argmax
-                        # already says rows with no value add nothing.
-                        f" and when none of those rows carries an "
-                        f"{e.bridge_amount} value; a row with no "
-                        f"{e.bridge_amount} value adds nothing, so a group "
-                        "with some values sums the values it has"
-                        if amount_may_be_missing
-                        else ""
+                        " Identical repeated source rows contribute once."
+                        if e.bridge_needs_dedupe else ""
                     )
-                    + "."
                 ),
                 input_nullable=e.bridge_amount_nullable,
             ),
@@ -180,19 +161,11 @@ def latest_snapshot(
                 source="snapshot_row_id",
                 type=e.bridge_key_type,
                 description=(
-                    f"{e.bridge_key} of the row with the latest {e.bridge_timestamp}; "
-                    f"ties take {tie_break_prose}. It is "
+                    f"The {e.bridge_key} of the {e.bridge} row with the latest "
+                    f"{e.bridge_timestamp}; ties use {tie_break_prose}. "
+                    "Missing timestamps sort last; rows with missing measures "
+                    "remain eligible. "
                     f"{_default_prose(e.bridge_key_type)} when there are no rows."
-                    + (
-                        # Rank every row by timestamp; the amount does not filter
-                        # candidates for the latest-row calculation.
-                        f" Every {e.bridge} row of the {e.parent} row ranks, "
-                        f"whether or not it carries a {e.bridge_amount} value: "
-                        f"the latest {e.bridge_timestamp} wins even when that "
-                        f"row's {e.bridge_amount} is missing."
-                        if amount_may_be_missing
-                        else ""
-                    )
                 ),
             ),
         )
@@ -242,19 +215,8 @@ def latest_snapshot(
                 ),
                 type=ColumnType.FLOAT,
                 description=(
-                    "latest_amount divided by lifetime_amount as a fraction, "
+                    "latest_amount divided by lifetime_amount, as a fraction "
                     "rounded to 4 decimal places; 0.0 when lifetime_amount is 0."
-                    + (
-                        # The numerator is the REPORTED latest_amount, after
-                        # its default: a winning row with no value gives 0
-                        # over a positive lifetime_amount, hence 0.0 — not a
-                        # missing share (lefty02w, batch10 run E).
-                        " The division uses latest_amount as this mart reports "
-                        "it, after its default of 0 for a winning row whose "
-                        f"{e.bridge_amount} is missing, so such a row gives 0.0."
-                        if amount_may_be_missing
-                        else ""
-                    )
                 ),
             ),
         ),
@@ -304,7 +266,6 @@ from elt_taskgen.generation.mart_plan import (  # noqa: E402
     Passthrough,
     StarJoin,
     TEXT_ORDER_PROSE,
-    _article,
     _default_prose,
     _require,
     build_rollup,

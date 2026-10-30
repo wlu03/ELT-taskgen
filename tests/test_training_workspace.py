@@ -56,6 +56,30 @@ def _write_candidate(attempt) -> None:
 
 
 class WorkspacePackageTests(unittest.TestCase):
+    def test_accepts_new_contract_but_rejects_mixed_or_modified_specifications(self) -> None:
+        from elt_taskgen.export.eltbench import _dump_yaml, build_data_model, public_documentation
+
+        package = load_workspace_package(FIXTURE_RELEASE, TASK_ID)
+        with tempfile.TemporaryDirectory() as directory:
+            copied = Path(directory) / "release"
+            shutil.copytree(FIXTURE_RELEASE, copied)
+            public = copied / "public" / TASK_ID
+            model_path = public / "data_model.yaml"
+            doc_path = public / "documentation" / "README.md"
+            model_path.chmod(0o644)
+            doc_path.chmod(0o644)
+            model = build_data_model(package.task)
+            model_path.write_text(_dump_yaml(model, sort_keys=False))
+            with self.assertRaisesRegex(WorkspacePackageError, "TaskIR specification"):
+                load_workspace_package(copied, TASK_ID, verify=False)
+            doc_path.write_text(public_documentation(package.task))
+            modern = load_workspace_package(copied, TASK_ID, verify=False)
+            self.assertEqual(modern.task_id, TASK_ID)
+            model["models"][0]["columns"][0]["description"] = "Incorrect business rule."
+            model_path.write_text(_dump_yaml(model, sort_keys=False))
+            with self.assertRaisesRegex(WorkspacePackageError, "data_model.yaml does not match"):
+                load_workspace_package(copied, TASK_ID, verify=False)
+
     def test_loads_combined_documentation_readme_not_retired_top_level_file(self) -> None:
         package = load_workspace_package(FIXTURE_RELEASE, TASK_ID)
         self.assertEqual(

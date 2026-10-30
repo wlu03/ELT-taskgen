@@ -195,7 +195,7 @@ class ArgmaxKeyType(unittest.TestCase):
             op for op in built.plan.ops if op.kind.value == "extrema"
         )
         exact_order = f"the smallest subscription_ref {mp.TEXT_ORDER_PROSE}"
-        self.assertIn(f"resolved by {exact_order}", top_label.description)
+        self.assertIn(f"then {exact_order}", top_label.description)
         self.assertIn(f"then {exact_order}", extrema.description)
 
         task = _task(built, "proof__argmax_text_id_order")

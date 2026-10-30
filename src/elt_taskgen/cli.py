@@ -1339,6 +1339,7 @@ def make_author_runner(provider):
 
     def run_author(engine: Engine, task: TaskIR) -> StageOutcome:
         from elt_taskgen.review import council, prose_fidelity
+        from elt_taskgen.review.model_specification import author_if_configured
         from elt_taskgen.review import providers as providers_mod
 
         author_behavior = {
@@ -1408,6 +1409,11 @@ def make_author_runner(provider):
                     ),
                     route=RepairRoute.SPECIFICATION,
                 )
+            try:
+                public_task = author_if_configured(task, provider)
+            except ValueError as exc:
+                return StageOutcome(VERDICT_FAIL, StagePayload(error=str(exc)),
+                                    route=RepairRoute.SPECIFICATION)
             return StageOutcome(
                 VERDICT_PASS,
                 StagePayload(
@@ -1432,6 +1438,7 @@ def make_author_runner(provider):
                         **admission,
                     },
                 ),
+                task=public_task if public_task != task else None,
             )
 
         # Use bounded revisions only when enabled; otherwise keep one-shot rows
@@ -1471,6 +1478,12 @@ def make_author_runner(provider):
                 # binding this candidate and its provenance row to one hash.
                 task=updated,
             )
+
+        try:
+            updated = author_if_configured(updated, provider)
+        except ValueError as exc:
+            return StageOutcome(VERDICT_FAIL, StagePayload(error=str(exc)),
+                                route=RepairRoute.SPECIFICATION, task=updated)
 
         if prose == stored:
             # (B) Unchanged prose is only honest OUTSIDE an UNANSWERED repair;
@@ -1521,6 +1534,7 @@ def make_author_runner(provider):
                         **session_data,
                     },
                 ),
+                task=updated if updated != task else None,
             )
         return StageOutcome(
             VERDICT_PASS,
@@ -5496,6 +5510,9 @@ def cmd_record_transcripts(args) -> int:
         finally:
             author_engine.close()
         authored = task.model_copy(update={"solver_prompt": prose})
+        from elt_taskgen.review.model_specification import author_if_configured
+
+        authored = author_if_configured(authored, provider)
         # Surface prose-fidelity problems AT SEEDING TIME: prose that fails the
         # completeness gate makes every later replay of the author stage fail
         # (a SPECIFICATION repair replays the same transcript). Re-record with --force.

@@ -57,19 +57,8 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
             # description derives from the same value, so it cannot drift.
             type=e.bridge_key_type,
             description=(
-                f"The {e.bridge_key} of that same extremal row — the winner "
-                "under the SAME total order, so it is the identifier of a "
-                f"real {e.bridge} row whenever the parent has any. "
-                + (
-                    f"This includes when none of them carries a "
-                    f"{e.bridge_amount} value. "
-                    if amount_may_be_missing
-                    else ""
-                )
-                + "It is "
-                f"{_default_prose(e.bridge_key_type)} when there are "
-                "no rows, and only then. It identifies WHICH row won, so a tie resolved the "
-                "wrong way is visible even when two rows share a label."
+                f"The {e.bridge_key} of the row selected for top_label; "
+                f"{_default_prose(e.bridge_key_type)} when there are no rows."
             ),
         ),
     ) if key_is_row_id else ()
@@ -127,40 +116,15 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                 # State every schema-permitted NULL outcome. Omit impossible
                 # real-row cases for required sources, but keep empty defaults.
                 description=(
-                    f"The {e.bridge_label} of the {e.bridge} row with the LARGEST "
-                    f"{e.bridge_amount} for this {e.parent} row. Ties in "
-                    f"{e.bridge_amount} are broken by taking the SMALLEST "
-                    f"{e.bridge_label} {TEXT_ORDER_PROSE}"
-                    + (
-                        f" — a row with no {e.bridge_label} value sorts after "
-                        "every labelled row"
-                        if label_may_be_missing
-                        else ""
-                    )
-                    + (
-                        f"; rows tied on both are resolved by "
-                        f"{row_id_tie_break_prose}. "
-                        if key_is_row_id
-                        else ". "
-                    )
-                    + (
-                        f"A row with no {e.bridge_amount} value still ranks, after "
-                        f"every row that has one, so a parent holding at least one "
-                        f"{e.bridge} row always has a winning row — when NONE of "
-                        f"its rows carries a {e.bridge_amount} value the winner is "
-                        "the one the tie-break alone selects, not the no-rows "
-                        "default. "
-                        if amount_may_be_missing
-                        else ""
-                    )
-                    + f"The literal '(none)' when the parent has no {e.bridge} "
-                    "rows at all"
-                    + (
-                        f", and '(none)' when the winning row has no "
-                        f"{e.bridge_label} value"
-                        if label_may_be_missing
-                        else ""
-                    )
+                    f"The {e.bridge_label} of the {e.bridge} row with the largest "
+                    f"{e.bridge_amount}. Ties use the smallest {e.bridge_label} "
+                    f"{TEXT_ORDER_PROSE}"
+                    + (f", then {row_id_tie_break_prose}" if key_is_row_id else "")
+                    + ". Missing ordering values sort last. "
+                    + ("If all measures are missing, the same tie-break selects the row. "
+                       if amount_may_be_missing else "")
+                    + "'(none)' when there is no row"
+                    + (" or its label is missing" if label_may_be_missing else "")
                     + "."
                 ),
             ),
@@ -195,15 +159,8 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"The largest {e.bridge_amount} itself; 0 when the parent "
-                    f"has no {e.bridge} rows"
-                    + (
-                        f", and 0 when none of its rows carries a "
-                        f"{e.bridge_amount} value"
-                        if amount_may_be_missing
-                        else ""
-                    )
-                    + "."
+                    f"Largest non-missing {e.bridge_amount} across associated "
+                    f"{e.bridge} rows; 0 when there are no values."
                 ),
                 input_nullable=e.bridge_amount_nullable,
             ),
@@ -212,21 +169,8 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                 expr='COUNT(CASE WHEN "f_measure" = "part_max" THEN "f_id" END)',
                 type=ColumnType.BIGINT,
                 description=(
-                    f"How many {e.bridge} rows are tied at that largest "
-                    f"{e.bridge_amount}. 1 when exactly one row carries that "
-                    f"largest {e.bridge_amount}; 0 when there are no rows"
-                    + (
-                        f" or when none of the rows carries a "
-                        f"{e.bridge_amount} value; a row with no "
-                        f"{e.bridge_amount} value never ties: only a row whose "
-                        f"{e.bridge_amount} value equals the largest value among "
-                        "the parent's rows holds the maximum, so the winning row "
-                        "of a parent whose rows all lack a value — the row the "
-                        "tie-break alone selects — is not counted here"
-                        if amount_may_be_missing
-                        else ""
-                    )
-                    + "."
+                    f"Number of {e.bridge} rows sharing the largest non-missing "
+                    f"{e.bridge_amount}; 0 when there are no such values."
                 ),
             ),
             Measure(
@@ -237,21 +181,12 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                     # The independent implementer counted the LEFT-join
                     # placeholder itself (COUNT(*) = 1 for a childless jobs
                     # row; dlt__workable, batch10 run K, 2026-09-11).
-                    f"Number of {e.bridge} rows for this {e.parent} row; "
-                    "0 when there are none. "
-                    # With reasoning the witness moved from COUNT(*) to
-                    # COUNT(*) FILTER (WHERE measure IS NOT NULL): a linked
-                    # row with no measure value is still a row (dlt__workable
-                    # probe, 2026-09-11).
-                    + (
-                        f"Every linked {e.bridge} row counts, whether or not it "
-                        f"carries {_article(e.bridge_amount)} {e.bridge_amount} value. "
-                        if amount_may_be_missing
-                        else ""
-                    )
-                    + f"{_article(e.parent, capitalized=True)} {e.parent} row kept with no "
-                    f"{e.bridge} row reports 0 here, never 1: its placeholder "
-                    f"holds no {e.bridge} row to count."
+                    (
+                    f"Number of associated {e.bridge} rows"
+                    + (f", including rows with missing {e.bridge_amount}"
+                       if amount_may_be_missing else "")
+                    + "; 0 when there are none."
+                )
                 ),
             ),
             Measure(
@@ -260,16 +195,8 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"Sum of {e.bridge_amount} over all of them; 0 when the "
-                    f"parent has no {e.bridge} rows"
-                    + (
-                        f", and 0 when none of its rows carries a "
-                        f"{e.bridge_amount} value (rows with no "
-                        f"{e.bridge_amount} value add nothing)"
-                        if amount_may_be_missing
-                        else ""
-                    )
-                    + "."
+                    f"Total non-missing {e.bridge_amount} across associated "
+                    f"{e.bridge} rows; 0 when there are no values."
                 ),
                 input_nullable=e.bridge_amount_nullable,
             ),
@@ -291,9 +218,8 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                 ),
                 type=ColumnType.FLOAT,
                 description=(
-                    "top_measure divided by total_measure as a FRACTION between 0 "
-                    "and 1 (not a percentage), rounded to 4 decimals, 0.0 when "
-                    "total_measure is 0."
+                    "top_measure divided by total_measure, as a fraction rounded "
+                    "to 4 decimal places; 0.0 when total_measure is 0."
                 ),
             ),
             Derived(
@@ -307,35 +233,8 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
                 # tied_count's terms: a parent whose rows all lack a value has
                 # tied_count 0 and reports 'empty' while child_count is nonzero.
                 description=(
-                    "'empty' when no row holds a maximum at all — the parent has "
-                    f"no {e.bridge} rows"
-                    + (
-                        f", or none of its rows carries a {e.bridge_amount} value"
-                        if amount_may_be_missing
-                        else ""
-                    )
-                    + " — 'unique' when exactly one row "
-                    "holds the maximum, 'tied' when two or more do. Equivalently, "
-                    "tie_state follows tied_count: 'empty' when tied_count is 0, "
-                    "'unique' when it is 1, 'tied' when it is 2 or more."
-                    + (
-                        # `empty` describes the measure maximum, not whether
-                        # ranking finds a winner. Name only emitted columns and
-                        # define the maximum over non-NULL values.
-                        f" A row holds the maximum only when it carries a "
-                        f"{e.bridge_amount} value equal to the largest "
-                        f"{e.bridge_amount} value among the parent's rows; a row "
-                        f"with no {e.bridge_amount} value never holds the maximum. "
-                        f"So a parent whose {e.bridge} rows all lack a "
-                        f"{e.bridge_amount} value has no row holding the maximum "
-                        "and is 'empty', with tied_count 0, even though the "
-                        "ranking still selects a winning row for it by the "
-                        "tie-break alone, which "
-                        + ("top_label and top_row_id name" if key_is_row_id else "top_label names")
-                        + "."
-                        if amount_may_be_missing
-                        else ""
-                    )
+                    "'empty' when tied_count is 0, 'unique' when it is 1, "
+                    "and 'tied' when it is greater than 1."
                 ),
                 kind=MartColumnKind.CATEGORICAL,
             ),
@@ -373,7 +272,6 @@ from elt_taskgen.generation.mart_plan import (  # noqa: E402
     StarJoin,
     TEXT_ORDER_PROSE,
     WindowExpr,
-    _article,
     _default_prose,
     _require,
     build_rollup,

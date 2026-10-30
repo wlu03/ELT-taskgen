@@ -481,6 +481,11 @@ def task_fingerprints(task: TaskIR) -> set[str]:
         for sql in task.reference.sql_by_mart.values():
             fps.add(sql_fingerprint(sql))
     fps.update(text_fingerprints(task.solver_prompt))
+    if task.public_specification is not None:
+        for model in task.public_specification.models:
+            fps.update(text_fingerprints(model.description))
+            for column in model.columns:
+                fps.update(text_fingerprints(column.description))
     return fps
 
 

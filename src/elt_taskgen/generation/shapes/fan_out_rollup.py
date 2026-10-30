@@ -38,7 +38,6 @@ def fan_out_rollup(
     # the exported solver bundle ships descriptions but not plan ops, so a rule
     # stated only on the op is one the solver never receives while gold is
     # graded on it. No-op when the bridge has a primary key.
-    distinct_ = "DISTINCT " if e.bridge_needs_dedupe else ""
     # Where "DISTINCT" would sit next to a table or column name, the prose
     # gate rejects it as SQL mechanics (declarative_prose "distinct-operator"),
     # and an author who copies the description inherits the rejection
@@ -110,15 +109,8 @@ def fan_out_rollup(
                 expr='COUNT("link_key")',
                 type=ColumnType.BIGINT,
                 description=(
-                    f"Number of {distinct_}{e.bridge} rows linked to this "
-                    f"{e.parent} row. 0 when there are none."
-                    + (
-                        f" {e.bridge} declares no primary key upstream and "
-                        "byte-identical duplicate rows occur in the source; they "
-                        "count ONCE."
-                        if e.bridge_needs_dedupe
-                        else ""
-                    )
+                    f"Number of {e.bridge} rows associated with this {e.parent} "
+                    f"row{once}; 0 when there are none."
                 ),
             ),
             Measure(
@@ -126,20 +118,9 @@ def fan_out_rollup(
                 expr='COUNT(DISTINCT "dim_key")',
                 type=ColumnType.BIGINT,
                 description=(
-                    f"Number of DISTINCT {e.child} rows reached through those links. "
-                    "Two links pointing at the same child count ONCE. 0 when there "
-                    "are no links."
-                    + (
-                        # The join op says a dangling link "still counts as a
-                        # link and is RETAINED"; this count is over the CHILD
-                        # rows, so such a link reaches none. Left unstated, the
-                        # ambiguity critic read the two rules as a fork on
-                        # synsql__3d_object_positioning (batch10 2026-09-11).
-                        f" A link whose {e.child} row is missing reaches no "
-                        f"{e.child} row and adds nothing to this count."
-                        if e.child_link_optional
-                        else ""
-                    )
+                    f"Number of unique {e.child} records associated through "
+                    f"{e.bridge}; 0 when there are none. Missing {e.child} "
+                    "records do not count."
                 ),
             ),
             Measure(
@@ -147,10 +128,8 @@ def fan_out_rollup(
                 expr=f'COUNT(CASE WHEN {passes} THEN "link_key" END)',
                 type=ColumnType.BIGINT,
                 description=(
-                    f"Number of linked {e.bridge} rows whose "
-                    f"{e.bridge_status} is one of {list(e.bridge_status_pass)}"
-                    f"{once}. A parent whose links ALL fail that test reports 0, "
-                    "not a missing row."
+                    f"Number of associated {e.bridge} rows whose {e.bridge_status} "
+                    f"is one of {list(e.bridge_status_pass)}{once}; 0 when none qualify."
                 ),
             ),
             Measure(
@@ -159,9 +138,8 @@ def fan_out_rollup(
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"Sum of {e.bridge_amount} over every {distinct_}linked row; "
-                    "0 when there are no links, and 0 when none of the linked "
-                    f"rows carries a {e.bridge_amount} value."
+                    f"Total non-missing {e.bridge_amount} across associated "
+                    f"{e.bridge} rows{once}; 0 when there are no values."
                 ),
             ),
             Measure(
@@ -170,10 +148,9 @@ def fan_out_rollup(
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"Sum of {e.bridge_amount} over links whose "
-                    f"{e.bridge_status} is one of {list(e.bridge_status_pass)}"
-                    f"{once}; 0 when none qualify, and 0 when every qualifying "
-                    f"row lacks a {e.bridge_amount} value."
+                    f"Total non-missing {e.bridge_amount} for associated {e.bridge} "
+                    f"rows whose {e.bridge_status} is one of {list(e.bridge_status_pass)}"
+                    f"{once}; 0 when there are no qualifying values."
                 ),
             ),
             Measure(
@@ -182,9 +159,8 @@ def fan_out_rollup(
                 null_default="0",
                 type=e.bridge_amount_type,
                 description=(
-                    f"Largest {e.bridge_amount} among the linked rows; 0 when there "
-                    "are no links, and 0 when none of the linked rows carries a "
-                    f"{e.bridge_amount} value."
+                    f"Largest non-missing {e.bridge_amount} across associated "
+                    f"{e.bridge} rows; 0 when there are no values."
                 ),
             ),
         ),
@@ -197,9 +173,8 @@ def fan_out_rollup(
                 ),
                 type=ColumnType.FLOAT,
                 description=(
-                    "active_amount divided by total_amount, expressed as a FRACTION "
-                    "between 0 and 1 (not a percentage), rounded to 4 decimal "
-                    "places, and reported as 0.0 when total_amount is 0."
+                    "active_amount divided by total_amount, as a fraction rounded "
+                    "to 4 decimal places; 0.0 when total_amount is 0."
                 ),
                 kind=MartColumnKind.DERIVED,
             ),
@@ -212,9 +187,8 @@ def fan_out_rollup(
                 ),
                 type=ColumnType.TEXT,
                 description=(
-                    "Size band of link_count: 'none' at exactly 0, 'small' for 1-2 "
-                    "INCLUSIVE of 2, 'medium' for 3-5 INCLUSIVE of 5, 'large' above "
-                    "5. Every value falls in exactly one band."
+                    "Size band of link_count: 'none' for 0, 'small' for 1–2, "
+                    "'medium' for 3–5, and 'large' for more than 5."
                 ),
                 kind=MartColumnKind.CATEGORICAL,
             ),

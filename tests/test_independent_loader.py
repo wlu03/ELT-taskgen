@@ -156,7 +156,9 @@ class TestLoaderView(LoaderTestCase):
         (bundle / "config.yaml").write_text("postgres: {}\n")
         (bundle / "schemas").mkdir()
         (bundle / "schemas" / "customers.csv").write_text("column_name,column_description\n")
-        (bundle / "documentation.md").write_text(eltbench.el_documentation(leaky))
+        (bundle / "documentation.md").write_text(
+            eltbench.el_documentation(leaky) + "\n" + REFERENCE_SQL
+        )
         with self.assertRaises(ValueError):
             independent.loader_view(leaky, bundle)
 

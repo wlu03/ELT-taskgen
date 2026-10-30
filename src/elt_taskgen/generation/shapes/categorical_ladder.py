@@ -99,13 +99,7 @@ def categorical_ladder(
                     # The independent implementer counted the LEFT-join
                     # placeholder itself (COUNT(*) = 1 for a childless jobs
                     # row; dlt__workable, batch10 run K, 2026-09-11).
-                    f"Number of {e.bridge} rows for this {e.parent} row; "
-                    "0 when there are none. "
-                    f"Every linked {e.bridge} row counts, whatever its "
-                    f"{e.bridge_status} value. "
-                    f"{_article(e.parent, capitalized=True)} {e.parent} row kept with no "
-                    f"{e.bridge} row reports 0 here, never 1: its placeholder "
-                    f"holds no {e.bridge} row to count."
+                    f"Number of associated {e.bridge} rows; 0 when there are none."
                 ),
             ),
             Measure(

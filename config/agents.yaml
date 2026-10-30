@@ -129,6 +129,13 @@ calibration:
 # Enforced sessions are identity-hashed; disabled runners use the rollback key.
 # Session limits cover one trajectory. Ambiguity and feasibility stay one-shot.
 roles:
+  # Rewrites the actual exported model/column descriptions, then reviews them.
+  # The expanded semantic_author draft remains internal review material.
+  public_model_author:
+    provider: ${ELT_TASKGEN_OSS_PROVIDER:-openai_compat}
+    model: ${ELT_TASKGEN_PUBLIC_MODEL_AUTHOR_MODEL:-moonshotai/kimi-k3}
+    max_tokens: 8192
+    max_usd: 0.75
   semantic_author:
     provider: ${ELT_TASKGEN_CLAUDE_PROVIDER:-anthropic}
     model: claude-opus-5

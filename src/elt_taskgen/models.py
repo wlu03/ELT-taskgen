@@ -1340,6 +1340,25 @@ class PoolSelection(CanonicalModel):
         }
 
 
+class PublicModelColumn(CanonicalModel):
+    name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+
+class PublicModel(CanonicalModel):
+    name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    columns: tuple[PublicModelColumn, ...] = Field(min_length=1)
+
+
+class PublicSpecification(CanonicalModel):
+    """Authored descriptions bound to the requirements and prompt that made them."""
+
+    source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    prompt_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    models: tuple[PublicModel, ...] = Field(min_length=1)
+
+
 class TaskIR(CanonicalModel):
     """A complete, frozen data project.
 
@@ -1363,9 +1382,13 @@ class TaskIR(CanonicalModel):
 
     # --- solver-facing description ---
     title: str = ""
-    #: Solver-visible prose from semantic authoring (empty until authored). MUST
-    #: NEVER contain reference SQL, gold values, or SynSQL question/sql/cot text.
+    #: Expanded semantic-author draft for internal review (empty until authored).
+    #: Public exports use specification.data_model instead. MUST NEVER contain
+    #: reference SQL, gold values, or SynSQL question/sql/cot text.
     solver_prompt: str = ""
+    #: Actual public descriptions, separately authored from the internal draft.
+    #: A source fingerprint prevents a repair from leaving stale public rules.
+    public_specification: PublicSpecification | None = None
 
     # --- physical schema ---
     tables: tuple[TableSpec, ...] = Field(min_length=1)
@@ -1385,6 +1408,13 @@ class TaskIR(CanonicalModel):
     # --- volatile (excluded from content_hash) ---
     status: TaskStatus = TaskStatus.DRAFT
     revisions: tuple[TaskRevision, ...] = ()
+
+    @model_serializer(mode="wrap")
+    def _omit_unauthored_public_specification(self, handler: Any) -> dict[str, Any]:
+        data = handler(self)
+        if data.get("public_specification") is None:
+            data.pop("public_specification", None)
+        return data
 
     # -- validators --------------------------------------------------------
 

@@ -255,6 +255,7 @@ REPAIR_PROPOSER_ROLE = "repair_proposer"
 PROSE_ROLES: frozenset[str] = frozenset(
     {
         "semantic_author",
+        "public_model_author",
         "independent_implementer",
         "independent_loader",
         REPAIR_PROPOSER_ROLE,

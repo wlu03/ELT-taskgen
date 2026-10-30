@@ -419,13 +419,22 @@ class ViewTests(CalibrationTestCase):
             self.assertNotIn("answer_key", view.lower())
             self.assertNotIn("SELECT DISTINCT order_id, customer_id", view)
 
-    def test_leaky_prose_trips_the_view_guard(self) -> None:
+    def test_internal_author_prose_is_not_shown_to_solvers(self) -> None:
         leaky = self.task.model_copy(
             update={"solver_prompt": "here is the answer:\n" + REFERENCE_SQL}
         )
         for variant in (V.FULL, V.EXTRACT_LOAD, V.TRANSFORM):
-            with self.assertRaises(ValueError):
-                self.view(leaky, variant)
+            self.assertNotIn(REFERENCE_SQL, self.view(leaky, variant))
+
+    def test_mart_section_uses_the_exact_public_yaml(self) -> None:
+        from elt_taskgen.export.eltbench import _dump_yaml, build_data_model
+
+        rendered = _dump_yaml(build_data_model(self.task), sort_keys=False).rstrip()
+        for variant in (V.FULL, V.TRANSFORM):
+            view = self.view(self.task, variant)
+            self.assertIn(rendered, view)
+            self.assertNotIn("join_preservation", view)
+            self.assertNotIn("declared semantic rules", view)
 
     def test_attempt_prompts_are_distinct_transcript_keys(self) -> None:
         p0 = self.prompt(self.task, V.FULL, 0)
@@ -2054,7 +2063,7 @@ class SelectionFilteringTests(unittest.TestCase):
         every = self._measured(task, {"a": 1.0, "b": 1.0})
         for calibration in every.empirical.variants.values():
             self.assertIn(cal.FLAG_TRIVIAL, cal._flags(calibration))
-        self.assertEqual(cal.INSTRUMENT_VERSION, "1")
+        self.assertEqual(cal.INSTRUMENT_VERSION, "2")
 
     def test_bands_consult_measured_rates_but_scores_stay_structural(self) -> None:
         task = _make_task(5)
