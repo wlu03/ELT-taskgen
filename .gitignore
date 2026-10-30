@@ -17,4 +17,4 @@ constraints.txt
 .env.*
 
 # Metered prompt-test runs stay local.
-/testing/results/
+/testing/

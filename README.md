@@ -31,7 +31,7 @@ verification. Authored descriptions are stored in `TaskIR.public_specification`
 and bound to a source fingerprint; changing requirements invalidates them.
 Custom routings without this role retain the deterministic compact renderer.
 
-[`testing/compare_model_spec_prompts.py`](testing/compare_model_spec_prompts.py)
+`testing/compare_model_spec_prompts.py`
 compares prompt variants on development tasks, freezes a winner, checks held-out
 tasks, and runs matched SQL recovery checks against three populations. Results,
 prompts, responses, and the comparison report are under
@@ -41,8 +41,8 @@ rebuild the report locally; `--phase dev` and
 `--phase holdout --winner balanced --solve` make metered API calls for missing
 responses. Preparation requires the frozen pilot case bank (`--case-bank`) and
 reference models (`--bench-root`); an existing campaign validates its saved inputs
-instead. A compact [measured evidence snapshot](testing/model-spec-evidence/report.md)
-is included for review. This small experiment is not a full benchmark evaluation.
+instead. The scripts and evidence stay local in the ignored `testing/` directory.
+This small experiment is not a full benchmark evaluation.
 
 ## Environment setup
 
