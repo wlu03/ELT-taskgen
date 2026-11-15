@@ -2864,34 +2864,9 @@ def repair_adjudication_path(workspace: Path, task_id: str) -> Path:
 
 
 def _atomic_replace_text(path: Path, text: str) -> None:
-    """Durably replace a mutable adjudication record without a torn final."""
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=target.parent,
-            prefix=f".{target.name}.stage-",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(text)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, target)
-        temporary = None
-        if os.name != "nt":
-            descriptor = os.open(target.parent, os.O_RDONLY)
-            try:
-                os.fsync(descriptor)
-            finally:
-                os.close(descriptor)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    from elt_taskgen.file_io import atomic_write
+
+    atomic_write(path, text, prefix=f".{Path(path).name}.stage-")
 
 
 def queue_adjudication(
@@ -2994,7 +2969,7 @@ def proposer_attempt_budget(config_path: Path | None = None) -> int:
     outside 0..DEFAULT_MAX_ATTEMPTS*5 are refused (a budget is a bound)."""
     import yaml
 
-    from elt_taskgen.review.providers import default_agents_config_path
+    from elt_taskgen.review.provider_config import default_agents_config_path
 
     path = Path(config_path) if config_path is not None else default_agents_config_path()
     if not path.is_file():
@@ -3485,7 +3460,7 @@ def repair_settings(config_path: Path | None = None) -> RepairSettings:
     refused, because a budget must bound something)."""
     import yaml
 
-    from elt_taskgen.review.providers import default_agents_config_path
+    from elt_taskgen.review.provider_config import default_agents_config_path
 
     path = Path(config_path) if config_path is not None else default_agents_config_path()
     max_attempts = proposer_attempt_budget(path)
@@ -3970,7 +3945,7 @@ class AgenticRepairProposer:
         certify_runners: Mapping[str, Callable[..., Any]] | None = None,
         certify_worker: str | None = None,
     ) -> None:
-        from elt_taskgen.review.providers import role_loop_limits
+        from elt_taskgen.review.provider_config import role_loop_limits
         from elt_taskgen.review.session import SessionLimits
         from elt_taskgen.review.tools import certify as certify_mod
         from elt_taskgen.review.tools.validators import session_defaults_for

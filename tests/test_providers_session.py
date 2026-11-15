@@ -30,6 +30,8 @@ API bodies, `[tool_use turn, ..., submit turn]`):
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import tempfile
 import unittest
@@ -198,12 +200,12 @@ class _AgenticRoles:
 
     def __enter__(self):
         self._patch.__enter__()
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         return self
 
     def __exit__(self, *exc):
         self._patch.__exit__(*exc)
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         return False
 
 
@@ -231,7 +233,7 @@ def _session_policy(role, *, submit="submit_prose", max_turns=6, max_tool_calls=
     REGISTERED tools (the `_AgenticRoles` patch), `submit` as the submit
     tool, an ENABLED limits block, the same wire tools `wire_tools_for`
     sends."""
-    declared = P.session_policy_for(role)
+    declared = _provider_protocol_module.session_policy_for(role)
     return P.SessionPolicy(
         role=role, tools=declared.tools, submit_tool=submit,
         limits=P.SessionLimits.from_block(
@@ -284,8 +286,8 @@ def _evidence_of(result):
 
 class _SessionCase(unittest.TestCase):
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
 
 # ---------------------------------------------------------------------------
@@ -298,9 +300,9 @@ class BackendStepTest(_SessionCase):
         prefix; EVERY `tool_use` block comes back, `truncated` folds the two
         wire spellings, and a step never retries on its own."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}):
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             self.assertEqual(policy.allowlist, tuple(sorted(AUTHOR_TOOLS)))
-            self.assertEqual(P.session_tool_choice(policy), "any")
+            self.assertEqual(_provider_protocol_module.session_tool_choice(policy), "any")
             tools = [dict(t) for t in policy.wire_tools]
             transport = FakeTransport([
                 parallel_tool_use_body([
@@ -309,7 +311,7 @@ class BackendStepTest(_SessionCase):
                 ]),
                 tool_use_body("submit_prose", {"text": "x"}, stop_reason="max_tokens"),
             ])
-            backend = P.AnthropicBackend("sk-test", transport=transport)
+            backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
             turn = backend.step(
                 role_name=AUTHOR, model="claude-opus-5", messages=_view(),
                 max_tokens=1024, effort="high", tools=tools, tool_choice="any",
@@ -320,7 +322,7 @@ class BackendStepTest(_SessionCase):
             self.assertTrue(all(t["strict"] for t in payload["tools"]))
             self.assertEqual(payload["tool_choice"], {"type": "any"})
             self.assertEqual(payload["output_config"], {"effort": "high"})
-            self.assertEqual(payload["system"], P._system_prompt(AUTHOR, schema_mode=False))
+            self.assertEqual(payload["system"], _provider_protocol_module._system_prompt(AUTHOR, schema_mode=False))
             self.assertNotIn("temperature", payload)
             self.assertEqual(turn.tool_use_ids, ("toolu_a", "toolu_b"))
             self.assertEqual(len(turn.tool_uses), 2)
@@ -338,13 +340,13 @@ class BackendStepTest(_SessionCase):
             self.assertEqual(transport.calls[1][2]["tool_choice"], {"type": "auto"})
             self.assertEqual(len(transport.calls), 2)
             # A forced tool name and the one-shot shapes are accepted too.
-            self.assertEqual(P._anthropic_tool_choice("submit_prose"), {"type": "tool", "name": "submit_prose"})
-            self.assertEqual(P._anthropic_tool_choice({"type": "tool", "name": "x"}), {"type": "tool", "name": "x"})
-            self.assertIsNone(P._anthropic_tool_choice(None))
-            self.assertEqual(P._chat_tool_choice("any"), "required")
-            self.assertEqual(P._chat_tool_choice("auto"), "auto")
+            self.assertEqual(_provider_backends_module._anthropic_tool_choice("submit_prose"), {"type": "tool", "name": "submit_prose"})
+            self.assertEqual(_provider_backends_module._anthropic_tool_choice({"type": "tool", "name": "x"}), {"type": "tool", "name": "x"})
+            self.assertIsNone(_provider_backends_module._anthropic_tool_choice(None))
+            self.assertEqual(_provider_backends_module._chat_tool_choice("any"), "required")
+            self.assertEqual(_provider_backends_module._chat_tool_choice("auto"), "auto")
             self.assertEqual(
-                P._chat_tool_choice({"type": "tool", "name": "x"}),
+                _provider_backends_module._chat_tool_choice({"type": "tool", "name": "x"}),
                 {"type": "function", "function": {"name": "x"}},
             )
 
@@ -354,13 +356,13 @@ class BackendStepTest(_SessionCase):
         `role: "tool"` messages (every id) and parses `tool_calls` back into
         canonical `tool_use` blocks; `finish_reason: length` is a truncation."""
         with _AgenticRoles(**{IMPLEMENTER: ("dev_query",)}):
-            policy = P.session_policy_for(IMPLEMENTER)
+            policy = _provider_protocol_module.session_policy_for(IMPLEMENTER)
             tools = [dict(t) for t in policy.wire_tools]
             transport = FakeTransport([
                 chat_tool_call_body("dev_query", {"text": "select 1"}),
                 chat_tool_call_body("dev_query", "{not json", call_id="call_02", finish="length"),
             ])
-            backend = P.OpenAICompatBackend("http://oss:8000/v1", "k", transport=transport)
+            backend = _provider_backends_module.OpenAICompatBackend("http://oss:8000/v1", "k", transport=transport)
             turn = backend.step(
                 role_name=IMPLEMENTER, model="m", messages=_view(), max_tokens=64,
                 effort=None, tools=tools, tool_choice="any",
@@ -435,7 +437,7 @@ class BackendStepTest(_SessionCase):
         self.assertEqual(len(_view()), 1, "the input list is never mutated")
         bare = P._with_tool_results(_view(), None, [], text="just text")
         self.assertEqual(bare, [{"role": "user", "content": "VIEW"}, {"role": "user", "content": "just text"}])
-        chat = P._chat_messages(out, "SYSTEM")
+        chat = _provider_backends_module._chat_messages(out, "SYSTEM")
         self.assertEqual(chat[0], {"role": "system", "content": "SYSTEM"})
         self.assertEqual(chat[1], {"role": "user", "content": "VIEW"})
         self.assertEqual(chat[2]["role"], "assistant")
@@ -447,9 +449,9 @@ class BackendStepTest(_SessionCase):
         # The one-shot correction is the special case, byte for byte.
         payload = {"messages": _view()}
         rejected = {"content": [{"type": "tool_use", "id": "toolu_01", "name": "report_findings", "input": {}}]}
-        correction = P.CORRECTION_TEXT.format(problem="bad")
+        correction = _provider_protocol_module.CORRECTION_TEXT.format(problem="bad")
         self.assertEqual(
-            P._with_correction(payload, rejected, "bad")["messages"],
+            _provider_backends_module._with_correction(payload, rejected, "bad")["messages"],
             [
                 {"role": "user", "content": "VIEW"},
                 {"role": "assistant", "content": rejected["content"]},
@@ -485,16 +487,16 @@ class ZeroToolParityTest(_SessionCase):
             provider = _provider(tempfile.mkdtemp(), FakeTransport([]))
             for role in ("ambiguity_critic", AUTHOR, IMPLEMENTER, "repair_proposer"):
                 with self.subTest(role=role):
-                    policy = P.session_policy_for(role)
+                    policy = _provider_protocol_module.session_policy_for(role)
                     self.assertEqual(policy.tools, ())
-                    self.assertFalse(P.role_is_agentic(role))
-                    key = P.transcript_key_v3(role, policy, _view("VIEW"))
-                    self.assertEqual(key, P.transcript_key(role, "VIEW"))
+                    self.assertFalse(_provider_protocol_module.role_is_agentic(role))
+                    key = _provider_protocol_module.transcript_key_v3(role, policy, _view("VIEW"))
+                    self.assertEqual(key, _provider_protocol_module.transcript_key(role, "VIEW"))
                     if role in provider.routing.roles:
                         self.assertEqual(key, provider.transcript_key_for(role, "VIEW"))
                     self.assertEqual(
-                        P.session_tool_choice(policy),
-                        P.tool_choice_for(role, schema_mode=P.uses_findings_schema(role)),
+                        _provider_protocol_module.session_tool_choice(policy),
+                        _provider_protocol_module.tool_choice_for(role, schema_mode=_provider_protocol_module.uses_findings_schema(role)),
                     )
 
     def test_harness_validated_critic_policy_keeps_the_forced_tool_choice(self):
@@ -508,17 +510,17 @@ class ZeroToolParityTest(_SessionCase):
         for role, validator in (("population_adversary", "compile_proposal"), ("shortcut_attacker", "compile_probe")):
             with self.subTest(role=role):
                 with _agents(_doc(**{role: {"enabled": False}})):
-                    disabled = P.session_policy_for(role)
+                    disabled = _provider_protocol_module.session_policy_for(role)
                     self.assertEqual(disabled.tools, ())
-                    wire = P.wire_tools_for(role)
+                    wire = _provider_protocol_module.wire_tools_for(role)
                 with _agents(_doc(**{role: {"enabled": True}})):
-                    policy = P.session_policy_for(role)
+                    policy = _provider_protocol_module.session_policy_for(role)
                     self.assertEqual([t.name for t in policy.tools], [validator])
                     self.assertTrue(all(t.harness_only for t in policy.tools))
-                    self.assertEqual(P.session_tool_choice(policy), P.tool_choice_for(role))
-                    self.assertEqual(P.session_tool_choice(policy), {"type": "tool", "name": P.FINDINGS_TOOL_NAME})
+                    self.assertEqual(_provider_protocol_module.session_tool_choice(policy), _provider_protocol_module.tool_choice_for(role))
+                    self.assertEqual(_provider_protocol_module.session_tool_choice(policy), {"type": "tool", "name": _provider_protocol_module.FINDINGS_TOOL_NAME})
                     self.assertEqual([dict(t) for t in policy.wire_tools], wire)
-                    self.assertEqual(P.wire_tools_for(role), wire)
+                    self.assertEqual(_provider_protocol_module.wire_tools_for(role), wire)
                     self.assertEqual(policy.mode, "harness_validated")
                     self.assertEqual(policy.limits.active_harness_validators, (validator,))
                     self.assertEqual([t.name for t in CV.critic_policy(role).tools], [validator])
@@ -527,17 +529,17 @@ class ZeroToolParityTest(_SessionCase):
         # forced choice it read fields and aborted on every blocked task), and
         # `any` again on a turn whose wire carries only submit and abort.
         with _AgenticRoles(repair_proposer=("read_view",)):
-            policy = P.session_policy_for("repair_proposer")
-            self.assertEqual(P.session_tool_choice(policy), "auto")
-            self.assertEqual(P.session_tool_choice(policy, terminal_only=True), "any")
+            policy = _provider_protocol_module.session_policy_for("repair_proposer")
+            self.assertEqual(_provider_protocol_module.session_tool_choice(policy), "auto")
+            self.assertEqual(_provider_protocol_module.session_tool_choice(policy, terminal_only=True), "any")
         # The shipped proposer policy: its last permitted turn carries only
         # submit and abort, and that wire is what forces `any` back.
-        shipped = P.session_policy_for("repair_proposer")
+        shipped = _provider_protocol_module.session_policy_for("repair_proposer")
         last = shipped.wire_tools_for_turn(shipped.limits.max_turns - 1)
-        self.assertTrue(P._wire_is_terminal_only(shipped, last))
-        self.assertFalse(P._wire_is_terminal_only(shipped, shipped.wire_tools))
+        self.assertTrue(_provider_protocol_module._wire_is_terminal_only(shipped, last))
+        self.assertFalse(_provider_protocol_module._wire_is_terminal_only(shipped, shipped.wire_tools))
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}):
-            self.assertEqual(P.session_tool_choice(P.session_policy_for(AUTHOR)), "any")
+            self.assertEqual(_provider_protocol_module.session_tool_choice(_provider_protocol_module.session_policy_for(AUTHOR)), "any")
 
     def test_turn_zero_of_a_zero_tool_session_sends_and_records_as_complete(self):
         """Turn 0 of a zero-tool session builds the SAME request bytes as the
@@ -547,25 +549,25 @@ class ZeroToolParityTest(_SessionCase):
             with self.subTest(role=role):
                 doc = _doc(**({role: {"enabled": False}} if role == AUTHOR else {}))
                 with _agents(doc):
-                    one_shot = P.AnthropicBackend._payload(
+                    one_shot = _provider_backends_module.AnthropicBackend._payload(
                         model="claude-opus-5", prompt="VIEW", max_tokens=64, effort="high",
                         role_name=role, schema_mode=schema_mode,
                     )
-                    policy = P.session_policy_for(role)
-                    session = P.AnthropicBackend._session_payload(
+                    policy = _provider_protocol_module.session_policy_for(role)
+                    session = _provider_backends_module.AnthropicBackend._session_payload(
                         model="claude-opus-5", messages=_view(), max_tokens=64, effort="high",
                         role_name=role, tools=[dict(t) for t in policy.wire_tools],
-                        tool_choice=P.session_tool_choice(policy),
+                        tool_choice=_provider_protocol_module.session_tool_choice(policy),
                     )
                     self.assertEqual(json.dumps(session), json.dumps(one_shot))
-                    cached = P.AnthropicBackend._payload(
+                    cached = _provider_backends_module.AnthropicBackend._payload(
                         model="claude-opus-5", prompt="VIEW", max_tokens=64, effort="high",
                         role_name=role, schema_mode=schema_mode, prompt_cache=True,
                     )
-                    cached_session = P.AnthropicBackend._session_payload(
+                    cached_session = _provider_backends_module.AnthropicBackend._session_payload(
                         model="claude-opus-5", messages=_view(), max_tokens=64, effort="high",
                         role_name=role, tools=[dict(t) for t in policy.wire_tools],
-                        tool_choice=P.session_tool_choice(policy), prompt_cache=True,
+                        tool_choice=_provider_protocol_module.session_tool_choice(policy), prompt_cache=True,
                     )
                     self.assertEqual(json.dumps(cached_session), json.dumps(cached))
         # complete() then _turn on the same store: served, zero HTTP.
@@ -573,26 +575,26 @@ class ZeroToolParityTest(_SessionCase):
             transport = FakeTransport([anthropic_tool_response([VALID_FINDING], model="claude-sonnet-5")])
             provider = _provider(tmp, transport)
             text = provider.complete(CouncilRole.AMBIGUITY_CRITIC, "VIEW")
-            policy = P.session_policy_for("ambiguity_critic")
+            policy = _provider_protocol_module.session_policy_for("ambiguity_critic")
             turn = provider._turn("ambiguity_critic", _view(), policy, 0)
             self.assertEqual(len(transport.calls), 1)
             self.assertTrue(turn.replayed)
-            self.assertEqual(turn.key, P.transcript_key("ambiguity_critic", "VIEW"))
+            self.assertEqual(turn.key, _provider_protocol_module.transcript_key("ambiguity_critic", "VIEW"))
             self.assertEqual(turn.text, text)
-            self.assertEqual(turn.tool_call()["name"], P.FINDINGS_TOOL_NAME)
+            self.assertEqual(turn.tool_call()["name"], _provider_protocol_module.FINDINGS_TOOL_NAME)
             self.assertEqual(turn.tool_call()["input"], {"findings": [VALID_FINDING]})
         # _turn then complete() on a fresh store: the same text, zero HTTP.
         with tempfile.TemporaryDirectory() as tmp:
             transport = FakeTransport([anthropic_tool_response([VALID_FINDING], model="claude-sonnet-5")])
             provider = _provider(tmp, transport)
-            policy = P.session_policy_for("ambiguity_critic")
+            policy = _provider_protocol_module.session_policy_for("ambiguity_critic")
             turn = provider._turn("ambiguity_critic", _view(), policy, 0)
             self.assertFalse(turn.replayed)
-            self.assertEqual(transport.calls[0][2]["tool_choice"], {"type": "tool", "name": P.FINDINGS_TOOL_NAME})
+            self.assertEqual(transport.calls[0][2]["tool_choice"], {"type": "tool", "name": _provider_protocol_module.FINDINGS_TOOL_NAME})
             served = provider.complete(CouncilRole.AMBIGUITY_CRITIC, "VIEW")
             self.assertEqual(len(transport.calls), 1)
             self.assertEqual(served, turn.text)
-            self.assertEqual(served, P.normalized_text_for("ambiguity_critic", {"findings": [VALID_FINDING]}))
+            self.assertEqual(served, _provider_protocol_module.normalized_text_for("ambiguity_critic", {"findings": [VALID_FINDING]}))
         # The chat wire, prose role: the request bytes agree too.
         with _agents(_doc(independent_implementer={"enabled": False})), tempfile.TemporaryDirectory() as tmp:
             transport = FakeTransport([openai_text_response("built"), openai_text_response("built")])
@@ -600,7 +602,7 @@ class ZeroToolParityTest(_SessionCase):
             provider = _provider(tmp, transport, routing=routing)
             provider.complete(IMPLEMENTER, "VIEW")
             provider.refresh = True
-            turn = provider._turn(IMPLEMENTER, _view(), P.session_policy_for(IMPLEMENTER), 0)
+            turn = provider._turn(IMPLEMENTER, _view(), _provider_protocol_module.session_policy_for(IMPLEMENTER), 0)
             self.assertEqual(json.dumps(transport.calls[0][2]), json.dumps(transport.calls[1][2]))
             self.assertEqual(turn.text, "built")
             self.assertEqual(turn.text_content, "built")
@@ -617,7 +619,7 @@ class TurnMemoTest(_SessionCase):
         message, another policy or another wire tool is a new key and a new
         call. The key is `transcript_key_v3`, and the entry is filed under it."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             transport = FakeTransport([
                 tool_use_body("replace_prose", {"text": "draft 1"}, id="toolu_a"),
                 tool_use_body("submit_prose", {"text": "draft 1"}, id="toolu_b"),
@@ -628,8 +630,8 @@ class TurnMemoTest(_SessionCase):
             with provider.session(AUTHOR, policy) as account:
                 turn0 = provider._turn(AUTHOR, _view(), policy, 0)
                 self.assertEqual(len(transport.calls), 1)
-                self.assertEqual(turn0.key, P.transcript_key_v3(AUTHOR, policy, _view()))
-                self.assertEqual(turn0.key, P.transcript_key(AUTHOR, "VIEW"))
+                self.assertEqual(turn0.key, _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view()))
+                self.assertEqual(turn0.key, _provider_protocol_module.transcript_key(AUTHOR, "VIEW"))
                 self.assertTrue(_entry_path(tmp, AUTHOR, turn0.key).is_file())
                 self.assertEqual(turn0.tool_call()["name"], "replace_prose")
                 # Same prefix again: served from the store, byte-equal content.
@@ -648,7 +650,7 @@ class TurnMemoTest(_SessionCase):
                 # Turn 1 is the final permitted turn in the shipped author
                 # policy, so its wire is narrowed to submit/abort and the
                 # per-turn helper (not the full-wire v3 shortcut) is the key.
-                self.assertEqual(turn1.key, P.session_turn_key(AUTHOR, policy, prefix1, 1))
+                self.assertEqual(turn1.key, _provider_protocol_module.session_turn_key(AUTHOR, policy, prefix1, 1))
                 self.assertEqual(transport.calls[1][2]["messages"], prefix1)
                 self.assertEqual(account.turn_keys, [turn0.key, turn0.key, turn1.key])
                 self.assertEqual(account.model_call_count, 3)
@@ -663,7 +665,7 @@ class TurnMemoTest(_SessionCase):
             turn_other = provider._turn(AUTHOR, _view(), other_policy, 0)
             self.assertEqual(len(transport.calls), 3)
             self.assertNotEqual(turn_other.key, turn0.key)
-            self.assertEqual(turn_other.key, P.transcript_key_v3(AUTHOR, other_policy, _view()))
+            self.assertEqual(turn_other.key, _provider_protocol_module.transcript_key_v3(AUTHOR, other_policy, _view()))
             # It is served back under ITS policy, and never under the other.
             self.assertTrue(provider._turn(AUTHOR, _view(), other_policy, 0).replayed)
             self.assertEqual(len(transport.calls), 3)
@@ -696,7 +698,7 @@ class TurnMemoTest(_SessionCase):
         since the previous turn, stop reason, tool choice; the route block
         states `entry_schema` 3; readers keep serving it and never rewrite it."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             response = tool_use_body("replace_prose", {"text": "d"}, id="toolu_a", text="Let me revise.")
             response["usage"]["cache_read_input_tokens"] = 600
             provider = _provider(tmp, FakeTransport([response]))
@@ -711,7 +713,7 @@ class TurnMemoTest(_SessionCase):
                 "correction_count", "finding_count", "usage", "elapsed_ms", "raw_attempts", "route",
             }
             self.assertEqual(set(entry), one_shot_fields | {"turn"} | set(provider._record_stamp()))
-            self.assertEqual(P.transcript_entry_schema(entry), P.SESSION_TRANSCRIPT_ENTRY_SCHEMA)
+            self.assertEqual(_provider_protocol_module.transcript_entry_schema(entry), _provider_protocol_module.SESSION_TRANSCRIPT_ENTRY_SCHEMA)
             self.assertEqual(entry["route"]["entry_schema"], 3)
             self.assertEqual(entry["route"]["policy_sha256"], policy.sha256())
             self.assertEqual(entry["route"]["tools_sha256"], policy.tools_sha256())
@@ -758,7 +760,7 @@ class TurnMemoTest(_SessionCase):
 
 class ReplayAndResumeTest(_SessionCase):
     def _record_two_turns(self, tmp, transport):
-        policy = P.session_policy_for(AUTHOR)
+        policy = _provider_protocol_module.session_policy_for(AUTHOR)
         provider = _provider(tmp, transport)
         with provider.session(AUTHOR, policy):
             turn0 = provider._turn(AUTHOR, _view(), policy, 0)
@@ -912,7 +914,7 @@ class ReplayAndResumeTest(_SessionCase):
                 ],
                 fault,
             )
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             provider = _provider(tmp, faulting)
             with provider.session(AUTHOR, policy) as account:
                 turn0 = provider._turn(AUTHOR, _view(), policy, 0)
@@ -933,7 +935,7 @@ class ReplayAndResumeTest(_SessionCase):
                 self.assertEqual(account.model_call_count, 2)
             # Turn 2 is the last permitted turn under the declared limits:
             # its narrowed wire enters its key (`session_turn_key`).
-            key2 = P.session_turn_key(AUTHOR, policy, prefix2, 2)
+            key2 = _provider_protocol_module.session_turn_key(AUTHOR, policy, prefix2, 2)
             self.assertTrue(_entry_path(tmp, AUTHOR, turn0.key).is_file())
             self.assertTrue(_entry_path(tmp, AUTHOR, turn1.key).is_file())
             self.assertFalse(_entry_path(tmp, AUTHOR, key2).exists())
@@ -1026,7 +1028,7 @@ class BudgetTest(_SessionCase):
         turn raises `RoleCapExceeded` with the entry on disk, and the next
         turn of the same session is refused at reserve before any call."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            declared = P.session_policy_for(AUTHOR)
+            declared = _provider_protocol_module.session_policy_for(AUTHOR)
             # (a) The task budget cannot absorb the prompt floor: refused.
             tiny = P.CostMeter(budget_per_task_usd=0.000001)
             transport = FakeTransport([tool_use_body("replace_prose", {"text": "d"})])
@@ -1066,7 +1068,7 @@ class BudgetTest(_SessionCase):
                 self.assertIsInstance(ctx.exception, P.BudgetExceededError)
                 self.assertIn("IS recorded", str(ctx.exception))
                 self.assertEqual(len(transport.calls), 1)
-                key0 = P.transcript_key_v3(AUTHOR, capped, _view())
+                key0 = _provider_protocol_module.transcript_key_v3(AUTHOR, capped, _view())
                 self.assertTrue(_entry_path(tmp, AUTHOR, key0, subdir="b").is_file())
                 self.assertAlmostEqual(meter.total_usd, per_turn)
                 self.assertAlmostEqual(account.usd, per_turn)
@@ -1082,7 +1084,7 @@ class BudgetTest(_SessionCase):
                 self.assertIn("refused before the call, nothing spent", str(ctx.exception))
                 self.assertEqual(len(transport.calls), 1)
                 self.assertFalse(
-                    _entry_path(tmp, AUTHOR, P.transcript_key_v3(AUTHOR, capped, prefix1), subdir="b").exists()
+                    _entry_path(tmp, AUTHOR, _provider_protocol_module.transcript_key_v3(AUTHOR, capped, prefix1), subdir="b").exists()
                 )
                 self.assertAlmostEqual(meter.total_usd, per_turn)
             # No evidence row was appended by `_turn` itself: the row is the
@@ -1102,7 +1104,7 @@ class BudgetTest(_SessionCase):
         self.assertNotIn("RoleCapExceeded", engine_mod._INFRA_EXCEPTION_NAMES)
         self.assertIn("BudgetExceededError", engine_mod._INFRA_EXCEPTION_NAMES)
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            declared = P.session_policy_for(AUTHOR)
+            declared = _provider_protocol_module.session_policy_for(AUTHOR)
             capped = P.SessionPolicy(
                 role=AUTHOR, tools=declared.tools, submit_tool="submit_prose",
                 limits=P.SessionLimits.from_block({"enabled": True, "max_usd": 0.001}),
@@ -1134,7 +1136,7 @@ class ParallelToolUseTest(_SessionCase):
         `multiple_tool_use`, the correction answers EVERY id as `is_error`
         on both wires, and no tool is executed."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             transport = FakeTransport([
                 parallel_tool_use_body([
                     ("toolu_a", "replace_prose", {"text": "one"}),
@@ -1168,7 +1170,7 @@ class ParallelToolUseTest(_SessionCase):
                 answered = [b for b in prefix1[-1]["content"] if b["type"] == "tool_result"]
                 self.assertEqual([b["tool_use_id"] for b in answered], ["toolu_a", "toolu_b"])
                 self.assertTrue(all(b["is_error"] for b in answered))
-                chat = P._chat_messages(prefix1, None)
+                chat = _provider_backends_module._chat_messages(prefix1, None)
                 self.assertEqual([m["tool_call_id"] for m in chat if m["role"] == "tool"], ["toolu_a", "toolu_b"])
                 # The next turn carries the correction; the refused calls never ran
                 # (the stub tools raise on run, and nothing raised).
@@ -1226,7 +1228,7 @@ class RunSessionTest(_SessionCase):
 
     def test_run_session_appends_one_exchange_evidence_row_per_session(self):
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             transport = FakeTransport([
                 tool_use_body("replace_prose", {"text": "draft"}, id="toolu_a", output_tokens=50),
                 tool_use_body("submit_prose", {"text": "final"}, id="toolu_b", output_tokens=70),
@@ -1246,7 +1248,7 @@ class RunSessionTest(_SessionCase):
             self.assertEqual(row["role"], AUTHOR)
             self.assertEqual(row["task_id"], "task-1")
             self.assertEqual(row["task_content_hash"], "a" * 64)
-            self.assertEqual(row["prompt_sha256"], P.transcript_key(AUTHOR, "VIEW"))
+            self.assertEqual(row["prompt_sha256"], _provider_protocol_module.transcript_key(AUTHOR, "VIEW"))
             self.assertEqual(row["response_sha256"], sha256_hex("final"))
             self.assertEqual((row["model_call_count"], row["attempt_count"]), (2, 2))
             self.assertEqual(row["live_model_call_count"], 2)
@@ -1260,7 +1262,7 @@ class RunSessionTest(_SessionCase):
             self.assertEqual(row["trajectory_sha256"], "c" * 64)
             self.assertEqual(row["entry_schema"], 3)
             self.assertEqual((row["provider"], row["model"]), ("anthropic", "claude-opus-5"))
-            self.assertEqual(row["behavior_sha256"], P.role_behavior_sha256(AUTHOR))
+            self.assertEqual(row["behavior_sha256"], _provider_protocol_module.role_behavior_sha256(AUTHOR))
             self.assertEqual(row["tools_sha256"], policy.tools_sha256())
             self.assertEqual(row["policy_sha256"], policy.sha256())
             self.assertEqual(row["diagnostics_version"], P.DIAGNOSTICS_VERSION)
@@ -1294,7 +1296,7 @@ class RunSessionTest(_SessionCase):
         infrastructure) with nothing spent, nothing recorded, no row, and the
         ledger closed. A runner raise appends no row either."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            declared = P.session_policy_for(AUTHOR)
+            declared = _provider_protocol_module.session_policy_for(AUTHOR)
             policy = P.SessionPolicy(
                 role=AUTHOR, tools=declared.tools, submit_tool="submit_prose",
                 limits=P.SessionLimits.from_block({"enabled": True, "max_usd": 1.00}),
@@ -1367,7 +1369,7 @@ class WireLoopTest(_SessionCase):
                 check = _RunningTool("check_draft")
                 with _AgenticRoles(**{role: (check, "submit_prose", "abort")}):
                     policy = _session_policy(role)
-                    self.assertTrue(P.role_is_agentic(role))
+                    self.assertTrue(_provider_protocol_module.role_is_agentic(role))
                     transport = FakeTransport(list(bodies))
                     provider = _bound(_provider(tmp, transport, routing=routing))
                     ctx = _session_ctx(tmp, role)
@@ -1388,13 +1390,13 @@ class WireLoopTest(_SessionCase):
         self.assertEqual([t.category for t in model_turns], ["tool_call", "tool_call", "terminal"])
         keys = [t.memo_key for t in model_turns]
         self.assertEqual(len(set(keys)), 3)
-        self.assertEqual(keys[0], P.transcript_key_v3(role, policy, _view()))
+        self.assertEqual(keys[0], _provider_protocol_module.transcript_key_v3(role, policy, _view()))
         store_dir = Path(tmp) / "transcripts" / role
         self.assertEqual(sorted(p.name for p in store_dir.glob("*.json")), sorted(f"{k}.json" for k in keys))
         self.assertEqual([p.name for p in store_dir.iterdir() if p.is_dir()], [P.SESSION_RECORDS_SUBDIR])
         for index, (key, turn) in enumerate(zip(keys, model_turns)):
             entry = json.loads((store_dir / f"{key}.json").read_text(encoding="utf-8"))
-            self.assertEqual(P.transcript_entry_schema(entry), P.SESSION_TRANSCRIPT_ENTRY_SCHEMA)
+            self.assertEqual(_provider_protocol_module.transcript_entry_schema(entry), _provider_protocol_module.SESSION_TRANSCRIPT_ENTRY_SCHEMA)
             self.assertEqual(entry["turn"]["turn_index"], index)
             self.assertEqual(entry["turn"]["memo_key"], key)
             self.assertEqual(entry["turn"]["tools_sha256"], policy.tools_sha256())
@@ -1475,8 +1477,8 @@ class BatchRefusalTest(_SessionCase):
             critic = P.BatchRequest("c-1", "ambiguity_critic", "p", "0" * 64)
             self.assertTrue(queue.batchable("anthropic", 2, [critic, critic]))
             with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}):
-                self.assertTrue(P.role_is_agentic(AUTHOR))
-                self.assertFalse(P.role_is_agentic("ambiguity_critic"))
+                self.assertTrue(_provider_protocol_module.role_is_agentic(AUTHOR))
+                self.assertFalse(_provider_protocol_module.role_is_agentic("ambiguity_critic"))
                 author = P.BatchRequest("a-1", AUTHOR, "p", "1" * 64)
                 self.assertFalse(queue.batchable("anthropic", 2, [author, author]))
                 self.assertFalse(queue.batchable("anthropic", 3, [critic, author, critic]))
@@ -1489,7 +1491,7 @@ class BatchRefusalTest(_SessionCase):
                     {name: [r.custom_id for r in reqs] for name, reqs in queue.groups().items()},
                     {"anthropic": ["c-1"]},
                 )
-            self.assertTrue(P.role_is_agentic(AUTHOR))
+            self.assertTrue(_provider_protocol_module.role_is_agentic(AUTHOR))
 
     def test_batch_queue_refuses_agentic_role(self):
         """`add` refuses an agentic role up front and `_run_serial` refuses
@@ -1502,7 +1504,7 @@ class BatchRefusalTest(_SessionCase):
                 queue.add(AUTHOR, "VIEW")
             self.assertIn("run_session", str(ctx.exception))
             self.assertEqual(len(queue), 0)
-            request = P.BatchRequest("a-1", AUTHOR, "VIEW", P.transcript_key(AUTHOR, "VIEW"))
+            request = P.BatchRequest("a-1", AUTHOR, "VIEW", _provider_protocol_module.transcript_key(AUTHOR, "VIEW"))
             responses: dict[str, str] = {}
             with self.assertRaises(ValueError):
                 queue._run_serial([request], responses, [])
@@ -1527,22 +1529,22 @@ class TranscriptKeyMovesTest(_SessionCase):
         tools digest all move when a role's tool manifest gains a tool or
         its policy (limits, nudge text) changes; the session salt moves
         nothing; restored, the key is exactly what it was."""
-        before = P.transcript_key(AUTHOR, "VIEW")
-        behaviour_before = P.role_behavior_sha256(AUTHOR)
-        tools_before = P.role_tools_sha256(AUTHOR)
+        before = _provider_protocol_module.transcript_key(AUTHOR, "VIEW")
+        behaviour_before = _provider_protocol_module.role_behavior_sha256(AUTHOR)
+        tools_before = _provider_protocol_module.role_tools_sha256(AUTHOR)
         moved: dict[str, str] = {}
         with _AgenticRoles(**{AUTHOR: ("replace_prose",)}):
-            moved["manifest"] = P.transcript_key(AUTHOR, "VIEW")
-            self.assertNotEqual(P.role_behavior_sha256(AUTHOR), behaviour_before)
-            self.assertNotEqual(P.role_tools_sha256(AUTHOR), tools_before)
+            moved["manifest"] = _provider_protocol_module.transcript_key(AUTHOR, "VIEW")
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(AUTHOR), behaviour_before)
+            self.assertNotEqual(_provider_protocol_module.role_tools_sha256(AUTHOR), tools_before)
             self.assertEqual(
-                [t["name"] for t in P.role_behavior_manifest(AUTHOR)["tools"]], ["replace_prose"]
+                [t["name"] for t in _provider_protocol_module.role_behavior_manifest(AUTHOR)["tools"]], ["replace_prose"]
             )
-            one_tool = P.transcript_key(AUTHOR, "VIEW")
+            one_tool = _provider_protocol_module.transcript_key(AUTHOR, "VIEW")
             with _AgenticRoles(**{AUTHOR: ("replace_prose", "submit_prose")}):
-                moved["second tool"] = P.transcript_key(AUTHOR, "VIEW")
+                moved["second tool"] = _provider_protocol_module.transcript_key(AUTHOR, "VIEW")
             self.assertNotEqual(moved["second tool"], one_tool)
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         # A limit edit that stays loadable: `max_turns` is bound to
         # `max_revisions + 1` (and its hard cap) by the loader, so the wall
         # is the limit this test moves.  The shipped block is enabled; an
@@ -1550,32 +1552,32 @@ class TranscriptKeyMovesTest(_SessionCase):
         # block, while the same edit when enabled moves digest and key.
         disabled_base = json.loads(json.dumps(doc))
         disabled_base["roles"][AUTHOR]["session"]["enabled"] = False
-        with mock.patch.object(P, "_agents_doc", lambda: disabled_base):
-            P.clear_behavior_caches()
-            disabled_before = P.transcript_key(AUTHOR, "VIEW")
-            disabled_behaviour_before = P.role_behavior_sha256(AUTHOR)
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled_base):
+            _provider_protocol_module.clear_behavior_caches()
+            disabled_before = _provider_protocol_module.transcript_key(AUTHOR, "VIEW")
+            disabled_behaviour_before = _provider_protocol_module.role_behavior_sha256(AUTHOR)
         disabled = json.loads(json.dumps(disabled_base))
         disabled["roles"][AUTHOR]["session"] = {
             **dict(disabled["roles"][AUTHOR].get("session") or {}), "wall_clock_s": 301,
         }
-        with mock.patch.object(P, "_agents_doc", lambda: disabled):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(
-                P.transcript_key(AUTHOR, "VIEW"), disabled_before,
+                _provider_protocol_module.transcript_key(AUTHOR, "VIEW"), disabled_before,
                 "an edit within a disabled runner block is inert",
             )
-            self.assertEqual(P.role_behavior_sha256(AUTHOR), disabled_behaviour_before)
-            self.assertEqual(P.role_behavior_manifest(AUTHOR)["loop_limits"], {"enabled": False})
+            self.assertEqual(_provider_protocol_module.role_behavior_sha256(AUTHOR), disabled_behaviour_before)
+            self.assertEqual(_provider_protocol_module.role_behavior_manifest(AUTHOR)["loop_limits"], {"enabled": False})
         doc["roles"][AUTHOR]["session"] = {
             **dict(doc["roles"][AUTHOR].get("session") or {}), "enabled": True, "wall_clock_s": 301,
         }
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
-            moved["policy limits"] = P.transcript_key(AUTHOR, "VIEW")
-            self.assertNotEqual(P.role_behavior_sha256(AUTHOR), behaviour_before)
-            self.assertEqual(P.role_behavior_manifest(AUTHOR)["loop_limits"]["wall_clock_s"], 301)
-        P.clear_behavior_caches()
-        policy = P.session_policy_for(AUTHOR)
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
+            moved["policy limits"] = _provider_protocol_module.transcript_key(AUTHOR, "VIEW")
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(AUTHOR), behaviour_before)
+            self.assertEqual(_provider_protocol_module.role_behavior_manifest(AUTHOR)["loop_limits"]["wall_clock_s"], 301)
+        _provider_protocol_module.clear_behavior_caches()
+        policy = _provider_protocol_module.session_policy_for(AUTHOR)
         for label, edit in (
             ("nudge text", {"nudge_text": "edited nudge"}),
             ("refusal text", {"refusal_text": "edited refusal (code: {code})"}),
@@ -1590,17 +1592,17 @@ class TranscriptKeyMovesTest(_SessionCase):
                    **edit},
             )
             self.assertNotEqual(edited.sha256(), policy.sha256(), label)
-            moved[label] = P.transcript_key_v3(AUTHOR, edited, _view())
+            moved[label] = _provider_protocol_module.transcript_key_v3(AUTHOR, edited, _view())
         for label, key in moved.items():
             self.assertNotEqual(key, before, label)
         self.assertEqual(len(set(moved.values())), len(moved), "each change keys apart")
-        self.assertEqual(P.transcript_key(AUTHOR, "VIEW"), before)
-        policy = P.session_policy_for(AUTHOR)
+        self.assertEqual(_provider_protocol_module.transcript_key(AUTHOR, "VIEW"), before)
+        policy = _provider_protocol_module.session_policy_for(AUTHOR)
         salted = P.SessionPolicy(
             role=AUTHOR, tools=policy.tools, submit_tool=policy.submit_tool,
             limits=policy.limits, mode=policy.mode, wire_tools=policy.wire_tools, session_salt=3,
         )
-        self.assertEqual(P.transcript_key_v3(AUTHOR, salted, _view()), before)
+        self.assertEqual(_provider_protocol_module.transcript_key_v3(AUTHOR, salted, _view()), before)
 
 
 # ---------------------------------------------------------------------------
@@ -1627,9 +1629,9 @@ class SessionEntryIntegrityTest(_SessionCase):
         self.assertTrue(private_sql)
         self.assertTrue(all(sql in view for sql in private_sql), "the REFERENCE view carries the reference SQL")
         routing = make_routing()
-        routing.roles[role] = P.RoleRoute(role, "anthropic", "claude-opus-5", 8192, "high")
+        routing.roles[role] = _provider_config_module.RoleRoute(role, "anthropic", "claude-opus-5", 8192, "high")
         with tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(role)
+            policy = _provider_protocol_module.session_policy_for(role)
             bodies = [
                 tool_use_body("abort", {"reason_code": "cannot_repair"}, id="toolu_a", text="no tool needed"),
                 tool_use_body("abort", {"reason_code": "cannot_repair"}, id="toolu_b"),
@@ -1675,7 +1677,7 @@ class SessionEntryIntegrityTest(_SessionCase):
         `--replay-only` and on the content-hash-tolerant F2 path; the
         pristine entry serves."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             provider = _bound(_provider(tmp, FakeTransport([tool_use_body("submit_prose", {"text": "d"}, id="toolu_a")])))
             with provider.session(AUTHOR, policy):
                 turn = provider._turn(AUTHOR, _view(), policy, 0)
@@ -1730,7 +1732,7 @@ class SessionEntryIntegrityTest(_SessionCase):
         mode, under `--replay-only` and on the F2 path: the stored blocks
         must reduce to the verified `response`, which alone never serves."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             provider = _bound(_provider(tmp, FakeTransport([tool_use_body("submit_prose", {"text": "d"}, id="toolu_a")])))
             with provider.session(AUTHOR, policy):
                 turn = provider._turn(AUTHOR, _view(), policy, 0)
@@ -1784,7 +1786,7 @@ class SessionEntryIntegrityTest(_SessionCase):
             provider = _bound(_provider(tmp, FakeTransport([anthropic_text_response("PROSE")])))
             text = provider.complete(AUTHOR, "VIEW")
             self.assertEqual(text, "PROSE")
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             with provider.session(AUTHOR, policy):
                 served = provider._turn(AUTHOR, _view(), policy, 0)
             self.assertTrue(served.replayed)
@@ -1810,20 +1812,20 @@ class SessionEntryIntegrityTest(_SessionCase):
         wire is not its key's (a tampered or corrupt store) is refused
         under `--replay-only` and remade, re-recorded, in live mode."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}), tempfile.TemporaryDirectory() as tmp:
-            policy = P.session_policy_for(AUTHOR)
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
             submit_only = [dict(t) for t in policy.wire_tools if t["name"] == "submit_prose"]
             forced = {"type": "tool", "name": "submit_prose"}
             provider = _bound(_provider(tmp, FakeTransport([tool_use_body("submit_prose", {"text": "d"}, id="toolu_a")])))
             with provider.session(AUTHOR, policy):
                 narrow = provider._turn(AUTHOR, _view(), policy, 0, tools=submit_only, tool_choice=forced)
-            wide_key = P.transcript_key_v3(AUTHOR, policy, _view())
+            wide_key = _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view())
             self.assertNotEqual(narrow.key, wide_key, "the narrowed wire enters the key")
             self.assertEqual(
-                narrow.key, P.session_turn_key(AUTHOR, policy, _view(), 0, tools=submit_only, tool_choice=forced)
+                narrow.key, _provider_protocol_module.session_turn_key(AUTHOR, policy, _view(), 0, tools=submit_only, tool_choice=forced)
             )
             self.assertEqual(
                 narrow.key,
-                P.transcript_key_v3(
+                _provider_protocol_module.transcript_key_v3(
                     AUTHOR, policy, _view(),
                     wire_tools_sha256=sha256_hex(canonical_json(submit_only)), tool_choice=forced,
                 ),
@@ -1891,22 +1893,22 @@ class TurnKeyBindingTest(_SessionCase):
         observation add nothing, so turn 0 of a zero-tool one-shot role IS
         `transcript_key(role, prompt)` (the parity gate)."""
         with _AgenticRoles(**{AUTHOR: AUTHOR_TOOLS}):
-            policy = P.session_policy_for(AUTHOR)
-            base = P.transcript_key_v3(AUTHOR, policy, _view())
-            self.assertEqual(P.turn_wire_binding(policy), "")
+            policy = _provider_protocol_module.session_policy_for(AUTHOR)
+            base = _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view())
+            self.assertEqual(_provider_protocol_module.turn_wire_binding(policy), "")
             self.assertEqual(
-                P.turn_wire_binding(
-                    policy, wire_tools_sha256=policy.tools_sha256(), tool_choice=P.session_tool_choice(policy)
+                _provider_protocol_module.turn_wire_binding(
+                    policy, wire_tools_sha256=policy.tools_sha256(), tool_choice=_provider_protocol_module.session_tool_choice(policy)
                 ),
                 "",
             )
             self.assertEqual(
-                P.transcript_key_v3(AUTHOR, policy, _view(), wire_tools_sha256=policy.tools_sha256(), tool_choice="any"),
+                _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), wire_tools_sha256=policy.tools_sha256(), tool_choice="any"),
                 base,
             )
-            self.assertEqual(P.transcript_key_v3(AUTHOR, policy, _view(), observations=[]), base)
-            self.assertEqual(P.session_turn_key(AUTHOR, policy, _view(), 0), base)
-            self.assertEqual(P.transcript_key(AUTHOR, "VIEW"), base)
+            self.assertEqual(_provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), observations=[]), base)
+            self.assertEqual(_provider_protocol_module.session_turn_key(AUTHOR, policy, _view(), 0), base)
+            self.assertEqual(_provider_protocol_module.transcript_key(AUTHOR, "VIEW"), base)
             last = policy.limits.max_turns - 1
             narrowed = [dict(t) for t in policy.wire_tools_for_turn(last)]
             # The declared policy of a PROSE role names no submit tool, so
@@ -1914,17 +1916,17 @@ class TurnKeyBindingTest(_SessionCase):
             self.assertEqual([t["name"] for t in narrowed], ["abort"])
             self.assertLess({t["name"] for t in narrowed}, {t["name"] for t in policy.wire_tools})
             keys = {
-                "narrowed wire (last permitted turn)": P.session_turn_key(AUTHOR, policy, _view(), last),
-                "forced choice": P.transcript_key_v3(AUTHOR, policy, _view(), tool_choice="submit_prose"),
-                "narrowed + forced": P.transcript_key_v3(
+                "narrowed wire (last permitted turn)": _provider_protocol_module.session_turn_key(AUTHOR, policy, _view(), last),
+                "forced choice": _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), tool_choice="submit_prose"),
+                "narrowed + forced": _provider_protocol_module.transcript_key_v3(
                     AUTHOR, policy, _view(),
                     wire_tools_sha256=sha256_hex(canonical_json(narrowed)),
                     tool_choice={"type": "tool", "name": "submit_prose"},
                 ),
-                "one observation": P.transcript_key_v3(AUTHOR, policy, _view(), observations=["a" * 64]),
-                "another observation": P.transcript_key_v3(AUTHOR, policy, _view(), observations=["b" * 64]),
-                "two observations": P.transcript_key_v3(AUTHOR, policy, _view(), observations=["a" * 64, "b" * 64]),
-                "observations in the other order": P.transcript_key_v3(
+                "one observation": _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), observations=["a" * 64]),
+                "another observation": _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), observations=["b" * 64]),
+                "two observations": _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), observations=["a" * 64, "b" * 64]),
+                "observations in the other order": _provider_protocol_module.transcript_key_v3(
                     AUTHOR, policy, _view(), observations=["b" * 64, "a" * 64]
                 ),
             }
@@ -1934,11 +1936,11 @@ class TurnKeyBindingTest(_SessionCase):
             # A choice by NAME and as the canonical object are one binding.
             self.assertEqual(
                 keys["forced choice"],
-                P.transcript_key_v3(AUTHOR, policy, _view(), tool_choice={"type": "tool", "name": "submit_prose"}),
+                _provider_protocol_module.transcript_key_v3(AUTHOR, policy, _view(), tool_choice={"type": "tool", "name": "submit_prose"}),
             )
             self.assertEqual(
                 keys["narrowed wire (last permitted turn)"],
-                P.transcript_key_v3(
+                _provider_protocol_module.transcript_key_v3(
                     AUTHOR, policy, _view(), wire_tools_sha256=sha256_hex(canonical_json(narrowed)), tool_choice="any"
                 ),
             )
@@ -1946,8 +1948,8 @@ class TurnKeyBindingTest(_SessionCase):
         # full wire and the default (forced report_findings) choice, keys
         # exactly as `complete()` does.
         for role in ("ambiguity_critic", IMPLEMENTER):
-            declared = P.session_policy_for(role)
-            self.assertEqual(P.session_turn_key(role, declared, _view("p"), 0), P.transcript_key(role, "p"))
+            declared = _provider_protocol_module.session_policy_for(role)
+            self.assertEqual(_provider_protocol_module.session_turn_key(role, declared, _view("p"), 0), _provider_protocol_module.transcript_key(role, "p"))
 
 
 @dataclass
@@ -2190,7 +2192,7 @@ AMB = "ambiguity_critic"
 
 def _doc(**session_updates) -> dict:
     """The loaded agents document with `roles.<role>.session` keys updated."""
-    doc = json.loads(json.dumps(P._agents_doc()))
+    doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
     for role, keys in session_updates.items():
         doc["roles"][role].setdefault("session", {}).update(keys)
     return doc
@@ -2198,12 +2200,12 @@ def _doc(**session_updates) -> dict:
 
 @_contextlib.contextmanager
 def _agents(doc: dict):
-    with mock.patch.object(P, "_agents_doc", lambda: doc):
-        P.clear_behavior_caches()
+    with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+        _provider_protocol_module.clear_behavior_caches()
         try:
             yield
         finally:
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
 
 
 def _expected(passes=("development", "stress")) -> dict:
@@ -2268,13 +2270,13 @@ class Phase4SeamTest(_SessionCase):
         seat outside `AGENTIC_ROLES` under a context, or a seat under an
         explicit `enabled: false` rollback — is the one-shot path, byte-identical:
         the same request bytes, the same entry, no session row."""
-        self.assertEqual(P.AGENTIC_ROLES, (POP, SHC))
-        self.assertTrue(P.agentic_role_enabled(POP))
-        self.assertTrue(P.agentic_role_enabled(SHC))
-        self.assertFalse(P.agentic_role_enabled(AMB))
+        self.assertEqual(_provider_protocol_module.AGENTIC_ROLES, (POP, SHC))
+        self.assertTrue(_provider_protocol_module.agentic_role_enabled(POP))
+        self.assertTrue(_provider_protocol_module.agentic_role_enabled(SHC))
+        self.assertFalse(_provider_protocol_module.agentic_role_enabled(AMB))
         disabled = _doc(population_adversary={"enabled": False}, shortcut_attacker={"enabled": False})
         with _agents(disabled):
-            one_shot_payload = P.AnthropicBackend._payload(
+            one_shot_payload = _provider_backends_module.AnthropicBackend._payload(
                 model="claude-sonnet-5", prompt="VIEW", max_tokens=1024, effort="medium",
                 role_name=POP, schema_mode=True,
             )
@@ -2288,7 +2290,7 @@ class Phase4SeamTest(_SessionCase):
                 finally:
                     provider.end_trial()
                 self.assertEqual(json.dumps(transport.calls[0][2]), json.dumps(one_shot_payload))
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
                 (row,) = provider.exchange_evidence
                 self.assertEqual((row["entry_schema"], row["attempt_count"], row["tool_call_count"]), (2, 1, 0))
         # A one-shot row inside a trial carries trial_nonce but no session
@@ -2299,9 +2301,9 @@ class Phase4SeamTest(_SessionCase):
                 self.assertFalse((ws / "tool_raw").exists())
         enabled = _doc(population_adversary={"enabled": True}, shortcut_attacker={"enabled": False})
         with _agents(enabled):
-            self.assertTrue(P.agentic_role_enabled(POP))
-            self.assertFalse(P.agentic_role_enabled(SHC))
-            self.assertFalse(P.agentic_role_enabled(AMB))
+            self.assertTrue(_provider_protocol_module.agentic_role_enabled(POP))
+            self.assertFalse(_provider_protocol_module.agentic_role_enabled(SHC))
+            self.assertFalse(_provider_protocol_module.agentic_role_enabled(AMB))
             # ENABLED but NO context: still the one-shot path (the same
             # bytes as the rollback config's, the prompt aside — the derived
             # prompt is the block's, see test_providers.py).
@@ -2312,7 +2314,7 @@ class Phase4SeamTest(_SessionCase):
                 sent = transport.calls[0][2]
                 self.assertEqual(sent["messages"], [{"role": "user", "content": "VIEW"}])
                 self.assertNotIn("cache_control", json.dumps(sent))
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
                 (row,) = provider.exchange_evidence
                 self.assertEqual(row["entry_schema"], 2)
                 self.assertFalse((ws / "transcripts" / "trajectories").exists())
@@ -2333,11 +2335,11 @@ class Phase4SeamTest(_SessionCase):
                 finally:
                     provider.end_trial()
                 self.assertIsNone(provider.active_trial)
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
                 self.assertEqual(len(transport.calls), 1)
                 sent = transport.calls[0][2]
-                self.assertEqual(sent["tool_choice"], {"type": "tool", "name": P.FINDINGS_TOOL_NAME})
-                self.assertEqual([t["name"] for t in sent["tools"]], [P.FINDINGS_TOOL_NAME])
+                self.assertEqual(sent["tool_choice"], {"type": "tool", "name": _provider_protocol_module.FINDINGS_TOOL_NAME})
+                self.assertEqual([t["name"] for t in sent["tools"]], [_provider_protocol_module.FINDINGS_TOOL_NAME])
                 (row,) = provider.exchange_evidence
                 self.assertEqual(row["entry_schema"], 3)
                 self.assertEqual(row["terminal"], "SUBMITTED")
@@ -2381,7 +2383,7 @@ class Phase4SeamTest(_SessionCase):
                 provider, ws = _trial_provider(tmp, transport)
                 provider.begin_task_evidence(TASK.task_id, TASK.content_hash(), task=TASK)
                 text = provider.complete(POP, "VIEW")
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": [VALID_FINDING]}))
                 (row,) = provider.exchange_evidence
                 self.assertEqual((row["entry_schema"], row["validator_run_count"]), (3, 1))
                 self.assertNotIn("trial_nonce", row)
@@ -2524,7 +2526,7 @@ class Phase4SeamTest(_SessionCase):
                     text = provider.complete(POP, "VIEW")
                 finally:
                     provider.end_trial()
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": []}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": []}))
                 (row,) = provider.exchange_evidence
                 self.assertEqual(row["terminal"], "POLICY_VIOLATION")
                 self.assertEqual((row["model_call_count"], row["terminal_count"], row["limit_stop_count"]), (1, 1, 0))
@@ -2781,7 +2783,7 @@ class Phase4SeamTest(_SessionCase):
                     text = provider.complete(POP, "VIEW")
                 finally:
                     provider.end_trial()
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": []}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": []}))
                 (row,) = provider.exchange_evidence
                 self.assertEqual(row["terminal"], "LIMIT_TURNS")
                 self.assertEqual((row["model_call_count"], row["correction_count"], row["limit_stop_count"]), (3, 2, 1))
@@ -2869,7 +2871,7 @@ class Phase4SeamTest(_SessionCase):
                     text = provider.complete(POP, "VIEW 2")
                 finally:
                     provider.end_trial()
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": green}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": green}))
                 self.assertEqual(provider.exchange_evidence[-1]["submitted_with_red_validators"], 0)
                 self.assertEqual(len(_council._parse_findings(_council.CouncilRole.POPULATION_ADVERSARY, text, "x")), 1)
                 self.assertIsNotNone(_council._parse_findings(_council.CouncilRole.POPULATION_ADVERSARY, text, "x")[0].proposed_case)
@@ -2894,8 +2896,8 @@ class RepairPassSeamTest(_SessionCase):
             population_adversary={"enabled": True}, shortcut_attacker={"enabled": True}
         )
         with _agents(both):
-            self.assertTrue(P.agentic_role_enabled(POP))
-            self.assertTrue(P.agentic_role_enabled(SHC))
+            self.assertTrue(_provider_protocol_module.agentic_role_enabled(POP))
+            self.assertTrue(_provider_protocol_module.agentic_role_enabled(SHC))
             with tempfile.TemporaryDirectory() as tmp:
                 transport = FakeTransport(
                     [
@@ -3002,7 +3004,7 @@ class RepairPassSeamTest(_SessionCase):
                     text = provider2.complete(POP, "VIEW")
                 finally:
                     provider2.end_trial()
-                self.assertEqual(text, P.normalized_text_for(POP, {"findings": []}))
+                self.assertEqual(text, _provider_protocol_module.normalized_text_for(POP, {"findings": []}))
                 (row,) = provider2.exchange_evidence
                 self.assertEqual(row["terminal"], "POLICY_VIOLATION")
                 self.assertEqual(row["private_probe_count"], 1)

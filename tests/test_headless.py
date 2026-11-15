@@ -3,6 +3,8 @@ driver: turn synthesis, answer delivery, wire narrowing, accounting, the
 session close, one-shot prose, and the provider-kind plumbing."""
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import os
 import threading
 import unittest
@@ -227,9 +229,9 @@ class OneShotTests(unittest.TestCase):
         good = {"findings": []}
         backend = _backend([([("report_findings", {"nope": 1}), ("report_findings", good)], H.TurnEnd(text="fin"))])
         result = backend.complete(role_name="ambiguity_critic", model="m", prompt="p", max_tokens=1, effort=None)
-        self.assertEqual(result.text, P.normalized_text_for("ambiguity_critic", good))
+        self.assertEqual(result.text, _provider_protocol_module.normalized_text_for("ambiguity_critic", good))
         driver = ScriptedDriver.instances[0]
-        self.assertEqual([t["name"] for t in driver.started.tools], [P.tool_name_for("ambiguity_critic")])
+        self.assertEqual([t["name"] for t in driver.started.tools], [_provider_protocol_module.tool_name_for("ambiguity_critic")])
         first_answer = driver.answers[0]
         self.assertTrue(first_answer[2])
         self.assertIn("REJECTED", first_answer[1])
@@ -237,19 +239,19 @@ class OneShotTests(unittest.TestCase):
         self.assertEqual(driver.closed, 1)
 
     def test_schema_complete_exhausts_after_the_shared_retries(self):
-        bad = [("report_findings", {"nope": i}) for i in range(1 + P.SCHEMA_RETRIES + 1)]
+        bad = [("report_findings", {"nope": i}) for i in range(1 + _provider_protocol_module.SCHEMA_RETRIES + 1)]
         backend = _backend([(bad, H.TurnEnd(text="fin"))])
         from elt_taskgen.review.council import ProviderProtocolError
 
         with self.assertRaises(ProviderProtocolError) as caught:
             backend.complete(role_name="ambiguity_critic", model="m", prompt="p", max_tokens=1, effort=None)
-        self.assertEqual(len(P.backend_attempts(caught.exception)), 1 + P.SCHEMA_RETRIES)
+        self.assertEqual(len(P.backend_attempts(caught.exception)), 1 + _provider_protocol_module.SCHEMA_RETRIES)
 
 
 class ProviderKindTests(unittest.TestCase):
     def test_the_kinds_are_registered_backends(self):
-        self.assertIs(P.PROVIDER_BACKENDS["claude_headless"], H.ClaudeHeadlessBackend)
-        self.assertIs(P.PROVIDER_BACKENDS["codex_headless"], H.CodexHeadlessBackend)
+        self.assertIs(_provider_backends_module.PROVIDER_BACKENDS["claude_headless"], H.ClaudeHeadlessBackend)
+        self.assertIs(_provider_backends_module.PROVIDER_BACKENDS["codex_headless"], H.CodexHeadlessBackend)
 
     def test_pricing_family_and_credentials(self):
         cfg = {"pricing": {"gpt-5.5": {"usd_per_mtok_input": 5.0, "usd_per_mtok_output": 30.0}}}
@@ -257,8 +259,8 @@ class ProviderKindTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "codex_headless"):
             P.rate_card_for("codex_headless", "gpt-9", cfg)
         self.assertEqual(P.rate_card_for("claude_headless", "claude-sonnet-5", {}), P.ANTHROPIC_PRICING_USD_PER_MTOK["claude-sonnet-5"])
-        self.assertEqual(P.model_family("claude_headless", "claude-sonnet-5"), "anthropic")
-        self.assertEqual(P.model_family("codex_headless", "gpt-5.5", {}), "openai")
+        self.assertEqual(_provider_config_module.model_family("claude_headless", "claude-sonnet-5"), "anthropic")
+        self.assertEqual(_provider_config_module.model_family("codex_headless", "gpt-5.5", {}), "openai")
         self.assertEqual(H.credential_problems_for("claude_headless", {}), ["ANTHROPIC_API_KEY is not set (claude_headless provider)"])
         self.assertEqual(H.credential_problems_for("claude_headless", {"api_key": "k"}), [])
         with mock.patch.dict(os.environ, {"CODEX_HOME": "/nonexistent-codex-home"}):  # noqa: E501
@@ -283,10 +285,10 @@ class ProviderKindTests(unittest.TestCase):
                 os.environ.pop(name, None)
             self.assertEqual(cli.current_agent_harness(), "api")
             self.assertEqual(cli.apply_agent_harness(None), "api")
-            default = P.load_role_routing()
+            default = _provider_config_module.load_role_routing()
             self.assertEqual(cli.apply_agent_harness("headless"), "headless")
             self.assertEqual(os.environ["ELT_TASKGEN_AGENT_HARNESS"], "headless")
-            switched = P.load_role_routing()
+            switched = _provider_config_module.load_role_routing()
             self.assertEqual(cli.current_agent_harness(), "headless")
         for role in claude_roles:
             self.assertEqual(default.for_role(role).provider, "anthropic", role)

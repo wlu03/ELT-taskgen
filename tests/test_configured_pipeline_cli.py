@@ -520,11 +520,11 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
             patches[1],
             patches[2],
             mock.patch(
-                "elt_taskgen.review.providers.load_role_routing",
+                'elt_taskgen.review.provider_config.load_role_routing',
                 return_value=mock.sentinel.routing,
             ) as load_routing,
             mock.patch(
-                "elt_taskgen.review.providers.credential_problems",
+                'elt_taskgen.review.provider_config.credential_problems',
                 return_value=[
                     "ELT_TASKGEN_OSS_API_KEY is not set (openai_compat provider)"
                 ],
@@ -657,7 +657,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
                     repair_proposer=True,
                 )
                 with mock.patch(
-                    "elt_taskgen.review.providers.load_role_routing"
+                    'elt_taskgen.review.provider_config.load_role_routing'
                 ) as load_routing:
                     self.assertEqual(
                         cli_mod._configured_live_provider_problems(args, spec),
@@ -694,11 +694,11 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
         )
         with (
             mock.patch(
-                "elt_taskgen.review.providers.load_role_routing",
+                'elt_taskgen.review.provider_config.load_role_routing',
                 return_value=routing,
             ),
             mock.patch(
-                "elt_taskgen.review.providers.credential_problems",
+                'elt_taskgen.review.provider_config.credential_problems',
                 return_value=[],
             ),
             mock.patch(
@@ -765,11 +765,11 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
         )
         with (
             mock.patch(
-                "elt_taskgen.review.providers.load_role_routing",
+                'elt_taskgen.review.provider_config.load_role_routing',
                 return_value=routing,
             ),
             mock.patch(
-                "elt_taskgen.review.providers.credential_problems",
+                'elt_taskgen.review.provider_config.credential_problems',
                 return_value=[],
             ),
         ):

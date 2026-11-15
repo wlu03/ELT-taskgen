@@ -13,9 +13,10 @@ from sqlglot import exp, parse_one
 from sqlglot.errors import ParseError
 
 from elt_taskgen.generation.semantic_difficulty import (
-    SemanticDifficultyError, SemanticEvidence, _merged_counterfactual,
+    SemanticDifficultyError, SemanticEvidence,
     semantic_candidates, semantic_plan, semantic_witness_rows, variants,
 )
+from elt_taskgen.generation.recipe_admission import RecipeFamily
 from elt_taskgen.models import (
     AttackCase, AttackKind, JoinType, MartColumnKind, MartOp, MartOpKind,
     MartPlan, MartSpec, PopulationName, SemanticPattern, TaskIR, canonical_json, sha256_hex,
@@ -205,10 +206,7 @@ def certifies_multiple_extrema(plan: MartPlan) -> bool:
 
 
 def composition_cases(e: SemanticEvidence, mart: str, template: str) -> tuple[AttackCase, ...]:
-    return tuple(AttackCase(name=f"{mart}__{v}", kind=AttackKind.CUSTOM,
-        description=f"Violate {v.replace('_', ' ')} in {mart}.",
-        mutation="directive:structured:" + canonical_json({"operation": template, "mart": mart, "variant": v}),
-        expected_pass={PopulationName.COUNTERFACTUAL: False}) for v in composition_variants(e, template))
+    return _FAMILY.cases(e, mart, template)
 
 
 def bound_composition(task: TaskIR, mart: MartSpec) -> SemanticEvidence:
@@ -222,105 +220,57 @@ def bound_composition(task: TaskIR, mart: MartSpec) -> SemanticEvidence:
 
 
 def materialize_composition_mutation(task: TaskIR, payload: dict) -> dict[str, str]:
-    from elt_taskgen.reference.solution import build_reference, compile_plan_sql
-    if set(payload) != {"operation", "mart", "variant"}:
-        raise ValueError("Invalid composition mutation")
-    mart = task.mart(payload["mart"])
-    if payload["operation"] != mart.plan.template_id:
-        raise ValueError("Composition mutation template mismatch")
-    e = bound_composition(task, mart)
-    result = dict(build_reference(task).sql_by_mart)
-    result[mart.name] = compile_plan_sql(task, composition_plan(task, e, mart.name, mart.plan.template_id, payload["variant"]))
-    return result
+    return _FAMILY.materialize_mutation(task, payload)
 
 
 def certify_composition(task: TaskIR, mart: MartSpec, e: SemanticEvidence, rows: dict) -> tuple[str, ...]:
-    from elt_taskgen.generation.mart_plan import validate_plan
-    from elt_taskgen.reference.duckdb_sandbox import sandboxed_memory_connection
-    from elt_taskgen.reference.solution import create_table, _insert_rows, compile_plan_sql, execute_mart
-    from elt_taskgen.verification.upstream_eval import compare_mart, rows_to_canonical_csv
-    problems = validate_plan(task, mart.plan)
-    if problems:
-        raise SemanticDifficultyError("; ".join(problems))
-    with sandboxed_memory_connection(memory_limit_mb=512, threads=1, disable_temp_spill=True) as con:
-        for table in task.tables:
-            create_table(con, table)
-            _insert_rows(con, table, rows.get(table.name, ()))
-        correct = execute_mart(con, mart, compile_plan_sql(task, mart))
-        gold = rows_to_canonical_csv(correct, tuple(c.name for c in mart.columns))
-        for variant in composition_variants(e, mart.plan.template_id):
-            mutant = composition_plan(task, e, mart.name, mart.plan.template_id, variant)
-            wrong = execute_mart(con, mutant, compile_plan_sql(task, mutant))
-            if compare_mart(gold, wrong, mart):
-                raise SemanticDifficultyError(f"No executable witness for {variant}")
-    return composition_variants(e, mart.plan.template_id)
+    return _FAMILY.certify(task, mart, e, rows)
+
+
+def composition_witness_rows(task, e, template):
+    """Keep equality at the global mean while retaining mixed-payload witnesses."""
+    from elt_taskgen.generation.populations import _coerce
+    new_rows = semantic_witness_rows(task, e)
+    if template == GLOBAL_BASELINE:
+        # Pin an actual equality at the GLOBAL mean after merging all
+        # existing rows. Change only two newly minted witness records.
+        old = next(p.literal_rows for p in task.populations if p.name is PopulationName.COUNTERFACTUAL)
+        target_rows = list(new_rows[e.fact])
+        remaining = [Decimal(str(r[e.measure])) for r in (*old.get(e.fact, ()), *target_rows[2:]) if r[e.measure] is not None]
+        total = sum(remaining, Decimal(0))
+        threshold = (total / max(1, len(remaining))).to_integral_value(rounding=ROUND_HALF_EVEN)
+        balancing = threshold * (len(remaining) + 1) - total
+        col = task.table(e.fact).column(e.measure)
+        # Put the smaller value on the earlier record so independent
+        # MIN(key)/MAX(measure) still constructs an impossible payload.
+        target_rows[0][e.measure] = _coerce(col, min(threshold, balancing))
+        target_rows[1][e.measure] = _coerce(col, max(threshold, balancing))
+        # Keep a separate mixed-payload witness whose returned label
+        # differs, even when numeric key differences fall within the
+        # evaluator's relative tolerance. This preserves the mean.
+        parent = new_rows[e.parent][2]
+        tied = [r for r in target_rows if all(r[c] == parent[k]
+                for c, k in zip(e.links, e.keys, strict=True))]
+        tied[0][e.measure], tied[-1][e.measure] = tied[-1][e.measure], tied[0][e.measure]
+    return new_rows
 
 
 def apply_composition_difficulty(task: TaskIR, *, template: str | None = None) -> TaskIR:
-    """Add one supported recipe, choosing reproducibly across task identities."""
-    from elt_taskgen.generation.populations import _coerce, _literal_row_problems
-    from elt_taskgen.reference.solution import attach_reference
-    existing = [m for m in task.marts if m.plan.template_id in COMPOSITION_TEMPLATES]
-    if existing:
-        for mart in existing:
-            if template and mart.plan.template_id != template:
-                raise SemanticDifficultyError("Task already contains a different composition")
-            e = bound_composition(task, mart)
-            if any(case not in task.attack_cases for case in composition_cases(e, mart.name, mart.plan.template_id)):
-                raise SemanticDifficultyError("Composition is missing mandatory attacks")
-            rows = next(p.literal_rows for p in task.populations if p.name is PopulationName.COUNTERFACTUAL)
-            certify_composition(task, mart, e, rows)
-        return task
+    # Existing tasks retain their recipe; new tasks use the same family rotation.
     if template is None:
+        existing = [m.plan.template_id for m in task.marts if m.plan.template_id in COMPOSITION_TEMPLATES]
+        if existing:
+            return _FAMILY.apply(task, COMPOSITION_TEMPLATES)
         template = COMPOSITION_TEMPLATES[int(sha256_hex(task.family_id)[:8], 16) % len(COMPOSITION_TEMPLATES)]
     if template not in COMPOSITION_TEMPLATES:
         raise ValueError(f"Unknown composition {template!r}")
-    refusals = []
-    for e in semantic_candidates(task)[:32]:
-        try:
-            new_rows = semantic_witness_rows(task, e)
-            if template == GLOBAL_BASELINE:
-                # Pin an actual equality at the GLOBAL mean after merging all
-                # existing rows. Change only two newly minted witness records.
-                old = next(p.literal_rows for p in task.populations if p.name is PopulationName.COUNTERFACTUAL)
-                target_rows = list(new_rows[e.fact])
-                remaining = [Decimal(str(r[e.measure])) for r in (*old.get(e.fact, ()), *target_rows[2:]) if r[e.measure] is not None]
-                total = sum(remaining, Decimal(0))
-                threshold = (total / max(1, len(remaining))).to_integral_value(rounding=ROUND_HALF_EVEN)
-                balancing = threshold * (len(remaining) + 1) - total
-                col = task.table(e.fact).column(e.measure)
-                # Put the smaller value on the earlier record so independent
-                # MIN(key)/MAX(measure) still constructs an impossible payload.
-                target_rows[0][e.measure] = _coerce(col, min(threshold, balancing))
-                target_rows[1][e.measure] = _coerce(col, max(threshold, balancing))
-                # Keep a separate mixed-payload witness whose returned label
-                # differs, even when numeric key differences fall within the
-                # evaluator's relative tolerance. This preserves the mean.
-                parent = new_rows[e.parent][2]
-                tied = [r for r in target_rows if all(r[c] == parent[k]
-                        for c, k in zip(e.links, e.keys, strict=True))]
-                tied[0][e.measure], tied[-1][e.measure] = tied[-1][e.measure], tied[0][e.measure]
-            rows = _merged_counterfactual(task, new_rows)
-            name = template.removesuffix("_v1") + "_activity"
-            occupied = {m.name for m in task.marts} | {t.name for t in task.tables}
-            while name in occupied:
-                name += "_"
-            mart = composition_plan(task, e, name, template)
-            populations = tuple(p.model_copy(update={"literal_rows": rows,
-                "scale": {n: max(1, len(v)) for n, v in rows.items()},
-                "conditions": (*p.conditions, f"{template}: executable witnesses for {name}")})
-                if p.name is PopulationName.COUNTERFACTUAL else p for p in task.populations)
-            changed = task.model_copy(update={"marts": (*task.marts, mart), "populations": populations,
-                "attack_cases": (*task.attack_cases, *composition_cases(e, name, template)), "reference": None})
-            changed = TaskIR.model_validate_json(changed.model_dump_json())
-            problems = _literal_row_problems(changed, next(p for p in populations if p.name is PopulationName.COUNTERFACTUAL))
-            if problems:
-                raise SemanticDifficultyError("; ".join(problems))
-            certify_composition(changed, mart, e, rows)
-        except SemanticDifficultyError as exc:
-            refusals.append(str(exc))
-            continue
-        return attach_reference(changed)
-    detail = " | ".join(refusals[:4]) if refusals else (
-        "schema needs a declared parent key, a many-to-one fact relationship, a numeric measure, and a usable group")
-    raise SemanticDifficultyError(f"No witnessed {template} candidate: {detail}")
+    return _FAMILY.apply(task, (template,))
+
+
+_FAMILY = RecipeFamily(
+    name="composition", recipes=COMPOSITION_TEMPLATES,
+    candidates=lambda task, recipe: semantic_candidates(task),
+    plan=composition_plan, witness_rows=composition_witness_rows,
+    variants=composition_variants, bind=bound_composition,
+    mart_name=lambda evidence, recipe: recipe.removesuffix("_v1") + "_activity",
+)

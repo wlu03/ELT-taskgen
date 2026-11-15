@@ -28,6 +28,8 @@ critics) and the transcript-store path by `FakeTransport`.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import hashlib
 import json
 import re
@@ -1497,15 +1499,15 @@ SPEC = RepairRoute.SPECIFICATION
 REF = RepairRoute.REFERENCE
 
 
-def proposer_routing() -> P.RoleRouting:
+def proposer_routing() -> _provider_config_module.RoleRouting:
     """The test routing plus a `repair_proposer` route (Opus, 8 192 tokens,
     `session.max_usd` 0.80 declared but disabled, exactly as agents.yaml)."""
     base = make_routing()
     roles = dict(base.roles)
-    roles[rp.ROLE_NAME] = P.RoleRoute(
+    roles[rp.ROLE_NAME] = _provider_config_module.RoleRoute(
         rp.ROLE_NAME, "anthropic", "claude-opus-5", 8192, "high", max_usd=0.80
     )
-    return P.RoleRouting(roles=roles, provider_config=base.provider_config, source=base.source)
+    return _provider_config_module.RoleRouting(roles=roles, provider_config=base.provider_config, source=base.source)
 
 
 _IDS = iter(range(1, 10_000))
@@ -1570,8 +1572,8 @@ class _BoundedFixture(_CertifierFixture):
 
     def setUp(self):
         super().setUp()
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def provider(self, workspace: Path, bodies, *, budget: float = 100.0, replay_only: bool = False):
         transport = FakeTransport(list(bodies))
@@ -2412,7 +2414,7 @@ class BoundedProposerTest(_BoundedFixture):
         # Exactly `max_turns` reads: the last is the forced turn. Read the
         # shipped budget rather than repeating it (8 since 2026-09-10, when
         # 30 recorded proposer turns produced zero patch submissions).
-        turns = providers_mod.role_loop_limits("repair_proposer")["max_turns"]
+        turns = _provider_config_module.role_loop_limits("repair_proposer")["max_turns"]
         reads = [body("read_view") for _ in range(turns)]
         outcome, _provider, transport = self.bounded(engine, reads)
         self.assertEqual(outcome.disposition, rp.DISPOSITION_BLOCKED_LIMIT)
@@ -2625,7 +2627,7 @@ class BoundedProposerTest(_BoundedFixture):
         self.assertEqual(choices[0], {"type": "auto"})
         from elt_taskgen.review import providers as providers_mod
 
-        policy = providers_mod.session_policy_for(rp.ROLE_NAME)
+        policy = _provider_protocol_module.session_policy_for(rp.ROLE_NAME)
         for index, (_u, _h, payload) in enumerate(transport.calls):
             names = {t.get("name") for t in payload.get("tools", ())}
             if names and names <= set(policy.terminal_tool_names):
@@ -2756,7 +2758,7 @@ class BoundedProposerTest(_BoundedFixture):
         # 2026-09-10 rerun, where 13 of 50 tasks stopped at the old 0.80).
         from elt_taskgen.review import providers as providers_mod
 
-        session_cap = providers_mod.role_loop_limits("repair_proposer")["max_usd"]
+        session_cap = _provider_config_module.role_loop_limits("repair_proposer")["max_usd"]
         self.assertAlmostEqual(proposer.session_reserve_usd(SPEC), session_cap + 0.56)
         self.assertAlmostEqual(proposer.session_reserve_usd(REF), session_cap + 0.05)
         with mock.patch.object(provider.meter, "reserve", wraps=provider.meter.reserve) as reserve:
@@ -4481,7 +4483,7 @@ class PopulationRouteTest(_BoundedFixture):
             # The role block is read through a per-path cache: each document
             # this test writes under the same name is a fresh read.
             path = self.population_config(**config_keys)
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             return rp.AgenticRepairProposer(provider, config_path=path)
 
         with self.assertRaises(ValueError) as bits:

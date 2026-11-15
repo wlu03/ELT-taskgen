@@ -15,7 +15,8 @@ from elt_taskgen.models import (
     AttackCase, AttackKind, ColumnType, JoinType, MartColumn, MartColumnKind,
     MartOp, MartOpKind, MartPlan, MartSpec, PopulationName, TaskIR, canonical_json,
 )
-from elt_taskgen.generation.mart_plan import quote, validate_plan
+from elt_taskgen.generation.mart_plan import quote
+from elt_taskgen.generation.recipe_admission import RecipeFamily, SemanticDifficultyError, _merged_counterfactual
 
 
 TEMPLATE = "semantic_rollup_v1"
@@ -27,8 +28,6 @@ MEASURE_WORDS = frozenset((
 ))
 
 
-class SemanticDifficultyError(ValueError):
-    """No schema-supported and witnessed composed mart can be admitted."""
 
 
 @dataclass(frozen=True)
@@ -268,10 +267,7 @@ def variants(e: SemanticEvidence) -> tuple[str, ...]:
 
 
 def mutation_cases(e: SemanticEvidence, mart: str) -> tuple[AttackCase, ...]:
-    return tuple(AttackCase(name=f"{mart}__{variant}", kind=AttackKind.CUSTOM,
-                           description=f"Violate the {variant.replace('_', ' ')} rule in {mart}; executable witness required.",
-                           mutation="directive:structured:" + canonical_json({"operation": TEMPLATE, "mart": mart, "variant": variant}),
-                           expected_pass={PopulationName.COUNTERFACTUAL: False}) for variant in variants(e))
+    return _FAMILY.cases(e, mart, TEMPLATE)
 
 
 def bound_evidence(task: TaskIR, mart: MartSpec) -> SemanticEvidence:
@@ -290,18 +286,7 @@ def bound_evidence(task: TaskIR, mart: MartSpec) -> SemanticEvidence:
 
 
 def materialize_semantic_mutation(task: TaskIR, payload: dict) -> dict[str, str]:
-    from elt_taskgen.reference.solution import build_reference, compile_plan_sql
-    if set(payload) != {"operation", "mart", "variant"} or payload["operation"] != TEMPLATE:
-        raise SemanticDifficultyError("Invalid semantic mutation directive")
-    mart = task.mart(payload["mart"])
-    if mart.plan.template_id != TEMPLATE:
-        raise SemanticDifficultyError("Semantic mutation targets a different template")
-    e = bound_evidence(task, mart)
-    if payload["variant"] not in variants(e):
-        raise SemanticDifficultyError("Unknown semantic mutation")
-    result = dict(build_reference(task).sql_by_mart)
-    result[mart.name] = compile_plan_sql(task, semantic_plan(task, e, mart.name, payload["variant"]))
-    return result
+    return _FAMILY.materialize_mutation(task, payload)
 
 
 def semantic_witness_rows(task: TaskIR, e: SemanticEvidence) -> dict:
@@ -378,91 +363,32 @@ def semantic_witness_rows(task: TaskIR, e: SemanticEvidence) -> dict:
     return result
 
 
-def _merged_counterfactual(task: TaskIR, new_rows: dict) -> dict:
-    from elt_taskgen.generation import populations as p
-    old = next((pop.literal_rows for pop in task.populations if pop.name is PopulationName.COUNTERFACTUAL), None)
-    if old is None:
-        raise SemanticDifficultyError("Task has no existing counterfactual population")
-    merged = {t.name: [dict(r) for r in (*old.get(t.name, ()), *new_rows.get(t.name, ()))] for t in task.tables}
-    p._enforce_primary_keys({t.name: t for t in task.tables}, merged)
-    before = p._unresolved_keys(task.relationships, old)
-    after = p._unresolved_keys(task.relationships, merged)
-    if before - after:
-        raise SemanticDifficultyError("New rows would resolve an existing intentional orphan")
-    if after - before - p._unresolved_keys(task.relationships, new_rows):
-        raise SemanticDifficultyError("Merging witnesses introduced an unresolved relationship")
-    for table in task.tables:
-        if any(row not in merged[table.name] for row in old.get(table.name, ())):
-            raise SemanticDifficultyError("Merging witnesses changed an existing source row")
-    result = {name: tuple(rows) for name, rows in merged.items()}
-    p.assert_literal_rows_typed(task.tables, result)
-    return result
 
 
 def certify_semantics(task: TaskIR, mart: MartSpec, e: SemanticEvidence, rows: dict) -> tuple[str, ...]:
-    """Every mutant must execute successfully and fail the real output comparator."""
-    from elt_taskgen.reference.duckdb_sandbox import sandboxed_memory_connection
-    from elt_taskgen.reference.solution import create_table, _insert_rows, compile_plan_sql, execute_mart
-    from elt_taskgen.verification.upstream_eval import compare_mart, rows_to_canonical_csv
-    problems = validate_plan(task, mart.plan)
-    if problems:
-        raise SemanticDifficultyError("Invalid semantic plan: " + "; ".join(problems))
-    with sandboxed_memory_connection(memory_limit_mb=512, threads=1, disable_temp_spill=True) as connection:
-        for table in task.tables:
-            create_table(connection, table)
-            _insert_rows(connection, table, rows.get(table.name, ()))
-        correct = execute_mart(connection, mart, compile_plan_sql(task, mart), max_rows=100_000, max_bytes=16 * 1024 * 1024)
-        gold = rows_to_canonical_csv(correct, tuple(c.name for c in mart.columns))
-        killed = []
-        for variant in variants(e):
-            wrong_mart = semantic_plan(task, e, mart.name, variant)
-            wrong = execute_mart(connection, wrong_mart, compile_plan_sql(task, wrong_mart), max_rows=100_000, max_bytes=16 * 1024 * 1024)
-            if compare_mart(gold, wrong, mart):
-                raise SemanticDifficultyError(f"No executable witness for {variant}")
-            killed.append(variant)
-    return tuple(killed)
+    return _FAMILY.certify(task, mart, e, rows)
 
 
 def apply_semantic_difficulty(task: TaskIR) -> TaskIR:
-    """Add a witnessed composed mart; reject schemas that cannot support one."""
-    from elt_taskgen.reference.solution import attach_reference
-    from elt_taskgen.generation.populations import _literal_row_problems
-    existing = [m for m in task.marts if m.plan.template_id == TEMPLATE]
-    if existing:
-        for mart in existing:
-            evidence = bound_evidence(task, mart)
-            required = mutation_cases(evidence, mart.name)
-            if any(case not in task.attack_cases for case in required):
-                raise SemanticDifficultyError("Semantic task is missing its required mutation cases")
-            rows = next(p.literal_rows for p in task.populations if p.name is PopulationName.COUNTERFACTUAL)
-            certify_semantics(task, mart, evidence, rows)
-        return task
+    """Add a witnessed composed mart through the shared admission contract."""
+    return _FAMILY.apply(task, (TEMPLATE,))
+
+
+def _candidates(task, recipe):
     candidates = semantic_candidates(task)
     if not candidates:
         raise SemanticDifficultyError("No semantic candidate: need a relationship to a declared unique parent key, a meaningful numeric measure, and a repeatable group or dimension")
-    refusals = []
-    for evidence in candidates[:32]:
-        mart_name = "semantic_" + re.sub(r"[^a-z0-9_]", "_", evidence.parent.casefold())[:35] + "_activity"
-        occupied = {m.name for m in task.marts} | {t.name for t in task.tables}
-        while mart_name in occupied:
-            mart_name += "_"
-        try:
-            mart = semantic_plan(task, evidence, mart_name)
-            rows = _merged_counterfactual(task, semantic_witness_rows(task, evidence))
-            populations = tuple(pop.model_copy(update={"literal_rows": rows,
-                "scale": {name: max(1, len(values)) for name, values in rows.items()},
-                "conditions": (*pop.conditions, f"{TEMPLATE}: isolated witnesses for {mart.name}; " + ", ".join(variants(evidence)))})
-                if pop.name is PopulationName.COUNTERFACTUAL else pop for pop in task.populations)
-            changed = task.model_copy(update={"marts": (*task.marts, mart), "populations": populations,
-                "attack_cases": (*task.attack_cases, *mutation_cases(evidence, mart_name)), "reference": None})
-            changed = TaskIR.model_validate_json(changed.model_dump_json())
-            counterfactual = next(p for p in populations if p.name is PopulationName.COUNTERFACTUAL)
-            problems = _literal_row_problems(changed, counterfactual)
-            if problems:
-                raise SemanticDifficultyError("; ".join(problems))
-            certify_semantics(changed, mart, evidence, rows)
-        except (SemanticDifficultyError, ValueError) as exc:
-            refusals.append(f"{evidence.fact}.{evidence.measure}/{evidence.group}: {exc}")
-            continue
-        return attach_reference(changed)
-    raise SemanticDifficultyError("No witnessed semantic candidate (checked up to 32): " + " | ".join(refusals[:4]))
+    return candidates
+
+
+_FAMILY = RecipeFamily(
+    name="semantic", recipes=(TEMPLATE,), candidates=_candidates,
+    plan=lambda task, evidence, mart, recipe, variant="": semantic_plan(task, evidence, mart, variant),
+    witness_rows=lambda task, evidence, recipe: semantic_witness_rows(task, evidence),
+    variants=lambda evidence, recipe: variants(evidence), bind=bound_evidence,
+    mart_name=lambda evidence, recipe: "semantic_" + re.sub(r"[^a-z0-9_]", "_", evidence.parent.casefold())[:35] + "_activity",
+    population_condition=lambda evidence, mart, recipe: f"{recipe}: isolated witnesses for {mart}; " + ", ".join(variants(evidence)),
+    attack_description="Violate the {variant} rule in {mart}; executable witness required.",
+    retryable_errors=(SemanticDifficultyError, ValueError),
+    max_result_rows=100_000, max_result_bytes=16 * 1024 * 1024,
+)

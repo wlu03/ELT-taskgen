@@ -1,0 +1,182 @@
+{
+  "activity_lifecycle_v1": {
+    "data_model": "26cdb5f76d69e36fdbd47ed4d4b0b42e1902799de6db1b65807065474ac86c3b",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "7698efa1f090b5de31966769af94dcdc1d032a07a0b8acd8b6519c626ef68353",
+    "task": "d8eb41728d7d9e88fc4e431eff79f77edd072c56cd2d3e01573dd6d3fae45c15"
+  },
+  "aggregate_filter_rank_v1": {
+    "data_model": "5b65ecef8597d62e6523026f8be00b8996dacd039737e6d69dcb35316f5c265b",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "5114d0ffab322a5d3e933e038505f45f8a53cc979ea28d0b723eedab34d6ed41",
+    "task": "b1e55831281d76e2dd99b2d2e9eadc08cf694716dbd7e6bafefb449073ef6c03"
+  },
+  "ambiguous_path_rollup_v1": {
+    "data_model": "dfc04be1063a3217f607ec6ff6161f98558c9e0bd3b629e05a41cc85f9ce0460",
+    "documentation": "d1d62ee1f9d5a04467f9a73e8bbf45eed402d4d093c9a3f287453e7c0b3a8e64",
+    "sql": "09a6dacfaace50b498bb426a758524fc04bc9b3c06171d6cd710ebef69ed3a70",
+    "task": "f941c1fe0b1bf666c25f7841b17554a93a83eb136eef36caafdac97f14ae9475"
+  },
+  "calendar_streak_v1": {
+    "data_model": "2722f190eabbb171b7b04d8bcacdad7664d4931fed3008e7a3f1282f5449be7f",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "c0b190f930cd8940383bf71eb94e0152aebf298d63810b91cdaf521cffbdeae6",
+    "task": "85238b8f4ee4c5827e46c84ea1e807f76e5473747ebc506dd74c5f41ed7544c7"
+  },
+  "cohort_retention_v1": {
+    "data_model": "6dc939509fad1b438bf1678001c5f1dd862c3206530b7e4bb814e7a20b08984c",
+    "documentation": "32ce8a0bb5d9843d26d35bff9a61a372c51ff805fb5d63c1d802a3eae3b74492",
+    "sql": "2144f0bbb07b0c90df93d77ae43b780c8151f358ac31a007498249fbbdcbe05e",
+    "task": "d981b88f47b3bd6df6512c7feffbf1d835f164e42979499f8c065b470a048e48"
+  },
+  "composite_key_bridge_v1": {
+    "data_model": "81209499bdf1bf45f2bd3c6b202577411a66ff2d12bb5d9822e4d86a5999b883",
+    "documentation": "7ecf3f8391d924375c39501a204c34ef5eb00ced0b0086ca6c3a18156d73a151",
+    "sql": "3efe29e68efdfcbfba70ef4d46b221d0bb17e12ad747820456afba3e26f3c77a",
+    "task": "413039300ca1d2a610e94a58db25aa1afcef5d2554ed1baf77489e46b7b095d7"
+  },
+  "document_reconciliation_v1": {
+    "data_model": "26cba9e19083069a5e65f9a0a746b231756b35e5b645043bb21bd9f7343defd4",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "427a7de8a24b66c68d0c95cf06bc43db31fea62bc685fb13e4531158d7ce265b",
+    "task": "34b2e8a313ebf262d093ded7b42a4ecae4e1eae18a0365d99deb4f8976a40a11"
+  },
+  "entity_total_baseline_v1": {
+    "data_model": "73371536e117424545974787c74202efba26cd314ed146bb7c43b033a87e8a5f",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "5a360577b1a4473c2fb9febeb22c8da168d22cf195cd8114faabfcaf8a0ed514",
+    "task": "21a9901a70beb04da5cff814f1b64f8856662ff891de244f792efbbb49aa1489"
+  },
+  "event_sessionization_v1": {
+    "data_model": "3f799f67dc50003d3be833f71807120863d7a11c06e7a1a3faeaa0ab793d35e2",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "d4572ed58505d9c88fdd041b88b3a7bcef68931024e0886e773e10a1b6384bd9",
+    "task": "d4e3fb8a0fa633ee116a88971fc34441db7985f53908536bfdb120d7d3b3407e"
+  },
+  "global_baseline_v1": {
+    "data_model": "88d23c3dffddb6fdc7df702a04da481c04f3f885d8a9fdb51efbc3f1be82fa8b",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "45305cac7f6c8afbb198017bee1a0ee8e7c688ae89cd9ecc30348c12340c6cbd",
+    "task": "54bf54af03ebedc4c927b7f98b7f5cc597d0ac7e926f33939b8e180c8ea3dd70"
+  },
+  "heterogeneous_key_join_v1": {
+    "data_model": "0e5ddd4755ab17f6869ed5813f61cbbaf6b48e371a7cae9648919a1b87d5ef9b",
+    "documentation": "243adc20270b964acd112e9cb19d4d64f54b3f985e6cbd17b2f994342a4d7b7d",
+    "sql": "cd21c7a8824427089121da438c0060c0501bbf55f1f4055bfdcca4605f0998d9",
+    "task": "03ad33be56e18cc16493ea25bbbc3b6bfcc4d6d32266eb8e4cee53cbad706218"
+  },
+  "historical_asof_v1": {
+    "data_model": "b786c775c8887b9d8cce5523ef4a8ec339cd818ca408171e2812bd61f5d9ed87",
+    "documentation": "32ce8a0bb5d9843d26d35bff9a61a372c51ff805fb5d63c1d802a3eae3b74492",
+    "sql": "f802c8fe43a2e3b08ed7eb6b543502382c337e16911e4436d19e32da7faff058",
+    "task": "f71eda03f6185b67bbbc6e5b9527ccab80de8b15b8d938a00adda843ea8179fe"
+  },
+  "independent_winners_v1": {
+    "data_model": "a07f51b76837997480267167b89555dad88cc0a863d3792e9b4709fda304962f",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "866a98b51c0a87694ac0947e12f4367302ebcd8a0df76ba4d5820af9b37bdbf0",
+    "task": "8b46b4f27fa9bd125e0de5e51265f56420c2eba83dc433c2147004242d446798"
+  },
+  "interval_coverage_v1": {
+    "data_model": "231120d9a036aa6155250f4a2c440ab1e7e8894112e17aa47ae557e9e8c07168",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "26d24b6dbeae0cf252fc3f99aece3eeafb411840f05e0158fa4ce491cd3a09ec",
+    "task": "a309361210c7549828de3aea26e848181aaefa09381fbb3f5525744277a0986e"
+  },
+  "ledger_reconciliation_v1": {
+    "data_model": "c175755b2dd6f7275de3d7011f86068862c9a9b28932b213de965361cec6b1e7",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "7217a0a95dc2b3287ea6c1efe4794fcdf29d0ff7b1952fdf7dce05eebb29e4bd",
+    "task": "5f7dede53f7d735ab395b6117356190e4b4cc8851d993d47e1f016256b8ab99b"
+  },
+  "multi_bridge_dedup_v1": {
+    "data_model": "acc41c4fb29327de7822b9fe642ce743cb4184a4fc762e1a6e61a93688db79db",
+    "documentation": "fce2f0dc5a06145c6375f79573479ba74f55bd87f260649ef4b4e7f4055786bd",
+    "sql": "69bc2cb64010cbd0dc5890d4545952fb59d256e1392d05367dd17edf1bde5659",
+    "task": "dd8294dbc4f6e19d16cf2cbaa18f43dca737cab60838028705c73cc9aa4b081f"
+  },
+  "optional_chain_coverage_v1": {
+    "data_model": "418938409389f3317811b483c19d69c030b2e6bbb0457a25a094387b9d5cfb85",
+    "documentation": "a361b1b4717fb57e1b318d9ac8773167986d29bcc8a23db6d8aaac13dad42e85",
+    "sql": "94a052b0ded827030cf32d9951598177b1ec519ba0abcaa499b02baf5d9b5899",
+    "task": "7e38c9cd578022757877fed42e03814c38b8fce27bc3d1c95eb31a4ed3278e30"
+  },
+  "recursive_hierarchy_v1": {
+    "data_model": "04c42ccfc3aa534128944026c1fdb969339f32a7f8a2c6b5c75739272c9c7f46",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "df5ec751a5774f7bfc5bf53128ea3cf39300b1863d8e19961bd99b86f6ec8ea5",
+    "task": "8402eb6b6c3b108fcdf8e06b89b51e0950a53eedbab55016f4061fe8661cc0b8"
+  },
+  "role_playing_dimension_v1": {
+    "data_model": "3e0b7698554f067935c59f23891f657c419ed21f7633a4e78202ffacf5f766e9",
+    "documentation": "63ac51c1325109b8b5ddad6712e84a5b0cfbdd88424047aaa9c4ea23e1b0551f",
+    "sql": "effa75389d18e0ed3b151f183d6f9f088c5fb5d464582176ff3863a42d1d1c98",
+    "task": "1b247e2cdb48cd979935f9ad7ba3589ff0d16425bf06f5cfe856007964fc3a11"
+  },
+  "semantic_rollup_v1": {
+    "data_model": "bd049cadeeb840feb5a01fb739edbc8e085c574d5f322780b962ed982b932063",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "ba4892425500bd2f8c0e3fa172b25aebd506a2fed1435e8b1094d11403d952ef",
+    "task": "8cef75687c0adf1e871fa99cff45c6f950e658c13c78e1ef52c9cd3f81666aca"
+  },
+  "shape:aggregate_then_filter": {
+    "data_model": "43c7ca0af19e661f89199108c0f564e1d8779a9c787bdc7cb9667bb73ce2b66b",
+    "documentation": "4437a403f8069317f14bf09005bad3b7134904567a4b9225bb9e6b063f2aee56",
+    "sql": "d7d301e4540ce3aac4693ad429972c1d2508475154fbbfce78a556606ec90323",
+    "task": "fa39ca9908f41c8e43823333a761442a5f3adfc58d845bfd673fb65ba8d3e874"
+  },
+  "shape:argmax_profile": {
+    "data_model": "ea456fa30de3e786adc0e220ff97a4806ce2fd5e99314f83eb74172cc3fff77b",
+    "documentation": "6146f4722c0aca8266fe8c912e1ebf6a53eb6f23933f1d48a6501db46734bd78",
+    "sql": "9b93c108f879640f47413e9eec40f38b6e320192731e8c0178f1adf114f7fc3a",
+    "task": "e2520b231f87e8812e29bd2cefcba966233dc0ef01f3f8a1acd174740fdc9bea"
+  },
+  "shape:categorical_ladder": {
+    "data_model": "4d62981d00c4a7882bfeda4ab933abd848a1fe0d77a2cfd11c2566d93a4d67fa",
+    "documentation": "af825770392c142f582b9304d3854b3a980e47edd599d425ef6627b96cb1fe63",
+    "sql": "a394415e6829650c9b828f672646da41e2a8d0cf30923891606077d2288ba2fe",
+    "task": "a1cd318c21368c73978f960332122dd138417de83cf6792daecc6e38e303ee3d"
+  },
+  "shape:fan_out_rollup": {
+    "data_model": "45f701c99fed6f1559fbb1097a819bdf577a4fffc8146a9d4a10f36f3c083f85",
+    "documentation": "ddd1f2e784f06d99f8414942f4ecc03e7066e1ab510dab9fd39ad055e9273918",
+    "sql": "2a80ce499220139140e1b1f8276a640b1d4321afdd89ccf139dfe5586b391295",
+    "task": "9317a52e1ce23fb11a5b91a0a0287654967403cbbf3a804236aa9de320af4d06"
+  },
+  "shape:latest_snapshot": {
+    "data_model": "373c9ee42ef59c3a2d3e7a772b86d13e43ad1224ac1f1d480a000e546ece4ece",
+    "documentation": "1b584ac12bb7a4436d772e57ff4009fdc354c4fbe09680e2dcb4689408ac1aa2",
+    "sql": "a9a1d72a831f5694bf95d54409137c32ff9611cd23896676743586b37cf273a3",
+    "task": "7f0069305f366677cf1a3042c2a044d51c15505cd1b3934f1e031efcdb08d7da"
+  },
+  "shape:measure_state_distribution": {
+    "data_model": "0c8b027a7f531948eef5cc0289ada483bd1e2af9c376c5f1de82202a1d7c680a",
+    "documentation": "fe04dfdf7237709bdb619534541507da9b3c847f0329a673d855e5a63b8bacc9",
+    "sql": "aa1dfca1b7a60cabcecfe434478fe350ed0561c995d43dacffe14ad356204968",
+    "task": "40b4259c50518fb39e60ca85c949745e6d27c8d62b4bdd0ec3ddd87d2601aad0"
+  },
+  "shape:orphan_coverage": {
+    "data_model": "0bcb1e613cf40e4d5dda1dbb1739b6135016eec821fe60286c9f0c225cf82796",
+    "documentation": "eda3829b920d460f7a6973a85896eb1b8038fe319308aa8482a42fff0441706b",
+    "sql": "f3d130af81487627108b9eb4f7bd4a37398bfb15fd8b862fa3923f462742ba9a",
+    "task": "e543e46ca3a24a9a29037f56ceb95c0260ebd453282369c8f798d87210ea51c6"
+  },
+  "shape:status_cohort_union": {
+    "data_model": "1f8f5bdc1ad9389dc3a71cb3e1bb5d5c55d5e89b98892a352d11034f5a216a36",
+    "documentation": "087be88951156bfa6b74efdb166174fa7a7b07ff7d6a9560fde82fe1037c26ae",
+    "sql": "3469f97db560477e44d6dc007ebe019822fe61c429332696fc90eabfd61ede07",
+    "task": "acdb84cb426cc39ceae1f6f6c52e93b3590084ef1caed04794fa563cee54cc76"
+  },
+  "shape:temporal_grid": {
+    "data_model": "cb26f66e6f53cab76e44b3da40a0ac8744e9a0c1c488530a9797322c889dac82",
+    "documentation": "c50f9b967352244044e82fc8dd9b12b77ee3573708720456d3c360c0e432f6e8",
+    "sql": "09ee6cece8d081fc31e5e99ab0926fc2bf4daaf2b7c499dd827f43e746de0655",
+    "task": "ac936fb9a841c8602e87aa3cdd8dd0c86555f3ca555253a47f069584d21cc818"
+  },
+  "weighted_allocation_v1": {
+    "data_model": "28dd756038c8a8232819f4adddf89131ad20be6f2565ee001f40f4f3bc4684b8",
+    "documentation": "32ce8a0bb5d9843d26d35bff9a61a372c51ff805fb5d63c1d802a3eae3b74492",
+    "sql": "2dd42db51ab49135293b59edd493359e8f28e67b6e7559dfaa31129e0a7efd83",
+    "task": "7340031de3c7aa6c2511350c50138b01cb13a362c30e89c42c4d216c8de1c86e"
+  }
+}

@@ -38,6 +38,8 @@ inside the tests only; they are not shipping providers.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import math
 import os
@@ -2217,7 +2219,7 @@ class OracleEndToEndTest(unittest.TestCase):
         """An admission is evidence from a (model, instructions, BENCHMARK)
         triple. Editing the pool or the harness version must stale the marker,
         or a council admitted by a weaker bar keeps its admission for free."""
-        routing = providers_mod.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         before = metrology_mod.council_routing_fingerprint(routing)
         with mock.patch.object(metrology_mod, "HARNESS_VERSION", "999"):
             self.assertNotEqual(
@@ -2554,7 +2556,7 @@ class AdmissionRecordIntegrityTest(unittest.TestCase):
             # have been LOOSENED is refused, not resurrected.
             config = workspace / "loose.yaml"
             document = yaml.safe_load(
-                providers_mod.default_agents_config_path().read_text(encoding="utf-8")
+                _provider_config_module.default_agents_config_path().read_text(encoding="utf-8")
             )
             document["metrology"] = {
                 **dict(document.get("metrology") or {}),
@@ -2685,7 +2687,7 @@ class AdmissionRecordIntegrityTest(unittest.TestCase):
         admission exactly as editing what it is TOLD does. Before this, the
         Aug-13 view enrichment re-keyed 384 of 415 transcripts and moved the
         fingerprint by zero bits."""
-        routing = providers_mod.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         before = metrology_mod.council_routing_fingerprint(routing)
         before_view = metrology_mod.view_digest()
 
@@ -2778,7 +2780,7 @@ class _EmptyFindingsTransport:
                 {
                     "type": "tool_use",
                     "id": "toolu_01",
-                    "name": providers_mod.FINDINGS_TOOL_NAME,
+                    "name": _provider_protocol_module.FINDINGS_TOOL_NAME,
                     "input": {"findings": []},
                 }
             ],
@@ -2793,14 +2795,14 @@ class ReroutedSeatReplayTest(unittest.TestCase):
     on the old model's transcripts (the r3_metrology_replay demonstration)."""
 
     @staticmethod
-    def _routing(*, ambiguity_model: str) -> providers_mod.RoleRouting:
-        base = providers_mod.load_role_routing(None)
+    def _routing(*, ambiguity_model: str) -> _provider_config_module.RoleRouting:
+        base = _provider_config_module.load_role_routing(None)
         roles = dict(base.roles)
         critic = roles["ambiguity_critic"]
-        roles["ambiguity_critic"] = providers_mod.RoleRoute(
+        roles["ambiguity_critic"] = _provider_config_module.RoleRoute(
             critic.role, critic.provider, ambiguity_model, critic.max_tokens, critic.effort
         )
-        return providers_mod.RoleRouting(
+        return _provider_config_module.RoleRouting(
             roles=roles,
             provider_config={
                 "anthropic": {"api_key": "sk-test"},
@@ -3071,7 +3073,7 @@ class RecordTranscriptsAdmissionGateTest(unittest.TestCase):
         out = io.StringIO()
         env = {k: v for k, v in os.environ.items() if k != metrology_mod.ADMISSION_ENV}
         with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(
-            providers_mod, "credential_problems", lambda routing, roles: []
+            _provider_config_module, "credential_problems", lambda routing, roles: []
         ), mock.patch.object(providers_mod, "RoutedProvider", factory), (
             contextlib.redirect_stdout(out)
         ):
@@ -3086,7 +3088,7 @@ class RecordTranscriptsAdmissionGateTest(unittest.TestCase):
         self.assertEqual(stub.calls if stub is not None else [], [])
 
     def test_record_transcripts_with_marker_proceeds(self):
-        routing = providers_mod.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         report = metrology_mod.run_metrology(
             OracleProvider(),
             routing_fingerprint=metrology_mod.council_routing_fingerprint(routing),
@@ -3183,7 +3185,7 @@ class MetrologyCliTest(unittest.TestCase):
         )
 
     def test_passing_replay_is_diagnostic_and_cannot_replace_admission(self):
-        routing = providers_mod.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         report = metrology_mod.run_metrology(
             OracleProvider(),
             routing_fingerprint=metrology_mod.council_routing_fingerprint(routing),
@@ -3215,7 +3217,7 @@ class MetrologyCliTest(unittest.TestCase):
         self.assertEqual(code, 2)
 
     def test_live_run_with_any_replayed_exchange_cannot_admit(self):
-        routing = providers_mod.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         report = metrology_mod.run_metrology(
             OracleProvider(),
             routing_fingerprint=metrology_mod.council_routing_fingerprint(routing),
@@ -3244,7 +3246,7 @@ class MetrologyCliTest(unittest.TestCase):
         self.assertEqual(code, 2)
 
     def test_complete_fresh_live_manifest_can_admit(self):
-        routing = providers_mod.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         report = metrology_mod.run_metrology(
             OracleProvider(),
             routing_fingerprint=metrology_mod.council_routing_fingerprint(routing),
@@ -3340,7 +3342,7 @@ _LIVE_SKIP_REASON = _live_metrology_skip_reason()
 class LiveMetrologyTest(unittest.TestCase):
     @unittest.skipUnless(_LIVE_SPEND_ALLOWED or _HAVE_TRANSCRIPTS, _LIVE_SKIP_REASON)
     def test_live_or_replayed_council_metrology_runs_end_to_end(self):
-        routing = providers_mod.load_role_routing()
+        routing = _provider_config_module.load_role_routing()
         store = providers_mod.TranscriptStore(
             _WORKSPACE_TRANSCRIPTS,
             fixtures_dir=providers_mod.default_fixtures_dir(),
@@ -3975,9 +3977,9 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
     count invariants, PROOF 5 and PROOF 6 as tests."""
 
     def setUp(self):
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
-        self.routing = providers_mod.load_role_routing(None)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
+        self.routing = _provider_config_module.load_role_routing(None)
 
     def _admitted_report(self, fingerprint="fp-abc", seed=_SEEDS[0]):
         return metrology_mod.run_metrology(
@@ -4623,7 +4625,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             ("nudge_count", 0), ("validator_run_count", 0), ("terminal", "SUBMITTED"),
             ("live_model_call_count", 1), ("stale_tool_result_count", 0),
             ("correction_kinds", {"schema": 0, "compile": 0}),
-            ("entry_schema", providers_mod.TRANSCRIPT_ENTRY_SCHEMA),
+            ("entry_schema", _provider_protocol_module.TRANSCRIPT_ENTRY_SCHEMA),
         ):
             self.assertEqual(row[key], value, key)
         metrology_mod._normalize_trajectory_row(
@@ -4793,9 +4795,9 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             _write_admission_marker(workspace, report)
             self.assertTrue(metrology_mod.live_admission_ok(workspace, routing_fingerprint=before_fp))
             with mock.patch.object(
-                providers_mod, "_tool_description_for", lambda r: "Report findings (edited)."
+                _provider_protocol_module, "_tool_description_for", lambda r: "Report findings (edited)."
             ):
-                providers_mod.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
                 self.assertEqual(metrology_mod.view_digest(), before_view)
                 after_surface = metrology_mod.tool_surface_sha256()
                 after_fp = metrology_mod.council_routing_fingerprint(self.routing)
@@ -4806,7 +4808,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                     self.assertFalse(status.ok)
                     self.assertIn("STALE", status.reason)
                     self.assertIn("tool surface", status.reason)
-            providers_mod.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(metrology_mod.tool_surface_sha256(), before_surface)
             self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before_fp)
             self.assertTrue(metrology_mod.live_admission_ok(workspace, routing_fingerprint=before_fp))
@@ -4843,11 +4845,11 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             self.assertNotEqual(metrology_mod.tool_surface_sha256(), before_surface)
             self.assertNotEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
 
-        disabled = json.loads(json.dumps(providers_mod._agents_doc()))
+        disabled = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role in ("population_adversary", "shortcut_attacker"):
             disabled["roles"][role]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: disabled):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled):
+            _provider_protocol_module.clear_behavior_caches()
             rollback = metrology_mod.council_routing_fingerprint(self.routing)
             rollback_surface = metrology_mod.tool_surface_sha256()
             self.assertEqual(metrology_mod.validator_digests(), {"code": {}, "binaries": {}})
@@ -4863,8 +4865,8 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
 
         pop_only = json.loads(json.dumps(disabled))
         pop_only["roles"]["population_adversary"]["session"]["enabled"] = True
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: pop_only):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: pop_only):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(
                 metrology_mod.critic_wired_validators()["population_adversary"],
                 ("compile_proposal",),
@@ -4913,37 +4915,37 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                 metrology_mod.validator_digests(scope=("ambiguity_critic",)),
                 {"code": {}, "binaries": {}},
             )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
         self.assertEqual(metrology_mod.tool_surface_sha256(), before_surface)
 
     def test_fingerprint_moves_when_the_sandbox_pin_changes(self):
         before = metrology_mod.council_routing_fingerprint(self.routing)
-        pinned = json.loads(json.dumps(providers_mod._agents_doc()))
+        pinned = json.loads(json.dumps(_provider_config_module._agents_doc()))
         pinned["metrology"]["sandbox"] = {
             "runtime": "docker", "image_digest": "sha256:" + "a" * 64,
             "workspace_template_sha256": "b" * 64,
         }
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: pinned):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: pinned):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(metrology_mod.sandbox_digest()["runtime"], "docker")
             self.assertNotEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
-        providers_mod.clear_behavior_caches()
-        self.assertEqual(metrology_mod.sandbox_digest(), providers_mod.sandbox_pin())
+        _provider_protocol_module.clear_behavior_caches()
+        self.assertEqual(metrology_mod.sandbox_digest(), _provider_config_module.sandbox_pin())
         self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
 
     def test_fingerprint_moves_when_loop_limits_change(self):
         before = metrology_mod.council_routing_fingerprint(self.routing)
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"]["feasibility_reviewer"]["session"]["max_wall_s"] = 301
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertNotEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
             components = metrology_mod.fingerprint_components(self.routing)
             self.assertEqual(
                 components["roles"]["feasibility_reviewer"]["loop_limits"]["max_wall_s"], 301
             )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
 
     def test_fingerprint_hashes_the_agents_document_the_routing_was_loaded_from(self):
@@ -4961,12 +4963,12 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
         default_fp = metrology_mod.council_routing_fingerprint(self.routing)
         default_components = metrology_mod.fingerprint_components(self.routing)
         with tempfile.TemporaryDirectory() as tmp:
-            doc = json.loads(json.dumps(providers_mod._agents_doc()))
+            doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
             doc["roles"]["feasibility_reviewer"]["session"]["max_wall_s"] = 301
             path = Path(tmp) / "agents.yaml"
             path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-            routing = providers_mod.load_role_routing(path)
-            self.assertEqual(providers_mod.agents_config_of(routing), path)
+            routing = _provider_config_module.load_role_routing(path)
+            self.assertEqual(_provider_config_module.agents_config_of(routing), path)
 
             custom_fp = metrology_mod.council_routing_fingerprint(routing)
             self.assertNotEqual(custom_fp, default_fp)
@@ -4975,7 +4977,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             self.assertEqual(seat["loop_limits"]["max_wall_s"], 301)
             self.assertEqual(
                 seat["behavior_sha256"],
-                providers_mod.role_behavior_sha256("feasibility_reviewer", agents_config=path),
+                _provider_protocol_module.role_behavior_sha256("feasibility_reviewer", agents_config=path),
             )
             self.assertNotEqual(
                 seat["behavior_sha256"],
@@ -4987,7 +4989,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                 components["roles"]["ambiguity_critic"],
                 default_components["roles"]["ambiguity_critic"],
             )
-            self.assertEqual(components["sandbox"], providers_mod.sandbox_pin(agents_config=path))
+            self.assertEqual(components["sandbox"], _provider_config_module.sandbox_pin(agents_config=path))
             self.assertEqual(
                 components["tool_surface_sha256"],
                 metrology_mod.tool_surface_sha256(agents_config=path),
@@ -5000,7 +5002,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                 },
             )
 
-            pinned = json.loads(json.dumps(providers_mod._agents_doc()))
+            pinned = json.loads(json.dumps(_provider_config_module._agents_doc()))
             pinned["metrology"]["sandbox"] = {
                 "runtime": "docker",
                 "image_digest": "sha256:" + "a" * 64,
@@ -5008,7 +5010,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             }
             pin_path = Path(tmp) / "pinned.yaml"
             pin_path.write_text(yaml.safe_dump(pinned, sort_keys=False), encoding="utf-8")
-            pin_routing = providers_mod.load_role_routing(pin_path)
+            pin_routing = _provider_config_module.load_role_routing(pin_path)
             self.assertEqual(
                 metrology_mod.fingerprint_components(pin_routing)["sandbox"]["runtime"], "docker"
             )
@@ -5019,16 +5021,16 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             # custom document never leaks into the process default.
             self.assertEqual(
                 metrology_mod.council_routing_fingerprint(
-                    providers_mod.load_role_routing(providers_mod.default_agents_config_path())
+                    _provider_config_module.load_role_routing(_provider_config_module.default_agents_config_path())
                 ),
                 default_fp,
             )
             self.assertEqual(
-                metrology_mod.council_routing_fingerprint(providers_mod.load_role_routing(None)),
+                metrology_mod.council_routing_fingerprint(_provider_config_module.load_role_routing(None)),
                 default_fp,
             )
             self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), default_fp)
-            self.assertEqual(metrology_mod.sandbox_digest(), providers_mod.sandbox_pin())
+            self.assertEqual(metrology_mod.sandbox_digest(), _provider_config_module.sandbox_pin())
             self.assertEqual(
                 metrology_mod.tool_surface_sha256(), default_components["tool_surface_sha256"]
             )
@@ -5049,10 +5051,10 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
 
     def test_fingerprint_moves_when_correction_text_changes(self):
         before = metrology_mod.council_routing_fingerprint(self.routing)
-        with mock.patch.object(providers_mod, "CORRECTION_TEXT", "Fix it: {problem}"):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_protocol_module, "CORRECTION_TEXT", "Fix it: {problem}"):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertNotEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
 
     def test_fingerprint_unchanged_by_non_critic_projection_version(self):
@@ -5064,21 +5066,21 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
         before = metrology_mod.council_routing_fingerprint(self.routing)
         surface = metrology_mod.tool_surface_sha256()
         with mock.patch.object(projection, "DIAGNOSTICS_VERSION", "999"):
-            providers_mod.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(metrology_mod.tool_surface_sha256(), surface)
             self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
             self.assertEqual(
                 metrology_mod.fingerprint_components(self.routing)["diagnostics_version"], "999"
             )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         original = providers_mod.ROLE_SYSTEM["semantic_author"]
         try:
             providers_mod.ROLE_SYSTEM["semantic_author"] = "Write nothing."
-            providers_mod.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), before)
         finally:
             providers_mod.ROLE_SYSTEM["semantic_author"] = original
-            providers_mod.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
         # The v5 document carries exactly the SoT T7 terms (harness "6":
         # plus the observable state and the pool families).
         components = metrology_mod.fingerprint_components(self.routing)
@@ -5096,11 +5098,11 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             components["model_call_deadline_version"],
             "interruptible-model-call-v1",
         )
-        self.assertEqual(components["api"], {"anthropic_version": providers_mod.AnthropicBackend.API_VERSION})
+        self.assertEqual(components["api"], {"anthropic_version": _provider_backends_module.AnthropicBackend.API_VERSION})
         for role in metrology_mod.CRITIC_ROLE_NAMES:
             entry = components["roles"][role]
-            self.assertEqual(entry["behavior_sha256"], providers_mod.role_behavior_sha256(role))
-            self.assertEqual(entry["loop_limits"], providers_mod.role_loop_limits(role))
+            self.assertEqual(entry["behavior_sha256"], _provider_protocol_module.role_behavior_sha256(role))
+            self.assertEqual(entry["loop_limits"], _provider_config_module.role_loop_limits(role))
             self.assertIn("provider", entry)
 
     #: Pinned harness-6 routing identity. Re-pin only for a reviewed
@@ -5189,8 +5191,8 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
         self.assertEqual(set(self.PHASE3_CRITIC_DIGESTS), set(metrology_mod.CRITIC_ROLE_NAMES))
         for role, (behavior, policy) in self.PHASE3_CRITIC_DIGESTS.items():
             with self.subTest(role=role):
-                manifest = providers_mod.role_behavior_manifest(role)
-                self.assertEqual(providers_mod.role_behavior_sha256(role), behavior)
+                manifest = _provider_protocol_module.role_behavior_manifest(role)
+                self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), behavior)
                 self.assertEqual(manifest["policy_sha256"], policy)
                 expected_validator = {
                     "population_adversary": "compile_proposal",
@@ -5200,7 +5202,7 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                     manifest["harness_validators"],
                     [] if expected_validator is None else [{"name": expected_validator}],
                 )
-                self.assertEqual([t["name"] for t in manifest["tools"]], [providers_mod.FINDINGS_TOOL_NAME])
+                self.assertEqual([t["name"] for t in manifest["tools"]], [_provider_protocol_module.FINDINGS_TOOL_NAME])
                 self.assertEqual(
                     manifest["loop_limits"]["enabled"],
                     role in {"population_adversary", "shortcut_attacker"},
@@ -5211,17 +5213,17 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
             components["roles"]["population_adversary"]["loop_limits"]["harness_validators"],
             ["compile_proposal"],
         )
-        shipped_keys = {role: providers_mod.transcript_key(role, "x") for role in self.PHASE0_ONE_SHOT_DIGESTS}
+        shipped_keys = {role: _provider_protocol_module.transcript_key(role, "x") for role in self.PHASE0_ONE_SHOT_DIGESTS}
         # The move is exactly the two declared blocks.
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         one_shot = {
             "enabled": False, "mode": "one_shot", "max_model_calls": 3,
             "max_tool_calls": 0, "max_wall_s": 300, "max_usd": 1.0,
         }
         for role in self.PHASE0_ONE_SHOT_DIGESTS:
             doc["roles"][role]["session"] = dict(one_shot)
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             try:
                 self.assertEqual(
                     metrology_mod.council_routing_fingerprint(self.routing),
@@ -5230,17 +5232,17 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
                 self.assertEqual(metrology_mod.tool_surface_sha256(), self.PHASE0_TOOL_SURFACE)
                 for role, (behavior, policy) in self.PHASE0_ONE_SHOT_DIGESTS.items():
                     with self.subTest(phase0=role):
-                        self.assertEqual(providers_mod.role_behavior_sha256(role), behavior)
-                        self.assertEqual(providers_mod.role_behavior_manifest(role)["policy_sha256"], policy)
+                        self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), behavior)
+                        self.assertEqual(_provider_protocol_module.role_behavior_manifest(role)["policy_sha256"], policy)
                         self.assertNotEqual(behavior, self.PHASE3_CRITIC_DIGESTS[role][0])
                         # ... and the one-shot transcript key moved with it: a
                         # POP / SHC transcript recorded between 0.E and Phase 3
                         # is orphaned under --replay-only.
-                        self.assertNotEqual(providers_mod.transcript_key(role, "x"), shipped_keys[role])
+                        self.assertNotEqual(_provider_protocol_module.transcript_key(role, "x"), shipped_keys[role])
                 for role in ("ambiguity_critic", "feasibility_reviewer"):
-                    self.assertEqual(providers_mod.role_behavior_sha256(role), self.PHASE3_CRITIC_DIGESTS[role][0])
+                    self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), self.PHASE3_CRITIC_DIGESTS[role][0])
             finally:
-                providers_mod.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), fp)
 
     #: Digest of the harness-6 fingerprint with protocol fields replaced by a
@@ -5359,14 +5361,14 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
         self.assertEqual(non_protocol_digest(one_family), self.PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS)
         # And disabling one default-enabled seat moves a non-protocol term.
         # SHC remains enabled, so the shared pinned binaries remain present.
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"]["population_adversary"]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             try:
                 flipped = metrology_mod.fingerprint_document(metrology_mod.fingerprint_components(self.routing))
             finally:
-                providers_mod.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(set(flipped["validators"]["binaries"]), {"duckdb", "sqlglot"})
         self.assertNotEqual(non_protocol_digest(flipped), self.PHASE3_NON_PROTOCOL_FINGERPRINT_TERMS)
         self.assertEqual((flipped["pool_sha256"], flipped["view_sha256"]), (document["pool_sha256"], document["view_sha256"]))
@@ -5384,36 +5386,36 @@ class HarnessFiveIntegrityTest(unittest.TestCase):
 
         shipped = metrology_mod.council_routing_fingerprint(self.routing)
         shipped_surface = metrology_mod.tool_surface_sha256()
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role in ("population_adversary", "shortcut_attacker"):
             doc["roles"][role]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             rollback = metrology_mod.council_routing_fingerprint(self.routing)
             rollback_surface = metrology_mod.tool_surface_sha256()
             manifests = {
-                role: providers_mod.role_behavior_manifest(role)
+                role: _provider_protocol_module.role_behavior_manifest(role)
                 for role in metrology_mod.CRITIC_ROLE_NAMES
             }
             for role in metrology_mod.CRITIC_ROLE_NAMES:
                 self.assertEqual(
                     [t["name"] for t in manifests[role]["tools"]],
-                    [providers_mod.FINDINGS_TOOL_NAME],
+                    [_provider_protocol_module.FINDINGS_TOOL_NAME],
                 )
                 self.assertEqual(manifests[role]["harness_validators"], [])
                 self.assertEqual(registry_mod.ToolRegistry.for_role(role).names, ())
             with mock.patch.object(registry_mod, "_DECLARED_VALIDATOR_ROLES", ()), \
                     mock.patch.object(critic_mod, "declared_validators", lambda role, block=None: ()):
-                providers_mod.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
                 self.assertEqual(
                     metrology_mod.council_routing_fingerprint(self.routing), rollback
                 )
                 self.assertEqual(metrology_mod.tool_surface_sha256(), rollback_surface)
                 for role in metrology_mod.CRITIC_ROLE_NAMES:
                     self.assertEqual(
-                        providers_mod.role_behavior_manifest(role), manifests[role], role
+                        _provider_protocol_module.role_behavior_manifest(role), manifests[role], role
                     )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertNotEqual(shipped, rollback)
         self.assertNotEqual(shipped_surface, rollback_surface)
         self.assertEqual(metrology_mod.council_routing_fingerprint(self.routing), shipped)
@@ -5524,9 +5526,9 @@ class HarnessSixProtocolTest(unittest.TestCase):
     `n_eff` reported and never gated, and every harness-5 record SUPERSEDED."""
 
     def setUp(self):
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
-        self.routing = providers_mod.load_role_routing(None)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
+        self.routing = _provider_config_module.load_role_routing(None)
 
     # -- isolation --------------------------------------------------------
 
@@ -5562,7 +5564,7 @@ class HarnessSixProtocolTest(unittest.TestCase):
                     self.assertIsInstance(ctx.tool_policy_by_role[role], metrology_mod.ToolPolicy)
                     self.assertEqual(
                         ctx.limits_by_role[role].as_manifest(),
-                        providers_mod.role_loop_limits(role),
+                        _provider_config_module.role_loop_limits(role),
                     )
                 self.assertEqual(ctx.roles, tuple(r.value for r in trial.roles))
                 self.assertIs(ctx.task, trial.task)
@@ -6252,7 +6254,7 @@ class HarnessSixProtocolTest(unittest.TestCase):
             self.assertIn("STALE", status.reason)
             self.assertIn("observable state", status.reason)
         # A query tool on a critic policy refuses (fail closed, OQ-13).
-        real = providers_mod.session_policy_for
+        real = _provider_protocol_module.session_policy_for
 
         def with_query_tool(role, **kw):
             policy = real(role, **kw)
@@ -6265,7 +6267,7 @@ class HarnessSixProtocolTest(unittest.TestCase):
                 wire_tools=policy.wire_tools,
             )
 
-        with mock.patch.object(providers_mod, "session_policy_for", with_query_tool):
+        with mock.patch.object(_provider_protocol_module, "session_policy_for", with_query_tool):
             with self.assertRaisesRegex(ValueError, "query tool"):
                 metrology_mod.observable_state_digest()
 
@@ -6288,28 +6290,28 @@ class HarnessSixProtocolTest(unittest.TestCase):
         self.assertEqual(set(shipped["binaries"]), {"duckdb", "sqlglot"})
         self.assertIn(attacks_mod.__name__, shipped["code"])
 
-        disabled = json.loads(json.dumps(providers_mod._agents_doc()))
+        disabled = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role in ("population_adversary", "shortcut_attacker"):
             disabled["roles"][role]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: disabled):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(
                 metrology_mod.validator_digests(),
                 {"code": {}, "binaries": {}},
             )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
         for role in ("population_adversary", "shortcut_attacker"):
             with self.subTest(enabled=role):
                 doc = json.loads(json.dumps(disabled))
                 doc["roles"][role]["session"]["enabled"] = True
-                with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-                    providers_mod.clear_behavior_caches()
+                with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+                    _provider_protocol_module.clear_behavior_caches()
                     digests = metrology_mod.validator_digests()
                     self.assertEqual(digests["binaries"], metrology_mod.toolchain_pins())
                     self.assertEqual(set(digests["binaries"]), {"duckdb", "sqlglot"})
                     self.assertIn(attacks_mod.__name__, digests["code"])
-                providers_mod.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
 
     def test_harness_6_supersedes_every_harness_5_record(self):
         """Every schema-4 record earned under harness "5" — as written, and

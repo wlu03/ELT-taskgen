@@ -18,6 +18,8 @@ SoT (T4, T5, T7, T8) exactly.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import tempfile
 import time
@@ -761,8 +763,8 @@ class RunnerTest(SessionCase):
             self.run_session(script, [FakeTool("check_scope"), submit_tool()])
         # The one-shot complete() keeps its three attempts: the correction
         # text still names the fix and `SCHEMA_RETRIES` is untouched.
-        self.assertEqual(P.SCHEMA_RETRIES, 2)
-        self.assertIn("raise this role's max_tokens", P.AnthropicBackend.complete.__code__.co_consts.__repr__())
+        self.assertEqual(_provider_protocol_module.SCHEMA_RETRIES, 2)
+        self.assertIn("raise this role's max_tokens", _provider_backends_module.AnthropicBackend.complete.__code__.co_consts.__repr__())
 
     def test_limit_stop_auto_submits_last_validator_green_draft(self):
         drafts: dict = {}
@@ -1484,7 +1486,7 @@ class PermitAccountingTest(SessionCase):
             S.SessionLimits.from_block({}, session_defaults={"format_error_disposition": "retry"})
         # The shipped document declares `halt` at the top level and the
         # policy reads it from there.
-        policy = P.session_policy_for("repair_proposer")
+        policy = _provider_protocol_module.session_policy_for("repair_proposer")
         self.assertEqual(dict(policy.limits.session_defaults), {"format_error_disposition": "halt"})
         self.assertEqual(policy.limits.format_error_disposition, "halt")
         # Under `stage_fail` the third protocol fault is RETURNED, not raised.
@@ -1532,7 +1534,7 @@ class TerminalStateCoverageTest(SessionCase):
             P.RoleCapExceeded("cap"): "LIMIT_USD",
             P.BudgetExceededError("b", scope="task"): "PROVIDER_FAULT",
             P.TranscriptMissingError("miss"): "PROVIDER_FAULT",
-            P.MissingCredentialsError("none"): "PROVIDER_FAULT",
+            _provider_backends_module.MissingCredentialsError("none"): "PROVIDER_FAULT",
             ProviderProtocolError("bad"): "PROVIDER_FAULT",
         }
         for exc, terminal in cases.items():
@@ -1674,7 +1676,7 @@ class TerminalStateCoverageTest(SessionCase):
         self.assertEqual(len(policy_tool.calls), 1)
         self.assertEqual(result.limit, "working")
         # The shipped council blocks declare no working limit at all.
-        doc = yaml.safe_load(P.default_agents_config_path().read_text(encoding="utf-8"))
+        doc = yaml.safe_load(_provider_config_module.default_agents_config_path().read_text(encoding="utf-8"))
         for role, spec in doc["roles"].items():
             self.assertNotIn("max_tool_wall_s", spec.get("session") or {}, role)
 
@@ -1959,7 +1961,7 @@ class TerminalStateCoverageTest(SessionCase):
         # A replay miss and missing credentials halt on the FIRST occurrence
         # (nothing a re-issue can change); a transport fault is re-issued
         # once (04 §6 retry policy) and halts on the second.
-        for exc, calls in ((P.TranscriptMissingError("no transcript"), 1), (P.MissingCredentialsError("no key"), 1),
+        for exc, calls in ((P.TranscriptMissingError("no transcript"), 1), (_provider_backends_module.MissingCredentialsError("no key"), 1),
                            (OSError("connection reset"), 2)):
             with self.subTest(exc=type(exc).__name__):
                 with self.assertRaises(Exception) as ctx:
@@ -2155,8 +2157,8 @@ SHARED_ROW_FIELDS = (
 
 class WireParityTest(unittest.TestCase):
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_session_zero_tool_turns_is_byte_identical_to_complete(self):
         """THE PARITY GATE (roadmap §4 DoD 1; 04 §7): a session with an EMPTY
@@ -2174,20 +2176,20 @@ class WireParityTest(unittest.TestCase):
         # parity test exercises their explicit one-shot rollback, where their
         # registry is empty and the old request remains byte-identical.
         for default_role in ("semantic_author", "independent_implementer"):
-            self.assertTrue(P.role_is_agentic(default_role), default_role)
-            self.assertTrue(P.session_policy_for(default_role).tools, default_role)
-        rollback = json.loads(json.dumps(P._agents_doc()))
+            self.assertTrue(_provider_protocol_module.role_is_agentic(default_role), default_role)
+            self.assertTrue(_provider_protocol_module.session_policy_for(default_role).tools, default_role)
+        rollback = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for rollback_role in ("semantic_author", "independent_implementer"):
             rollback["roles"][rollback_role]["session"]["enabled"] = False
-        patcher = mock.patch.object(P, "_agents_doc", lambda: rollback)
+        patcher = mock.patch.object(_provider_config_module, "_agents_doc", lambda: rollback)
         patcher.start()
         self.addCleanup(patcher.stop)
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
         chat_routing = make_routing(oss_base="http://oss:8000/v1", oss_key="k", oss_model="m")
-        chat_schema_routing = P.RoleRouting(
+        chat_schema_routing = _provider_config_module.RoleRouting(
             roles={**chat_routing.roles,
-                   "ambiguity_critic": P.RoleRoute("ambiguity_critic", "openai_compat", "m", 2048, None)},
+                   "ambiguity_critic": _provider_config_module.RoleRoute("ambiguity_critic", "openai_compat", "m", 2048, None)},
             provider_config=chat_routing.provider_config,
         )
         cases = (
@@ -2202,10 +2204,10 @@ class WireParityTest(unittest.TestCase):
         )
         for label, role, routing, body in cases:
             with self.subTest(case=label):
-                policy = P.session_policy_for(role)
+                policy = _provider_protocol_module.session_policy_for(role)
                 self.assertEqual(policy.tools, ())
-                self.assertFalse(P.role_is_agentic(role))
-                self.assertEqual(policy.wire_tools, tuple(P.wire_tools_for(role)))
+                self.assertFalse(_provider_protocol_module.role_is_agentic(role))
+                self.assertEqual(policy.wire_tools, tuple(_provider_protocol_module.wire_tools_for(role)))
                 # (A) complete() first; the session is served from its entry.
                 with tempfile.TemporaryDirectory() as tmp:
                     transport = FakeTransport([body()])
@@ -2278,7 +2280,7 @@ class WireParityTest(unittest.TestCase):
                     self.assertEqual(P.exchange_row_problems(one_shot_row), [])
         # The one-shot path keeps its three attempts on a truncation
         # (SoT T4), and the parity holds on the request builders too.
-        self.assertEqual(P.SCHEMA_RETRIES, 2)
+        self.assertEqual(_provider_protocol_module.SCHEMA_RETRIES, 2)
 
     def test_session_row_manifest_branch_accepts_multi_turn_counts(self):
         """SoT T8 validator rule. A REAL multi-turn session through the wire
@@ -2339,7 +2341,7 @@ class WireParityTest(unittest.TestCase):
             self.assertIn("does not equal attempts-1", P.exchange_row_problems({**one_shot, "correction_count": 1})[0])
             # The review manifest: four one-shot critic rows validate as today
             # and the session row rides beside them without a problem.
-            zero = P.normalized_text_for("ambiguity_critic", {"findings": []})
+            zero = _provider_protocol_module.normalized_text_for("ambiguity_critic", {"findings": []})
             for critic_role in ("ambiguity_critic", "population_adversary", "shortcut_attacker", "feasibility_reviewer"):
                 route_binding = provider._route_block(
                     provider.routing.for_role(critic_role),
@@ -2358,13 +2360,13 @@ class WireParityTest(unittest.TestCase):
             self.assertNotIn("semantic_author", [m["role"] for m in manifest])
             # Critic session rows use exchange_row_problems/T5 identity in review
             # manifests, not the one-shot attempts-minus-one rule.
-            critic_behavior = P.role_behavior_manifest("ambiguity_critic")
+            critic_behavior = _provider_protocol_module.role_behavior_manifest("ambiguity_critic")
             as_critic = {
                 **row,
                 "role": "ambiguity_critic",
                 "finding_count": 0,
                 "zero_findings": True,
-                "behavior_sha256": P.role_behavior_sha256("ambiguity_critic"),
+                "behavior_sha256": _provider_protocol_module.role_behavior_sha256("ambiguity_critic"),
                 "tools_sha256": sha256_hex(canonical_json(critic_behavior["tools"])),
                 "policy_sha256": critic_behavior["policy_sha256"],
             }
@@ -2377,7 +2379,7 @@ class WireParityTest(unittest.TestCase):
 
 class AgentsConfigTest(unittest.TestCase):
     def test_agents_yaml_session_defaults_never_exceed_hard_caps(self):
-        doc = yaml.safe_load(P.default_agents_config_path().read_text(encoding="utf-8"))
+        doc = yaml.safe_load(_provider_config_module.default_agents_config_path().read_text(encoding="utf-8"))
         author = doc["roles"]["semantic_author"]["session"]
         # Author defaults match the hard caps after one revision proved
         # insufficient; defaults must never exceed those caps.
@@ -2395,10 +2397,10 @@ class AgentsConfigTest(unittest.TestCase):
         # runner reads (`turns` = revisions + 1, `tool_calls` its validator runs).
         from elt_taskgen.review.tools import validators as V
 
-        self.assertEqual(P.role_loop_limits("semantic_author"), V.author_limits(author).as_manifest())
+        self.assertEqual(_provider_config_module.role_loop_limits("semantic_author"), V.author_limits(author).as_manifest())
         # The shipped bounded block enters the behaviour manifest in full.
-        self.assertEqual(P.role_behavior_manifest("semantic_author")["loop_limits"], author)
-        self.assertEqual(P.role_manifest_limits("semantic_author"), author)
+        self.assertEqual(_provider_protocol_module.role_behavior_manifest("semantic_author")["loop_limits"], author)
+        self.assertEqual(_provider_config_module.role_manifest_limits("semantic_author"), author)
         self.assertEqual(author["hard_caps"]["turns"], author["hard_caps"]["revisions"] + 1)
         self.assertEqual(author["hard_caps"]["tool_calls"], author["hard_caps"]["turns"])
         self.assertEqual(author["max_turns"], author["max_revisions"] + 1)
@@ -2431,7 +2433,7 @@ class AgentsConfigTest(unittest.TestCase):
             if block is not None:
                 self.assertEqual(block["enabled"], role in enabled_roles, role)
                 limits = S.SessionLimits.from_block(block)  # the loader accepts every shipped block
-                self.assertEqual(limits.as_manifest(), P.role_loop_limits(role), role)
+                self.assertEqual(limits.as_manifest(), _provider_config_module.role_loop_limits(role), role)
         self.assertEqual(
             {role for role, spec in doc["roles"].items() if spec.get("session", {}).get("enabled")},
             enabled_roles,
@@ -2473,17 +2475,17 @@ class AgentsConfigTest(unittest.TestCase):
         self.assertEqual(at_cap.as_manifest(), {"hard_caps": {"turns": 8}, "max_turns": 8})
         # Enabled roles carry their enforced blocks.  Explicitly disabling
         # them remains the compact, byte-compatible rollback manifest.
-        self.assertEqual(P.role_behavior_manifest("semantic_author")["loop_limits"], author)
-        self.assertEqual(P.role_behavior_manifest("repair_proposer")["loop_limits"], proposer)
-        self.assertEqual(P.role_loop_limits("repair_proposer"), S.SessionLimits.from_block(proposer).as_manifest())
+        self.assertEqual(_provider_protocol_module.role_behavior_manifest("semantic_author")["loop_limits"], author)
+        self.assertEqual(_provider_protocol_module.role_behavior_manifest("repair_proposer")["loop_limits"], proposer)
+        self.assertEqual(_provider_config_module.role_loop_limits("repair_proposer"), S.SessionLimits.from_block(proposer).as_manifest())
         rollback = json.loads(json.dumps(doc))
         rollback["roles"]["semantic_author"]["session"]["enabled"] = False
         rollback["roles"]["repair_proposer"]["session"]["enabled"] = False
-        with mock.patch.object(P, "_agents_doc", lambda: rollback):
-            P.clear_behavior_caches()
-            self.assertEqual(P.role_manifest_limits("semantic_author"), {"enabled": False})
-            self.assertEqual(P.role_manifest_limits("repair_proposer"), {"enabled": False})
-        P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: rollback):
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertEqual(_provider_config_module.role_manifest_limits("semantic_author"), {"enabled": False})
+            self.assertEqual(_provider_config_module.role_manifest_limits("repair_proposer"), {"enabled": False})
+        _provider_protocol_module.clear_behavior_caches()
 
 
 # ---------------------------------------------------------------------------
@@ -2709,7 +2711,7 @@ class CorrectionChannelTest(SessionCase):
         either the payload is accepted as submitted. The hook sees the
         task (`validate_payload_for` never does), every run is a recorded
         validator turn, and the kinds split into the evidence row."""
-        self.assertEqual(S.SCHEMA_RETRIES, P.SCHEMA_RETRIES)
+        self.assertEqual(S.SCHEMA_RETRIES, _provider_protocol_module.SCHEMA_RETRIES)
         self.assertEqual(S.SCHEMA_RETRIES, S.PROTOCOL_FAULT_LIMIT - 1)
         seen: list = []
 
@@ -2740,7 +2742,7 @@ class CorrectionChannelTest(SessionCase):
         self.assertTrue(correction["is_error"])
         self.assertEqual(correction["content"], diag(ok=False, code="failed").render())
         self.assertNotIn("That call was refused", correction["content"])
-        self.assertNotIn(P.CORRECTION_TEXT[:20], correction["content"])
+        self.assertNotIn(_provider_protocol_module.CORRECTION_TEXT[:20], correction["content"])
         validator_turns = [t for t in result.turns if t.kind == "validator"]
         self.assertEqual([t.tool_name for t in validator_turns], ["compile_check", "compile_check"])
         self.assertEqual([t.outcome_code for t in validator_turns], ["failed", "failed"])

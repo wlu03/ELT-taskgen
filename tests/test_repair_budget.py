@@ -30,6 +30,8 @@ author transcript verbatim, which is exactly the cache behaviour that made the
 defect invisible in the first place.
 """
 
+from elt_taskgen.review import provider_protocol as _provider_protocol_module
+
 import hashlib
 import json
 import tempfile
@@ -912,7 +914,7 @@ class TestAuthorRepairPath(RepairBudgetTestCase):
         )
         self.assertEqual(
             payload["data"][AUTHOR_BEHAVIOR_SHA_KEY],
-            providers.role_behavior_sha256("semantic_author"),
+            _provider_protocol_module.role_behavior_sha256("semantic_author"),
         )
 
     def test_unchanged_prose_outside_a_repair_is_still_a_pass(self):

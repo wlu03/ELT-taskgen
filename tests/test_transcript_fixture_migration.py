@@ -18,6 +18,8 @@ re-keyed offline. These tests pin the two properties that make that honest:
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import importlib.util
 import json
 import sys
@@ -68,7 +70,7 @@ class TranscriptFixtureMigrationTest(unittest.TestCase):
             self.assertEqual(entry["prompt_sha256"], Path(rel).stem, rel)
             self.assertNotIn("route", entry, rel)
             self.assertNotIn("migration", entry, rel)
-            self.assertEqual(P.transcript_entry_schema(entry), 0, rel)
+            self.assertEqual(_provider_protocol_module.transcript_entry_schema(entry), 0, rel)
 
     def test_migration_refuses_entries_after_their_public_view_moves(self):
         """The migration never rekeys historical output after its stimulus moves.
@@ -137,7 +139,7 @@ class TranscriptFixtureMigrationTest(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as tmp:
             provider = P.RoutedProvider(
-                P.load_role_routing(None),
+                _provider_config_module.load_role_routing(None),
                 P.TranscriptStore(Path(tmp) / "transcripts", fixtures_dir=LIVE_DIR),
                 P.CostMeter(budget_per_task_usd=1.0),
                 replay_only=True,
@@ -145,7 +147,7 @@ class TranscriptFixtureMigrationTest(unittest.TestCase):
             with self.assertRaises(P.TranscriptMissingError):
                 provider.complete(CouncilRole.SEMANTIC_AUTHOR, view)
             legacy_only = P.RoutedProvider(
-                P.load_role_routing(None),
+                _provider_config_module.load_role_routing(None),
                 P.TranscriptStore(Path(tmp) / "transcripts2", fixtures_dir=LEGACY_DIR),
                 P.CostMeter(budget_per_task_usd=1.0),
                 replay_only=True,

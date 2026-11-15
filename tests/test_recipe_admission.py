@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import duckdb
 
 from elt_taskgen.engine import StageName
-from elt_taskgen.generation import advanced_recipes, dependent_compositions, graph_recipes, scenario_recipes
+from elt_taskgen.generation import advanced_recipes, compositions, dependent_compositions, graph_recipes, scenario_recipes, semantic_difficulty
 from elt_taskgen.generation.advanced_evidence import ASOF
 from elt_taskgen.generation.graph_evidence import ROLES
 from elt_taskgen.generation.recipe_evidence import ENTITY_BASELINE
@@ -24,6 +24,8 @@ class RecipeAdmissionTests(unittest.TestCase):
     def setUpClass(cls):
         cls.examples = []
         for family, source, recipe, retry_sql in (
+            (semantic_difficulty._FAMILY, source_task(), semantic_difficulty.TEMPLATE, False),
+            (compositions._FAMILY, source_task(), compositions.GLOBAL_BASELINE, False),
             (advanced_recipes._FAMILY, advanced_source(), ASOF, False),
             (dependent_compositions._FAMILY, source_task(), ENTITY_BASELINE, False),
             (graph_recipes._FAMILY, graph_source(ROLES), ROLES, True),

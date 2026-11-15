@@ -148,27 +148,9 @@ def _sha256(path: Path) -> str:
 
 
 def _atomic_write(path: Path, payload: bytes) -> None:
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
-    )
-    temporary = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        temporary = None  # type: ignore[assignment]
-        if os.name != "nt":
-            directory = os.open(path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory)
-            finally:
-                os.close(directory)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    from elt_taskgen.file_io import atomic_write
+
+    atomic_write(path, payload, directory_mode=0o700)
 
 
 def _evaluator_runtime_identity() -> dict[str, str]:

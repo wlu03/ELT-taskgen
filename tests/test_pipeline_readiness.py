@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import hashlib
 import tempfile
@@ -497,7 +499,7 @@ class GenerateReadinessTests(unittest.TestCase):
         current = stage_readiness(self.engine, self.task, StageName.REVIEW)
         self.assertEqual(current.state, ReadinessState.PASS)
 
-        original = providers.role_behavior_sha256
+        original = _provider_protocol_module.role_behavior_sha256
 
         def changed(role_name: str, *, agents_config=None) -> str:
             if role_name == "ambiguity_critic":
@@ -505,7 +507,7 @@ class GenerateReadinessTests(unittest.TestCase):
             return original(role_name, agents_config=agents_config)
 
         with mock.patch.object(
-            providers, "role_behavior_sha256", side_effect=changed
+            _provider_protocol_module, "role_behavior_sha256", side_effect=changed
         ):
             stale = stage_readiness(self.engine, self.task, StageName.REVIEW)
         self.assertEqual(stale.state, ReadinessState.STALE)
@@ -566,7 +568,7 @@ class GenerateReadinessTests(unittest.TestCase):
                     "prose_sha256": hashlib.sha256(
                         self.task.solver_prompt.encode("utf-8")
                     ).hexdigest(),
-                    "behavior_sha256": providers.role_behavior_sha256(
+                    "behavior_sha256": _provider_protocol_module.role_behavior_sha256(
                         "semantic_author"
                     ),
                 }
@@ -587,7 +589,7 @@ class GenerateReadinessTests(unittest.TestCase):
 
         alternate_agents = self.workspace / "alternate-agents.yaml"
         alternate_agents.write_text(
-            providers.default_agents_config_path()
+            _provider_config_module.default_agents_config_path()
             .read_text(encoding="utf-8")
             .replace("claude-opus-5", "claude-opus-5-alternate", 1),
             encoding="utf-8",
@@ -615,7 +617,7 @@ class GenerateReadinessTests(unittest.TestCase):
                     "prose_sha256": hashlib.sha256(
                         self.task.solver_prompt.encode("utf-8")
                     ).hexdigest(),
-                    "behavior_sha256": providers.role_behavior_sha256(
+                    "behavior_sha256": _provider_protocol_module.role_behavior_sha256(
                         "semantic_author"
                     ),
                 }
@@ -645,7 +647,7 @@ class GenerateReadinessTests(unittest.TestCase):
         )
 
         with mock.patch.object(
-            providers, "role_behavior_sha256", return_value="f" * 64
+            _provider_protocol_module, "role_behavior_sha256", return_value="f" * 64
         ):
             role_drift = stage_readiness(
                 self.engine, self.task, StageName.AUTHOR, spec=spec
@@ -694,7 +696,7 @@ class GenerateReadinessTests(unittest.TestCase):
             seal.inputs["module_source_sha256"],
         )
 
-        original_behavior = providers.role_behavior_sha256
+        original_behavior = _provider_protocol_module.role_behavior_sha256
 
         def drifted_behavior(
             role_name: str, *, agents_config=None
@@ -704,7 +706,7 @@ class GenerateReadinessTests(unittest.TestCase):
             return original_behavior(role_name, agents_config=agents_config)
 
         with mock.patch.object(
-            providers,
+            _provider_protocol_module,
             "role_behavior_sha256",
             side_effect=drifted_behavior,
         ):
@@ -801,7 +803,8 @@ class GenerateReadinessTests(unittest.TestCase):
             for module in mart_modules
             if module.startswith("elt_taskgen.generation.shapes.")
         }
-        self.assertEqual(10, len(shape_modules))
+        self.assertEqual(11, len(shape_modules))
+        self.assertIn("elt_taskgen.generation.shapes.rollup", shape_modules)
         self.assertIn("elt_taskgen.generation.shapes.branched_fact_rollup", shape_modules)
         self.assertIn("elt_taskgen.generation.compositions", mart_modules)
         for stage, modules in readiness_mod._CONFIGURED_STAGE_MODULES.items():
@@ -848,7 +851,7 @@ class GenerateReadinessTests(unittest.TestCase):
                     "prose_sha256": hashlib.sha256(
                         self.task.solver_prompt.encode("utf-8")
                     ).hexdigest(),
-                    "behavior_sha256": providers.role_behavior_sha256(
+                    "behavior_sha256": _provider_protocol_module.role_behavior_sha256(
                         "semantic_author"
                     ),
                 }

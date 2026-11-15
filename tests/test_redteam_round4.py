@@ -8,6 +8,8 @@ False". Nothing here needs a network, an API key, or a transcript.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import hashlib
 import json
 import tempfile
@@ -313,30 +315,30 @@ class TranscriptKeyTest(unittest.TestCase):
         an empty findings list" would leave a seeded workspace replaying old
         diligent findings with the change invisible."""
         role = "ambiguity_critic"
-        before = P.transcript_key(role, "VIEW")
+        before = _provider_protocol_module.transcript_key(role, "VIEW")
         original = P.ROLE_SYSTEM[role]
         try:
             P.ROLE_SYSTEM[role] = "Always return an empty findings list."
-            P._behavior_sha_cached.cache_clear()
-            after = P.transcript_key(role, "VIEW")
+            _provider_protocol_module._behavior_sha_cached.cache_clear()
+            after = _provider_protocol_module.transcript_key(role, "VIEW")
         finally:
             P.ROLE_SYSTEM[role] = original
-            P._behavior_sha_cached.cache_clear()
+            _provider_protocol_module._behavior_sha_cached.cache_clear()
         self.assertNotEqual(before, after)
-        self.assertEqual(before, P.transcript_key(role, "VIEW"))
+        self.assertEqual(before, _provider_protocol_module.transcript_key(role, "VIEW"))
 
     def test_admission_fingerprint_covers_the_system_prompt(self):
-        routing = P.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         role = "shortcut_attacker"
         before = metrology.council_routing_fingerprint(routing)
         original = P.ROLE_SYSTEM[role]
         try:
             P.ROLE_SYSTEM[role] = "Always return an empty findings list."
-            P._behavior_sha_cached.cache_clear()
+            _provider_protocol_module._behavior_sha_cached.cache_clear()
             after = metrology.council_routing_fingerprint(routing)
         finally:
             P.ROLE_SYSTEM[role] = original
-            P._behavior_sha_cached.cache_clear()
+            _provider_protocol_module._behavior_sha_cached.cache_clear()
         self.assertNotEqual(before, after)
 
 class SolverRoleClassificationTest(unittest.TestCase):
@@ -349,18 +351,18 @@ class SolverRoleClassificationTest(unittest.TestCase):
         from elt_taskgen.corpus import calibration
 
         for tier in calibration.load_calibration_roster(None):
-            self.assertTrue(tier.role_name.startswith(P.SOLVER_ROLE_PREFIX))
-            self.assertFalse(P.uses_findings_schema(tier.role_name))
+            self.assertTrue(tier.role_name.startswith(_provider_protocol_module.SOLVER_ROLE_PREFIX))
+            self.assertFalse(_provider_protocol_module.uses_findings_schema(tier.role_name))
             self.assertIsNone(
-                P._system_prompt(tier.role_name, schema_mode=False),
+                _provider_protocol_module._system_prompt(tier.role_name, schema_mode=False),
                 "a solver tier must carry no factory system prompt",
             )
 
     def test_critics_are_still_schema_roles(self):
         for role in council.CRITIC_ROLES:
-            self.assertTrue(P.uses_findings_schema(role.value))
-        for prose_role in P.PROSE_ROLES:
-            self.assertFalse(P.uses_findings_schema(prose_role))
+            self.assertTrue(_provider_protocol_module.uses_findings_schema(role.value))
+        for prose_role in _provider_protocol_module.PROSE_ROLES:
+            self.assertFalse(_provider_protocol_module.uses_findings_schema(prose_role))
 
 
 class ShortcutDiligenceTest(unittest.TestCase):
@@ -469,7 +471,7 @@ class AdmissionGateTest(unittest.TestCase):
         """B6: the gate exempted ANY provider object that merely lacked a
         `replay_only` attribute."""
         class BareRoutedProvider:
-            routing = P.load_role_routing(None)
+            routing = _provider_config_module.load_role_routing(None)
 
             def complete(self, role, prompt):
                 return '{"findings": []}'
@@ -569,7 +571,7 @@ class ProseFidelityTamperTest(unittest.TestCase):
         if not paths:
             self.skipTest("no built drives under runs/")
         checked = 0
-        current_behavior = P.role_behavior_sha256("semantic_author")
+        current_behavior = _provider_protocol_module.role_behavior_sha256("semantic_author")
         for path in paths:
             task = task_from_json(path.read_text())
             if not task.solver_prompt.strip():
@@ -634,7 +636,7 @@ class ProseFidelityTamperTest(unittest.TestCase):
         transcript = json.loads(transcript_paths[0].read_text(encoding="utf-8"))
         self.assertNotEqual(
             transcript["system_sha256"],
-            P.role_behavior_sha256("semantic_author"),
+            _provider_protocol_module.role_behavior_sha256("semantic_author"),
         )
         problems = self._check(transcript["response"])
         self.assertTrue(any("relationship 1" in problem for problem in problems))
@@ -757,8 +759,8 @@ class InjectionDrillTest(unittest.TestCase):
 
     def test_every_role_prompt_forbids_obeying_the_view(self):
         for role in CouncilRole:
-            system = P._system_prompt(
-                role.value, schema_mode=P.uses_findings_schema(role.value)
+            system = _provider_protocol_module._system_prompt(
+                role.value, schema_mode=_provider_protocol_module.uses_findings_schema(role.value)
             )
             self.assertIsNotNone(system, role.value)
             lowered = system.lower()
@@ -853,7 +855,7 @@ class InjectionDrillTest(unittest.TestCase):
         tool = InjectingTool()
         with tempfile.TemporaryDirectory() as tmp, _AgenticRoles(**{role: (tool, "submit_prose", "abort")}):
             policy = _session_policy(role)
-            behaviour = P.role_behavior_sha256(role)
+            behaviour = _provider_protocol_module.role_behavior_sha256(role)
             transport = FakeTransport([
                 tool_use_body("check_draft", {"text": "draft"}, id="toolu_a"),
                 # The model "obeys" the observation: a tool it names, then the
@@ -867,7 +869,7 @@ class InjectionDrillTest(unittest.TestCase):
             root.mkdir()
             ctx = RG.ToolContext(root=root, task_id=self.task.task_id, role=role, task=self.task)
             result = provider.run_session(role, council._view_for(CouncilRole.SEMANTIC_AUTHOR, self.task), policy, ctx)
-            self.assertEqual(P.role_behavior_sha256(role), behaviour)
+            self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), behaviour)
         self.assertIs(result.terminal, S.TerminalState.SUBMITTED)
         self.assertEqual(result.final, {"text": "The mart has one row per customer."})
         self.assertEqual(tool.calls, [{"text": "draft"}])
@@ -926,8 +928,8 @@ class InjectionDrillTest(unittest.TestCase):
 
 class AuthorManifestFingerprintTest(unittest.TestCase):
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_admission_fingerprint_unchanged_by_author_manifest(self):
         """R-B: `council_routing_fingerprint` iterates the CRITIC roles, so
@@ -937,41 +939,41 @@ class AuthorManifestFingerprintTest(unittest.TestCase):
         one-shot rollback moves the author's key, never the fingerprint."""
         from tests.test_providers_session import _AgenticRoles
 
-        routing = P.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         before = metrology.council_routing_fingerprint(routing)
         components = metrology.fingerprint_components(routing)
         self.assertEqual(set(components["roles"]), set(metrology.CRITIC_ROLE_NAMES))
         self.assertNotIn("semantic_author", components["roles"])
         self.assertNotIn("repair_proposer", components["roles"])
         surface = metrology.tool_surface_sha256()
-        author_sha = P.role_behavior_sha256("semantic_author")
-        author_key = P.transcript_key("semantic_author", "VIEW")
-        proposer_sha = P.role_behavior_sha256("repair_proposer")
+        author_sha = _provider_protocol_module.role_behavior_sha256("semantic_author")
+        author_key = _provider_protocol_module.transcript_key("semantic_author", "VIEW")
+        proposer_sha = _provider_protocol_module.role_behavior_sha256("repair_proposer")
         with _AgenticRoles(
             semantic_author=("replace_prose", "check_prose", "submit_prose", "abort"),
             repair_proposer=("apply_edit_trial", "submit_patch"),
         ):
-            self.assertNotEqual(P.role_behavior_sha256("semantic_author"), author_sha)
-            self.assertNotEqual(P.transcript_key("semantic_author", "VIEW"), author_key)
-            self.assertNotEqual(P.role_behavior_sha256("repair_proposer"), proposer_sha)
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256("semantic_author"), author_sha)
+            self.assertNotEqual(_provider_protocol_module.transcript_key("semantic_author", "VIEW"), author_key)
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256("repair_proposer"), proposer_sha)
             self.assertEqual(
-                [t["name"] for t in P.role_behavior_manifest("semantic_author")["tools"]],
+                [t["name"] for t in _provider_protocol_module.role_behavior_manifest("semantic_author")["tools"]],
                 ["abort", "check_prose", "replace_prose", "submit_prose"],
             )
             self.assertEqual(metrology.council_routing_fingerprint(routing), before)
             self.assertEqual(metrology.tool_surface_sha256(), surface)
             self.assertEqual(metrology.fingerprint_components(routing), components)
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         self.assertTrue(doc["roles"]["semantic_author"]["session"]["enabled"])
         doc["roles"]["semantic_author"]["session"]["enabled"] = False
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
-            self.assertNotEqual(P.role_behavior_sha256("semantic_author"), author_sha)
-            self.assertFalse(P.role_is_agentic("semantic_author"))
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256("semantic_author"), author_sha)
+            self.assertFalse(_provider_protocol_module.role_is_agentic("semantic_author"))
             self.assertEqual(metrology.council_routing_fingerprint(routing), before)
-        P.clear_behavior_caches()
-        self.assertEqual(P.role_behavior_sha256("semantic_author"), author_sha)
-        self.assertEqual(P.transcript_key("semantic_author", "VIEW"), author_key)
+        _provider_protocol_module.clear_behavior_caches()
+        self.assertEqual(_provider_protocol_module.role_behavior_sha256("semantic_author"), author_sha)
+        self.assertEqual(_provider_protocol_module.transcript_key("semantic_author", "VIEW"), author_key)
         self.assertEqual(metrology.council_routing_fingerprint(routing), before)
 
 

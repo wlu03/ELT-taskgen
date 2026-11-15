@@ -16,6 +16,8 @@ Everything here is offline: no provider, no network, no live drive.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module
+
 import hashlib
 import inspect
 import json
@@ -1026,7 +1028,7 @@ class RegistryTest(unittest.TestCase):
     def test_wire_tools_match_the_payload_tool_shape(self):
         registry = RG.ToolRegistry("repair_proposer", [StubTool()])
         wire_tool = registry.wire_tools()[0]
-        payload = P.AnthropicBackend._payload(
+        payload = _provider_backends_module.AnthropicBackend._payload(
             model="claude-opus-5", prompt="p", max_tokens=16, effort=None,
             role_name="ambiguity_critic", schema_mode=True,
         )

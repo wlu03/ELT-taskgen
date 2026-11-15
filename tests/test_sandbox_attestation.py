@@ -25,6 +25,8 @@ counted by NAME with reads disabled, so nothing under a mount is ever opened.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module
+
 import atexit
 import json
 import shutil
@@ -565,7 +567,7 @@ class TestSandboxAttestation(unittest.TestCase):
             self.assertEqual(limits_a["independent_implementer.max_turns"], 4)
             self.assertEqual(limits_b["independent_implementer.max_turns"], 5)
 
-            original_identity = providers_mod.agents_config_identity
+            original_identity = _provider_config_module.agents_config_identity
 
             def rewrite_path_after_identity(*, agents_config=None):
                 identity = original_identity(agents_config=agents_config)
@@ -573,7 +575,7 @@ class TestSandboxAttestation(unittest.TestCase):
                 return identity
 
             with mock.patch.object(
-                providers_mod,
+                _provider_config_module,
                 "agents_config_identity",
                 side_effect=rewrite_path_after_identity,
             ):
@@ -585,7 +587,7 @@ class TestSandboxAttestation(unittest.TestCase):
             self.assertEqual(record.loop_limits, limits_a)
             self.assertEqual(
                 record.agents_config_sha256,
-                providers_mod.agents_config_sha256(agents_config=document_a),
+                _provider_config_module.agents_config_sha256(agents_config=document_a),
             )
             self.assertEqual(
                 att.assert_attestation_matches_agents_config(
@@ -875,7 +877,7 @@ class TestSandboxAttestation(unittest.TestCase):
         which is what keeps PROOF 3's cross-process determinism true.
         """
         pin = att.pinned_sandbox_declaration()
-        self.assertEqual(pin, providers_mod.sandbox_pin())
+        self.assertEqual(pin, _provider_config_module.sandbox_pin())
         self.assertEqual(
             set(pin), {"runtime", "image_digest", "workspace_template_sha256"}
         )
@@ -903,7 +905,7 @@ class TestSandboxAttestation(unittest.TestCase):
         self.assertEqual(record.tier, "A")
         # Observing a gVisor host did not move the hashed declaration.
         self.assertEqual(metrology_mod.sandbox_digest(), before)
-        self.assertEqual(providers_mod.sandbox_pin(), pin)
+        self.assertEqual(_provider_config_module.sandbox_pin(), pin)
 
         # The repository default is the laptop pin, so an attestation minted
         # from it must be the dev-only one; a Tier A host requires a re-pin

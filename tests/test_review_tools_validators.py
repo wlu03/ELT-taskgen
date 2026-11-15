@@ -18,6 +18,8 @@ provider double here raises on any `complete` to prove it is never reached.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import hashlib
 import inspect
 import json
@@ -1454,25 +1456,25 @@ class MatrixTest(ProposerToolsCase):
                 role,
             )
         # Shipped config: enabled -> bounded tools are active and behavior-bound.
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(set(RG.ToolRegistry.for_role(ROLE).names), set(MATRIX))
-        self.assertTrue(P.role_is_agentic(ROLE))
-        self.assertEqual(set(t["name"] for t in P.wire_tools_for(ROLE)), set(MATRIX))
-        self.assertEqual(set(t.name for t in P.session_policy_for(ROLE).tools), set(MATRIX))
-        enabled_sha = P.role_behavior_sha256(ROLE)
+        self.assertTrue(_provider_protocol_module.role_is_agentic(ROLE))
+        self.assertEqual(set(t["name"] for t in _provider_protocol_module.wire_tools_for(ROLE)), set(MATRIX))
+        self.assertEqual(set(t.name for t in _provider_protocol_module.session_policy_for(ROLE).tools), set(MATRIX))
+        enabled_sha = _provider_protocol_module.role_behavior_sha256(ROLE)
         # Explicit rollback: disabled -> off the wire and one-shot behavior.
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"][ROLE]["session"]["enabled"] = False
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             try:
                 self.assertEqual(RG.ToolRegistry.for_role(ROLE).names, ())
-                self.assertFalse(P.role_is_agentic(ROLE))
-                self.assertEqual(P.session_policy_for(ROLE).tools, ())
-                self.assertEqual([t["name"] for t in P.wire_tools_for(ROLE)], [])
-                self.assertNotEqual(P.role_behavior_sha256(ROLE), enabled_sha)
+                self.assertFalse(_provider_protocol_module.role_is_agentic(ROLE))
+                self.assertEqual(_provider_protocol_module.session_policy_for(ROLE).tools, ())
+                self.assertEqual([t["name"] for t in _provider_protocol_module.wire_tools_for(ROLE)], [])
+                self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(ROLE), enabled_sha)
             finally:
-                P.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(set(RG.ToolRegistry.for_role(ROLE).names), set(MATRIX))
         # A declared name of another role is `tool_not_permitted`, not unknown.
         ctx = RG.ToolContext(root=self.workspace, task_id=self.task_id, role="independent_implementer")
@@ -1844,8 +1846,8 @@ class LocatorScopeTest(ProposerToolsCase):
             for route in (RepairRoute.SPECIFICATION, RepairRoute.REFERENCE, RepairRoute.POPULATION):
                 self.assertFalse(rp._ir_path_allowed(path, route), (path, route.value))
         # The one-shot prompt renders exactly the narrowed allowlist.
-        self.assertIn("reference.sql_by_mart.*", P.repair_route_scope_text())
-        self.assertNotIn("reference.*", P.repair_route_scope_text())
+        self.assertIn("reference.sql_by_mart.*", _provider_protocol_module.repair_route_scope_text())
+        self.assertNotIn("reference.*", _provider_protocol_module.repair_route_scope_text())
         session = self.open_session(RepairRoute.REFERENCE, "reference")
         doc = json.loads(session.trial_text())
         inert = {
@@ -2545,15 +2547,15 @@ class SessionDefaultsTest(unittest.TestCase):
     honoured and no transcript key moves."""
 
     def test_author_and_proposer_policies_carry_the_session_wide_defaults(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
         self.assertEqual(V.session_defaults_for(), {"format_error_disposition": "halt"})
         baseline = V.proposer_policy().sha256()
         author_baseline = V.author_policy().sha256()
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["session"] = {"format_error_disposition": "stage_fail"}
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(V.session_defaults_for(), {"format_error_disposition": "stage_fail"})
             built = {
                 "author_limits": V.author_limits(),
@@ -2578,10 +2580,10 @@ class SessionDefaultsTest(unittest.TestCase):
             self.assertEqual(V.author_policy(explicit).limits.format_error_disposition, "halt")
             # A document declaring no block: `{}` and the `halt` default.
             del doc["session"]
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             self.assertEqual(V.session_defaults_for(), {})
             self.assertEqual(V.proposer_policy().limits.format_error_disposition, "halt")
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(V.proposer_policy().limits.format_error_disposition, "halt")
 
 
@@ -3335,14 +3337,14 @@ class WitnessSessionIntegrationTest(unittest.TestCase):
         cls.good_sql = cls.task.reference.sql_by_mart[cls.MART]
 
     def setUp(self) -> None:
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_implementer_session_build_records_provenance_and_passes_the_gate(self):
         from elt_taskgen.reference import independent
         from elt_taskgen.review.metrology import HARNESS_VERSION
 
-        block = dict(P.DEFAULT_ROUTING_DOC["roles"][V.IMPLEMENTER_ROLE]["session"])
+        block = dict(_provider_config_module.DEFAULT_ROUTING_DOC["roles"][V.IMPLEMENTER_ROLE]["session"])
         block["enabled"] = True
         policy = V.implementer_policy(V.implementer_limits(block))
         self.assertEqual(policy.role, V.IMPLEMENTER_ROLE)
@@ -3390,7 +3392,7 @@ class WitnessSessionIntegrationTest(unittest.TestCase):
         from elt_taskgen.reference import independent
         from elt_taskgen.review.metrology import HARNESS_VERSION
 
-        block = dict(P.DEFAULT_ROUTING_DOC["roles"][V.LOADER_ROLE]["session"])
+        block = dict(_provider_config_module.DEFAULT_ROUTING_DOC["roles"][V.LOADER_ROLE]["session"])
         block["enabled"] = True
         policy = V.loader_policy(V.loader_limits(block))
         plan = [
@@ -3451,4 +3453,4 @@ class CheckSubmissionValidatorTest(ImplementerToolsCase):
     def test_the_validator_is_harness_only_and_declared(self):
         from elt_taskgen.review import providers as P
         self.assertNotIn("check_submission", [t["name"] for t in V.implementer_registry().wire_tools()])
-        self.assertEqual(P.role_loop_limits("independent_implementer")["harness_validators"], ["check_submission"])
+        self.assertEqual(_provider_config_module.role_loop_limits("independent_implementer")["harness_validators"], ["check_submission"])

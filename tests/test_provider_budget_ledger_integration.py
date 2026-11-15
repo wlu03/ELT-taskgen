@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_protocol as _provider_protocol_module
+
 import argparse
 import multiprocessing
 import tempfile
@@ -434,7 +436,7 @@ class ProviderDurableBudgetIntegrationTest(unittest.TestCase):
             replay_only=False,
             record=False,
         )
-        with mock.patch.object(P, "configure_retry_policy") as configured:
+        with mock.patch.object(_provider_protocol_module, "configure_retry_policy") as configured:
             provider = cli._resolve_provider(args, ledger_workspace)
         configured.assert_called_once_with(
             http_retries=2,
@@ -477,7 +479,7 @@ class ProviderDurableBudgetIntegrationTest(unittest.TestCase):
             record=False,
         )
         provider_workspace = self.root / "metrology"
-        with mock.patch.object(P, "configure_retry_policy"):
+        with mock.patch.object(_provider_protocol_module, "configure_retry_policy"):
             provider = cli._resolve_provider(args, provider_workspace)
         shared = provider.meter.durable_ledger
         self.assertEqual(shared.database_path, parent.database_path)
@@ -489,12 +491,12 @@ class ProviderDurableBudgetIntegrationTest(unittest.TestCase):
     def test_partial_retry_override_resets_unspecified_values_and_preserves_zero(self) -> None:
         original = {
             "http_retries": _review_provider_transport._HTTP_RETRIES,
-            "schema_retries": P.SCHEMA_RETRIES,
+            "schema_retries": _provider_protocol_module.SCHEMA_RETRIES,
             "http_timeout_seconds": _review_provider_transport._HTTP_TIMEOUT_SECONDS,
             "http_backoff_seconds": _review_provider_transport._HTTP_BACKOFF_BASE_SECONDS,
         }
-        self.addCleanup(lambda: P.configure_retry_policy(**original))
-        P.configure_retry_policy(
+        self.addCleanup(lambda: _provider_protocol_module.configure_retry_policy(**original))
+        _provider_protocol_module.configure_retry_policy(
             http_retries=6, schema_retries=4,
             http_timeout_seconds=19.0, http_backoff_seconds=0.5,
         )
@@ -505,7 +507,7 @@ class ProviderDurableBudgetIntegrationTest(unittest.TestCase):
         )
         cli._resolve_provider(args, self.root / "partial-retry")
         self.assertEqual(_review_provider_transport._HTTP_RETRIES, 0)
-        self.assertEqual(P.SCHEMA_RETRIES, 2)
+        self.assertEqual(_provider_protocol_module.SCHEMA_RETRIES, 2)
         self.assertEqual(_review_provider_transport._HTTP_TIMEOUT_SECONDS, 600.0)
         self.assertEqual(_review_provider_transport._HTTP_BACKOFF_BASE_SECONDS, 2.0)
 
@@ -517,28 +519,28 @@ class ProviderDurableBudgetIntegrationTest(unittest.TestCase):
     def test_retry_reconfiguration_invalidates_behavior_digest_cache(self) -> None:
         original = (
             _review_provider_transport._HTTP_RETRIES,
-            P.SCHEMA_RETRIES,
+            _provider_protocol_module.SCHEMA_RETRIES,
             _review_provider_transport._HTTP_TIMEOUT_SECONDS,
             _review_provider_transport._HTTP_BACKOFF_BASE_SECONDS,
         )
         self.addCleanup(
-            lambda: P.configure_retry_policy(
+            lambda: _provider_protocol_module.configure_retry_policy(
                 http_retries=original[0],
                 schema_retries=original[1],
                 http_timeout_seconds=original[2],
                 http_backoff_seconds=original[3],
             )
         )
-        P.configure_retry_policy(schema_retries=2)
-        two_retry_digest = P.role_behavior_sha256("ambiguity_critic")
+        _provider_protocol_module.configure_retry_policy(schema_retries=2)
+        two_retry_digest = _provider_protocol_module.role_behavior_sha256("ambiguity_critic")
         # This call must not return `_behavior_sha_cached` under the previous
         # module-level retry policy.
-        P.configure_retry_policy(schema_retries=1)
-        one_retry_digest = P.role_behavior_sha256("ambiguity_critic")
+        _provider_protocol_module.configure_retry_policy(schema_retries=1)
+        one_retry_digest = _provider_protocol_module.role_behavior_sha256("ambiguity_critic")
 
         self.assertNotEqual(one_retry_digest, two_retry_digest)
         self.assertEqual(
-            P.role_behavior_manifest("ambiguity_critic")["schema_retries"], 1
+            _provider_protocol_module.role_behavior_manifest("ambiguity_critic")["schema_retries"], 1
         )
 
     def test_release_ready_delegation_propagates_run_config_retries(self) -> None:

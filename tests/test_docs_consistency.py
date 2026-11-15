@@ -26,6 +26,8 @@ cites a module that no longer exists, or introduces a block as working "without
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_protocol as _provider_protocol_module
+
 import re
 import shutil
 import subprocess
@@ -827,7 +829,7 @@ class TestBoundedAgentsPhase3Records(unittest.TestCase):
         for name in (
             f"`{cv.COMPILE_PROPOSAL_TOOL}`",
             f"`{cv.MEASURED_MATCH_BIT_TOOL}`",
-            f"`{providers_mod.FINDINGS_TOOL_NAME}`",
+            f"`{_provider_protocol_module.FINDINGS_TOOL_NAME}`",
             "`max_compile_corrections",
             "`max_oracle_bits",
             "`SCHEMA_RETRIES`",
@@ -863,9 +865,9 @@ class TestBoundedAgentsPhase3Records(unittest.TestCase):
             "25d6642e96088612",  # behaviour
         ):
             self.assertIn(historical_digest, text)
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertNotIn(
-            providers_mod.role_behavior_sha256("population_adversary")[:16], text
+            _provider_protocol_module.role_behavior_sha256("population_adversary")[:16], text
         )
 
 

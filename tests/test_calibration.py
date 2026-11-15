@@ -46,6 +46,8 @@ submissions that are EXECUTED and scored, never trusted):
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import os
 import re
@@ -1352,7 +1354,7 @@ class KeyOptionalTests(CalibrationTestCase):
 
         class NoKeys:
             def complete(self, role, prompt):
-                raise providers_mod.MissingCredentialsError(
+                raise _provider_backends_module.MissingCredentialsError(
                     "ANTHROPIC_API_KEY is not set"
                 )
 
@@ -2261,7 +2263,7 @@ class CliCalibrateStageTests(CalibrationTestCase):
 
         class NoKeys:
             def complete(self, role, prompt):
-                raise providers_mod.MissingCredentialsError("no ANTHROPIC_API_KEY")
+                raise _provider_backends_module.MissingCredentialsError("no ANTHROPIC_API_KEY")
 
         engine = self._engine()
         runner = cli.make_calibrate_runner(
@@ -2292,7 +2294,7 @@ class TranscriptKeyProvenanceTests(CalibrationTestCase):
 
         from elt_taskgen.review import providers as providers_mod
 
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"][WEAK.role_name] = {
             "provider": WEAK.provider,
             "model": WEAK.model,
@@ -2310,26 +2312,26 @@ class TranscriptKeyProvenanceTests(CalibrationTestCase):
         self.assertTrue(record.success)
         self.assertEqual(
             record.prompt_sha256,
-            providers_mod.transcript_key(WEAK.role_name, self.prompt(self.task, V.TRANSFORM, 0)),
+            _provider_protocol_module.transcript_key(WEAK.role_name, self.prompt(self.task, V.TRANSFORM, 0)),
         )
 
     def test_attempt_prompt_sha_follows_the_provider_transcript_key(self) -> None:
         from elt_taskgen.review import providers as providers_mod
 
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
         ws = self.fresh_workspace()
         custom = self._custom_agents_config(ws)
         prompt = self.prompt(self.task, V.TRANSFORM, 0)
-        custom_key = providers_mod.transcript_key(WEAK.role_name, prompt, agents_config=custom)
-        self.assertNotEqual(custom_key, providers_mod.transcript_key(WEAK.role_name, prompt))
+        custom_key = _provider_protocol_module.transcript_key(WEAK.role_name, prompt, agents_config=custom)
+        self.assertNotEqual(custom_key, _provider_protocol_module.transcript_key(WEAK.role_name, prompt))
 
         class KeyedSolver(FixtureSolver):
             """What a RoutedProvider on a custom --agents-config computes."""
 
             def transcript_key_for(self, role, prompt: str) -> str:
                 role_name = getattr(role, "value", str(role))
-                return providers_mod.transcript_key(role_name, prompt, agents_config=custom)
+                return _provider_protocol_module.transcript_key(role_name, prompt, agents_config=custom)
 
         solver = KeyedSolver({WEAK.role_name: CORRECT}, self.plan)
         record = cal._run_attempt(self.task, self.gold, V.TRANSFORM, ws, solver, WEAK, 0)
@@ -2348,7 +2350,7 @@ class TranscriptKeyProvenanceTests(CalibrationTestCase):
         self.assertEqual(record.prompt_sha256, custom_key)
         # The same key a real RoutedProvider on that document files under.
         routed = providers_mod.RoutedProvider(
-            providers_mod.load_role_routing(custom),
+            _provider_config_module.load_role_routing(custom),
             providers_mod.TranscriptStore(ws / "transcripts"),
             providers_mod.CostMeter(budget_per_task_usd=1.0),
         )

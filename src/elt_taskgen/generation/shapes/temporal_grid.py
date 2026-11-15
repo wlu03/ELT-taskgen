@@ -2,6 +2,24 @@
 
 from __future__ import annotations
 
+from elt_taskgen.generation.plan_ops import (
+    BuiltPlan,
+    ChainEvidence,
+    Derived,
+    FactRoles,
+    KeyColumn,
+    Measure,
+    Passthrough,
+    StarJoin,
+    WindowExpr,
+    _in_list,
+    _require,
+    quote,
+    relation_identifier,
+)
+from elt_taskgen.models import ColumnType, MartColumnKind
+from elt_taskgen.generation.plan_validation import ShapeNotSelectable
+from elt_taskgen.generation.shapes.rollup import build_rollup
 from elt_taskgen.generation.witness import (
     WITNESS_ALL_FAIL,
     WITNESS_BRIDGE_NO_CHILD,
@@ -248,26 +266,3 @@ def temporal_grid(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bui
         ),
         notes=notes,
     )
-
-
-# Imported after the function is defined so this module can participate in the
-# mart-plan compatibility cycle without observing a half-defined builder.
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
-    BuiltPlan,
-    ChainEvidence,
-    ColumnType,
-    Derived,
-    FactRoles,
-    KeyColumn,
-    MartColumnKind,
-    Measure,
-    Passthrough,
-    ShapeNotSelectable,
-    StarJoin,
-    WindowExpr,
-    _in_list,
-    _require,
-    build_rollup,
-    quote,
-    relation_identifier,
-)

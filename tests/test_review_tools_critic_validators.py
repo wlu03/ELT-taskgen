@@ -20,6 +20,8 @@ retries_budget`).
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import contextlib
 import json
 import re
@@ -51,7 +53,7 @@ from tests.test_bounded_session import ScriptedProvider, text_block, tool_use
 TASK = demo_task()
 POP = CV.ADVERSARY_ROLE
 SHC = CV.ATTACKER_ROLE
-SUBMIT = P.FINDINGS_TOOL_NAME
+SUBMIT = _provider_protocol_module.FINDINGS_TOOL_NAME
 GROUNDED = (
     "Rule 2 never says whether duplicate order_items rows for a customer_id "
     "should be summed twice in total_spend."
@@ -99,7 +101,7 @@ def _payload(*findings: dict) -> dict:
 
 def _doc(**session_updates) -> dict:
     """The loaded agents document with `roles.<role>.session` keys updated."""
-    doc = json.loads(json.dumps(P._agents_doc()))
+    doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
     for role, keys in session_updates.items():
         doc["roles"][role].setdefault("session", {}).update(keys)
     return doc
@@ -107,12 +109,12 @@ def _doc(**session_updates) -> dict:
 
 @contextlib.contextmanager
 def _agents(doc: dict):
-    with mock.patch.object(P, "_agents_doc", lambda: doc):
-        P.clear_behavior_caches()
+    with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+        _provider_protocol_module.clear_behavior_caches()
         try:
             yield
         finally:
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
 
 
 def _texts(diag: PJ.Diagnostic) -> tuple[str, str]:
@@ -125,8 +127,8 @@ def _texts(diag: PJ.Diagnostic) -> tuple[str, str]:
 
 class _CriticCase(unittest.TestCase):
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.root = Path(self._tmp.name) / "scratch"
@@ -509,7 +511,7 @@ class MutationFeedbackTest(_CriticCase):
             POP, [[tool_use(SUBMIT, red, "a")], [tool_use(SUBMIT, good, "b")]], block=POP_BLOCK,
         )
         self.assertIs(result.terminal, S.TerminalState.SUBMITTED)
-        self.assertEqual(result.final, P.normalized_text_for(POP, json.loads(json.dumps(good))))
+        self.assertEqual(result.final, _provider_protocol_module.normalized_text_for(POP, json.loads(json.dumps(good))))
         self.assertEqual(dict(result.correction_kinds), {"schema": 0, "compile": 1})
         self.assertEqual((result.validator_run_count, result.oracle_bits_used, result.tool_call_count), (2, 6, 0))
         self.assertEqual(session.check_count, 2)
@@ -518,7 +520,7 @@ class MutationFeedbackTest(_CriticCase):
         self.assertTrue(correction["content"].startswith("[compile] uncompilable"))
         self.assertIn("param_unknown=true", correction["content"])
         self.assertNotIn("That call was refused", correction["content"])
-        self.assertNotIn(P.CORRECTION_TEXT[:20], correction["content"])
+        self.assertNotIn(_provider_protocol_module.CORRECTION_TEXT[:20], correction["content"])
         validator_turns = [t for t in result.turns if t.kind == "validator"]
         self.assertEqual([t.outcome_code for t in validator_turns], ["uncompilable", "compiles"])
         self.assertTrue(all(t.fresh and t.tool_name == CV.COMPILE_PROPOSAL_TOOL for t in validator_turns))
@@ -530,7 +532,7 @@ class MutationFeedbackTest(_CriticCase):
         )
         self.assertIs(result.terminal, S.TerminalState.SUBMITTED)
         self.assertEqual(dict(result.correction_kinds), {"schema": 0, "compile": 1})
-        self.assertEqual(result.final, P.normalized_text_for(POP, json.loads(json.dumps(red))))
+        self.assertEqual(result.final, _provider_protocol_module.normalized_text_for(POP, json.loads(json.dumps(red))))
         # Schema and compile corrections SHARE the two: after two schema
         # corrections a red on the last permitted turn is accepted as is.
         result, _, _ = self.run_critic_session(
@@ -556,7 +558,7 @@ class MutationFeedbackTest(_CriticCase):
 # ---------------------------------------------------------------------------
 
 def _roles_with_session_block() -> list[str]:
-    roles = P._agents_doc().get("roles") or {}
+    roles = _provider_config_module._agents_doc().get("roles") or {}
     return sorted(r for r, spec in roles.items() if isinstance(spec, dict) and isinstance(spec.get("session"), dict))
 
 
@@ -666,7 +668,7 @@ class CorrectionExhaustionTest(_CriticCase):
         self.assertEqual(dumped["red_validators_at_submit"], [CV.COMPILE_PROPOSAL_TOOL])
         self.assertEqual(dumped["submitted_with_red_validators"], 1)
         self.assertTrue(result.verify_chain())
-        self.assertEqual(result.final, P.normalized_text_for(POP, json.loads(json.dumps(red))))
+        self.assertEqual(result.final, _provider_protocol_module.normalized_text_for(POP, json.loads(json.dumps(red))))
         self.assert_identities(result)
 
         # POST-SESSION: what the harness compiled red is VOIDED before the
@@ -756,12 +758,12 @@ class ProposalMatrixTest(_CriticCase):
             with ctx:
                 for role in roles:
                     with self.subTest(config=label, role=role):
-                        manifest = P.role_behavior_manifest(role)
+                        manifest = _provider_protocol_module.role_behavior_manifest(role)
                         names = {t["name"] for t in manifest["tools"]}
                         names |= {v["name"] for v in manifest["harness_validators"]}
                         names |= set(RG.ToolRegistry.for_role(role).names)
                         names |= set(RG.ToolRegistry.declared_for_role(role).names)
-                        names |= set(P.session_policy_for(role).allowlist)
+                        names |= set(_provider_protocol_module.session_policy_for(role).allowlist)
                         self.assertTrue(names.isdisjoint(forbidden), names & forbidden)
                 self.assertTrue(set(RG._registered_names()).isdisjoint(forbidden))
         # Post-session: the record is a pure function of the promoter's
@@ -790,30 +792,30 @@ class ProposalMatrixTest(_CriticCase):
         `compile_proposal` (+ `measured_match_bit` under the flag) and never
         a matrix verb; the default tool choice stays the forced tool."""
         forbidden = set(CV.POST_SESSION_PROJECTION_NAMES)
-        forced = P.tool_choice_for(POP)
-        shipped = P.role_behavior_manifest(POP)
+        forced = _provider_protocol_module.tool_choice_for(POP)
+        shipped = _provider_protocol_module.role_behavior_manifest(POP)
         self.assertEqual([t["name"] for t in shipped["tools"]], [SUBMIT])
         self.assertEqual(shipped["harness_validators"], [{"name": CV.COMPILE_PROPOSAL_TOOL}])
         self.assertEqual(shipped["tool_choice_policy"], forced)
-        self.assertEqual(P.session_policy_for(POP).allowlist, (CV.COMPILE_PROPOSAL_TOOL,))
+        self.assertEqual(_provider_protocol_module.session_policy_for(POP).allowlist, (CV.COMPILE_PROPOSAL_TOOL,))
         with _agents(_doc(**{POP: {"enabled": True}})):
-            manifest = P.role_behavior_manifest(POP)
+            manifest = _provider_protocol_module.role_behavior_manifest(POP)
             self.assertEqual([t["name"] for t in manifest["tools"]], [SUBMIT])
             self.assertEqual(manifest["harness_validators"], [{"name": CV.COMPILE_PROPOSAL_TOOL}])
             self.assertEqual(manifest["tool_choice_policy"], forced)
-            policy = P.session_policy_for(POP)
+            policy = _provider_protocol_module.session_policy_for(POP)
             self.assertEqual(policy.allowlist, (CV.COMPILE_PROPOSAL_TOOL,))
-            self.assertEqual(P.session_tool_choice(policy), forced)
+            self.assertEqual(_provider_protocol_module.session_tool_choice(policy), forced)
             self.assertEqual([t["name"] for t in policy.wire_tools], [SUBMIT])
         with _agents(_doc(**{POP: {"enabled": True, "measured_match_bit": True, "max_oracle_bits": 7}})):
-            manifest = P.role_behavior_manifest(POP)
+            manifest = _provider_protocol_module.role_behavior_manifest(POP)
             self.assertEqual([t["name"] for t in manifest["tools"]], [SUBMIT])
             self.assertEqual([v["name"] for v in manifest["harness_validators"]],
                              [CV.COMPILE_PROPOSAL_TOOL, CV.MEASURED_MATCH_BIT_TOOL])
             names = {t["name"] for t in manifest["tools"]} | {v["name"] for v in manifest["harness_validators"]}
             self.assertTrue(names.isdisjoint(forbidden))
-            self.assertEqual(P.session_tool_choice(P.session_policy_for(POP)), forced)
-        self.assertEqual(P.role_behavior_manifest(POP), shipped)
+            self.assertEqual(_provider_protocol_module.session_tool_choice(_provider_protocol_module.session_policy_for(POP)), forced)
+        self.assertEqual(_provider_protocol_module.role_behavior_manifest(POP), shipped)
 
 
 class RejectedProposalRecordTest(tap._DemoFixtureMixin, unittest.TestCase):
@@ -889,7 +891,7 @@ class MeasuredMatchBitTest(_CriticCase):
         declared nor run; when on, it is ONE aggregate bit (1 oracle bit,
         `per_session` 1) the harness runs on the first submitted payload and
         never again, in a scratch workspace — the matrices stay behind."""
-        block = P.role_loop_limits(POP)
+        block = _provider_config_module.role_loop_limits(POP)
         self.assertIs(block["measured_match_bit"], False)
         self.assertEqual(S.SessionLimits.from_block(block).active_harness_validators, (CV.COMPILE_PROPOSAL_TOOL,))
         self.assertEqual(CV.critic_registry(POP).names, (CV.COMPILE_PROPOSAL_TOOL,))
@@ -949,7 +951,7 @@ class MeasuredMatchBitTest(_CriticCase):
         only when the adversary's session is enabled AND the flag is on;
         each step moves the tool surface and the routing fingerprint, and
         the shipped config restores the exact fingerprint."""
-        routing = P.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         base = M.council_routing_fingerprint(routing)
         base_surface = M.tool_surface_sha256()
         self.assertEqual(M.critic_wired_validators()[POP], (CV.COMPILE_PROPOSAL_TOOL,))
@@ -967,7 +969,7 @@ class MeasuredMatchBitTest(_CriticCase):
             self.assertIn("elt_taskgen.review.tools.critic_validators", digests["code"])
             self.assertEqual(digests["binaries"], M.toolchain_pins())
             self.assertEqual(RG.ToolRegistry.for_role(POP).names, (CV.COMPILE_PROPOSAL_TOOL, CV.MEASURED_MATCH_BIT_TOOL))
-            self.assertEqual([t["name"] for t in P.wire_tools_for(POP)], [SUBMIT])
+            self.assertEqual([t["name"] for t in _provider_protocol_module.wire_tools_for(POP)], [SUBMIT])
         self.assertNotEqual(flagged_fp, base)
         self.assertNotEqual(flagged_surface, base_surface)
         self.assertNotEqual(rollback_surface, base_surface)
@@ -988,16 +990,16 @@ class RegistryGateTest(_CriticCase):
                 self.assertEqual(RG.ToolRegistry.declared_for_role(role).names, ())
                 self.assertEqual(CV.critic_registry(role).names, names)
                 self.assertEqual(CV.critic_registry(role).wire_tools(), [])
-                self.assertTrue(P.role_is_agentic(role))
-                wire = P.wire_tools_for(role)
-                sha = P.role_behavior_sha256(role)
+                self.assertTrue(_provider_protocol_module.role_is_agentic(role))
+                wire = _provider_protocol_module.wire_tools_for(role)
+                sha = _provider_protocol_module.role_behavior_sha256(role)
                 with _agents(_doc(**{role: {"enabled": False}})):
                     self.assertEqual(RG.ToolRegistry.for_role(role).names, ())
-                    self.assertEqual(P.wire_tools_for(role), wire)
-                    self.assertFalse(P.role_is_agentic(role))
-                    self.assertNotEqual(P.role_behavior_sha256(role), sha)
+                    self.assertEqual(_provider_protocol_module.wire_tools_for(role), wire)
+                    self.assertFalse(_provider_protocol_module.role_is_agentic(role))
+                    self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(role), sha)
                 self.assertEqual(RG.ToolRegistry.for_role(role).names, names)
-                self.assertEqual(P.role_behavior_sha256(role), sha)
+                self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), sha)
         # A declared validator's name is REGISTERED (naming it from another
         # role is `tool_not_permitted`); the flagged match bit is declared
         # only under its flag, so under the shipped config it is unknown.
@@ -1013,7 +1015,7 @@ class RegistryGateTest(_CriticCase):
         self.assertEqual(policy.terminal_tool_names, (SUBMIT,))
         self.assertEqual([t["name"] for t in policy.wire_tools], [SUBMIT])
         self.assertEqual(policy.allowlist, (CV.COMPILE_PROPOSAL_TOOL,))
-        self.assertEqual(policy.limits.as_manifest(), P.role_loop_limits(POP))
+        self.assertEqual(policy.limits.as_manifest(), _provider_config_module.role_loop_limits(POP))
         with self.assertRaises(ValueError):
             CV.critic_policy("ambiguity_critic")
         with self.assertRaises(ValueError):
@@ -1105,7 +1107,7 @@ class FindingsFromSessionTest(_CriticCase):
         )
         self.assertIs(result.terminal, S.TerminalState.SUBMITTED)
         self.assertEqual(dict(result.correction_kinds), {"schema": 2, "compile": 0})
-        self.assertEqual(result.final, P.normalized_text_for(POP, valid))
+        self.assertEqual(result.final, _provider_protocol_module.normalized_text_for(POP, valid))
 
     def test_findings_from_session_is_the_only_path_from_a_session_to_the_screen(self):
         """`council.findings_from_session(task, role, result, session,
@@ -1876,7 +1878,7 @@ class BatchRepairRoundTwoTest(_CriticCase):
                 proposal = dict(_proposal("inner_join"))
                 proposal["params"] = text
                 bad = _payload(_finding(proposed=proposal))
-                problem = P.validate_payload_for(POP, json.loads(json.dumps(bad)))
+                problem = _provider_protocol_module.validate_payload_for(POP, json.loads(json.dumps(bad)))
                 self.assertIsNotNone(problem)
                 self.assertIn("non-finite number", problem)
                 good = _payload(_finding(proposed=_proposal("inner_join")))
@@ -1893,5 +1895,5 @@ class BatchRepairRoundTwoTest(_CriticCase):
                 self.assert_identities(result)
         # A dict from an older transcript is held to the same rule.
         with self.assertRaises(ValueError):
-            P._normalized_proposal({"proposed_case": {**_proposal("inner_join"), "params": {"x": float("inf")}}})
-        self.assertEqual(P._normalized_proposal({"proposed_case": {**_proposal("inner_join"), "params": {"x": 1.5}}})["params"], {"x": 1.5})
+            _provider_protocol_module._normalized_proposal({"proposed_case": {**_proposal("inner_join"), "params": {"x": float("inf")}}})
+        self.assertEqual(_provider_protocol_module._normalized_proposal({"proposed_case": {**_proposal("inner_join"), "params": {"x": 1.5}}})["params"], {"x": 1.5})

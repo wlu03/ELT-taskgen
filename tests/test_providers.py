@@ -19,6 +19,8 @@ Fail-closed contracts under test:
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import os
 import tempfile
@@ -84,7 +86,7 @@ def anthropic_tool_response(findings, *, input_tokens=1000, output_tokens=200,
             {
                 "type": "tool_use",
                 "id": "toolu_01",
-                "name": P.FINDINGS_TOOL_NAME,
+                "name": _provider_protocol_module.FINDINGS_TOOL_NAME,
                 "input": {"findings": findings},
             }
         ],
@@ -126,7 +128,7 @@ def openai_tool_response(findings, *, prompt_tokens=800, completion_tokens=150,
                             "id": call_id,
                             "type": "function",
                             "function": {
-                                "name": P.FINDINGS_TOOL_NAME,
+                                "name": _provider_protocol_module.FINDINGS_TOOL_NAME,
                                 "arguments": json.dumps({"findings": findings}),
                             },
                         }
@@ -200,7 +202,7 @@ def make_routing(
     """Test routing. `oss_rates=None` leaves the openai_compat route UNPRICED,
     which rates_for now refuses (see OpenAICompatPricingFailsClosedTest)."""
     roles = {
-        name: P.RoleRoute(name, "anthropic", model, 1024, effort)
+        name: _provider_config_module.RoleRoute(name, "anthropic", model, 1024, effort)
         for name, model, effort in (
             ("semantic_author", "claude-opus-5", "high"),
             ("ambiguity_critic", "claude-sonnet-5", "medium"),
@@ -209,7 +211,7 @@ def make_routing(
             ("feasibility_reviewer", "claude-haiku-4-5", None),
         )
     }
-    roles["independent_implementer"] = P.RoleRoute(
+    roles["independent_implementer"] = _provider_config_module.RoleRoute(
         "independent_implementer", "openai_compat", oss_model or "test-oss-model",
         2048, None,
     )
@@ -217,7 +219,7 @@ def make_routing(
     if oss_rates is not None:
         oss_config["usd_per_mtok_input"] = oss_rates[0]
         oss_config["usd_per_mtok_output"] = oss_rates[1]
-    return P.RoleRouting(
+    return _provider_config_module.RoleRouting(
         roles=roles,
         provider_config={
             "anthropic": {"api_key": api_key},
@@ -233,8 +235,8 @@ def make_routing(
 
 class AnthropicBackendTest(unittest.TestCase):
     def test_missing_key_raises_missing_credentials(self):
-        with self.assertRaises(P.MissingCredentialsError):
-            P.AnthropicBackend("")
+        with self.assertRaises(_provider_backends_module.MissingCredentialsError):
+            _provider_backends_module.AnthropicBackend("")
 
     def test_workspace_id_header_is_sent_only_when_configured(self):
         """An API key that is not scoped to a workspace must name one per
@@ -245,7 +247,7 @@ class AnthropicBackendTest(unittest.TestCase):
         for configured, expected in (("", None), ("  wrkspc_01abc  ", "wrkspc_01abc")):
             with self.subTest(configured=configured):
                 transport = FakeTransport([anthropic_tool_response([VALID_FINDING])])
-                backend = P.AnthropicBackend(
+                backend = _provider_backends_module.AnthropicBackend(
                     "sk-test", transport=transport, workspace_id=configured
                 )
                 backend.complete(
@@ -259,20 +261,20 @@ class AnthropicBackendTest(unittest.TestCase):
     def test_routed_provider_passes_the_configured_workspace_id(self):
         """`_backend` reads `providers.anthropic.workspace_id` out of the
         routing, so the operator sets it once in `config/agents.yaml`."""
-        routing = P.load_role_routing()
+        routing = _provider_config_module.load_role_routing()
         self.assertIn("workspace_id", routing.provider_config.get("anthropic", {}))
-        backend = P.AnthropicBackend("sk-test", workspace_id="wrkspc_02xyz")
+        backend = _provider_backends_module.AnthropicBackend("sk-test", workspace_id="wrkspc_02xyz")
         self.assertEqual(
             backend._headers()["anthropic-workspace-id"], "wrkspc_02xyz"  # noqa: SLF001
         )
         self.assertNotIn(
             "anthropic-workspace-id",
-            P.AnthropicBackend("sk-test")._headers(),  # noqa: SLF001
+            _provider_backends_module.AnthropicBackend("sk-test")._headers(),  # noqa: SLF001
         )
 
     def test_critic_call_is_tool_forced_strict_and_unsampled(self):
         transport = FakeTransport([anthropic_tool_response([VALID_FINDING])])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         result = backend.complete(
             role_name="ambiguity_critic", model="claude-sonnet-5",
             prompt="PROMPT", max_tokens=1024, effort="medium",
@@ -282,9 +284,9 @@ class AnthropicBackendTest(unittest.TestCase):
         self.assertEqual(headers["x-api-key"], "sk-test")
         self.assertIn("anthropic-version", headers)
         # Tool-forced strict schema.
-        self.assertEqual(payload["tool_choice"], {"type": "tool", "name": P.FINDINGS_TOOL_NAME})
+        self.assertEqual(payload["tool_choice"], {"type": "tool", "name": _provider_protocol_module.FINDINGS_TOOL_NAME})
         self.assertTrue(payload["tools"][0]["strict"])
-        self.assertEqual(payload["tools"][0]["input_schema"], P.findings_tool_schema())
+        self.assertEqual(payload["tools"][0]["input_schema"], _provider_protocol_module.findings_tool_schema())
         # No sampling-parameter pinning (the models reject it with a 400).
         for banned in ("temperature", "top_p", "top_k"):
             self.assertNotIn(banned, payload)
@@ -297,7 +299,7 @@ class AnthropicBackendTest(unittest.TestCase):
 
     def test_haiku_route_omits_effort_parameter(self):
         transport = FakeTransport([anthropic_tool_response([VALID_FINDING])])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         backend.complete(
             role_name="feasibility_reviewer", model="claude-haiku-4-5",
             prompt="PROMPT", max_tokens=512, effort="high",
@@ -308,7 +310,7 @@ class AnthropicBackendTest(unittest.TestCase):
         transport = FakeTransport(
             [anthropic_bad_tool_response(), anthropic_tool_response([VALID_FINDING])]
         )
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         result = backend.complete(
             role_name="shortcut_attacker", model="claude-opus-5",
             prompt="PROMPT", max_tokens=1024, effort="high",
@@ -321,18 +323,18 @@ class AnthropicBackendTest(unittest.TestCase):
 
     def test_schema_retries_bounded_then_raises_protocol_error(self):
         transport = FakeTransport([anthropic_bad_tool_response() for _ in range(5)])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         with self.assertRaises(ProviderProtocolError):
             backend.complete(
                 role_name="ambiguity_critic", model="claude-sonnet-5",
                 prompt="PROMPT", max_tokens=1024, effort=None,
             )
         # Exactly 1 initial attempt + SCHEMA_RETRIES retries, never more.
-        self.assertEqual(len(transport.calls), 1 + P.SCHEMA_RETRIES)
+        self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
 
     def test_prose_role_is_plain_completion(self):
         transport = FakeTransport([anthropic_text_response("Solver-visible prose.")])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         result = backend.complete(
             role_name="semantic_author", model="claude-opus-5",
             prompt="PROMPT", max_tokens=2048, effort="high",
@@ -344,7 +346,7 @@ class AnthropicBackendTest(unittest.TestCase):
 
     def test_empty_prose_retries_then_raises(self):
         transport = FakeTransport([anthropic_text_response("") for _ in range(3)])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         with self.assertRaises(ProviderProtocolError):
             backend.complete(
                 role_name="semantic_author", model="claude-opus-5",
@@ -373,11 +375,11 @@ class SchemaRetryWireProtocolTest(unittest.TestCase):
 
     def test_anthropic_retry_answers_every_tool_use_with_a_tool_result(self):
         rejected = anthropic_bad_tool_response()
-        payload = P.AnthropicBackend._payload(
+        payload = _provider_backends_module.AnthropicBackend._payload(
             model="claude-sonnet-5", prompt="P", max_tokens=64, effort=None,
             role_name="ambiguity_critic", schema_mode=True,
         )
-        retry = P._with_correction(payload, rejected, "bad severity")
+        retry = _provider_backends_module._with_correction(payload, rejected, "bad severity")
         messages = retry["messages"]
         self.assertEqual(messages[-2]["role"], "assistant")
         self.assertEqual(messages[-1]["role"], "user")
@@ -398,7 +400,7 @@ class SchemaRetryWireProtocolTest(unittest.TestCase):
     def test_anthropic_prose_retry_stays_plain_text(self):
         """No tool_use in the rejected turn -> no tool_result to invent."""
         rejected = anthropic_text_response("")
-        retry = P._with_correction({"messages": []}, rejected, "empty")
+        retry = _provider_backends_module._with_correction({"messages": []}, rejected, "empty")
         self.assertEqual(retry["messages"][-1]["role"], "user")
         self.assertIsInstance(retry["messages"][-1]["content"], str)
 
@@ -408,7 +410,7 @@ class SchemaRetryWireProtocolTest(unittest.TestCase):
               "route_hint": None, "suggested_attack": None}],
             call_id="call_xyz",
         )
-        retry = P._with_correction_chat(
+        retry = _provider_backends_module._with_correction_chat(
             {"messages": [{"role": "user", "content": "P"}]},
             rejected,
             "bad severity",
@@ -430,13 +432,13 @@ class SchemaRetryWireProtocolTest(unittest.TestCase):
         message["reasoning"] = "internal"
         message["reasoning_details"] = [{"type": "reasoning.text", "text": "x"}]
         message["refusal"] = None
-        retry = P._with_correction_chat({"messages": []}, rejected, "why")
+        retry = _provider_backends_module._with_correction_chat({"messages": []}, rejected, "why")
         self.assertNotIn("reasoning", retry["messages"][0])
         self.assertNotIn("reasoning_details", retry["messages"][0])
         self.assertNotIn("refusal", retry["messages"][0])
 
     def test_chat_prose_retry_has_no_tool_message(self):
-        retry = P._with_correction_chat(
+        retry = _provider_backends_module._with_correction_chat(
             {"messages": []}, openai_text_response(""), "empty prose response"
         )
         self.assertEqual([m["role"] for m in retry["messages"]],
@@ -452,7 +454,7 @@ class SchemaRetryWireProtocolTest(unittest.TestCase):
             ),
             openai_tool_response([VALID_FINDING]),
         ])
-        backend = P.OpenAICompatBackend(
+        backend = _provider_backends_module.OpenAICompatBackend(
             "http://oss:8000/v1", "k", transport=transport
         )
         backend.complete(
@@ -479,12 +481,12 @@ class SchemaRetryWireProtocolTest(unittest.TestCase):
 
 class OpenAICompatBackendTest(unittest.TestCase):
     def test_missing_base_url_raises_missing_credentials(self):
-        with self.assertRaises(P.MissingCredentialsError):
-            P.OpenAICompatBackend("", "key")
+        with self.assertRaises(_provider_backends_module.MissingCredentialsError):
+            _provider_backends_module.OpenAICompatBackend("", "key")
 
     def test_critic_call_forces_function_and_parses_arguments(self):
         transport = FakeTransport([openai_tool_response([VALID_FINDING])])
-        backend = P.OpenAICompatBackend(
+        backend = _provider_backends_module.OpenAICompatBackend(
             "http://localhost:8000/v1", "oss-key", transport=transport
         )
         result = backend.complete(
@@ -496,10 +498,10 @@ class OpenAICompatBackendTest(unittest.TestCase):
         self.assertEqual(headers["authorization"], "Bearer oss-key")
         self.assertEqual(
             payload["tool_choice"],
-            {"type": "function", "function": {"name": P.FINDINGS_TOOL_NAME}},
+            {"type": "function", "function": {"name": _provider_protocol_module.FINDINGS_TOOL_NAME}},
         )
         self.assertEqual(
-            payload["tools"][0]["function"]["parameters"], P.findings_tool_schema()
+            payload["tools"][0]["function"]["parameters"], _provider_protocol_module.findings_tool_schema()
         )
         data = json.loads(result.text)
         self.assertEqual(data["role"], "ambiguity_critic")
@@ -508,17 +510,17 @@ class OpenAICompatBackendTest(unittest.TestCase):
     def test_schema_violation_retries_then_raises(self):
         bad = openai_tool_response([{"severity": "nope", "summary": "s"}])
         transport = FakeTransport([bad, dict(bad), dict(bad)])
-        backend = P.OpenAICompatBackend("http://x/v1", "", transport=transport)
+        backend = _provider_backends_module.OpenAICompatBackend("http://x/v1", "", transport=transport)
         with self.assertRaises(ProviderProtocolError):
             backend.complete(
                 role_name="shortcut_attacker", model="test-oss-model",
                 prompt="PROMPT", max_tokens=1024, effort=None,
             )
-        self.assertEqual(len(transport.calls), 1 + P.SCHEMA_RETRIES)
+        self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
 
     def test_prose_role_reads_message_content(self):
         transport = FakeTransport([openai_text_response("independent build")])
-        backend = P.OpenAICompatBackend("http://x/v1", "", transport=transport)
+        backend = _provider_backends_module.OpenAICompatBackend("http://x/v1", "", transport=transport)
         result = backend.complete(
             role_name="independent_implementer", model="test-oss-model",
             prompt="PROMPT", max_tokens=1024, effort=None,
@@ -527,8 +529,8 @@ class OpenAICompatBackendTest(unittest.TestCase):
         self.assertNotIn("tools", transport.calls[0][2])
 
     def test_missing_model_raises_missing_credentials(self):
-        backend = P.OpenAICompatBackend("http://x/v1", "", transport=FakeTransport([]))
-        with self.assertRaises(P.MissingCredentialsError):
+        backend = _provider_backends_module.OpenAICompatBackend("http://x/v1", "", transport=FakeTransport([]))
+        with self.assertRaises(_provider_backends_module.MissingCredentialsError):
             backend.complete(
                 role_name="independent_implementer", model="",
                 prompt="PROMPT", max_tokens=1024, effort=None,
@@ -947,12 +949,12 @@ class OpenAICompatPricingFailsClosedTest(unittest.TestCase):
         """config/agents.yaml must price whatever ELT_TASKGEN_OSS_MODEL names
         (verified against https://openrouter.ai/api/v1/models:
         kimi-k2.7-code prompt 7e-7 / completion 3.5e-6 USD per token)."""
-        cfg = P.DEFAULT_ROUTING_DOC["providers"]["openai_compat"]
+        cfg = _provider_config_module.DEFAULT_ROUTING_DOC["providers"]["openai_compat"]
         self.assertEqual(
             P.rates_for("openai_compat", "moonshotai/kimi-k2.7-code", cfg),
             (0.70, 3.50),
         )
-        routing = P.load_role_routing()
+        routing = _provider_config_module.load_role_routing()
         file_cfg = routing.provider_config.get("openai_compat") or {}
         self.assertEqual(
             P.rates_for("openai_compat", "moonshotai/kimi-k2.7-code", file_cfg),
@@ -1002,7 +1004,7 @@ class ProviderReportedCostWinsTest(unittest.TestCase):
         second = openai_tool_response([VALID_FINDING])
         second["usage"]["cost"] = 0.002
         transport = FakeTransport([first, second])
-        backend = P.OpenAICompatBackend(
+        backend = _provider_backends_module.OpenAICompatBackend(
             "http://oss:8000/v1", "k", transport=transport
         )
         result = backend.complete(
@@ -1013,7 +1015,7 @@ class ProviderReportedCostWinsTest(unittest.TestCase):
 
     def test_no_cost_field_reports_none(self):
         transport = FakeTransport([openai_tool_response([VALID_FINDING])])
-        backend = P.OpenAICompatBackend(
+        backend = _provider_backends_module.OpenAICompatBackend(
             "http://oss:8000/v1", "k", transport=transport
         )
         result = backend.complete(
@@ -1032,22 +1034,22 @@ class RoutingConfigTest(unittest.TestCase):
         """The wheel fallback is the packaged YAML, never a copied literal."""
         from elt_taskgen.review import metrology as metrology_mod
 
-        path = P.default_agents_config_path()
+        path = _provider_config_module.default_agents_config_path()
         self.assertTrue(path.is_file(), path)
         raw = path.read_bytes()
         on_disk = yaml.safe_load(raw.decode("utf-8"))
         self.assertIsInstance(on_disk, dict)
         # Kept only for old callers: this is a parsed view, not another source.
-        self.assertEqual(P.DEFAULT_ROUTING_DOC, on_disk)
+        self.assertEqual(_provider_config_module.DEFAULT_ROUTING_DOC, on_disk)
 
-        from_source = P.load_role_routing(path)
+        from_source = _provider_config_module.load_role_routing(path)
         source_fingerprint = metrology_mod.council_routing_fingerprint(from_source)
         with tempfile.TemporaryDirectory() as tmp:
             packaged = Path(tmp) / "elt_taskgen" / "_resources" / "config" / "agents.yaml"
             packaged.parent.mkdir(parents=True)
             packaged.write_bytes(raw)
-            with mock.patch.object(P, "resource_path", return_value=packaged):
-                from_package = P.load_role_routing()
+            with mock.patch.object(_provider_config_module, "resource_path", return_value=packaged):
+                from_package = _provider_config_module.load_role_routing()
                 package_fingerprint = metrology_mod.council_routing_fingerprint(from_package)
 
         self.assertEqual(from_package.agents_document, on_disk)
@@ -1057,17 +1059,17 @@ class RoutingConfigTest(unittest.TestCase):
         for role in from_source.roles:
             with self.subTest(role=role):
                 self.assertEqual(
-                    P.role_behavior_sha256(
+                    _provider_protocol_module.role_behavior_sha256(
                         role, agents_config=from_package.agents_document
                     ),
-                    P.role_behavior_sha256(
+                    _provider_protocol_module.role_behavior_sha256(
                         role, agents_config=from_source.agents_document
                     ),
                 )
 
     def test_provider_uses_one_snapshot_and_later_construction_reloads(self):
         """A file replacement cannot mix A routing with B behavior."""
-        first = json.loads(json.dumps(P._agents_doc()))
+        first = json.loads(json.dumps(_provider_config_module._agents_doc()))
         second = json.loads(json.dumps(first))
         first["roles"]["ambiguity_critic"]["max_tokens"] = 1111
         first["roles"]["ambiguity_critic"]["session"]["max_wall_s"] = 301
@@ -1077,7 +1079,7 @@ class RoutingConfigTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "agents.yaml"
             path.write_text(yaml.safe_dump(first, sort_keys=False), encoding="utf-8")
-            routing_a = P.load_role_routing(path)
+            routing_a = _provider_config_module.load_role_routing(path)
 
             # Simulate an atomic config deployment in the crash/race window
             # between routing construction and provider construction.
@@ -1089,7 +1091,7 @@ class RoutingConfigTest(unittest.TestCase):
             )
             self.assertEqual(routing_a.for_role("ambiguity_critic").max_tokens, 1111)
             self.assertEqual(
-                P.role_loop_limits(
+                _provider_config_module.role_loop_limits(
                     "ambiguity_critic", agents_config=provider_a.agents_document
                 )["max_wall_s"],
                 301,
@@ -1097,7 +1099,7 @@ class RoutingConfigTest(unittest.TestCase):
 
             # A separate construction keeps reload behavior and sees B in
             # both halves; it does not inherit A from a process-global cache.
-            routing_b = P.load_role_routing(path)
+            routing_b = _provider_config_module.load_role_routing(path)
             provider_b = P.RoutedProvider(
                 routing_b,
                 P.TranscriptStore(Path(tmp) / "transcripts-b"),
@@ -1105,16 +1107,16 @@ class RoutingConfigTest(unittest.TestCase):
             )
             self.assertEqual(routing_b.for_role("ambiguity_critic").max_tokens, 2222)
             self.assertEqual(
-                P.role_loop_limits(
+                _provider_config_module.role_loop_limits(
                     "ambiguity_critic", agents_config=provider_b.agents_document
                 )["max_wall_s"],
                 302,
             )
             self.assertNotEqual(
-                P.role_behavior_sha256(
+                _provider_protocol_module.role_behavior_sha256(
                     "ambiguity_critic", agents_config=provider_a.agents_document
                 ),
-                P.role_behavior_sha256(
+                _provider_protocol_module.role_behavior_sha256(
                     "ambiguity_critic", agents_config=provider_b.agents_document
                 ),
             )
@@ -1135,7 +1137,7 @@ class RoutingConfigTest(unittest.TestCase):
         }
         for role, enabled in expected.items():
             with self.subTest(role=role):
-                block = P.role_loop_limits(role)
+                block = _provider_config_module.role_loop_limits(role)
                 self.assertIs(block["enabled"], enabled)
                 if enabled:
                     self.assertGreater(float(block["max_usd"]), 0.0)
@@ -1143,7 +1145,7 @@ class RoutingConfigTest(unittest.TestCase):
                     self.assertIsNotNone(wall)
                     self.assertGreater(int(wall), 0)
     def test_repo_default_config_routes_all_roles(self):
-        routing = P.load_role_routing()
+        routing = _provider_config_module.load_role_routing()
         for role in (
             "semantic_author", "ambiguity_critic", "population_adversary",
             "shortcut_attacker", "feasibility_reviewer", "independent_implementer",
@@ -1188,18 +1190,18 @@ class RoutingConfigTest(unittest.TestCase):
                 "    effort: high\n"
             )
             with mock.patch.dict(os.environ, {"ELT_TEST_PROV_KEY": "sk-from-env"}):
-                routing = P.load_role_routing(cfg)
+                routing = _provider_config_module.load_role_routing(cfg)
             self.assertEqual(
                 routing.provider_config["anthropic"]["api_key"], "sk-from-env"
             )
             with mock.patch.dict(os.environ, {}, clear=False):
                 os.environ.pop("ELT_TEST_PROV_KEY", None)
-                routing = P.load_role_routing(cfg)
+                routing = _provider_config_module.load_role_routing(cfg)
             self.assertEqual(routing.provider_config["anthropic"]["api_key"], "")
 
     def test_explicit_missing_path_fails_closed(self):
         with self.assertRaises(FileNotFoundError):
-            P.load_role_routing(Path("/nonexistent/agents.yaml"))
+            _provider_config_module.load_role_routing(Path("/nonexistent/agents.yaml"))
 
     def test_unknown_provider_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1208,7 +1210,7 @@ class RoutingConfigTest(unittest.TestCase):
                 "roles:\n  semantic_author: {provider: sparkle, model: x, max_tokens: 1}\n"
             )
             with self.assertRaises(ValueError):
-                P.load_role_routing(cfg)
+                _provider_config_module.load_role_routing(cfg)
 
     def test_unrouted_role_fails_closed(self):
         routing = make_routing()
@@ -1217,7 +1219,7 @@ class RoutingConfigTest(unittest.TestCase):
 
     def test_credential_problems(self):
         routing = make_routing(api_key="", oss_base="")
-        problems = P.credential_problems(
+        problems = _provider_config_module.credential_problems(
             routing, ["semantic_author", "independent_implementer"]
         )
         self.assertTrue(any("ANTHROPIC_API_KEY" in p for p in problems))
@@ -1226,7 +1228,7 @@ class RoutingConfigTest(unittest.TestCase):
             api_key="sk-x", oss_base="http://x", oss_key="or-x", oss_model="oss/m"
         )
         self.assertEqual(
-            P.credential_problems(
+            _provider_config_module.credential_problems(
                 routing, ["semantic_author", "independent_implementer"]
             ),
             [],
@@ -1247,7 +1249,7 @@ class RoutingConfigTest(unittest.TestCase):
         ):
             with self.subTest(env_var=env_var):
                 routing = make_routing(api_key="sk-x", oss_base="http://x", **missing)
-                problems = P.credential_problems(routing, ["independent_implementer"])
+                problems = _provider_config_module.credential_problems(routing, ["independent_implementer"])
                 self.assertTrue(
                     any(env_var in p for p in problems),
                     f"expected {env_var} to be reported, got {problems}",
@@ -1290,7 +1292,7 @@ class RoutedProviderTest(unittest.TestCase):
                 tmp, responses=[anthropic_tool_response([VALID_FINDING])]
             )
             text = provider.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             path = Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json"
             self.assertTrue(path.is_file())
             entry = json.loads(path.read_text())
@@ -1307,7 +1309,7 @@ class RoutedProviderTest(unittest.TestCase):
             task_hash = "a" * 64
             provider.begin_task_evidence("task-1", task_hash)
             text = provider.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             entry = json.loads(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json")
                 .read_text()
@@ -1360,7 +1362,7 @@ class RoutedProviderTest(unittest.TestCase):
             live.begin_task_evidence("task-1", "a" * 64)
             first = live.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
             self.assertEqual(len(transport.calls), 1)
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             path = Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json"
             stored = path.read_bytes()
             spent = live.meter.per_task_usd.get("task-1", 0.0)
@@ -1406,7 +1408,7 @@ class RoutedProviderTest(unittest.TestCase):
             # still one-shot in the shipped profile.  The shortcut attacker
             # now has an enabled harness-validated session, whose route
             # identity intentionally rejects its old one-shot fixtures.
-            sha = P.transcript_key("ambiguity_critic", "seen prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "seen prompt")
             d = fixtures / "ambiguity_critic"
             d.mkdir(parents=True)
             # A fixture, like every real recording, names the route that
@@ -1429,7 +1431,7 @@ class RoutedProviderTest(unittest.TestCase):
     def test_missing_key_and_no_transcript_is_clean_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             provider, transport = self._provider(tmp, api_key="")
-            with self.assertRaises(P.MissingCredentialsError) as ctx:
+            with self.assertRaises(_provider_backends_module.MissingCredentialsError) as ctx:
                 provider.complete(CouncilRole.AMBIGUITY_CRITIC, "prompt")
             self.assertEqual(transport.calls, [])
             message = str(ctx.exception)
@@ -1448,7 +1450,7 @@ class RoutedProviderTest(unittest.TestCase):
             )
             with self.assertRaises(P.BudgetExceededError):
                 provider.complete(CouncilRole.AMBIGUITY_CRITIC, "prompt")
-            sha = P.transcript_key("ambiguity_critic", "prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "prompt")
             path = Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json"
             self.assertTrue(path.is_file())  # the paid-for call was recorded
 
@@ -1469,7 +1471,7 @@ class RoutedProviderTest(unittest.TestCase):
                 tmp, responses=[anthropic_tool_response([VALID_FINDING])]
             )
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "prompt")
-            sha = P.transcript_key("ambiguity_critic", "prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "prompt")
             path = Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json"
             entry = json.loads(path.read_text(encoding="utf-8"))
             stamp = set(provider._record_stamp())
@@ -1492,7 +1494,7 @@ class RoutedProviderTest(unittest.TestCase):
             # bit-identical to the baseline single charge).
             self.assertEqual(entry["role"], "ambiguity_critic")
             self.assertEqual(entry["prompt_sha256"], sha)
-            self.assertEqual(entry["system_sha256"], P.role_behavior_sha256("ambiguity_critic"))
+            self.assertEqual(entry["system_sha256"], _provider_protocol_module.role_behavior_sha256("ambiguity_critic"))
             self.assertEqual((entry["provider"], entry["model"]), ("anthropic", "claude-sonnet-5"))
             self.assertEqual(entry["response_sha256"], sha256_hex(entry["response"]))
             self.assertEqual((entry["task_id"], entry["task_content_hash"]), ("task-1", ""))
@@ -1552,10 +1554,10 @@ class RoutedProviderTest(unittest.TestCase):
         """A second provider on the SAME store with ambiguity_critic re-routed."""
         routing = make_routing()
         roles = dict(routing.roles)
-        roles["ambiguity_critic"] = P.RoleRoute(
+        roles["ambiguity_critic"] = _provider_config_module.RoleRoute(
             "ambiguity_critic", "anthropic", model, max_tokens, effort
         )
-        rerouted = P.RoleRouting(
+        rerouted = _provider_config_module.RoleRouting(
             roles=roles, provider_config=routing.provider_config, source="(rerouted)"
         )
         transport = FakeTransport(responses or [])
@@ -1575,7 +1577,7 @@ class RoutedProviderTest(unittest.TestCase):
                 tmp, responses=[anthropic_tool_response([VALID_FINDING])]
             )
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             entry = json.loads(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").read_text()
             )
@@ -1588,14 +1590,14 @@ class RoutedProviderTest(unittest.TestCase):
             # Phase 0.E (entry schema 2): the binding also names the behaviour,
             # wire-tool and policy digests the entry was recorded under, and
             # records (never hashes) the diagnostics version.
-            self.assertEqual(route["behavior_sha256"], P.role_behavior_sha256("ambiguity_critic"))
-            self.assertEqual(route["tools_sha256"], P.role_tools_sha256("ambiguity_critic"))
+            self.assertEqual(route["behavior_sha256"], _provider_protocol_module.role_behavior_sha256("ambiguity_critic"))
+            self.assertEqual(route["tools_sha256"], _provider_protocol_module.role_tools_sha256("ambiguity_critic"))
             self.assertEqual(
-                route["policy_sha256"], P.session_policy_for("ambiguity_critic").sha256()
+                route["policy_sha256"], _provider_protocol_module.session_policy_for("ambiguity_critic").sha256()
             )
             self.assertEqual(route["diagnostics_version"], P.DIAGNOSTICS_VERSION)
-            self.assertEqual(route["entry_schema"], P.TRANSCRIPT_ENTRY_SCHEMA)
-            self.assertEqual(P.transcript_entry_schema(entry), 2)
+            self.assertEqual(route["entry_schema"], _provider_protocol_module.TRANSCRIPT_ENTRY_SCHEMA)
+            self.assertEqual(_provider_protocol_module.transcript_entry_schema(entry), 2)
             self.assertNotIn("admission", entry)  # unstamped unless provided
             self.assertNotIn("recorded_by", entry)
 
@@ -1613,7 +1615,7 @@ class RoutedProviderTest(unittest.TestCase):
             # The sonnet transcript is NOT served for the opus route: a live
             # call is made and the entry is rewritten under the new route.
             self.assertEqual(len(other_transport.calls), 1)
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             entry = json.loads(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").read_text()
             )
@@ -1641,14 +1643,14 @@ class RoutedProviderTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             routing = make_routing()  # implementer model 'test-oss-model'
             roles = dict(routing.roles)
-            roles["independent_implementer"] = P.RoleRoute(
+            roles["independent_implementer"] = _provider_config_module.RoleRoute(
                 "independent_implementer", "openai_compat", "", 2048, None
             )
-            unbound = P.RoleRouting(
+            unbound = _provider_config_module.RoleRouting(
                 roles=roles, provider_config=routing.provider_config, source="(t)"
             )
             store = P.TranscriptStore(Path(tmp) / "transcripts")
-            sha = P.transcript_key("independent_implementer", "build")
+            sha = _provider_protocol_module.transcript_key("independent_implementer", "build")
             store.record("independent_implementer", sha, {
                 "prompt_sha256": sha,
                 "provider": "openai_compat",
@@ -1665,7 +1667,7 @@ class RoutedProviderTest(unittest.TestCase):
     def test_entry_without_model_binding_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             provider, _ = self._provider(tmp, replay_only=True)
-            sha = P.transcript_key("ambiguity_critic", "p")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "p")
             provider.store.record(
                 "ambiguity_critic", sha, {"prompt_sha256": sha, "response": "R"}
             )
@@ -1675,7 +1677,7 @@ class RoutedProviderTest(unittest.TestCase):
 
     def test_effort_change_misses_only_when_route_block_recorded(self):
         with tempfile.TemporaryDirectory() as tmp:
-            sha = P.transcript_key("ambiguity_critic", "p")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "p")
             store = P.TranscriptStore(Path(tmp) / "transcripts")
             # Legacy entry: provider/model only -> unbound on effort -> served.
             store.record("ambiguity_critic", sha, {
@@ -1704,7 +1706,7 @@ class RoutedProviderTest(unittest.TestCase):
             self.assertEqual(transport.calls, [])
 
     def test_transcript_route_mismatch_helper(self):
-        route = P.RoleRoute("r", "anthropic", "claude-opus-5", 1024, "high")
+        route = _provider_config_module.RoleRoute("r", "anthropic", "claude-opus-5", 1024, "high")
         self.assertIsNone(P.transcript_route_mismatch(
             {"provider": "anthropic", "model": "claude-opus-5"}, route
         ))
@@ -1736,7 +1738,7 @@ class RoutedProviderTest(unittest.TestCase):
                 provider.admission_provenance, {"admission_evidence_sha256": "abc"}
             )
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             entry = json.loads(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").read_text()
             )
@@ -1751,7 +1753,7 @@ class RoutedProviderTest(unittest.TestCase):
             )
             provider.admission_provenance = {"admission_mode": "admitted"}
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             entry = json.loads(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").read_text()
             )
@@ -1760,7 +1762,7 @@ class RoutedProviderTest(unittest.TestCase):
     def test_unstamped_legacy_transcript_still_replays(self):
         with tempfile.TemporaryDirectory() as tmp:
             provider, transport = self._provider(tmp, replay_only=True)
-            sha = P.transcript_key("ambiguity_critic", "old prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "old prompt")
             provider.store.record("ambiguity_critic", sha, {
                 "prompt_sha256": sha,
                 "provider": "anthropic",
@@ -1810,28 +1812,28 @@ class TestModelFamily(unittest.TestCase):
         }
         for model, family in cases.items():
             with self.subTest(model=model):
-                self.assertEqual(P.model_family("openai_compat", model), family)
+                self.assertEqual(_provider_config_module.model_family("openai_compat", model), family)
 
     def test_anthropic_provider_key_is_anthropic_family(self):
-        self.assertEqual(P.model_family("anthropic", "anything"), "anthropic")
+        self.assertEqual(_provider_config_module.model_family("anthropic", "anything"), "anthropic")
 
     def test_anthropic_host_wins(self):
         self.assertEqual(
-            P.model_family(
+            _provider_config_module.model_family(
                 "openai_compat", "foo", {"base_url": "https://api.anthropic.com/v1"}
             ),
             "anthropic",
         )
         self.assertNotEqual(
-            P.model_family(
+            _provider_config_module.model_family(
                 "openai_compat", "foo", {"base_url": "https://openrouter.ai/api/v1"}
             ),
             "anthropic",
         )
-        self.assertEqual(P.endpoint_host({"base_url": "https://openrouter.ai/api/v1"}),
+        self.assertEqual(_provider_config_module.endpoint_host({"base_url": "https://openrouter.ai/api/v1"}),
                          "openrouter.ai")
-        self.assertEqual(P.endpoint_host({"base_url": ""}), "")
-        self.assertEqual(P.endpoint_host(None), "")
+        self.assertEqual(_provider_config_module.endpoint_host({"base_url": ""}), "")
+        self.assertEqual(_provider_config_module.endpoint_host(None), "")
 
 
 # ---------------------------------------------------------------------------
@@ -1881,7 +1883,7 @@ class RoleSystemPromptTest(unittest.TestCase):
         from elt_taskgen.review import prompts
 
         transport = FakeTransport([anthropic_tool_response([VALID_FINDING])])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         backend.complete(
             role_name="ambiguity_critic", model="claude-sonnet-5",
             prompt="THE VIEW", max_tokens=1024, effort=None,
@@ -1897,7 +1899,7 @@ class RoleSystemPromptTest(unittest.TestCase):
         from elt_taskgen.review import prompts
 
         transport = FakeTransport([anthropic_text_response("prose")])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         backend.complete(
             role_name="semantic_author", model="claude-opus-5",
             prompt="THE VIEW", max_tokens=1024, effort=None,
@@ -1908,7 +1910,7 @@ class RoleSystemPromptTest(unittest.TestCase):
 
     def test_anthropic_implementer_gets_no_system_prompt(self):
         transport = FakeTransport([anthropic_text_response("sql")])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         backend.complete(
             role_name="independent_implementer", model="claude-opus-5",
             prompt="BUILD IT", max_tokens=1024, effort=None,
@@ -1919,7 +1921,7 @@ class RoleSystemPromptTest(unittest.TestCase):
         from elt_taskgen.review import prompts
 
         transport = FakeTransport([openai_tool_response([VALID_FINDING])])
-        backend = P.OpenAICompatBackend("http://oss:8000/v1", "", transport=transport)
+        backend = _provider_backends_module.OpenAICompatBackend("http://oss:8000/v1", "", transport=transport)
         backend.complete(
             role_name="shortcut_attacker", model="test-oss-model",
             prompt="THE VIEW", max_tokens=1024, effort=None,
@@ -1937,7 +1939,7 @@ class RoleSystemPromptTest(unittest.TestCase):
             if key not in ("proposed_case", "disposition")
         }
         transport = FakeTransport([anthropic_tool_response([generic_finding])])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         backend.complete(
             role_name="mystery_critic", model="claude-sonnet-5",
             prompt="THE VIEW", max_tokens=1024, effort=None,
@@ -1965,17 +1967,17 @@ class DisabledRunnerBlockKeyStabilityTest(unittest.TestCase):
     disabled key behavior without manufacturing replay evidence."""
 
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     @staticmethod
     def _patched(doc):
-        return mock.patch.object(P, "_agents_doc", lambda: doc)
+        return mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc)
 
     def test_runner_roles_mirror_the_registry_declaration(self):
         from elt_taskgen.review.tools import registry as RG
 
-        self.assertEqual(sorted(P.SESSION_RUNNER_ROLES), sorted(RG._DECLARED_ROLES))
+        self.assertEqual(sorted(_provider_config_module.SESSION_RUNNER_ROLES), sorted(RG._DECLARED_ROLES))
 
     def test_disabled_runner_block_edits_do_not_move_the_one_shot_key_but_enabling_does(self):
         from elt_taskgen import demo_fixture
@@ -1984,10 +1986,10 @@ class DisabledRunnerBlockKeyStabilityTest(unittest.TestCase):
 
         view = council.render_view(CouncilRole.SEMANTIC_AUTHOR, demo_fixture.demo_task())
         prompts = {"semantic_author": view, "repair_proposer": "a proposer prompt"}
-        shipped_author_key = P.transcript_key("semantic_author", view)
+        shipped_author_key = _provider_protocol_module.transcript_key("semantic_author", view)
         live = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "transcripts" / "semantic_author"
         self.assertEqual(sorted(p.stem for p in live.glob("*.json")), [])
-        base = json.loads(json.dumps(P._agents_doc()))
+        base = json.loads(json.dumps(_provider_config_module._agents_doc()))
         # The package now enables both runners by default.  This test covers
         # the documented rollback contract using an explicit disabled
         # profile; no response recorded under an obsolete author system prompt
@@ -1995,16 +1997,16 @@ class DisabledRunnerBlockKeyStabilityTest(unittest.TestCase):
         for role in prompts:
             base["roles"][role]["session"]["enabled"] = False
         with self._patched(base):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             for role in prompts:
-                declared = P.role_loop_limits(role)
+                declared = _provider_config_module.role_loop_limits(role)
                 self.assertTrue(declared and not declared.get("enabled"), role)
-                self.assertEqual(P.role_manifest_limits(role), {"enabled": False}, role)
-                self.assertEqual(P.role_behavior_manifest(role)["loop_limits"], {"enabled": False}, role)
-                self.assertEqual(P.session_policy_for(role).limits.as_manifest(), {"enabled": False}, role)
-                self.assertEqual(P.role_behavior_manifest(role)["harness_validators"], [], role)
-            keys = {role: P.transcript_key(role, prompt) for role, prompt in prompts.items()}
-            digests = {role: P.role_behavior_sha256(role) for role in prompts}
+                self.assertEqual(_provider_config_module.role_manifest_limits(role), {"enabled": False}, role)
+                self.assertEqual(_provider_protocol_module.role_behavior_manifest(role)["loop_limits"], {"enabled": False}, role)
+                self.assertEqual(_provider_protocol_module.session_policy_for(role).limits.as_manifest(), {"enabled": False}, role)
+                self.assertEqual(_provider_protocol_module.role_behavior_manifest(role)["harness_validators"], [], role)
+            keys = {role: _provider_protocol_module.transcript_key(role, prompt) for role, prompt in prompts.items()}
+            digests = {role: _provider_protocol_module.role_behavior_sha256(role) for role in prompts}
             self.assertNotEqual(keys["semantic_author"], shipped_author_key)
         # (1) Editing the DISABLED block's limits: the reader sees the edit,
         # the manifest, the digest and the key do not move.
@@ -2012,64 +2014,64 @@ class DisabledRunnerBlockKeyStabilityTest(unittest.TestCase):
         edited["roles"]["semantic_author"]["session"].update({"max_usd": 0.75, "wall_clock_s": 299})
         edited["roles"]["repair_proposer"]["session"].update({"max_usd": 0.5, "max_turns": 4, "max_oracle_bits": 3})
         with self._patched(edited):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             for role, prompt in prompts.items():
-                self.assertEqual(P.role_loop_limits(role)["max_usd"], edited["roles"][role]["session"]["max_usd"], role)
-                self.assertEqual(P.role_manifest_limits(role), {"enabled": False}, role)
-                self.assertEqual(P.transcript_key(role, prompt), keys[role], role)
-                self.assertEqual(P.role_behavior_sha256(role), digests[role], role)
+                self.assertEqual(_provider_config_module.role_loop_limits(role)["max_usd"], edited["roles"][role]["session"]["max_usd"], role)
+                self.assertEqual(_provider_config_module.role_manifest_limits(role), {"enabled": False}, role)
+                self.assertEqual(_provider_protocol_module.transcript_key(role, prompt), keys[role], role)
+                self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), digests[role], role)
         # (2) Enabling the block: the declared limits enter the manifest
         # verbatim and the digest and the key move.
         enabled = json.loads(json.dumps(base))
         for role in prompts:
             enabled["roles"][role]["session"]["enabled"] = True
         with self._patched(enabled):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             for role, prompt in prompts.items():
-                manifest = P.role_behavior_manifest(role)
-                self.assertEqual(manifest["loop_limits"], P.role_loop_limits(role), role)
+                manifest = _provider_protocol_module.role_behavior_manifest(role)
+                self.assertEqual(manifest["loop_limits"], _provider_config_module.role_loop_limits(role), role)
                 self.assertTrue(manifest["loop_limits"]["enabled"], role)
-                self.assertEqual(P.session_policy_for(role).limits.as_manifest(), P.role_loop_limits(role), role)
-                self.assertNotEqual(P.transcript_key(role, prompt), keys[role], role)
-                self.assertNotEqual(P.role_behavior_sha256(role), digests[role], role)
+                self.assertEqual(_provider_protocol_module.session_policy_for(role).limits.as_manifest(), _provider_config_module.role_loop_limits(role), role)
+                self.assertNotEqual(_provider_protocol_module.transcript_key(role, prompt), keys[role], role)
+                self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(role), digests[role], role)
         # (3) Dropping the declaration: `{}` is not `{"enabled": false}`.
         dropped = json.loads(json.dumps(base))
         for role in prompts:
             del dropped["roles"][role]["session"]
         with self._patched(dropped):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             for role, prompt in prompts.items():
-                self.assertEqual(P.role_loop_limits(role), {}, role)
-                self.assertEqual(P.role_manifest_limits(role), {}, role)
-                self.assertNotEqual(P.transcript_key(role, prompt), keys[role], role)
+                self.assertEqual(_provider_config_module.role_loop_limits(role), {}, role)
+                self.assertEqual(_provider_config_module.role_manifest_limits(role), {}, role)
+                self.assertNotEqual(_provider_protocol_module.transcript_key(role, prompt), keys[role], role)
         with self._patched(base):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             for role, prompt in prompts.items():
-                self.assertEqual(P.transcript_key(role, prompt), keys[role], role)
+                self.assertEqual(_provider_protocol_module.transcript_key(role, prompt), keys[role], role)
         # A disabled block is still VALIDATED at load: a default above its
         # hard cap is refused whether or not the seat is enabled.
         bad = json.loads(json.dumps(base))
         bad["roles"]["repair_proposer"]["session"]["max_turns"] = 99
         with self._patched(bad):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             with self.assertRaises(ValueError):
-                P.role_manifest_limits("repair_proposer")
-        P.clear_behavior_caches()
+                _provider_config_module.role_manifest_limits("repair_proposer")
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_critic_seat_blocks_stay_hashed_verbatim_and_a_bare_role_is_unmoved(self):
-        before = P.transcript_key("ambiguity_critic", "p")
-        bare = P.transcript_key("unconfigured_role", "q")
-        doc = json.loads(json.dumps(P._agents_doc()))
+        before = _provider_protocol_module.transcript_key("ambiguity_critic", "p")
+        bare = _provider_protocol_module.transcript_key("unconfigured_role", "q")
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"]["ambiguity_critic"]["session"]["max_wall_s"] = 301
         with self._patched(doc):
-            P.clear_behavior_caches()
-            self.assertFalse(P.role_loop_limits("ambiguity_critic")["enabled"])
-            self.assertEqual(P.role_manifest_limits("ambiguity_critic"), P.role_loop_limits("ambiguity_critic"))
-            self.assertEqual(P.role_behavior_manifest("ambiguity_critic")["loop_limits"]["max_wall_s"], 301)
-            self.assertNotEqual(P.transcript_key("ambiguity_critic", "p"), before)
-            self.assertEqual(P.transcript_key("unconfigured_role", "q"), bare)
-            self.assertEqual(P.role_manifest_limits("unconfigured_role"), {})
-        P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertFalse(_provider_config_module.role_loop_limits("ambiguity_critic")["enabled"])
+            self.assertEqual(_provider_config_module.role_manifest_limits("ambiguity_critic"), _provider_config_module.role_loop_limits("ambiguity_critic"))
+            self.assertEqual(_provider_protocol_module.role_behavior_manifest("ambiguity_critic")["loop_limits"]["max_wall_s"], 301)
+            self.assertNotEqual(_provider_protocol_module.transcript_key("ambiguity_critic", "p"), before)
+            self.assertEqual(_provider_protocol_module.transcript_key("unconfigured_role", "q"), bare)
+            self.assertEqual(_provider_config_module.role_manifest_limits("unconfigured_role"), {})
+        _provider_protocol_module.clear_behavior_caches()
 
 
 if __name__ == "__main__":
@@ -2375,7 +2377,7 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
             self.assertIn("refused before the call", str(ctx.exception))
             self.assertEqual(transport.calls, [])
             self.assertEqual(tiny.total_usd, 0.0)
-            sha = P.transcript_key("ambiguity_critic", prompt)
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", prompt)
             self.assertFalse(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").exists()
             )
@@ -2404,7 +2406,7 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
             self.assertEqual(ctx.exception.scope, "role")
             self.assertIsInstance(ctx.exception, P.RoleCapExceeded)
             self.assertAlmostEqual(meter.total_usd, 0.60)
-            sha = P.transcript_key("ambiguity_critic", "p")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "p")
             self.assertTrue(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").is_file()
             )
@@ -2496,7 +2498,7 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
                 "    session: {enabled: true, mode: one_shot, max_model_calls: 3,"
                 " max_tool_calls: 0, max_wall_s: 300, max_usd: 1.00}\n"
             )
-            routing = P.load_role_routing(path)
+            routing = _provider_config_module.load_role_routing(path)
             disabled = routing.for_role("ambiguity_critic")
             enabled = routing.for_role("shortcut_attacker")
             self.assertEqual((disabled.max_usd, disabled.session_enabled), (1.00, False))
@@ -2511,10 +2513,10 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
             rates = P.rate_card_for("anthropic", "claude-opus-5", {})
             per_attempt = rates.usd_for(P.Usage(input_tokens=10_000, output_tokens=16_384))
             self.assertLess(2 * per_attempt, 1.00)                        # the cap's sizing
-            self.assertGreater((1 + P.SCHEMA_RETRIES) * per_attempt, 1.00)  # the one-shot max
+            self.assertGreater((1 + _provider_protocol_module.SCHEMA_RETRIES) * per_attempt, 1.00)  # the one-shot max
 
             def maxed_exchange():
-                attempts = [anthropic_bad_tool_response() for _ in range(P.SCHEMA_RETRIES)]
+                attempts = [anthropic_bad_tool_response() for _ in range(_provider_protocol_module.SCHEMA_RETRIES)]
                 attempts.append(anthropic_tool_response([VALID_FINDING]))
                 for response in attempts:
                     response["model"] = "claude-opus-5"
@@ -2526,12 +2528,12 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
             meter = P.CostMeter(budget_per_task_usd=100.0, budget_per_role_usd=routing.usd_caps())
             provider = _routed(Path(tmp) / "a", transport, meter=meter, routing=routing)
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "p")
-            self.assertEqual(len(transport.calls), 1 + P.SCHEMA_RETRIES)
+            self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
             reading = meter.per_role["ambiguity_critic"]
-            self.assertEqual(reading["attempts"], 1 + P.SCHEMA_RETRIES)
+            self.assertEqual(reading["attempts"], 1 + _provider_protocol_module.SCHEMA_RETRIES)
             self.assertGreater(reading["usd"], 1.00)
-            self.assertAlmostEqual(reading["usd"], (1 + P.SCHEMA_RETRIES) * per_attempt)
-            self.assertEqual(provider.exchange_evidence[0]["attempt_count"], 1 + P.SCHEMA_RETRIES)
+            self.assertAlmostEqual(reading["usd"], (1 + _provider_protocol_module.SCHEMA_RETRIES) * per_attempt)
+            self.assertEqual(provider.exchange_evidence[0]["attempt_count"], 1 + _provider_protocol_module.SCHEMA_RETRIES)
             # (2) A meter built from the DECLARED caps: the disabled seat's
             # trajectory ignores the role cap, so the same exchange completes.
             transport = FakeTransport(maxed_exchange())
@@ -2547,7 +2549,7 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
             )
             provider = _routed(Path(tmp) / "b", transport, meter=declared, routing=routing)
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "p")
-            self.assertEqual(len(transport.calls), 1 + P.SCHEMA_RETRIES)
+            self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
             self.assertGreater(declared.per_role["ambiguity_critic"]["usd"], 1.00)
             # (3) The ENABLED seat: the third recorded attempt crosses $1.00
             # and the exchange stops as RoleCapExceeded, transcript on disk.
@@ -2557,8 +2559,8 @@ class ReserveAndTrajectoryBudgetTest(unittest.TestCase):
             with self.assertRaises(P.RoleCapExceeded) as ctx:
                 provider.complete(CouncilRole.SHORTCUT_ATTACKER, "p")
             self.assertEqual(ctx.exception.scope, "role")
-            self.assertEqual(len(transport.calls), 1 + P.SCHEMA_RETRIES)
-            self.assertEqual(meter.per_role["shortcut_attacker"]["attempts"], 1 + P.SCHEMA_RETRIES)
+            self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
+            self.assertEqual(meter.per_role["shortcut_attacker"]["attempts"], 1 + _provider_protocol_module.SCHEMA_RETRIES)
             key = provider.transcript_key_for(CouncilRole.SHORTCUT_ATTACKER, "p")
             self.assertTrue(
                 (Path(tmp) / "c" / "transcripts" / "shortcut_attacker" / f"{key}.json").is_file()
@@ -2592,7 +2594,7 @@ class ChargePerAttemptTest(unittest.TestCase):
             provider = _routed(tmp, transport, meter=meter)
             with self.assertRaises(ProviderProtocolError):
                 provider.complete(CouncilRole.SHORTCUT_ATTACKER, "p")
-            self.assertEqual(len(transport.calls), 1 + P.SCHEMA_RETRIES)
+            self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
             reading = meter.per_role["shortcut_attacker"]
             self.assertEqual(reading["attempts"], 3)
             self.assertEqual(reading["input_tokens"], 3000)
@@ -2651,7 +2653,7 @@ class ExchangeInstrumentationTest(unittest.TestCase):
             provider = _routed(tmp, transport, meter=meter)
             provider.begin_task_evidence("task-1", "a" * 64)
             provider.complete(CouncilRole.AMBIGUITY_CRITIC, "the prompt")
-            sha = P.transcript_key("ambiguity_critic", "the prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "the prompt")
             entry = json.loads(
                 (Path(tmp) / "transcripts" / "ambiguity_critic" / f"{sha}.json").read_text()
             )
@@ -2696,7 +2698,7 @@ class ExchangeInstrumentationTest(unittest.TestCase):
             fixtures = Path(tmp) / "fixtures"
             # Keep this a legacy ONE-SHOT replay.  Shortcut attacker now has
             # a session route binding and correctly refuses its former key.
-            sha = P.transcript_key("ambiguity_critic", "seen prompt")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "seen prompt")
             (fixtures / "ambiguity_critic").mkdir(parents=True)
             (fixtures / "ambiguity_critic" / f"{sha}.json").write_text(json.dumps({
                 "prompt_sha256": sha, "provider": "anthropic",
@@ -2738,18 +2740,18 @@ class PromptCacheGateTest(unittest.TestCase):
             "independent_implementer": 0.50,
             "independent_loader": 0.20,
         }
-        for routing in (P.load_role_routing(), P.load_role_routing(P.default_agents_config_path())):
+        for routing in (_provider_config_module.load_role_routing(), _provider_config_module.load_role_routing(_provider_config_module.default_agents_config_path())):
             for role_name, route in sorted(routing.roles.items()):
                 with self.subTest(source=routing.source, role=role_name):
                     self.assertFalse(route.prompt_cache)
                     self.assertEqual(route.max_usd, declared_caps.get(role_name))
                     if route.provider != "anthropic":
                         continue
-                    payload = P.AnthropicBackend._payload(
+                    payload = _provider_backends_module.AnthropicBackend._payload(
                         model=route.model, prompt="PROMPT",
                         max_tokens=route.max_tokens, effort=route.effort,
                         role_name=role_name,
-                        schema_mode=P.uses_findings_schema(role_name),
+                        schema_mode=_provider_protocol_module.uses_findings_schema(role_name),
                         prompt_cache=route.prompt_cache,
                     )
                     self.assertNotIn("cache_control", json.dumps(payload))
@@ -2760,7 +2762,7 @@ class PromptCacheGateTest(unittest.TestCase):
                         self.assertIsInstance(payload["system"], str)
         # The live backend sends exactly the flag-off payload by default.
         transport = FakeTransport([anthropic_tool_response([VALID_FINDING])])
-        backend = P.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         backend.complete(
             role_name="ambiguity_critic", model="claude-sonnet-5",
             prompt="PROMPT", max_tokens=1024, effort="medium",
@@ -2768,11 +2770,11 @@ class PromptCacheGateTest(unittest.TestCase):
         self.assertNotIn("cache_control", json.dumps(transport.calls[0][2]))
 
     def test_prompt_cache_flag_adds_two_breakpoints(self):
-        off = P.AnthropicBackend._payload(
+        off = _provider_backends_module.AnthropicBackend._payload(
             model="claude-opus-5", prompt="TASK VIEW", max_tokens=1024,
             effort="high", role_name="ambiguity_critic", schema_mode=True,
         )
-        on = P.AnthropicBackend._payload(
+        on = _provider_backends_module.AnthropicBackend._payload(
             model="claude-opus-5", prompt="TASK VIEW", max_tokens=1024,
             effort="high", role_name="ambiguity_critic", schema_mode=True,
             prompt_cache=True,
@@ -2817,7 +2819,7 @@ class PromptCacheGateTest(unittest.TestCase):
                 "    provider: anthropic\n    model: claude-haiku-4-5\n"
                 "    max_tokens: 2048\n"
             )
-            routing = P.load_role_routing(path)
+            routing = _provider_config_module.load_role_routing(path)
             self.assertEqual(routing.for_role("ambiguity_critic").max_usd, 1.00)
             self.assertFalse(routing.for_role("ambiguity_critic").prompt_cache)
             self.assertTrue(routing.for_role("semantic_author").prompt_cache)
@@ -2873,7 +2875,7 @@ class PromptCacheGateTest(unittest.TestCase):
                 "    provider: anthropic\n    model: claude-opus-5\n"
                 "    max_tokens: 8192\n    max_usd: 2.00\n"
             )
-            routing = P.load_role_routing(path)
+            routing = _provider_config_module.load_role_routing(path)
             self.assertFalse(routing.for_role("ambiguity_critic").session_enabled)
             self.assertTrue(routing.for_role("feasibility_reviewer").session_enabled)
             self.assertTrue(routing.for_role("semantic_author").max_usd_top_level)
@@ -2885,9 +2887,9 @@ class PromptCacheGateTest(unittest.TestCase):
             meter = P.CostMeter(budget_per_task_usd=100.0, budget_per_role_usd=routing.usd_caps())
             rates = P.rate_card_for("anthropic", "claude-opus-5", {})
             maxed = P.Usage(input_tokens=10_000, output_tokens=16_384)
-            self.assertGreater((1 + P.SCHEMA_RETRIES) * rates.usd_for(maxed), 1.00)
+            self.assertGreater((1 + _provider_protocol_module.SCHEMA_RETRIES) * rates.usd_for(maxed), 1.00)
             trajectory = meter.trajectory("t1", "ambiguity_critic")
-            for _ in range(1 + P.SCHEMA_RETRIES):
+            for _ in range(1 + _provider_protocol_module.SCHEMA_RETRIES):
                 trajectory.reserve(
                     P.estimate_turn_usd(rates=rates, max_tokens=16_384, prompt="x" * 40_000)
                 )
@@ -2895,12 +2897,12 @@ class PromptCacheGateTest(unittest.TestCase):
             self.assertGreater(trajectory.spent_usd, 1.00)  # never raised scope=role
             enabled = meter.trajectory("t1", "feasibility_reviewer")
             with self.assertRaises(P.BudgetExceededError) as ctx:
-                for _ in range(1 + P.SCHEMA_RETRIES):
+                for _ in range(1 + _provider_protocol_module.SCHEMA_RETRIES):
                     enabled.charge(usage=maxed, rates=rates)
             self.assertEqual(ctx.exception.scope, "role")
             # Six bounded roles plus the public model author's explicit
             # one-shot cap are enforced; the advisory readers remain disabled.
-            live = P.load_role_routing(None)
+            live = _provider_config_module.load_role_routing(None)
             self.assertEqual(
                 live.usd_caps(),
                 {
@@ -2935,21 +2937,21 @@ class BehaviorManifestTest(unittest.TestCase):
     transcript key and the route binding cover the tool protocol."""
 
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     @staticmethod
     def _routing():
-        return P.load_role_routing(None)
+        return _provider_config_module.load_role_routing(None)
 
     def test_role_behavior_sha256_is_sha256_of_canonical_manifest(self):
         from elt_taskgen.models import canonical_json
 
         for role in ("ambiguity_critic", "semantic_author",
                      "independent_implementer", "repair_proposer"):
-            manifest = P.role_behavior_manifest(role)
+            manifest = _provider_protocol_module.role_behavior_manifest(role)
             self.assertEqual(
-                P.role_behavior_sha256(role), sha256_hex(canonical_json(manifest)), role
+                _provider_protocol_module.role_behavior_sha256(role), sha256_hex(canonical_json(manifest)), role
             )
             # Every SoT T7 field is present, and nothing environmental is.
             self.assertEqual(
@@ -2959,9 +2961,9 @@ class BehaviorManifestTest(unittest.TestCase):
                  "correction_text_sha256", "schema_retries", "api_version",
                  "validators", "projections", "sandbox"},
             )
-            self.assertEqual(manifest["schema_retries"], P.SCHEMA_RETRIES)
-            self.assertEqual(manifest["api_version"], P.AnthropicBackend.API_VERSION)
-            self.assertEqual(manifest["correction_text_sha256"], sha256_hex(P.CORRECTION_TEXT))
+            self.assertEqual(manifest["schema_retries"], _provider_protocol_module.SCHEMA_RETRIES)
+            self.assertEqual(manifest["api_version"], _provider_backends_module.AnthropicBackend.API_VERSION)
+            self.assertEqual(manifest["correction_text_sha256"], sha256_hex(_provider_protocol_module.CORRECTION_TEXT))
             self.assertEqual(manifest["validators"], {"code": {}, "binaries": {}})
             self.assertEqual(manifest["projections"], {})
             expected_harness = (
@@ -2976,8 +2978,8 @@ class BehaviorManifestTest(unittest.TestCase):
             )
         # Same manifest, same digest, in a fresh call (no clock, path or seed).
         self.assertEqual(
-            P.role_behavior_manifest("shortcut_attacker"),
-            P.role_behavior_manifest("shortcut_attacker"),
+            _provider_protocol_module.role_behavior_manifest("shortcut_attacker"),
+            _provider_protocol_module.role_behavior_manifest("shortcut_attacker"),
         )
 
     def test_behavior_manifest_equals_wire_tools(self):
@@ -2989,51 +2991,51 @@ class BehaviorManifestTest(unittest.TestCase):
         roles = sorted(set(routing.roles) | {"solver__tier"})
         for role in roles:
             with self.subTest(role=role):
-                manifest = P.role_behavior_manifest(role)
-                policy = P.session_policy_for(role)
-                if P.role_is_agentic(role):
+                manifest = _provider_protocol_module.role_behavior_manifest(role)
+                policy = _provider_protocol_module.session_policy_for(role)
+                if _provider_protocol_module.role_is_agentic(role):
                     # Enabled bounded roles travel through the session wire;
                     # one-shot `_payload` deliberately has no prose tools.
-                    payload = P.AnthropicBackend._session_payload(
+                    payload = _provider_backends_module.AnthropicBackend._session_payload(
                         model="claude-opus-5", messages=[{"role": "user", "content": "VIEW"}],
                         max_tokens=64, effort=None, role_name=role,
                         tools=[dict(tool) for tool in policy.wire_tools],
-                        tool_choice=P.session_tool_choice(policy),
+                        tool_choice=_provider_protocol_module.session_tool_choice(policy),
                     )
                 else:
-                    payload = P.AnthropicBackend._payload(
+                    payload = _provider_backends_module.AnthropicBackend._payload(
                         model="claude-opus-5", prompt="VIEW", max_tokens=64, effort=None,
-                        role_name=role, schema_mode=P.uses_findings_schema(role),
+                        role_name=role, schema_mode=_provider_protocol_module.uses_findings_schema(role),
                     )
                 self.assertEqual(
                     json.dumps(manifest["tools"], sort_keys=True),
                     json.dumps(payload.get("tools", []), sort_keys=True),
                 )
                 self.assertEqual(manifest["tool_choice_policy"], payload.get("tool_choice"))
-                if P.uses_findings_schema(role):
-                    self.assertEqual(manifest["tools"][0]["name"], P.tool_name_for(role))
-                    self.assertEqual(manifest["tools"][0]["input_schema"], P.tool_schema_for(role))
+                if _provider_protocol_module.uses_findings_schema(role):
+                    self.assertEqual(manifest["tools"][0]["name"], _provider_protocol_module.tool_name_for(role))
+                    self.assertEqual(manifest["tools"][0]["input_schema"], _provider_protocol_module.tool_schema_for(role))
                     self.assertTrue(manifest["tools"][0]["strict"])
                     self.assertEqual(
                         manifest["tool_choice_policy"],
-                        {"type": "tool", "name": P.tool_name_for(role)},
+                        {"type": "tool", "name": _provider_protocol_module.tool_name_for(role)},
                     )
-                elif not P.role_is_agentic(role):
+                elif not _provider_protocol_module.role_is_agentic(role):
                     self.assertEqual(manifest["tools"], [])
                     self.assertIsNone(manifest["tool_choice_policy"])
                 # The digests in the route block are digests of the same list.
                 self.assertEqual(
-                    P.role_tools_sha256(role), P.session_policy_for(role).tools_sha256()
+                    _provider_protocol_module.role_tools_sha256(role), _provider_protocol_module.session_policy_for(role).tools_sha256()
                 )
         # The chat-completions backend sends the SAME tool, field for field.
         transport = FakeTransport([openai_tool_response([VALID_FINDING])])
-        backend = P.OpenAICompatBackend("http://oss:8000/v1", "", transport=transport)
+        backend = _provider_backends_module.OpenAICompatBackend("http://oss:8000/v1", "", transport=transport)
         backend.complete(
             role_name="ambiguity_critic", model="m", prompt="VIEW",
             max_tokens=64, effort=None,
         )
         function = transport.calls[0][2]["tools"][0]["function"]
-        wire = P.role_behavior_manifest("ambiguity_critic")["tools"][0]
+        wire = _provider_protocol_module.role_behavior_manifest("ambiguity_critic")["tools"][0]
         self.assertEqual(function["name"], wire["name"])
         self.assertEqual(function["description"], wire["description"])
         self.assertEqual(function["parameters"], wire["input_schema"])
@@ -3045,57 +3047,57 @@ class BehaviorManifestTest(unittest.TestCase):
         these moved the key (it hashed the system prompt alone)."""
         role = "ambiguity_critic"
         prompt = "VIEW"
-        before = P.transcript_key(role, prompt)
-        before_manifest = P.role_behavior_sha256(role)
+        before = _provider_protocol_module.transcript_key(role, prompt)
+        before_manifest = _provider_protocol_module.role_behavior_sha256(role)
         moved: dict[str, str] = {}
 
         def key_under(label, patcher):
             with patcher:
-                P.clear_behavior_caches()
-                moved[label] = P.transcript_key(role, prompt)
-                self.assertNotEqual(P.role_behavior_sha256(role), before_manifest, label)
-            P.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
+                moved[label] = _provider_protocol_module.transcript_key(role, prompt)
+                self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(role), before_manifest, label)
+            _provider_protocol_module.clear_behavior_caches()
 
         key_under(
             "tool description",
-            mock.patch.object(P, "_tool_description_for", lambda r: "Report findings (edited)."),
+            mock.patch.object(_provider_protocol_module, "_tool_description_for", lambda r: "Report findings (edited)."),
         )
         key_under(
             "tool schema",
             mock.patch.object(
-                P, "tool_schema_for",
-                lambda r: {**P.findings_tool_schema(r), "description": "edited"},
+                _provider_protocol_module, "tool_schema_for",
+                lambda r: {**_provider_protocol_module.findings_tool_schema(r), "description": "edited"},
             ),
         )
         key_under(
             "tool choice policy",
-            mock.patch.object(P, "tool_choice_for", lambda r, **kw: {"type": "any"}),
+            mock.patch.object(_provider_protocol_module, "tool_choice_for", lambda r, **kw: {"type": "any"}),
         )
-        key_under("correction text", mock.patch.object(P, "CORRECTION_TEXT", "Fix it: {problem}"))
-        key_under("schema retries", mock.patch.object(P, "SCHEMA_RETRIES", 3))
-        doc = json.loads(json.dumps(P._agents_doc()))
+        key_under("correction text", mock.patch.object(_provider_protocol_module, "CORRECTION_TEXT", "Fix it: {problem}"))
+        key_under("schema retries", mock.patch.object(_provider_protocol_module, "SCHEMA_RETRIES", 3))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"][role]["session"]["max_wall_s"] = 301
-        key_under("loop limits", mock.patch.object(P, "_agents_doc", lambda: doc))
-        pinned = json.loads(json.dumps(P._agents_doc()))
+        key_under("loop limits", mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc))
+        pinned = json.loads(json.dumps(_provider_config_module._agents_doc()))
         pinned["metrology"]["sandbox"] = {
             "runtime": "docker", "image_digest": "sha256:" + "a" * 64,
             "workspace_template_sha256": "b" * 64,
         }
-        key_under("sandbox pin", mock.patch.object(P, "_agents_doc", lambda: pinned))
+        key_under("sandbox pin", mock.patch.object(_provider_config_module, "_agents_doc", lambda: pinned))
         for label, key in moved.items():
             self.assertNotEqual(key, before, label)
         self.assertEqual(len(set(moved.values())), len(moved), "each edit keys apart")
         # Restored, the key is exactly what it was: content, not events.
-        self.assertEqual(P.transcript_key(role, prompt), before)
+        self.assertEqual(_provider_protocol_module.transcript_key(role, prompt), before)
         # ... and the fingerprint the admission binds to moved with each edit.
         from elt_taskgen.review import metrology as metrology_mod
 
         routing = self._routing()
         fp_before = metrology_mod.council_routing_fingerprint(routing)
-        with mock.patch.object(P, "_tool_description_for", lambda r: "edited"):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_protocol_module, "_tool_description_for", lambda r: "edited"):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertNotEqual(metrology_mod.council_routing_fingerprint(routing), fp_before)
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(metrology_mod.council_routing_fingerprint(routing), fp_before)
 
     def test_fingerprint_moves_when_tool_schema_description_policy_limits_or_pin_change(self):
@@ -3106,25 +3108,25 @@ class BehaviorManifestTest(unittest.TestCase):
 
         routing = self._routing()
         before = metrology_mod.council_routing_fingerprint(routing)
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"]["shortcut_attacker"]["session"]["max_model_calls"] = 4
-        pinned = json.loads(json.dumps(P._agents_doc()))
+        pinned = json.loads(json.dumps(_provider_config_module._agents_doc()))
         pinned["metrology"]["sandbox"]["runtime"] = "docker"
         cases = {
             "tool schema": mock.patch.object(
-                P, "tool_schema_for", lambda r: {**P.findings_tool_schema(r), "title": "x"}
+                _provider_protocol_module, "tool_schema_for", lambda r: {**_provider_protocol_module.findings_tool_schema(r), "title": "x"}
             ),
-            "tool description": mock.patch.object(P, "_tool_description_for", lambda r: "x"),
-            "tool policy": mock.patch.object(P, "tool_choice_for", lambda r, **kw: {"type": "auto"}),
-            "loop limits": mock.patch.object(P, "_agents_doc", lambda: doc),
-            "correction text": mock.patch.object(P, "CORRECTION_TEXT", "x {problem}"),
-            "sandbox pin": mock.patch.object(P, "_agents_doc", lambda: pinned),
+            "tool description": mock.patch.object(_provider_protocol_module, "_tool_description_for", lambda r: "x"),
+            "tool policy": mock.patch.object(_provider_protocol_module, "tool_choice_for", lambda r, **kw: {"type": "auto"}),
+            "loop limits": mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc),
+            "correction text": mock.patch.object(_provider_protocol_module, "CORRECTION_TEXT", "x {problem}"),
+            "sandbox pin": mock.patch.object(_provider_config_module, "_agents_doc", lambda: pinned),
         }
         for label, patcher in cases.items():
             with self.subTest(change=label), patcher:
-                P.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
                 self.assertNotEqual(metrology_mod.council_routing_fingerprint(routing), before)
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
         self.assertEqual(metrology_mod.council_routing_fingerprint(routing), before)
 
     def test_custom_agents_config_moves_manifest_key_and_route_block(self):
@@ -3138,44 +3140,44 @@ class BehaviorManifestTest(unittest.TestCase):
         them as a behaviour-manifest route mismatch."""
         from elt_taskgen.models import canonical_json
 
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc.setdefault("providers", {}).setdefault("anthropic", {})["api_key"] = "sk-test"
         doc["roles"]["ambiguity_critic"]["session"]["max_wall_s"] = 301
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "agents.yaml"
             path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-            routing = P.load_role_routing(path)
-            self.assertEqual(P.agents_config_of(routing), path)
-            self.assertIsNone(P.agents_config_of(P.load_role_routing(None)))
-            self.assertIsNone(P.agents_config_of(P.load_role_routing(P.default_agents_config_path())))
-            self.assertIsNone(P.agents_config_of(make_routing()))
+            routing = _provider_config_module.load_role_routing(path)
+            self.assertEqual(_provider_config_module.agents_config_of(routing), path)
+            self.assertIsNone(_provider_config_module.agents_config_of(_provider_config_module.load_role_routing(None)))
+            self.assertIsNone(_provider_config_module.agents_config_of(_provider_config_module.load_role_routing(_provider_config_module.default_agents_config_path())))
+            self.assertIsNone(_provider_config_module.agents_config_of(make_routing()))
             self.assertEqual(
-                P.role_behavior_sha256("ambiguity_critic"),
-                P.role_behavior_sha256(
-                    "ambiguity_critic", agents_config=P.default_agents_config_path()
+                _provider_protocol_module.role_behavior_sha256("ambiguity_critic"),
+                _provider_protocol_module.role_behavior_sha256(
+                    "ambiguity_critic", agents_config=_provider_config_module.default_agents_config_path()
                 ),
             )
             # The changed role moves; an unchanged role does not.
-            custom = P.role_behavior_manifest("ambiguity_critic", agents_config=path)
+            custom = _provider_protocol_module.role_behavior_manifest("ambiguity_critic", agents_config=path)
             self.assertEqual(custom["loop_limits"]["max_wall_s"], 301)
             self.assertEqual(
-                P.role_behavior_manifest("ambiguity_critic")["loop_limits"]["max_wall_s"], 300
+                _provider_protocol_module.role_behavior_manifest("ambiguity_critic")["loop_limits"]["max_wall_s"], 300
             )
-            custom_sha = P.role_behavior_sha256("ambiguity_critic", agents_config=path)
+            custom_sha = _provider_protocol_module.role_behavior_sha256("ambiguity_critic", agents_config=path)
             self.assertEqual(custom_sha, sha256_hex(canonical_json(custom)))
-            self.assertNotEqual(custom_sha, P.role_behavior_sha256("ambiguity_critic"))
+            self.assertNotEqual(custom_sha, _provider_protocol_module.role_behavior_sha256("ambiguity_critic"))
             self.assertEqual(
-                P.role_behavior_sha256("shortcut_attacker", agents_config=path),
-                P.role_behavior_sha256("shortcut_attacker"),
+                _provider_protocol_module.role_behavior_sha256("shortcut_attacker", agents_config=path),
+                _provider_protocol_module.role_behavior_sha256("shortcut_attacker"),
             )
-            self.assertEqual(P.sandbox_pin(agents_config=path), P.sandbox_pin())
-            self.assertEqual(P.role_loop_limits("ambiguity_critic", agents_config=path)["max_wall_s"], 301)
-            custom_key = P.transcript_key("ambiguity_critic", "p", agents_config=path)
-            default_key = P.transcript_key("ambiguity_critic", "p")
+            self.assertEqual(_provider_config_module.sandbox_pin(agents_config=path), _provider_config_module.sandbox_pin())
+            self.assertEqual(_provider_config_module.role_loop_limits("ambiguity_critic", agents_config=path)["max_wall_s"], 301)
+            custom_key = _provider_protocol_module.transcript_key("ambiguity_critic", "p", agents_config=path)
+            default_key = _provider_protocol_module.transcript_key("ambiguity_critic", "p")
             self.assertNotEqual(custom_key, default_key)
             self.assertEqual(
-                P.transcript_key("shortcut_attacker", "p", agents_config=path),
-                P.transcript_key("shortcut_attacker", "p"),
+                _provider_protocol_module.transcript_key("shortcut_attacker", "p", agents_config=path),
+                _provider_protocol_module.transcript_key("shortcut_attacker", "p"),
             )
             route = routing.for_role("ambiguity_critic")
             default_block = P.RoutedProvider._route_block(route)
@@ -3217,7 +3219,7 @@ class BehaviorManifestTest(unittest.TestCase):
                 json.dumps(copied), encoding="utf-8"
             )
             replay = P.RoutedProvider(
-                P.load_role_routing(None), P.TranscriptStore(store_dir),
+                _provider_config_module.load_role_routing(None), P.TranscriptStore(store_dir),
                 P.CostMeter(budget_per_task_usd=100.0), task_id="task-1",
                 replay_only=True, transports={"anthropic": FakeTransport([])},
             )
@@ -3232,20 +3234,20 @@ class BehaviorManifestTest(unittest.TestCase):
         """A critic seat's declared-but-disabled block (SoT T1.1) puts its
         harness validators neither on the wire nor in the manifest's
         `harness_validators`; flipping `enabled` is the Phase 4 re-earn."""
-        disabled_doc = json.loads(json.dumps(P._agents_doc()))
+        disabled_doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         disabled_doc["roles"]["population_adversary"]["session"]["enabled"] = False
-        with mock.patch.object(P, "_agents_doc", lambda: disabled_doc):
-            P.clear_behavior_caches()
-            manifest = P.role_behavior_manifest("population_adversary")
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled_doc):
+            _provider_protocol_module.clear_behavior_caches()
+            manifest = _provider_protocol_module.role_behavior_manifest("population_adversary")
         self.assertEqual(manifest["loop_limits"]["harness_validators"], ["compile_proposal"])
         self.assertFalse(manifest["loop_limits"]["enabled"])
         self.assertEqual(manifest["harness_validators"], [])
-        self.assertEqual([t["name"] for t in manifest["tools"]], [P.FINDINGS_TOOL_NAME])
+        self.assertEqual([t["name"] for t in manifest["tools"]], [_provider_protocol_module.FINDINGS_TOOL_NAME])
         enabled_doc = json.loads(json.dumps(disabled_doc))
         enabled_doc["roles"]["population_adversary"]["session"]["enabled"] = True
-        with mock.patch.object(P, "_agents_doc", lambda: enabled_doc):
-            P.clear_behavior_caches()
-            enabled = P.role_behavior_manifest("population_adversary")
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: enabled_doc):
+            _provider_protocol_module.clear_behavior_caches()
+            enabled = _provider_protocol_module.role_behavior_manifest("population_adversary")
         self.assertEqual(enabled["harness_validators"], [{"name": "compile_proposal"}])
         self.assertNotEqual(
             sha256_hex(json.dumps(enabled, sort_keys=True)),
@@ -3257,26 +3259,26 @@ class BehaviorManifestTest(unittest.TestCase):
         zero-tool session and `complete()` share their recorded entries; a
         different policy, different tools or a longer prefix key apart."""
         role = "ambiguity_critic"
-        policy = P.session_policy_for(role)
+        policy = _provider_protocol_module.session_policy_for(role)
         turn0 = [{"role": "user", "content": "VIEW"}]
-        self.assertEqual(P.transcript_key_v3(role, policy, turn0), P.transcript_key(role, "VIEW"))
-        self.assertEqual(len(P.transcript_key(role, "VIEW")), 64)
+        self.assertEqual(_provider_protocol_module.transcript_key_v3(role, policy, turn0), _provider_protocol_module.transcript_key(role, "VIEW"))
+        self.assertEqual(len(_provider_protocol_module.transcript_key(role, "VIEW")), 64)
         longer = turn0 + [{"role": "assistant", "content": "…"}, {"role": "user", "content": "more"}]
-        self.assertNotEqual(P.transcript_key_v3(role, policy, longer), P.transcript_key(role, "VIEW"))
+        self.assertNotEqual(_provider_protocol_module.transcript_key_v3(role, policy, longer), _provider_protocol_module.transcript_key(role, "VIEW"))
         other_policy = P.SessionPolicy(
             role=role, submit_tool=policy.submit_tool, limits=policy.limits,
             wire_tools=policy.wire_tools, nudge_text="edited nudge",
         )
         self.assertNotEqual(other_policy.sha256(), policy.sha256())
         self.assertNotEqual(
-            P.transcript_key_v3(role, other_policy, turn0), P.transcript_key(role, "VIEW")
+            _provider_protocol_module.transcript_key_v3(role, other_policy, turn0), _provider_protocol_module.transcript_key(role, "VIEW")
         )
         other_tools = P.SessionPolicy(
             role=role, submit_tool=policy.submit_tool, limits=policy.limits,
             wire_tools=policy.wire_tools + ({"name": "dev_query", "input_schema": {}},),
         )
         self.assertNotEqual(
-            P.transcript_key_v3(role, other_tools, turn0), P.transcript_key(role, "VIEW")
+            _provider_protocol_module.transcript_key_v3(role, other_tools, turn0), _provider_protocol_module.transcript_key(role, "VIEW")
         )
         # The salt is not policy: it never moves policy_sha256.
         salted = P.SessionPolicy(
@@ -3290,7 +3292,7 @@ class BehaviorManifestTest(unittest.TestCase):
         behaviour, or policy) is REFUSED even when its key matches: a miss in
         live mode (re-recorded), fail-closed under replay-only."""
         role = "ambiguity_critic"
-        route = P.RoleRoute(role, "anthropic", "claude-sonnet-5", 1024, "medium")
+        route = _provider_config_module.RoleRoute(role, "anthropic", "claude-sonnet-5", 1024, "medium")
         good = P.RoutedProvider._route_block(route)
         entry = {"prompt_sha256": "k", "response": "R", "route": dict(good)}
         self.assertIsNone(P.transcript_route_mismatch(entry, route))
@@ -3311,7 +3313,7 @@ class BehaviorManifestTest(unittest.TestCase):
         # live mode re-records under the current digest.
         with tempfile.TemporaryDirectory() as tmp:
             store = P.TranscriptStore(Path(tmp) / "transcripts")
-            sha = P.transcript_key(role, "p")
+            sha = _provider_protocol_module.transcript_key(role, "p")
             store.record(role, sha, {
                 "prompt_sha256": sha, "provider": "anthropic",
                 "model": "claude-sonnet-5", "response": "stale",
@@ -3331,9 +3333,9 @@ class BehaviorManifestTest(unittest.TestCase):
             live.complete(CouncilRole.AMBIGUITY_CRITIC, "p")
             self.assertEqual(len(transport.calls), 1)
             fresh = store.lookup(role, sha)
-            self.assertEqual(fresh["route"]["tools_sha256"], P.role_tools_sha256(role))
-            self.assertEqual(fresh["route"]["entry_schema"], P.TRANSCRIPT_ENTRY_SCHEMA)
-            self.assertEqual(fresh["system_sha256"], P.role_behavior_sha256(role))
+            self.assertEqual(fresh["route"]["tools_sha256"], _provider_protocol_module.role_tools_sha256(role))
+            self.assertEqual(fresh["route"]["entry_schema"], _provider_protocol_module.TRANSCRIPT_ENTRY_SCHEMA)
+            self.assertEqual(fresh["system_sha256"], _provider_protocol_module.role_behavior_sha256(role))
 
     def test_readers_tolerate_legacy_entry_schema_and_never_upgrade(self):
         """Entries with no route block (schema 0) or a bare route block
@@ -3341,18 +3343,18 @@ class BehaviorManifestTest(unittest.TestCase):
         stored bytes are left alone (roadmap R-E); once a role's session is
         enabled a legacy entry no longer serves it."""
         role = "ambiguity_critic"
-        route = P.RoleRoute(role, "anthropic", "claude-sonnet-5", 1024, "medium")
+        route = _provider_config_module.RoleRoute(role, "anthropic", "claude-sonnet-5", 1024, "medium")
         legacy0 = {"prompt_sha256": "k", "provider": "anthropic",
                    "model": "claude-sonnet-5", "response": "legacy"}
         legacy1 = {**legacy0, "route": {"provider": "anthropic", "model": "claude-sonnet-5",
                                         "max_tokens": 1024, "effort": "medium"}}
-        self.assertEqual(P.transcript_entry_schema(legacy0), 0)
-        self.assertEqual(P.transcript_entry_schema(legacy1), 1)
+        self.assertEqual(_provider_protocol_module.transcript_entry_schema(legacy0), 0)
+        self.assertEqual(_provider_protocol_module.transcript_entry_schema(legacy1), 1)
         self.assertIsNone(P.transcript_route_mismatch(legacy0, route))
         self.assertIsNone(P.transcript_route_mismatch(legacy1, route))
         with tempfile.TemporaryDirectory() as tmp:
             store = P.TranscriptStore(Path(tmp) / "transcripts")
-            sha = P.transcript_key(role, "p")
+            sha = _provider_protocol_module.transcript_key(role, "p")
             path = store.record(role, sha, {**legacy1, "prompt_sha256": sha})
             before = path.read_bytes()
             provider = P.RoutedProvider(
@@ -3360,26 +3362,26 @@ class BehaviorManifestTest(unittest.TestCase):
             )
             self.assertEqual(provider.complete(CouncilRole.AMBIGUITY_CRITIC, "p"), "legacy")
             self.assertEqual(path.read_bytes(), before, "a stored entry is never upgraded")
-            self.assertEqual(P.transcript_entry_schema(json.loads(path.read_text())), 1)
-        doc = json.loads(json.dumps(P._agents_doc()))
+            self.assertEqual(_provider_protocol_module.transcript_entry_schema(json.loads(path.read_text())), 1)
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         doc["roles"][role]["session"]["enabled"] = True
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             reason = P.transcript_route_mismatch(legacy1, route)
         self.assertIsNotNone(reason)
         self.assertIn("legacy", reason)
 
     def test_sandbox_pin_is_read_from_config_and_fails_closed_on_unknown_keys(self):
         self.assertEqual(
-            P.sandbox_pin(),
+            _provider_config_module.sandbox_pin(),
             {"runtime": "none", "image_digest": "", "workspace_template_sha256": ""},
         )
-        with mock.patch.object(P, "_agents_doc", lambda: {"metrology": {}}):
-            self.assertEqual(P.sandbox_pin(), dict(P.DEFAULT_SANDBOX_PIN))
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: {"metrology": {}}):
+            self.assertEqual(_provider_config_module.sandbox_pin(), dict(_provider_config_module.DEFAULT_SANDBOX_PIN))
         bad = {"metrology": {"sandbox": {"runtime": "docker", "observed_at": "now"}}}
-        with mock.patch.object(P, "_agents_doc", lambda: bad):
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: bad):
             with self.assertRaises(ValueError):
-                P.sandbox_pin()
+                _provider_config_module.sandbox_pin()
         # The thresholds loader sets the pin aside instead of refusing it.
         from elt_taskgen.review import metrology as metrology_mod
 
@@ -3425,7 +3427,7 @@ class BehaviorManifestTest(unittest.TestCase):
             )
 
     def test_loop_limits_are_the_declared_session_block_verbatim(self):
-        block = P.role_loop_limits("population_adversary")
+        block = _provider_config_module.role_loop_limits("population_adversary")
         self.assertEqual(
             block,
             {"enabled": True, "mode": "harness_validated",
@@ -3436,7 +3438,7 @@ class BehaviorManifestTest(unittest.TestCase):
         # Pin the enabled author block. Its defaults rose after two revisions
         # still left most tasks short of prose completeness.
         self.assertEqual(
-            P.role_loop_limits("semantic_author"),
+            _provider_config_module.role_loop_limits("semantic_author"),
             {"enabled": True,
              "hard_caps": {"compile_corrections": 4, "revisions": 4, "tool_calls": 5, "turns": 5,
                            "usd": 2.75, "wall_clock_s": 1800},
@@ -3448,7 +3450,7 @@ class BehaviorManifestTest(unittest.TestCase):
         # implementer's enabled WITNESS block, verbatim.  Enabled runner
         # blocks also enter the behaviour manifest unchanged.
         self.assertEqual(
-            P.role_loop_limits("independent_implementer"),
+            _provider_config_module.role_loop_limits("independent_implementer"),
             {"enabled": True,
              "hard_caps": {"compile_corrections": 2, "tool_calls": 24, "turns": 14, "usd": 0.5, "wall_clock_s": 1800},
              "harness_validators": ["check_submission"], "max_compile_corrections": 2,
@@ -3457,45 +3459,45 @@ class BehaviorManifestTest(unittest.TestCase):
              "wall_clock_s": 1500},
         )
         self.assertEqual(
-            P.role_manifest_limits("independent_implementer"),
-            P.role_loop_limits("independent_implementer"),
+            _provider_config_module.role_manifest_limits("independent_implementer"),
+            _provider_config_module.role_loop_limits("independent_implementer"),
         )
-        self.assertEqual(P.role_loop_limits("unconfigured_role"), {})
+        self.assertEqual(_provider_config_module.role_loop_limits("unconfigured_role"), {})
         # The author's two harness-validated-submit keys are DERIVED (R0.2):
         # a block omitting them hashes the same as one declaring them, and a
         # disagreeing declaration is refused rather than silently overridden.
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         block = doc["roles"]["semantic_author"]["session"]
         declared = dict(block)
         block.pop("harness_validators")
         block.pop("max_compile_corrections")
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
-            self.assertEqual(P.role_loop_limits("semantic_author")["harness_validators"], ["check_prose"])
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertEqual(_provider_config_module.role_loop_limits("semantic_author")["harness_validators"], ["check_prose"])
             # Derived from max_revisions when the block omits it (4 since the
             # 2026-09-10 rerun raised the author to four revisions).
-            self.assertEqual(P.role_loop_limits("semantic_author")["max_compile_corrections"], 4)
-            self.assertEqual(P.role_loop_limits("semantic_author"), S.SessionLimits.from_block(declared).as_manifest())
+            self.assertEqual(_provider_config_module.role_loop_limits("semantic_author")["max_compile_corrections"], 4)
+            self.assertEqual(_provider_config_module.role_loop_limits("semantic_author"), S.SessionLimits.from_block(declared).as_manifest())
             block["harness_validators"] = ["compile_probe"]
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             with self.assertRaises(ValueError):
-                P.role_loop_limits("semantic_author")
+                _provider_config_module.role_loop_limits("semantic_author")
             block["harness_validators"] = ["check_prose"]
             # A declared count that DISAGREES with the max_revisions derivation
             # (4 since the 2026-09-10 rerun) is refused.
             block["max_compile_corrections"] = 1
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             with self.assertRaises(ValueError):
-                P.role_loop_limits("semantic_author")
-        P.clear_behavior_caches()
-        policy = P.session_policy_for("feasibility_reviewer")
+                _provider_config_module.role_loop_limits("semantic_author")
+        _provider_protocol_module.clear_behavior_caches()
+        policy = _provider_protocol_module.session_policy_for("feasibility_reviewer")
         self.assertEqual(policy.limits.max_usd, 1.00)
         self.assertEqual(policy.limits.max_model_calls, 3)
         self.assertEqual(policy.limits.max_tool_calls, 0)
         self.assertEqual(policy.mode, "one_shot")
         self.assertEqual(policy.allowlist, ())
-        self.assertEqual(policy.submit_tool, P.FINDINGS_TOOL_NAME)
-        self.assertEqual(P.session_policy_for("semantic_author").submit_tool, "")
+        self.assertEqual(policy.submit_tool, _provider_protocol_module.FINDINGS_TOOL_NAME)
+        self.assertEqual(_provider_protocol_module.session_policy_for("semantic_author").submit_tool, "")
 
     def test_session_policy_for_carries_the_stuck_override_and_session_defaults(self):
         """SoT T5 "Exemptions": a `stuck:` override in the role's session
@@ -3503,32 +3505,32 @@ class BehaviorManifestTest(unittest.TestCase):
         the runner's detector (`stuck_thresholds`); the document's top-level
         `session.format_error_disposition` rides beside the block as its
         un-hashed default."""
-        base = json.loads(json.dumps(P._agents_doc()))
+        base = json.loads(json.dumps(_provider_config_module._agents_doc()))
         # Exercise the explicit disabled rollback independently of the
         # shipped enabled default.
         base["roles"]["repair_proposer"]["session"]["enabled"] = False
         doc = json.loads(json.dumps(base))
         doc["roles"]["repair_proposer"]["session"]["stuck"] = {"identical_pairs_nudge": 2, "identical_pairs_halt": 3}
         doc["session"] = {"format_error_disposition": "stage_fail"}
-        with mock.patch.object(P, "_agents_doc", lambda: base):
-            P.clear_behavior_caches()
-            default = P.session_policy_for("repair_proposer")
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: base):
+            _provider_protocol_module.clear_behavior_caches()
+            default = _provider_protocol_module.session_policy_for("repair_proposer")
         self.assertEqual(dict(default.stuck_thresholds), dict(S.STUCK_DETECTOR_THRESHOLDS))
         self.assertEqual(default.limits.format_error_disposition, "halt")
         # Finding 1-0: while the runner block is DISABLED nothing enforces
         # its `stuck:` override, so the declared policy hashes neither it
         # nor any other key of the block (the session-wide default still
         # rides beside it, un-hashed).
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
-            inert = P.session_policy_for("repair_proposer")
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
+            inert = _provider_protocol_module.session_policy_for("repair_proposer")
             self.assertEqual(dict(inert.stuck_thresholds), dict(S.STUCK_DETECTOR_THRESHOLDS))
             self.assertEqual(inert.sha256(), default.sha256())
             self.assertEqual(inert.limits.format_error_disposition, "stage_fail")
         doc["roles"]["repair_proposer"]["session"]["enabled"] = True
-        with mock.patch.object(P, "_agents_doc", lambda: doc):
-            P.clear_behavior_caches()
-            policy = P.session_policy_for("repair_proposer")
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
+            policy = _provider_protocol_module.session_policy_for("repair_proposer")
             self.assertEqual(policy.stuck_thresholds["identical_pairs_nudge"], 2)
             self.assertEqual(policy.stuck_thresholds["identical_pairs_halt"], 3)
             self.assertEqual(policy.stuck_thresholds["error_streak_nudge"], 3)
@@ -3539,13 +3541,13 @@ class BehaviorManifestTest(unittest.TestCase):
             self.assertNotIn("format_error_disposition", policy.limits.as_manifest())
             # A role block's own key overrides the session-wide default.
             doc["roles"]["repair_proposer"]["session"]["format_error_disposition"] = "halt"
-            P.clear_behavior_caches()
-            self.assertEqual(P.session_policy_for("repair_proposer").limits.format_error_disposition, "halt")
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertEqual(_provider_protocol_module.session_policy_for("repair_proposer").limits.format_error_disposition, "halt")
             # A role without a block still reads the session-wide default.
-            self.assertEqual(P.session_policy_for("unconfigured_role").limits.format_error_disposition, "stage_fail")
-        with mock.patch.object(P, "_agents_doc", lambda: base):
-            P.clear_behavior_caches()
-            self.assertEqual(P.session_policy_for("repair_proposer").sha256(), default.sha256())
+            self.assertEqual(_provider_protocol_module.session_policy_for("unconfigured_role").limits.format_error_disposition, "stage_fail")
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: base):
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertEqual(_provider_protocol_module.session_policy_for("repair_proposer").sha256(), default.sha256())
 
 
 
@@ -3563,12 +3565,12 @@ class WitnessSessionRolesTest(unittest.TestCase):
     LOADER = "independent_loader"
 
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     @staticmethod
     def _patched(doc):
-        return mock.patch.object(P, "_agents_doc", lambda: doc)
+        return mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc)
 
     def test_record_transcripts_warnings_have_two_distinct_shapes(self):
         """Finding 1-0 (sanctioned in docs/plans/bounded_agents_phase2.md §2):
@@ -3631,8 +3633,8 @@ class WitnessSessionRolesTest(unittest.TestCase):
                     budget_per_task=P.DEFAULT_BUDGET_PER_TASK_USD, budget_total=None,
                 )
                 out = io.StringIO()
-                with self._patched(json.loads(json.dumps(P._agents_doc()))), mock.patch.object(
-                    P, "credential_problems", lambda routing, roles: []
+                with self._patched(json.loads(json.dumps(_provider_config_module._agents_doc()))), mock.patch.object(
+                    _provider_config_module, "credential_problems", lambda routing, roles: []
                 ), mock.patch.object(P, "RoutedProvider", factory), mock.patch.object(
                     _pipeline_review, "_admission_gate", lambda provider, workspace: (None, {})
                 ), mock.patch.object(
@@ -3644,9 +3646,9 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 ), mock.patch.object(eltbench_mod, "emit_variant", emit_variant), mock.patch.object(
                     independent, "load_sample_prompt", lambda task, bundle, i: f"loader prompt {i}"
                 ), contextlib.redirect_stdout(out):
-                    P.clear_behavior_caches()
+                    _provider_protocol_module.clear_behavior_caches()
                     rc = cli.cmd_record_transcripts(args)
-                P.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
             return rc, out.getvalue()
 
         # Path 1: the frozen-reference read fails (load_gold raises).
@@ -3686,12 +3688,12 @@ class WitnessSessionRolesTest(unittest.TestCase):
             },
         }
         for role, block in expected.items():
-            self.assertIn(role, P.SESSION_RUNNER_ROLES, role)
-            self.assertIn(role, P.WITNESS_RUNNER_ROLES, role)
-            declared = P.role_loop_limits(role)
+            self.assertIn(role, _provider_config_module.SESSION_RUNNER_ROLES, role)
+            self.assertIn(role, _provider_config_module.WITNESS_RUNNER_ROLES, role)
+            declared = _provider_config_module.role_loop_limits(role)
             self.assertEqual(declared, S.SessionLimits.from_block(block).as_manifest(), role)
             # The embedded defaults mirror the file.
-            self.assertEqual(P.DEFAULT_ROUTING_DOC["roles"][role]["session"], block, role)
+            self.assertEqual(_provider_config_module.DEFAULT_ROUTING_DOC["roles"][role]["session"], block, role)
             # A default never exceeds its cap (SoT R0.1).
             limits = S.SessionLimits.from_block(declared)
             self.assertLessEqual(limits.max_turns, limits.hard_caps["turns"], role)
@@ -3699,26 +3701,26 @@ class WitnessSessionRolesTest(unittest.TestCase):
             self.assertLessEqual(limits.max_usd, limits.hard_caps["usd"], role)
             self.assertLessEqual(limits.session_wall_seconds, limits.hard_caps["wall_clock_s"], role)
             # Enabled: the enforced limits and tool surface are fully hashed.
-            self.assertEqual(P.role_manifest_limits(role), block, role)
-            self.assertEqual(P.role_behavior_manifest(role)["loop_limits"], block, role)
-            self.assertEqual(P.session_policy_for(role).limits.as_manifest(), block, role)
-            self.assertTrue(P.role_is_agentic(role), role)
+            self.assertEqual(_provider_config_module.role_manifest_limits(role), block, role)
+            self.assertEqual(_provider_protocol_module.role_behavior_manifest(role)["loop_limits"], block, role)
+            self.assertEqual(_provider_protocol_module.session_policy_for(role).limits.as_manifest(), block, role)
+            self.assertTrue(_provider_protocol_module.role_is_agentic(role), role)
         self.assertEqual(
-            sorted(P.WITNESS_RUNNER_ROLES), [self.IMPLEMENTER, self.LOADER]
+            sorted(_provider_config_module.WITNESS_RUNNER_ROLES), [self.IMPLEMENTER, self.LOADER]
         )
-        self.assertTrue(set(P.WITNESS_RUNNER_ROLES) <= set(P.SESSION_RUNNER_ROLES))
-        disabled = json.loads(json.dumps(P._agents_doc()))
-        for role in P.WITNESS_RUNNER_ROLES:
+        self.assertTrue(set(_provider_config_module.WITNESS_RUNNER_ROLES) <= set(_provider_config_module.SESSION_RUNNER_ROLES))
+        disabled = json.loads(json.dumps(_provider_config_module._agents_doc()))
+        for role in _provider_config_module.WITNESS_RUNNER_ROLES:
             disabled["roles"][role]["session"]["enabled"] = False
         with self._patched(disabled):
-            P.clear_behavior_caches()
-            for role in P.WITNESS_RUNNER_ROLES:
-                self.assertEqual(P.role_manifest_limits(role), {}, role)
-                self.assertEqual(P.role_behavior_manifest(role)["loop_limits"], {}, role)
-                self.assertEqual(P.session_policy_for(role).limits.as_manifest(), {}, role)
-                self.assertEqual(P.role_behavior_manifest(role)["harness_validators"], [], role)
-                self.assertFalse(P.role_is_agentic(role), role)
-        P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
+            for role in _provider_config_module.WITNESS_RUNNER_ROLES:
+                self.assertEqual(_provider_config_module.role_manifest_limits(role), {}, role)
+                self.assertEqual(_provider_protocol_module.role_behavior_manifest(role)["loop_limits"], {}, role)
+                self.assertEqual(_provider_protocol_module.session_policy_for(role).limits.as_manifest(), {}, role)
+                self.assertEqual(_provider_protocol_module.role_behavior_manifest(role)["harness_validators"], [], role)
+                self.assertFalse(_provider_protocol_module.role_is_agentic(role), role)
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_committed_implementer_fixture_tracks_enabled_profile_and_disabled_key_is_stable(self):
         from elt_taskgen import demo_fixture
@@ -3729,7 +3731,7 @@ class WitnessSessionRolesTest(unittest.TestCase):
         self.assertEqual(len(fixtures), 1)
         entry = json.loads(fixtures[0].read_text(encoding="utf-8"))
         # The live fixture follows the shipping, enabled witness profile.
-        self.assertEqual(entry["system_sha256"], P.role_behavior_sha256(self.IMPLEMENTER))
+        self.assertEqual(entry["system_sha256"], _provider_protocol_module.role_behavior_sha256(self.IMPLEMENTER))
         # The implementer stimulus is reconstructable from the byte-preserved
         # legacy author response.  Reading that text as static TaskIR prose does
         # not make the stale author entry replayable; the migration tests enforce
@@ -3740,67 +3742,67 @@ class WitnessSessionRolesTest(unittest.TestCase):
         prompts = {i: independent.sample_prompt(task, i) for i in range(4)}
         self.assertIn(
             fixtures[0].stem,
-            {P.transcript_key(self.IMPLEMENTER, prompt) for prompt in prompts.values()},
+            {_provider_protocol_module.transcript_key(self.IMPLEMENTER, prompt) for prompt in prompts.values()},
         )
-        base = json.loads(json.dumps(P._agents_doc()))
-        for role in P.WITNESS_RUNNER_ROLES:
+        base = json.loads(json.dumps(_provider_config_module._agents_doc()))
+        for role in _provider_config_module.WITNESS_RUNNER_ROLES:
             base["roles"][role]["session"]["enabled"] = False
         # The explicit one-shot rollback has a different key, but retains its
         # own byte-identical stability contract under disabled-limit edits.
         with self._patched(base):
-            P.clear_behavior_caches()
-            keys = {P.transcript_key(self.IMPLEMENTER, prompt) for prompt in prompts.values()}
+            _provider_protocol_module.clear_behavior_caches()
+            keys = {_provider_protocol_module.transcript_key(self.IMPLEMENTER, prompt) for prompt in prompts.values()}
             self.assertNotIn(fixtures[0].stem, keys)
-            digests = {role: P.role_behavior_sha256(role) for role in P.WITNESS_RUNNER_ROLES}
-            loader_key = P.transcript_key(self.LOADER, "a loader prompt")
+            digests = {role: _provider_protocol_module.role_behavior_sha256(role) for role in _provider_config_module.WITNESS_RUNNER_ROLES}
+            loader_key = _provider_protocol_module.transcript_key(self.LOADER, "a loader prompt")
         # (1) Editing the DISABLED block's limits moves nothing.
         edited = json.loads(json.dumps(base))
         edited["roles"][self.IMPLEMENTER]["session"].update({"max_usd": 0.25, "max_turns": 3})
         edited["roles"][self.LOADER]["session"].update({"max_usd": 0.10})
         with self._patched(edited):
-            P.clear_behavior_caches()
-            self.assertEqual(P.role_loop_limits(self.IMPLEMENTER)["max_turns"], 3)
-            for role in P.WITNESS_RUNNER_ROLES:
-                self.assertEqual(P.role_manifest_limits(role), {}, role)
-                self.assertEqual(P.role_behavior_sha256(role), digests[role], role)
-            self.assertNotIn(fixtures[0].stem, {P.transcript_key(self.IMPLEMENTER, p) for p in prompts.values()})
-            self.assertEqual(P.transcript_key(self.LOADER, "a loader prompt"), loader_key)
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertEqual(_provider_config_module.role_loop_limits(self.IMPLEMENTER)["max_turns"], 3)
+            for role in _provider_config_module.WITNESS_RUNNER_ROLES:
+                self.assertEqual(_provider_config_module.role_manifest_limits(role), {}, role)
+                self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), digests[role], role)
+            self.assertNotIn(fixtures[0].stem, {_provider_protocol_module.transcript_key(self.IMPLEMENTER, p) for p in prompts.values()})
+            self.assertEqual(_provider_protocol_module.transcript_key(self.LOADER, "a loader prompt"), loader_key)
         # (2) Dropping the declaration is the SAME manifest for a witness
         # (`{}` is what it had before the declaration existed).
         dropped = json.loads(json.dumps(base))
-        for role in P.WITNESS_RUNNER_ROLES:
+        for role in _provider_config_module.WITNESS_RUNNER_ROLES:
             del dropped["roles"][role]["session"]
         with self._patched(dropped):
-            P.clear_behavior_caches()
-            for role in P.WITNESS_RUNNER_ROLES:
-                self.assertEqual(P.role_loop_limits(role), {}, role)
-                self.assertEqual(P.role_behavior_sha256(role), digests[role], role)
-            self.assertNotIn(fixtures[0].stem, {P.transcript_key(self.IMPLEMENTER, p) for p in prompts.values()})
+            _provider_protocol_module.clear_behavior_caches()
+            for role in _provider_config_module.WITNESS_RUNNER_ROLES:
+                self.assertEqual(_provider_config_module.role_loop_limits(role), {}, role)
+                self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), digests[role], role)
+            self.assertNotIn(fixtures[0].stem, {_provider_protocol_module.transcript_key(self.IMPLEMENTER, p) for p in prompts.values()})
         # (3) Enabling the block: the declared limits enter the manifest
         # verbatim and the digest and the key move (the session is a
         # different behaviour; its trajectories are seeded whole).
         enabled = json.loads(json.dumps(base))
-        for role in P.WITNESS_RUNNER_ROLES:
+        for role in _provider_config_module.WITNESS_RUNNER_ROLES:
             enabled["roles"][role]["session"]["enabled"] = True
         with self._patched(enabled):
-            P.clear_behavior_caches()
-            for role in P.WITNESS_RUNNER_ROLES:
-                manifest = P.role_behavior_manifest(role)
-                self.assertEqual(manifest["loop_limits"], P.role_loop_limits(role), role)
+            _provider_protocol_module.clear_behavior_caches()
+            for role in _provider_config_module.WITNESS_RUNNER_ROLES:
+                manifest = _provider_protocol_module.role_behavior_manifest(role)
+                self.assertEqual(manifest["loop_limits"], _provider_config_module.role_loop_limits(role), role)
                 self.assertTrue(manifest["loop_limits"]["enabled"], role)
-                self.assertNotEqual(P.role_behavior_sha256(role), digests[role], role)
-            self.assertIn(fixtures[0].stem, {P.transcript_key(self.IMPLEMENTER, p) for p in prompts.values()})
-            self.assertNotEqual(P.transcript_key(self.LOADER, "a loader prompt"), loader_key)
-        P.clear_behavior_caches()
-        self.assertNotEqual(P.role_behavior_sha256(self.IMPLEMENTER), digests[self.IMPLEMENTER])
+                self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(role), digests[role], role)
+            self.assertIn(fixtures[0].stem, {_provider_protocol_module.transcript_key(self.IMPLEMENTER, p) for p in prompts.values()})
+            self.assertNotEqual(_provider_protocol_module.transcript_key(self.LOADER, "a loader prompt"), loader_key)
+        _provider_protocol_module.clear_behavior_caches()
+        self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(self.IMPLEMENTER), digests[self.IMPLEMENTER])
         # A disabled witness block is still VALIDATED at load (SoT R0.1).
         bad = json.loads(json.dumps(base))
         bad["roles"][self.LOADER]["session"]["max_turns"] = 9
         with self._patched(bad):
-            P.clear_behavior_caches()
+            _provider_protocol_module.clear_behavior_caches()
             with self.assertRaises(ValueError):
-                P.role_manifest_limits(self.LOADER)
-        P.clear_behavior_caches()
+                _provider_config_module.role_manifest_limits(self.LOADER)
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_session_fault_in_build_is_could_not_measure_not_red_gate(self):
         """C7 (roadmap 2.a): a harness fault inside the witness — the build
@@ -3939,7 +3941,7 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 )
                 out = io.StringIO()
                 with self._patched(doc), mock.patch.object(
-                    P, "credential_problems", lambda routing, roles: []
+                    _provider_config_module, "credential_problems", lambda routing, roles: []
                 ), mock.patch.object(P, "RoutedProvider", factory), mock.patch.object(
                     _pipeline_review, "_admission_gate", lambda provider, workspace: (None, {})
                 ), mock.patch.object(
@@ -3953,12 +3955,12 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 ), mock.patch.object(
                     independent, "run_independent_build", build
                 ), mock.patch.object(independent, "run_independent_load_build", load), contextlib.redirect_stdout(out):
-                    P.clear_behavior_caches()
+                    _provider_protocol_module.clear_behavior_caches()
                     rc = cli.cmd_record_transcripts(args)
-                P.clear_behavior_caches()
+                _provider_protocol_module.clear_behavior_caches()
             return rc, made[0], builds, loads, out.getvalue()
 
-        base = json.loads(json.dumps(P._agents_doc()))
+        base = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role in (self.IMPLEMENTER, self.LOADER):
             base["roles"][role]["session"]["enabled"] = False
         # Explicit rollback: both witnesses one-shot, seeded as before.
@@ -4004,12 +4006,12 @@ class WitnessSessionRolesTest(unittest.TestCase):
 
 class HarnessValidatedPromptTest(unittest.TestCase):
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     @staticmethod
     def _doc(**session_updates) -> dict:
-        doc = json.loads(json.dumps(P._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role, keys in session_updates.items():
             doc["roles"][role].setdefault("session", {}).update(keys)
         return doc
@@ -4030,22 +4032,22 @@ class HarnessValidatedPromptTest(unittest.TestCase):
         self.assertEqual(prompts.HARNESS_VALIDATED_PROMPT_ROLES, ("population_adversary", "shortcut_attacker"))
         rollback_digests = {}
         disabled = self._doc(population_adversary={"enabled": False}, shortcut_attacker={"enabled": False})
-        with mock.patch.object(P, "_agents_doc", lambda: disabled):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled):
+            _provider_protocol_module.clear_behavior_caches()
             for role in ("population_adversary", "shortcut_attacker", "ambiguity_critic", "feasibility_reviewer"):
                 with self.subTest(rollback=role):
                     self.assertFalse(prompts.harness_validated_prompt_enabled(role))
                     self.assertEqual(prompts.role_system_prompt(role), prompts.ROLE_SYSTEM[role])
                     self.assertIn(prompts.NO_TOOLS_SENTENCE, prompts.role_system_prompt(role))
-                    manifest = P.role_behavior_manifest(role)
+                    manifest = _provider_protocol_module.role_behavior_manifest(role)
                     self.assertEqual(manifest["system_prompt_sha256"], sha256_hex(prompts.ROLE_SYSTEM[role]))
-                    rollback_digests[role] = P.role_behavior_sha256(role)
-                    payload = P.AnthropicBackend._payload(
+                    rollback_digests[role] = _provider_protocol_module.role_behavior_sha256(role)
+                    payload = _provider_backends_module.AnthropicBackend._payload(
                         model="claude-opus-5", prompt="VIEW", max_tokens=64, effort="high",
                         role_name=role, schema_mode=True,
                     )
                     self.assertEqual(payload["system"], prompts.ROLE_SYSTEM[role])
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         for role in ("population_adversary", "shortcut_attacker"):
             self.assertTrue(prompts.harness_validated_prompt_enabled(role), role)
             self.assertNotIn(prompts.NO_TOOLS_SENTENCE, prompts.role_system_prompt(role))
@@ -4056,8 +4058,8 @@ class HarnessValidatedPromptTest(unittest.TestCase):
         # Flip POP only: its prompt drops the sentence for the harness-validated
         # one, its digests move; SHC (still disabled), AMB and FEA are byte-identical.
         enabled = self._doc(population_adversary={"enabled": True}, shortcut_attacker={"enabled": False})
-        with mock.patch.object(P, "_agents_doc", lambda: enabled):
-            P.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: enabled):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertTrue(prompts.harness_validated_prompt_enabled("population_adversary"))
             derived = prompts.role_system_prompt("population_adversary")
             self.assertNotIn(prompts.NO_TOOLS_SENTENCE, derived)
@@ -4071,34 +4073,34 @@ class HarnessValidatedPromptTest(unittest.TestCase):
             self.assertEqual(prompts.ROLE_SYSTEM["population_adversary"].count(prompts.NO_TOOLS_SENTENCE), 1)
             self.assertNotIn("no way to ask a follow-up question", derived)
             self.assertEqual(
-                P.role_behavior_manifest("population_adversary")["system_prompt_sha256"], sha256_hex(derived)
+                _provider_protocol_module.role_behavior_manifest("population_adversary")["system_prompt_sha256"], sha256_hex(derived)
             )
-            self.assertNotEqual(P.role_behavior_sha256("population_adversary"), rollback_digests["population_adversary"])
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256("population_adversary"), rollback_digests["population_adversary"])
             for role in ("shortcut_attacker", "ambiguity_critic", "feasibility_reviewer"):
                 with self.subTest(unchanged=role):
                     self.assertEqual(prompts.role_system_prompt(role), prompts.ROLE_SYSTEM[role])
-                    self.assertEqual(P.role_behavior_sha256(role), rollback_digests[role])
+                    self.assertEqual(_provider_protocol_module.role_behavior_sha256(role), rollback_digests[role])
             # The wire sends the derived prompt (one-shot and session payload alike).
-            payload = P.AnthropicBackend._payload(
+            payload = _provider_backends_module.AnthropicBackend._payload(
                 model="claude-opus-5", prompt="VIEW", max_tokens=64, effort="high",
                 role_name="population_adversary", schema_mode=True,
             )
             self.assertEqual(payload["system"], derived)
-            policy = P.session_policy_for("population_adversary")
-            session = P.AnthropicBackend._session_payload(
+            policy = _provider_protocol_module.session_policy_for("population_adversary")
+            session = _provider_backends_module.AnthropicBackend._session_payload(
                 model="claude-opus-5", messages=[{"role": "user", "content": "VIEW"}], max_tokens=64,
                 effort="high", role_name="population_adversary",
-                tools=[dict(t) for t in policy.wire_tools], tool_choice=P.session_tool_choice(policy),
+                tools=[dict(t) for t in policy.wire_tools], tool_choice=_provider_protocol_module.session_tool_choice(policy),
             )
             self.assertEqual(session["system"], derived)
             # A role that is NOT a harness-validated seat keeps the sentence
             # even with its block enabled (the AMB one-shot block).
             amb_enabled = self._doc(population_adversary={"enabled": True}, ambiguity_critic={"enabled": True})
-            with mock.patch.object(P, "_agents_doc", lambda: amb_enabled):
-                P.clear_behavior_caches()
+            with mock.patch.object(_provider_config_module, "_agents_doc", lambda: amb_enabled):
+                _provider_protocol_module.clear_behavior_caches()
                 self.assertFalse(prompts.harness_validated_prompt_enabled("ambiguity_critic"))
                 self.assertEqual(prompts.role_system_prompt("ambiguity_critic"), prompts.ROLE_SYSTEM["ambiguity_critic"])
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         # A custom --agents-config document disabling SHC restores SHC's
         # one-shot prompt for THAT document (manifest, transcript key and
         # backend all read the same document); the default stays bounded.
@@ -4112,19 +4114,19 @@ class HarnessValidatedPromptTest(unittest.TestCase):
             self.assertIn(prompts.NO_TOOLS_SENTENCE, custom)
             self.assertNotEqual(prompts.role_system_prompt("shortcut_attacker"), prompts.ROLE_SYSTEM["shortcut_attacker"])
             self.assertEqual(
-                P.role_behavior_manifest("shortcut_attacker", agents_config=path)["system_prompt_sha256"],
+                _provider_protocol_module.role_behavior_manifest("shortcut_attacker", agents_config=path)["system_prompt_sha256"],
                 sha256_hex(custom),
             )
-            self.assertNotEqual(P.role_behavior_sha256("shortcut_attacker"), rollback_digests["shortcut_attacker"])
-            backend = P.AnthropicBackend("sk-test", transport=FakeTransport([]), agents_config=path)
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256("shortcut_attacker"), rollback_digests["shortcut_attacker"])
+            backend = _provider_backends_module.AnthropicBackend("sk-test", transport=FakeTransport([]), agents_config=path)
             payload = backend._payload(
                 model="claude-opus-5", prompt="VIEW", max_tokens=64, effort="high",
                 role_name="shortcut_attacker", schema_mode=True, agents_config=backend._agents_config,
             )
             self.assertEqual(payload["system"], custom)
             self.assertNotEqual(
-                P.transcript_key("shortcut_attacker", "VIEW", agents_config=path),
-                P.transcript_key("shortcut_attacker", "VIEW"),
+                _provider_protocol_module.transcript_key("shortcut_attacker", "VIEW", agents_config=path),
+                _provider_protocol_module.transcript_key("shortcut_attacker", "VIEW"),
             )
 
 
@@ -4136,12 +4138,12 @@ class OpenAICompatReasoningEffortTest(unittest.TestCase):
 
     def test_effort_travels_as_the_reasoning_object(self):
         transport = FakeTransport([openai_tool_response([VALID_FINDING])])
-        backend = P.OpenAICompatBackend("http://oss:8000/v1", "k", transport=transport)
+        backend = _provider_backends_module.OpenAICompatBackend("http://oss:8000/v1", "k", transport=transport)
         backend.complete(role_name="ambiguity_critic", model="m", prompt="P", max_tokens=64, effort="high")
         self.assertEqual(transport.calls[0][2].get("reasoning"), {"effort": "high"})
 
     def test_no_effort_sends_no_reasoning_field(self):
         transport = FakeTransport([openai_tool_response([VALID_FINDING])])
-        backend = P.OpenAICompatBackend("http://oss:8000/v1", "k", transport=transport)
+        backend = _provider_backends_module.OpenAICompatBackend("http://oss:8000/v1", "k", transport=transport)
         backend.complete(role_name="ambiguity_critic", model="m", prompt="P", max_tokens=64, effort=None)
         self.assertNotIn("reasoning", transport.calls[0][2])

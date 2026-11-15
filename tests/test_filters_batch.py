@@ -22,6 +22,8 @@ doubled at the TRANSPORT level (no mock provider is reintroduced).
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import argparse
 import ast
 import contextlib
@@ -872,7 +874,7 @@ VALID_FINDING = {
 
 def anthropic_tool_message(findings=None, *, model="claude-sonnet-5",
                            input_tokens=100, output_tokens=20,
-                           tool_name=P.FINDINGS_TOOL_NAME):
+                           tool_name=_provider_protocol_module.FINDINGS_TOOL_NAME):
     return {
         "model": model,
         "content": [
@@ -935,17 +937,17 @@ class FakeBatchTransport:
 def batch_routing(*, api_key="sk-test", oss_base="http://oss:8000/v1",
                   oss_model="test-oss-model"):
     roles = {
-        "ambiguity_critic": P.RoleRoute(
+        "ambiguity_critic": _provider_config_module.RoleRoute(
             "ambiguity_critic", "anthropic", "claude-sonnet-5", 1024, "medium"
         ),
-        "shortcut_attacker": P.RoleRoute(
+        "shortcut_attacker": _provider_config_module.RoleRoute(
             "shortcut_attacker", "anthropic", "claude-opus-5", 1024, "high"
         ),
-        "independent_implementer": P.RoleRoute(
+        "independent_implementer": _provider_config_module.RoleRoute(
             "independent_implementer", "openai_compat", oss_model, 2048, None
         ),
     }
-    return P.RoleRouting(
+    return _provider_config_module.RoleRouting(
         roles=roles,
         provider_config={
             "anthropic": {"api_key": api_key},
@@ -973,21 +975,21 @@ class BatchQueueTest(unittest.TestCase):
     """
 
     def setUp(self):
-        P.clear_behavior_caches()
-        shipped = json.loads(json.dumps(P._agents_doc()))
+        _provider_protocol_module.clear_behavior_caches()
+        shipped = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role in ("shortcut_attacker", "independent_implementer"):
             self.assertTrue(shipped["roles"][role]["session"]["enabled"], role)
-            self.assertTrue(P.role_is_agentic(role), role)
+            self.assertTrue(_provider_protocol_module.role_is_agentic(role), role)
             shipped["roles"][role]["session"]["enabled"] = False
-        self._rollback = mock.patch.object(P, "_agents_doc", lambda: shipped)
+        self._rollback = mock.patch.object(_provider_config_module, "_agents_doc", lambda: shipped)
         self._rollback.start()
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         for role in ("shortcut_attacker", "independent_implementer"):
-            self.assertFalse(P.role_is_agentic(role), role)
+            self.assertFalse(_provider_protocol_module.role_is_agentic(role), role)
 
     def tearDown(self):
         self._rollback.stop()
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
     def _provider(self, tmp, *, api_key="sk-test", replay_only=False,
                   responses=(), fixtures=None):
@@ -1075,11 +1077,11 @@ class BatchQueueTest(unittest.TestCase):
             )
             self.assertEqual(
                 submitted[0]["params"]["tool_choice"],
-                {"type": "tool", "name": P.FINDINGS_TOOL_NAME},
+                {"type": "tool", "name": _provider_protocol_module.FINDINGS_TOOL_NAME},
             )
             # Answers land in the SAME store, under the interactive key.
             store = provider.store
-            entry = store.lookup("ambiguity_critic", P.transcript_key("ambiguity_critic", "view A"))
+            entry = store.lookup("ambiguity_critic", _provider_protocol_module.transcript_key("ambiguity_critic", "view A"))
             self.assertIsNotNone(entry)
             self.assertEqual(entry["response"], result.text_for(cid_a))
             self.assertEqual(entry["batch_id"], "msgbatch_1")
@@ -1113,7 +1115,7 @@ class BatchQueueTest(unittest.TestCase):
                 any("batch unavailable" in r for r in result.fallback_reasons)
             )
             self.assertTrue(
-                provider.store.lookup("shortcut_attacker", P.transcript_key("shortcut_attacker", "view B"))
+                provider.store.lookup("shortcut_attacker", _provider_protocol_module.transcript_key("shortcut_attacker", "view B"))
             )
 
     def test_one_unusable_result_falls_back_for_that_call_only(self):
@@ -1181,7 +1183,7 @@ class BatchQueueTest(unittest.TestCase):
     def test_recorded_transcripts_are_served_with_zero_http(self):
         with tempfile.TemporaryDirectory() as tmp:
             provider, interactive = self._provider(tmp)
-            sha = P.transcript_key("ambiguity_critic", "view A")
+            sha = _provider_protocol_module.transcript_key("ambiguity_critic", "view A")
             # A transcript is served only for the (provider, model) that
             # produced it, so the seed names the route `batch_routing` binds
             # ambiguity_critic to.
@@ -1208,7 +1210,7 @@ class BatchQueueTest(unittest.TestCase):
         """A transcript recorded under another model is a MISS in live mode
         and fails closed in replay-only mode — never silently replayed."""
         entry = {
-            "prompt_sha256": P.transcript_key("ambiguity_critic", "view A"),
+            "prompt_sha256": _provider_protocol_module.transcript_key("ambiguity_critic", "view A"),
             "provider": "anthropic",
             "model": "other-model",
             "response": '{"findings": []}',
@@ -1254,7 +1256,7 @@ class BatchQueueTest(unittest.TestCase):
             )
             queue.add("ambiguity_critic", "view A")
             queue.add("shortcut_attacker", "view B")
-            with self.assertRaises(P.MissingCredentialsError) as ctx:
+            with self.assertRaises(_provider_backends_module.MissingCredentialsError) as ctx:
                 queue.run()
             message = str(ctx.exception)
             self.assertIn("ANTHROPIC_API_KEY", message)

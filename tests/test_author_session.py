@@ -27,6 +27,8 @@ over a scripted provider), that:
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import hashlib
 import json
 import re
@@ -80,7 +82,7 @@ def _sha(text: str) -> str:
 def _author_doc(**block):
     """A copy of the loaded agents document with the author's `session:`
     block replaced by `ENABLED_BLOCK` updated with `block`."""
-    doc = json.loads(json.dumps(P._agents_doc()))
+    doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
     doc["roles"][AUTHOR]["session"] = {**ENABLED_BLOCK, **block}
     return doc
 
@@ -91,16 +93,16 @@ class _AuthorConfig:
 
     def __init__(self, **block):
         self.doc = _author_doc(**block)
-        self._patch = mock.patch.object(P, "_agents_doc", lambda: self.doc)
+        self._patch = mock.patch.object(_provider_config_module, "_agents_doc", lambda: self.doc)
 
     def __enter__(self):
         self._patch.__enter__()
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         return self
 
     def __exit__(self, *exc):
         self._patch.__exit__(*exc)
-        P.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         return False
 
 
@@ -226,8 +228,8 @@ def _report_row(verdict: str, data: dict, *, id_: int):
 
 class _Case(unittest.TestCase):
     def setUp(self):
-        P.clear_behavior_caches()
-        self.addCleanup(P.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
 
 # ---------------------------------------------------------------------------
@@ -753,8 +755,8 @@ class AuthorRunnerTest(_Case):
         keeps the bounded session on."""
         expected_prompt = council.render_view(CouncilRole.SEMANTIC_AUTHOR, TASK)
         self.assertIsNotNone(cli._author_session_block(OneShotDouble(GREEN_PROSE)))
-        self.assertTrue(P.role_is_agentic(AUTHOR))
-        self.assertEqual([tool["name"] for tool in P.wire_tools_for(AUTHOR)], ["abort", "submit_prose"])
+        self.assertTrue(_provider_protocol_module.role_is_agentic(AUTHOR))
+        self.assertEqual([tool["name"] for tool in _provider_protocol_module.wire_tools_for(AUTHOR)], ["abort", "submit_prose"])
         for label, config in (("max_revisions 0", {"max_revisions": 0}),
                               ("enabled false", {"enabled": False})):
             with self.subTest(config=label), tempfile.TemporaryDirectory() as tmp:
@@ -762,10 +764,10 @@ class AuthorRunnerTest(_Case):
                 ctx.__enter__()
                 try:
                     self.assertIsNone(cli._author_session_block(OneShotDouble(GREEN_PROSE)))
-                    self.assertEqual(P.wire_tools_for(AUTHOR), [])
+                    self.assertEqual(_provider_protocol_module.wire_tools_for(AUTHOR), [])
                     self.assertEqual(RG.ToolRegistry.for_role(AUTHOR).names, ())
-                    self.assertFalse(P.role_is_agentic(AUTHOR))
-                    self.assertEqual(P.session_policy_for(AUTHOR).tools, ())
+                    self.assertFalse(_provider_protocol_module.role_is_agentic(AUTHOR))
+                    self.assertEqual(_provider_protocol_module.session_policy_for(AUTHOR).tools, ())
                     provider = OneShotDouble(GREEN_PROSE)
                     engine = _engine(tmp)
                     outcome = cli.make_author_runner(provider)(engine, TASK)
@@ -778,7 +780,7 @@ class AuthorRunnerTest(_Case):
                         outcome.payload.data,
                         {
                             cli.AUTHOR_PROSE_SHA_KEY: _sha(GREEN_PROSE),
-                            cli.AUTHOR_BEHAVIOR_SHA_KEY: P.role_behavior_sha256(AUTHOR),
+                            cli.AUTHOR_BEHAVIOR_SHA_KEY: _provider_protocol_module.role_behavior_sha256(AUTHOR),
                             **admission,
                         },
                     )
@@ -802,21 +804,21 @@ class AuthorRunnerTest(_Case):
         limits) and puts its two terminals — never its harness validators —
         on the wire, while the admission fingerprint, which iterates the
         critic seats, is byte-identical."""
-        routing = P.load_role_routing(None)
+        routing = _provider_config_module.load_role_routing(None)
         with _AuthorConfig(enabled=False):
-            disabled_sha = P.role_behavior_sha256(AUTHOR)
+            disabled_sha = _provider_protocol_module.role_behavior_sha256(AUTHOR)
             disabled_fingerprint = metrology.council_routing_fingerprint(routing)
-            self.assertFalse(P.role_is_agentic(AUTHOR))
+            self.assertFalse(_provider_protocol_module.role_is_agentic(AUTHOR))
         with _AuthorConfig():
-            self.assertEqual(P.wire_tools_for(AUTHOR) and [t["name"] for t in P.wire_tools_for(AUTHOR)], ["abort", "submit_prose"])
+            self.assertEqual(_provider_protocol_module.wire_tools_for(AUTHOR) and [t["name"] for t in _provider_protocol_module.wire_tools_for(AUTHOR)], ["abort", "submit_prose"])
             self.assertEqual(set(RG.ToolRegistry.for_role(AUTHOR).names), set(V.AUTHOR_TOOL_NAMES))
-            self.assertTrue(P.role_is_agentic(AUTHOR))
-            self.assertNotEqual(P.role_behavior_sha256(AUTHOR), disabled_sha)
+            self.assertTrue(_provider_protocol_module.role_is_agentic(AUTHOR))
+            self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(AUTHOR), disabled_sha)
             self.assertEqual(metrology.council_routing_fingerprint(routing), disabled_fingerprint)
-            manifest = P.role_behavior_manifest(AUTHOR)
+            manifest = _provider_protocol_module.role_behavior_manifest(AUTHOR)
             self.assertEqual([t["name"] for t in manifest["tools"]], ["abort", "submit_prose"])
             self.assertEqual(manifest["loop_limits"]["max_revisions"], 1)
-        self.assertNotEqual(P.role_behavior_sha256(AUTHOR), disabled_sha)
+        self.assertNotEqual(_provider_protocol_module.role_behavior_sha256(AUTHOR), disabled_sha)
 
 
 # ---------------------------------------------------------------------------
@@ -1394,7 +1396,7 @@ class AuthorDiagnosticLocusTest(_Case):
         self.assertEqual((caps["revisions"], caps["turns"], caps["tool_calls"], caps["compile_corrections"]), (4, 5, 5, 4))
         self.assertLessEqual(limits.max_usd, caps["usd"])
         self.assertLessEqual(limits.session_wall_seconds, caps["wall_clock_s"])
-        self.assertTrue(V.author_session_enabled(P.role_loop_limits(AUTHOR)))
+        self.assertTrue(V.author_session_enabled(_provider_config_module.role_loop_limits(AUTHOR)))
         view = prompts.semantic_author_session_view("V", max_revisions=limits.max_revisions)
         self.assertIn("4 revision(s)", view)
         protocol = prompts.SEMANTIC_AUTHOR_SESSION_PROTOCOL

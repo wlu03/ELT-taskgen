@@ -21,6 +21,8 @@ the finding itself.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import unittest
 
 from elt_taskgen import demo_fixture
@@ -1470,7 +1472,7 @@ class RecordedDemoCouncilTest(unittest.TestCase):
         # The key is recomputed from the current author behavior + view. An
         # intentional author-prompt change must make the old recording
         # unavailable; never re-key an answer to a prompt it did not receive.
-        key = providers.transcript_key(
+        key = _provider_protocol_module.transcript_key(
             "semantic_author", council._author_view(task)
         )
         author_record = fixtures / "semantic_author" / f"{key}.json"
@@ -1489,7 +1491,7 @@ class RecordedDemoCouncilTest(unittest.TestCase):
 
         cls.tmp = tempfile.mkdtemp()
         provider = providers.RoutedProvider(
-            providers.load_role_routing(None),
+            _provider_config_module.load_role_routing(None),
             providers.TranscriptStore(
                 Path(cls.tmp) / "transcripts", fixtures_dir=fixtures
             ),

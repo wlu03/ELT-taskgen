@@ -1,7 +1,6 @@
 """Build the latest-snapshot mart-plan shape."""
 
 from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from elt_taskgen.generation.witness import (
@@ -13,7 +12,7 @@ from elt_taskgen.generation.witness import (
 )
 
 if TYPE_CHECKING:
-    from elt_taskgen.generation.mart_plan import BuiltPlan, ChainEvidence
+    from elt_taskgen.generation.plan_ops import BuiltPlan, ChainEvidence
 
 __all__ = ["latest_snapshot"]
 
@@ -254,10 +253,9 @@ def latest_snapshot(
 
 # Resolve the builder's globals only after its definition so importing this
 # module first cannot create an import-time cycle with ``mart_plan``.
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
+from elt_taskgen.generation.plan_ops import (
     BuiltPlan,
     ChainEvidence,
-    ColumnType,
     Derived,
     Extremum,
     FactRoles,
@@ -268,5 +266,6 @@ from elt_taskgen.generation.mart_plan import (  # noqa: E402
     TEXT_ORDER_PROSE,
     _default_prose,
     _require,
-    build_rollup,
 )
+from elt_taskgen.models import ColumnType
+from elt_taskgen.generation.shapes.rollup import build_rollup

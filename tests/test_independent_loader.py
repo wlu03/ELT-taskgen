@@ -38,6 +38,8 @@ execution/scoring path underneath is the real one (trusted readers via
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import re
 import shutil
@@ -472,9 +474,9 @@ class TestEvidenceAndRouting(LoaderTestCase):
         """A forced report_findings tool call cannot express a load plan."""
         from elt_taskgen.review import providers as providers_mod
 
-        self.assertIn(independent.LOADER_ROLE_NAME, providers_mod.PROSE_ROLES)
+        self.assertIn(independent.LOADER_ROLE_NAME, _provider_protocol_module.PROSE_ROLES)
         self.assertFalse(
-            providers_mod.uses_findings_schema(independent.LOADER_ROLE_NAME)
+            _provider_protocol_module.uses_findings_schema(independent.LOADER_ROLE_NAME)
         )
 
 
@@ -674,8 +676,8 @@ class TestLoaderSession(LoaderTestCase):
     def setUp(self) -> None:
         from elt_taskgen.review import providers as providers_mod
 
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_pipeline_workspace_under_repository_runs_uses_scratch_tool_root(self) -> None:
         """The loader's logical source paths stay confined to rendered_dev;
@@ -726,12 +728,12 @@ class TestLoaderSession(LoaderTestCase):
 
         workspace = self.bundled_workspace()
         bundle = independent.el_bundle_dir(workspace, self.task.task_id)
-        self.assertTrue(providers_mod.role_loop_limits(independent.LOADER_ROLE_NAME)["enabled"])
-        disabled = json.loads(json.dumps(providers_mod._agents_doc()))
+        self.assertTrue(_provider_config_module.role_loop_limits(independent.LOADER_ROLE_NAME)["enabled"])
+        disabled = json.loads(json.dumps(_provider_config_module._agents_doc()))
         disabled["roles"][independent.LOADER_ROLE_NAME]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: disabled):
-            providers_mod.clear_behavior_caches()
-            self.assertFalse(providers_mod.role_loop_limits(independent.LOADER_ROLE_NAME)["enabled"])
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled):
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertFalse(_provider_config_module.role_loop_limits(independent.LOADER_ROLE_NAME)["enabled"])
             gated = OneShotOnlyDouble([plan_response(CORRECT_PLAN)])
             self.assertIsNone(independent._witness_session_block(gated, independent.LOADER_ROLE_NAME))
             result = independent.run_independent_load_build(self.task, workspace, gated, self.gold)
@@ -748,7 +750,7 @@ class TestLoaderSession(LoaderTestCase):
             document = json.loads(path.read_bytes())
             for sample in document["samples"]:
                 self.assertEqual(set(sample), _ONE_SHOT_LOAD_SAMPLE_KEYS)
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertIsNotNone(independent._witness_session_block(gated, independent.LOADER_ROLE_NAME))
         self.assertEqual(
             set(independent.IndependentLoadBuildResult.model_fields),
@@ -984,8 +986,8 @@ class TestBatchD5LoaderSession(unittest.TestCase):
 
         if not (_D5_LOADER_TRANSCRIPT.is_file() and (_BATCH / "tasks" / _D5_TASK_ID / "task_ir.json").is_file()):
             self.skipTest("batch evidence not on disk")
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_recorded_turn_is_scored_and_resampled_then_a_prefix_plan_turns_the_gate_green(self) -> None:
         from elt_taskgen.models import TaskIR
@@ -1084,8 +1086,8 @@ class TestLoadPlanShapeRefusals(LoaderTestCase):
     def setUp(self) -> None:
         from elt_taskgen.review import providers as providers_mod
 
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_static_check_refuses_unknown_and_duplicate_tables_in_session(self) -> None:
         from elt_taskgen.review.tools import projection as PJ

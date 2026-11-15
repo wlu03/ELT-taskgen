@@ -26,6 +26,15 @@ class CliUsageError(ValueError):
     usage error is not a rejected task, and a traceback is not an answer."""
 
 
+def open_engine(workspace: Path, **kwargs) -> Engine:
+    """Guard application-owned workspaces before constructing a writing engine."""
+    from elt_taskgen.workspace import assert_workspace_is_not_a_container
+
+    workspace = Path(workspace).resolve()
+    assert_workspace_is_not_a_container(workspace)
+    return Engine(workspace, **kwargs)
+
+
 def _answer_key_dir(engine: Engine, task: TaskIR) -> Path:
     return engine.task_dir(task.task_id) / "answer_key"
 
@@ -88,36 +97,6 @@ def _force_stage_rerun(engine: Engine, task: TaskIR, stage: StageName, reason: s
 
 
 def _atomic_replace_text(path: Path, text: str) -> None:
-    """Durably publish a small workspace record with temp + rename.
+    from elt_taskgen.file_io import atomic_write
 
-    Corpus and per-task selection records are resumable coordinator state.  A
-    process death may leave an unreferenced private temp file, but never a torn
-    JSON document at the public path.
-    """
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(text)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        temporary = None
-        if os.name != "nt":
-            descriptor = os.open(path.parent, os.O_RDONLY)
-            try:
-                os.fsync(descriptor)
-            finally:
-                os.close(descriptor)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    atomic_write(path, text)

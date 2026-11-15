@@ -11,6 +11,8 @@ artifacts / typed failure payloads, never opinion, and a population repair must
 invalidate gold, attacks, gate evidence, and calibration in one committed step.
 """
 
+from elt_taskgen.review import provider_backends as _provider_backends_module
+
 import json
 import sqlite3
 import tempfile
@@ -1134,7 +1136,7 @@ class InfraMarkerChainTest(unittest.TestCase):
         self.assertEqual(marker(infra), "sandboxfault")
         # The cause outranks the context.
         both = RuntimeError("both")
-        both.__cause__ = providers_mod.MissingCredentialsError("no key")
+        both.__cause__ = _provider_backends_module.MissingCredentialsError("no key")
         both.__context__ = budget
         self.assertEqual(marker(both), "MissingCredentialsError")
         # Cycles terminate; a chain with no fault is ''.

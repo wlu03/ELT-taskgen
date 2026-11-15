@@ -251,10 +251,21 @@ def certifies_branched_plan(plan: MartPlan) -> bool:
 from sqlglot import exp, parse_one  # noqa: E402
 from sqlglot.errors import ParseError  # noqa: E402
 
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
-    BranchedFactCandidate, BranchedFactShape, BuiltPlan, MartBudgetError,
-    ShapeNotSelectable, _parse_expression, _select_projections, _slug, _source_op_description, _unique,
-    budget_problems, quote,
+from elt_taskgen.generation.plan_ops import (
+    BranchedFactCandidate,
+    BranchedFactShape,
+    BuiltPlan,
+    _slug,
+    _source_op_description,
+    _unique,
+    budget_problems,
+    quote,
+)
+from elt_taskgen.generation.plan_validation import (
+    MartBudgetError,
+    ShapeNotSelectable,
+    _parse_expression,
+    _select_projections,
 )
 from elt_taskgen.generation.witness import WITNESS_CHILDLESS  # noqa: E402
 from elt_taskgen.generation.witness.branched import (  # noqa: E402

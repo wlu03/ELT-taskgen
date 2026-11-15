@@ -13,6 +13,7 @@ from unittest import mock
 
 from pydantic import ValidationError
 
+from elt_taskgen.pipeline import migration
 from elt_taskgen import cli as cli_mod, demo_fixture
 from elt_taskgen.engine import (
     EVIDENCE_SUPERSESSION_KEY,
@@ -790,7 +791,7 @@ class GeneratorContinuityEvidenceTests(unittest.TestCase):
                 )
 
             with mock.patch.object(
-                cli_mod,
+                migration,
                 "_load_committed_generator_migration",
                 side_effect=verify_prior,
             ) as verify:
@@ -808,7 +809,7 @@ class GeneratorContinuityEvidenceTests(unittest.TestCase):
             self.assertIsNone(pending.committed_receipt)
 
             with mock.patch.object(
-                cli_mod,
+                migration,
                 "_load_committed_generator_migration",
                 side_effect=verify_prior,
             ):
@@ -825,7 +826,7 @@ class GeneratorContinuityEvidenceTests(unittest.TestCase):
                     )
 
             with mock.patch.object(
-                cli_mod,
+                migration,
                 "_load_committed_generator_migration",
                 side_effect=verify_prior,
             ):
@@ -864,11 +865,11 @@ class GeneratorContinuityEvidenceTests(unittest.TestCase):
                 )
 
             with mock.patch.object(
-                cli_mod,
+                migration,
                 "_load_committed_generator_migration",
                 side_effect=lambda **kwargs: kwargs["pending"],
             ), mock.patch.object(
-                cli_mod,
+                migration,
                 "_pool_reconstructed_at_selected_implementation",
                 side_effect=reconstruct,
             ):

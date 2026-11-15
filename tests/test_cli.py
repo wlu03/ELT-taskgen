@@ -12,6 +12,8 @@ end to end now means driving a real pool; see the README ladder.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import ast
 import contextlib
 import hashlib
@@ -668,7 +670,7 @@ class TestReviewStageDiligence(unittest.TestCase):
         fails closed via TranscriptMissingError."""
         with tempfile.TemporaryDirectory() as tmp:
             provider = providers_mod.RoutedProvider(
-                providers_mod.load_role_routing(),
+                _provider_config_module.load_role_routing(),
                 providers_mod.TranscriptStore(Path(tmp) / "transcripts"),
                 providers_mod.CostMeter(),
                 replay_only=True,
@@ -1515,7 +1517,7 @@ class TestReviewTranscriptManifest(unittest.TestCase):
             else:
                 response = '{"findings": []}'
                 count = 0
-            behavior = providers_mod.role_behavior_manifest(role_name)
+            behavior = _provider_protocol_module.role_behavior_manifest(role_name)
             self.exchange_evidence.append(
                 {
                     "task_id": self.task_id,
@@ -1525,12 +1527,12 @@ class TestReviewTranscriptManifest(unittest.TestCase):
                     "response_sha256": hashlib.sha256(response.encode()).hexdigest(),
                     "attempt_count": 1,
                     "correction_count": 0,
-                    "entry_schema": providers_mod.TRANSCRIPT_ENTRY_SCHEMA,
+                    "entry_schema": _provider_protocol_module.TRANSCRIPT_ENTRY_SCHEMA,
                     "finding_count": count,
                     "zero_findings": count == 0,
                     "provider": "test",
                     "model": "test",
-                    "behavior_sha256": providers_mod.role_behavior_sha256(
+                    "behavior_sha256": _provider_protocol_module.role_behavior_sha256(
                         role_name
                     ),
                     "tools_sha256": hashlib.sha256(
@@ -2123,14 +2125,14 @@ _CRITICS = ("ambiguity_critic", "feasibility_reviewer", "population_adversary", 
 
 def _one_shot_row(task, role, *, count=0):
     response = '{"findings": []}'
-    behavior = providers_mod.role_behavior_manifest(role)
+    behavior = _provider_protocol_module.role_behavior_manifest(role)
     return {
         "task_id": task.task_id, "task_content_hash": task.content_hash(), "role": role,
         "prompt_sha256": _sha256_hex(f"{role}:prompt"), "response_sha256": _sha256_hex(response),
         "attempt_count": 1, "correction_count": 0, "entry_schema": 2,
         "finding_count": count, "zero_findings": count == 0,
         "provider": "test", "model": "test", "replayed": True,
-        "behavior_sha256": providers_mod.role_behavior_sha256(role),
+        "behavior_sha256": _provider_protocol_module.role_behavior_sha256(role),
         "tools_sha256": _sha256_hex(
             providers_mod.canonical_json(behavior["tools"])
         ),
@@ -2149,7 +2151,7 @@ def _session_row(task, role, *, count=0, **overrides):
             role, critic_tools.critic_limits(role)
         )
     else:
-        policy = providers_mod.session_policy_for(role)
+        policy = _provider_protocol_module.session_policy_for(role)
     row = {
         "task_id": task.task_id, "task_content_hash": task.content_hash(), "role": role,
         "prompt_sha256": _sha256_hex(f"{role}:view"), "response_sha256": _sha256_hex(f"{role}:final"),
@@ -2160,7 +2162,7 @@ def _session_row(task, role, *, count=0, **overrides):
         "stale_tool_result_count": 0, "replayed": False, "trajectory_sha256": _sha256_hex(f"{role}:traj"),
         "entry_schema": 3, "finding_count": count, "zero_findings": count == 0,
         "provider": "anthropic", "model": "claude-opus-5",
-        "behavior_sha256": providers_mod.role_behavior_sha256(role),
+        "behavior_sha256": _provider_protocol_module.role_behavior_sha256(role),
         "tools_sha256": policy.tools_sha256(),
         "policy_sha256": policy.sha256(),
         "diagnostics_version": providers_mod.DIAGNOSTICS_VERSION,
@@ -2301,7 +2303,7 @@ class _RowDouble:
 
     def complete(self, role, prompt):
         role_name = getattr(role, "value", str(role))
-        response = providers_mod.normalized_text_for(role_name, {"findings": []})
+        response = _provider_protocol_module.normalized_text_for(role_name, {"findings": []})
         self.exchange_evidence.append({
             "role": role_name, "prompt_sha256": _sha256_hex(prompt), "response_sha256": _sha256_hex(response),
             "attempt_count": 1, "model_call_count": 1, "correction_count": 0, "tool_call_count": 0,

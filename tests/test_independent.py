@@ -25,6 +25,8 @@ single reward).
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import shutil
 import tempfile
@@ -632,7 +634,7 @@ class TestCrossFamilyMandate(unittest.TestCase):
     def test_default_routing_passes_the_guard(self) -> None:
         from elt_taskgen.review import providers as providers_mod
 
-        routing = providers_mod.load_role_routing()
+        routing = _provider_config_module.load_role_routing()
         provider = types.SimpleNamespace(routing=routing)
         # Guard alone: must not raise for the shipped routing.
         independent._assert_cross_family(provider)
@@ -665,7 +667,7 @@ class TestCrossFamilyMandate(unittest.TestCase):
         tmp.close()
         try:
             with mock.patch.dict(os.environ, {}, clear=False):
-                routing = providers_mod.load_role_routing(Path(tmp.name))
+                routing = _provider_config_module.load_role_routing(Path(tmp.name))
         finally:
             os.unlink(tmp.name)
         return types.SimpleNamespace(
@@ -825,7 +827,7 @@ class TestCliEnsureIndependentBuild(IndependentTestCase):
         engine = Engine(ws)
         self.addCleanup(engine.close)
         provider = providers_mod.RoutedProvider(
-            providers_mod.load_role_routing(),
+            _provider_config_module.load_role_routing(),
             providers_mod.TranscriptStore(ws / "transcripts"),
             providers_mod.CostMeter(),
             replay_only=True,
@@ -1237,7 +1239,7 @@ class TestTranscriptKeyProvenance(IndependentTestCase):
 
         from elt_taskgen.review import providers as providers_mod
 
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         for role in (independent.ROLE_NAME, independent.LOADER_ROLE_NAME):
             doc["roles"].setdefault(role, {})["session"] = {"max_wall_s": 301}
         # Since Phase 2 the two witnesses are session-runner roles whose
@@ -1261,21 +1263,21 @@ class TestTranscriptKeyProvenance(IndependentTestCase):
         )
         self.assertEqual(
             result.samples[0].prompt_sha256,
-            providers_mod.transcript_key(
+            _provider_protocol_module.transcript_key(
                 independent.ROLE_NAME, independent.sample_prompt(self.task, 0)
             ),
         )
         double = ScriptedProvider([correct_response()])
         self.assertEqual(
             independent._transcript_key_for(double, independent.LOADER_ROLE_NAME, "p"),
-            providers_mod.transcript_key(independent.LOADER_ROLE_NAME, "p"),
+            _provider_protocol_module.transcript_key(independent.LOADER_ROLE_NAME, "p"),
         )
 
     def test_recorded_prompt_sha_follows_the_provider_transcript_key(self) -> None:
         from elt_taskgen.review import providers as providers_mod
 
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
         ws = self.fresh_workspace()
         custom = self._custom_agents_config(ws)
 
@@ -1284,14 +1286,14 @@ class TestTranscriptKeyProvenance(IndependentTestCase):
 
             def transcript_key_for(self, role, prompt: str) -> str:
                 role_name = getattr(role, "value", str(role))
-                return providers_mod.transcript_key(role_name, prompt, agents_config=custom)
+                return _provider_protocol_module.transcript_key(role_name, prompt, agents_config=custom)
 
         prompt = independent.sample_prompt(self.task, 0)
-        custom_key = providers_mod.transcript_key(
+        custom_key = _provider_protocol_module.transcript_key(
             independent.ROLE_NAME, prompt, agents_config=custom
         )
         self.assertNotEqual(
-            custom_key, providers_mod.transcript_key(independent.ROLE_NAME, prompt)
+            custom_key, _provider_protocol_module.transcript_key(independent.ROLE_NAME, prompt)
         )
         result = independent.run_independent_build(
             self.task, ws, KeyedProvider([correct_response()]), self.gold
@@ -1301,18 +1303,18 @@ class TestTranscriptKeyProvenance(IndependentTestCase):
 
         loader_prompt = "the loader view"
         keyed = KeyedProvider([correct_response()])
-        loader_key = providers_mod.transcript_key(
+        loader_key = _provider_protocol_module.transcript_key(
             independent.LOADER_ROLE_NAME, loader_prompt, agents_config=custom
         )
         self.assertNotEqual(
-            loader_key, providers_mod.transcript_key(independent.LOADER_ROLE_NAME, loader_prompt)
+            loader_key, _provider_protocol_module.transcript_key(independent.LOADER_ROLE_NAME, loader_prompt)
         )
         self.assertEqual(
             independent._transcript_key_for(keyed, independent.LOADER_ROLE_NAME, loader_prompt),
             loader_key,
         )
         # A real RoutedProvider on that document agrees with the double.
-        routing = providers_mod.load_role_routing(custom)
+        routing = _provider_config_module.load_role_routing(custom)
         routed = providers_mod.RoutedProvider(
             routing,
             providers_mod.TranscriptStore(ws / "transcripts"),
@@ -1511,17 +1513,17 @@ def _witness_routing(*, implementer_provider: str = "openai_compat",
     from elt_taskgen.review import providers as providers_mod
 
     roles = {
-        "semantic_author": providers_mod.RoleRoute(
+        "semantic_author": _provider_config_module.RoleRoute(
             "semantic_author", "anthropic", "claude-opus-5", 1024, "high"
         ),
-        independent.ROLE_NAME: providers_mod.RoleRoute(
+        independent.ROLE_NAME: _provider_config_module.RoleRoute(
             independent.ROLE_NAME, implementer_provider, implementer_model, 4096, None
         ),
-        independent.LOADER_ROLE_NAME: providers_mod.RoleRoute(
+        independent.LOADER_ROLE_NAME: _provider_config_module.RoleRoute(
             independent.LOADER_ROLE_NAME, "openai_compat", "test-oss-model", 4096, None
         ),
     }
-    return providers_mod.RoleRouting(
+    return _provider_config_module.RoleRouting(
         roles=roles,
         provider_config={
             "anthropic": {"api_key": "sk-test"},
@@ -1574,8 +1576,8 @@ class TestImplementerSession(IndependentTestCase):
     def setUp(self) -> None:
         from elt_taskgen.review import providers as providers_mod
 
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
 
     def test_pipeline_workspace_under_repository_runs_uses_scratch_tool_root(self) -> None:
         """The shipped default workspace is ``<checkout>/runs/...`` while
@@ -1621,12 +1623,12 @@ class TestImplementerSession(IndependentTestCase):
         # is false, so a provider that COULD run a session never does, the
         # one-shot exchanges are exactly the salted `sample_prompt`s, and the
         # recorded evidence is byte for byte the cold-resample loop's.
-        self.assertTrue(providers_mod.role_loop_limits(independent.ROLE_NAME)["enabled"])
-        disabled = json.loads(json.dumps(providers_mod._agents_doc()))
+        self.assertTrue(_provider_config_module.role_loop_limits(independent.ROLE_NAME)["enabled"])
+        disabled = json.loads(json.dumps(_provider_config_module._agents_doc()))
         disabled["roles"][independent.ROLE_NAME]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: disabled):
-            providers_mod.clear_behavior_caches()
-            self.assertFalse(providers_mod.role_loop_limits(independent.ROLE_NAME)["enabled"])
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: disabled):
+            _provider_protocol_module.clear_behavior_caches()
+            self.assertFalse(_provider_config_module.role_loop_limits(independent.ROLE_NAME)["enabled"])
             gated = OneShotOnlyDouble([bad, correct_response()])
             self.assertIsNone(independent._witness_session_block(gated, independent.ROLE_NAME))
             result = independent.run_independent_build(self.task, ws, gated, self.gold)
@@ -1661,7 +1663,7 @@ class TestImplementerSession(IndependentTestCase):
         self.assertEqual(loaded.samples[0].limits, {})
         # The gate is decided by the CONFIG alone: enabling the block in the
         # agents document flips the same provider into the session path.
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         block = independent._witness_session_block(gated, independent.ROLE_NAME)
         self.assertIsNotNone(block)
         self.assertTrue(block["enabled"])
@@ -1851,7 +1853,7 @@ class TestImplementerSession(IndependentTestCase):
         independent._assert_turns_cross_family(
             SessionDouble(), independent.ROLE_NAME, types.SimpleNamespace(turns=(bad_turn,))
         )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_implementer_certifier_unchanged_parse_sql_by_mart_then_evaluate_build(self) -> None:
         from unittest import mock
@@ -2144,7 +2146,7 @@ class TestImplementerSession(IndependentTestCase):
         # No one-shot exchange exists for an enabled witness: the seed IS the
         # trajectory, and a `complete()` key would never be looked up.
         self.assertIsNone(recorder.store.lookup(
-            independent.ROLE_NAME, providers_mod.transcript_key(
+            independent.ROLE_NAME, _provider_protocol_module.transcript_key(
                 independent.ROLE_NAME, independent.sample_prompt(self.task, 0)
             )
         ))
@@ -2173,7 +2175,7 @@ class TestImplementerSession(IndependentTestCase):
             independent.run_independent_build(
                 self.task, ws, empty, self.gold, session_policy=policy
             )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_a_truncated_witness_note_leads_with_its_canonical_marker(self) -> None:
         """batch10 run N (2026-09-11): the reasoning witness overran
@@ -2342,7 +2344,7 @@ class TestBatchD6DualBuildDiagnosis(unittest.TestCase):
         from elt_taskgen.review import providers as providers_mod
         from elt_taskgen.review.tools import validators as witness_tools
 
-        block = dict(providers_mod.DEFAULT_ROUTING_DOC["roles"][witness_tools.IMPLEMENTER_ROLE]["session"])
+        block = dict(_provider_config_module.DEFAULT_ROUTING_DOC["roles"][witness_tools.IMPLEMENTER_ROLE]["session"])
         return witness_tools.implementer_policy(witness_tools.implementer_limits(block))
 
     def test_recorded_evidence_binds_to_this_task(self) -> None:
@@ -2385,7 +2387,7 @@ class TestBatchD6DualBuildDiagnosis(unittest.TestCase):
         else:
             self.assertEqual(policy.tools_sha256(), self.session_record["tools_sha256"])
         view = independent.implementer_session_view(self.task, 0, limits=policy.limits)
-        key = providers_mod.transcript_key_v3(
+        key = _provider_protocol_module.transcript_key_v3(
             witness_tools.IMPLEMENTER_ROLE, policy, [{"role": "user", "content": view}]
         )
         if "DUCKDB PITFALLS" in independent._IMPLEMENTER_SESSION_PREAMBLE:

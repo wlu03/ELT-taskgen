@@ -258,15 +258,13 @@ def argmax_profile(evidence: ChainEvidence, *, mart: str, notes: str = "") -> Bu
 
 # See fan_out_rollup: dependency binding follows the builder definition to keep
 # imports safe from either side of the compatibility boundary.
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
+from elt_taskgen.generation.plan_ops import (
     BuiltPlan,
     ChainEvidence,
-    ColumnType,
     Derived,
     Extremum,
     FactRoles,
     KeyColumn,
-    MartColumnKind,
     Measure,
     Passthrough,
     StarJoin,
@@ -274,5 +272,6 @@ from elt_taskgen.generation.mart_plan import (  # noqa: E402
     WindowExpr,
     _default_prose,
     _require,
-    build_rollup,
 )
+from elt_taskgen.models import ColumnType, MartColumnKind
+from elt_taskgen.generation.shapes.rollup import build_rollup

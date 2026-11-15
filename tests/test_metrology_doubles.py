@@ -42,6 +42,8 @@ Harness instruments only — none of these is a shipping provider.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
+
 import json
 import os
 import random
@@ -484,7 +486,7 @@ class CorrectionExhaustedOracleProvider(OracleAgentProvider):
         session = critic_validators.CriticSession(task=ctx.task, role=role.value)
         critic_validators.critic_validator(name).run(session.context(ctx.workspace), broken)
         result = SimpleNamespace(
-            final=providers_mod.normalized_text_for(role.value, broken),
+            final=_provider_protocol_module.normalized_text_for(role.value, broken),
             red_validators_at_submit=(name,),
         )
         from elt_taskgen.review.council import findings_from_session
@@ -724,9 +726,9 @@ class AgentDoublesTest(unittest.TestCase):
     measured as specified, the diligent one is admitted (DoD (i), (ii))."""
 
     def setUp(self):
-        providers_mod.clear_behavior_caches()
-        self.addCleanup(providers_mod.clear_behavior_caches)
-        self.routing = providers_mod.load_role_routing(None)
+        _provider_protocol_module.clear_behavior_caches()
+        self.addCleanup(_provider_protocol_module.clear_behavior_caches)
+        self.routing = _provider_config_module.load_role_routing(None)
 
     def test_oracle_agent_provider_is_admitted_with_invariants(self):
         provider = OracleAgentProvider(routing=self.routing)
@@ -972,15 +974,15 @@ class AgentDoublesTest(unittest.TestCase):
         POLICY_VIOLATION trial of 35 keeps the Wilson UB under 0.10 (0.075)
         and two put it over (0.112); the refused call is recorded and the
         trial continues, scored as no findings."""
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         block = doc["roles"]["population_adversary"]["session"]
         block["enabled"] = True
         block["max_tool_calls"] = 3
         caps = block.get("hard_caps")
         if isinstance(caps, dict) and "tool_calls" in caps:
             caps["tool_calls"] = max(int(caps["tool_calls"]), 3)
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             self.assertTrue(metrology_mod._has_tool_channel("population_adversary"))
             for violations, blocks in ((1, False), (2, True)):
                 with self.subTest(violations=violations):
@@ -1004,7 +1006,7 @@ class AgentDoublesTest(unittest.TestCase):
                     for role in CRITIC_ROLES:
                         if role is not POP:
                             self.assertEqual(report.per_role[role.value].policy_violation_trials, 0)
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_policy_violation_bar_blocks_under_the_shipped_zero_tool_block(self):
         """findings p4-0-0 / p4-1-0 / p4-2-3: the blocking
@@ -1024,13 +1026,13 @@ class AgentDoublesTest(unittest.TestCase):
         forbidden-argument rules to the submitted payload. The channel is now
         "an enabled session", including the shipped POP profile.
         """
-        doc = json.loads(json.dumps(providers_mod._agents_doc()))
+        doc = json.loads(json.dumps(_provider_config_module._agents_doc()))
         block = doc["roles"]["population_adversary"]["session"]
         self.assertEqual(block["max_tool_calls"], 0)
         self.assertEqual(block["mode"], "harness_validated")
         self.assertTrue(block["enabled"])
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: doc):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: doc):
+            _provider_protocol_module.clear_behavior_caches()
             # The shipped block: the bar is LIVE despite zero model tools.
             self.assertTrue(metrology_mod._has_tool_channel("population_adversary"))
             report = metrology_mod.run_metrology(
@@ -1058,13 +1060,13 @@ class AgentDoublesTest(unittest.TestCase):
                         report.per_role[role.value].policy_violation_trials, 0
                     )
                     self.assertEqual(report.per_role[role.value].block_reasons, ())
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
         self.assertTrue(metrology_mod._has_tool_channel("population_adversary"))
 
-        rollback = json.loads(json.dumps(providers_mod._agents_doc()))
+        rollback = json.loads(json.dumps(_provider_config_module._agents_doc()))
         rollback["roles"]["population_adversary"]["session"]["enabled"] = False
-        with mock.patch.object(providers_mod, "_agents_doc", lambda: rollback):
-            providers_mod.clear_behavior_caches()
+        with mock.patch.object(_provider_config_module, "_agents_doc", lambda: rollback):
+            _provider_protocol_module.clear_behavior_caches()
             # Explicit rollback: no session, so the count is zero by
             # construction and the ratio stays moot.
             self.assertFalse(metrology_mod._has_tool_channel("population_adversary"))
@@ -1074,7 +1076,7 @@ class AgentDoublesTest(unittest.TestCase):
                 ),
                 0.0,
             )
-        providers_mod.clear_behavior_caches()
+        _provider_protocol_module.clear_behavior_caches()
 
     def test_private_sniffing_doubles_tombstone_private_exposure_and_private_probe(self):
         fingerprint = metrology_mod.council_routing_fingerprint(self.routing)

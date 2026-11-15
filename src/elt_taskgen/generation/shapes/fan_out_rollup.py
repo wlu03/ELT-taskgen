@@ -2,6 +2,20 @@
 
 from __future__ import annotations
 
+from elt_taskgen.generation.plan_ops import (
+    BuiltPlan,
+    ChainEvidence,
+    Derived,
+    FactRoles,
+    KeyColumn,
+    Measure,
+    Passthrough,
+    StarJoin,
+    _in_list,
+    _require,
+)
+from elt_taskgen.models import ColumnType, MartColumnKind
+from elt_taskgen.generation.shapes.rollup import build_rollup
 from elt_taskgen.generation.witness import (
     WITNESS_ALL_FAIL,
     WITNESS_BRIDGE_NO_CHILD,
@@ -242,22 +256,3 @@ def fan_out_rollup(
         ),
         notes=notes,
     )
-
-
-# Imported after the function is defined so this module can participate in the
-# mart-plan compatibility cycle without observing a half-defined builder.
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
-    BuiltPlan,
-    ChainEvidence,
-    ColumnType,
-    Derived,
-    FactRoles,
-    KeyColumn,
-    MartColumnKind,
-    Measure,
-    Passthrough,
-    StarJoin,
-    _in_list,
-    _require,
-    build_rollup,
-)

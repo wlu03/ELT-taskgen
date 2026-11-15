@@ -89,6 +89,9 @@ _CONFIGURED_STAGE_ROLES: dict[StageName, tuple[str, ...]] = {
 _COMMON_PROVIDER_IMPLEMENTATION_MODULES = (
     "elt_taskgen.review.prompts",
     "elt_taskgen.review.providers",
+    "elt_taskgen.review.provider_config",
+    "elt_taskgen.review.provider_protocol",
+    "elt_taskgen.review.provider_backends",
     "elt_taskgen.review.provider_accounting",
     "elt_taskgen.review.provider_transport",
     "elt_taskgen.review.provider_types",
@@ -97,6 +100,9 @@ _COMMON_PROVIDER_IMPLEMENTATION_MODULES = (
 )
 _MART_PLAN_IMPLEMENTATION_MODULES = (
     "elt_taskgen.generation.mart_plan",
+    "elt_taskgen.generation.plan_ops",
+    "elt_taskgen.generation.plan_validation",
+    "elt_taskgen.generation.shapes.rollup",
     "elt_taskgen.generation.semantic_difficulty",
     "elt_taskgen.generation.compositions",
     "elt_taskgen.generation.dependent_compositions",
@@ -1225,6 +1231,10 @@ def _configured_stage_implementation_identity(
         "elt_taskgen.pipeline.stages",
         "elt_taskgen.pipeline.payloads",
         "elt_taskgen.pipeline.support",
+        "elt_taskgen.pipeline.workers",
+        "elt_taskgen.pipeline.corpus",
+        "elt_taskgen.pipeline.migration",
+        "elt_taskgen.file_io",
     ))
     if roles:
         modules.update(_COMMON_PROVIDER_IMPLEMENTATION_MODULES)
@@ -1238,9 +1248,10 @@ def _configured_stage_implementation_identity(
     role_digests: dict[str, str] = {}
     if roles:
         from elt_taskgen.review import providers as providers_mod
+        from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
 
         role_digests = {
-            role: providers_mod.role_behavior_sha256(
+            role: _provider_protocol_module.role_behavior_sha256(
                 role,
                 agents_config=(spec.agents_config or None),
             )
@@ -1272,8 +1283,9 @@ def _configured_inputs(
         inputs["generation"] = spec.generation.canonical_contract(spec.seed)
     if stage in _PROVIDER_STAGES:
         from elt_taskgen.review import providers as providers_mod
+        from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
 
-        inputs["agents_config_sha256"] = providers_mod.agents_config_sha256(
+        inputs["agents_config_sha256"] = _provider_config_module.agents_config_sha256(
             agents_config=(spec.agents_config or None)
         )
         inputs["agent_harness"] = spec.agent_harness
@@ -1452,11 +1464,12 @@ def _current_review_bindings(
     """Current executable critic identity for one durable exchange row."""
 
     from elt_taskgen.review import providers as providers_mod
+    from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
 
-    manifest = providers_mod.role_behavior_manifest(
+    manifest = _provider_protocol_module.role_behavior_manifest(
         role_name, agents_config=agents_config
     )
-    if entry_schema >= providers_mod.SESSION_TRANSCRIPT_ENTRY_SCHEMA:
+    if entry_schema >= _provider_protocol_module.SESSION_TRANSCRIPT_ENTRY_SCHEMA:
         from elt_taskgen.review.tools import critic_validators as critic_tools
 
         if role_name in critic_tools.CRITIC_VALIDATOR_ROLES:
@@ -1468,7 +1481,7 @@ def _current_review_bindings(
                 agents_config=agents_config,
             )
         else:
-            policy = providers_mod.session_policy_for(
+            policy = _provider_protocol_module.session_policy_for(
                 role_name, agents_config=agents_config
             )
         tools_sha256 = policy.tools_sha256()
@@ -1479,7 +1492,7 @@ def _current_review_bindings(
         ).hexdigest()
         policy_sha256 = str(manifest["policy_sha256"])
     return {
-        "behavior_sha256": providers_mod.role_behavior_sha256(
+        "behavior_sha256": _provider_protocol_module.role_behavior_sha256(
             role_name, agents_config=agents_config
         ),
         "tools_sha256": tools_sha256,
@@ -1575,6 +1588,7 @@ def _stage_owned_evidence(
         return (_rel(engine.workspace, answer_key / "manifest.json"),), ""
     if stage is StageName.AUTHOR:
         from elt_taskgen.review import providers as providers_mod
+        from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
 
         prose = task.solver_prompt or ""
         if not prose.strip() or prose.strip().lower() in {
@@ -1592,7 +1606,7 @@ def _stage_owned_evidence(
         actual = hashlib.sha256(prose.encode("utf-8")).hexdigest()
         if recorded != actual:
             return (), "solver-facing specification does not match author evidence"
-        expected_behavior = providers_mod.role_behavior_sha256(
+        expected_behavior = _provider_protocol_module.role_behavior_sha256(
             "semantic_author",
             agents_config=_evidence_agents_config(engine, spec),
         )
@@ -1601,6 +1615,7 @@ def _stage_owned_evidence(
         return (), ""
     if stage is StageName.REVIEW:
         from elt_taskgen.review import providers as providers_mod
+        from elt_taskgen.review import provider_config as _provider_config_module, provider_protocol as _provider_protocol_module
 
         path = tdir / "reports" / "review_transcript_manifest.json"
         try:
@@ -2695,27 +2710,9 @@ def task_readiness(
 
 
 def _atomic_write(path: Path, payload: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
-    )
-    temporary = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        temporary = None  # type: ignore[assignment]
-        if os.name != "nt":
-            directory = os.open(path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory)
-            finally:
-                os.close(directory)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    from elt_taskgen.file_io import atomic_write
+
+    atomic_write(path, payload)
 
 
 def _markdown_cell(value: Any) -> str:

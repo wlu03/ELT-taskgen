@@ -112,16 +112,9 @@ def aggregate_then_filter(
 
 from dataclasses import replace  # noqa: E402
 
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
-    BuiltPlan,
-    ChainEvidence,
-    MartOp,
-    MartOpKind,
-    SemanticPattern,
-    _unique,
-    op_problems,
-    quote,
-)
+from elt_taskgen.generation.plan_ops import BuiltPlan, ChainEvidence, _unique, quote
+from elt_taskgen.models import MartOp, MartOpKind, SemanticPattern
+from elt_taskgen.generation.plan_validation import op_problems
 from elt_taskgen.generation.shapes.fan_out_rollup import (  # noqa: E402
     fan_out_rollup,
 )

@@ -738,7 +738,7 @@ class SandboxTierTests(unittest.TestCase):
 
         with (
             mock.patch(
-                "elt_taskgen.review.providers.sandbox_pin",
+                'elt_taskgen.review.provider_config.sandbox_pin',
                 return_value=sandbox_fixture.GVISOR_PIN,
             ) as pin,
             mock.patch.object(
@@ -788,7 +788,7 @@ class SandboxTierTests(unittest.TestCase):
 
         with (
             mock.patch(
-                "elt_taskgen.review.providers.sandbox_pin",
+                'elt_taskgen.review.provider_config.sandbox_pin',
                 return_value=sandbox_fixture.GVISOR_PIN,
             ),
             mock.patch(
@@ -819,7 +819,7 @@ class SandboxTierTests(unittest.TestCase):
         out = root / "sandbox-attestation.json"
         with (
             mock.patch(
-                "elt_taskgen.review.providers.sandbox_pin",
+                'elt_taskgen.review.provider_config.sandbox_pin',
                 return_value=sandbox_fixture.GVISOR_PIN,
             ),
             mock.patch.object(lifecycle, "attest_sandbox", return_value=record),
@@ -845,7 +845,7 @@ class SandboxTierTests(unittest.TestCase):
         out = root / "sealed" / "sandbox-attestation.json"
         with (
             mock.patch(
-                "elt_taskgen.review.providers.sandbox_pin",
+                'elt_taskgen.review.provider_config.sandbox_pin',
                 return_value=sandbox_fixture.GVISOR_PIN,
             ),
             mock.patch(

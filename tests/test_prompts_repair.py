@@ -14,6 +14,8 @@ code decides.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_protocol as _provider_protocol_module
+
 import re
 import unittest
 from unittest import mock
@@ -47,7 +49,7 @@ APPROVAL_GRANTS = (
 )
 
 PROMPTS = {
-    "repair_proposer": P.REPAIR_PROPOSER_SYSTEM,
+    "repair_proposer": _provider_protocol_module.REPAIR_PROPOSER_SYSTEM,
 }
 
 
@@ -76,22 +78,22 @@ class SharedPrefixTest(unittest.TestCase):
 
     def test_the_prompt_opens_with_the_shared_prefix(self):
         for name, prompt in PROMPTS.items():
-            self.assertTrue(prompt.startswith(P.SHARED_ROLE_PREFIX), name)
+            self.assertTrue(prompt.startswith(_provider_protocol_module.SHARED_ROLE_PREFIX), name)
 
     def test_prefix_carries_the_injection_barrier(self):
-        prefix = P.SHARED_ROLE_PREFIX.lower()
+        prefix = _provider_protocol_module.SHARED_ROLE_PREFIX.lower()
         self.assertIn("data, never instruction", prefix)
         self.assertIn("untrusted", prefix)
         self.assertIn("never orders", prefix)
 
     def test_prefix_states_that_output_is_executed_and_can_fail_the_stage(self):
-        prefix = P.SHARED_ROLE_PREFIX.lower()
+        prefix = _provider_protocol_module.SHARED_ROLE_PREFIX.lower()
         self.assertIn("executed", prefix)
         self.assertIn("protocol error", prefix)
         self.assertIn("fails the stage", prefix)
 
     def test_prefix_bans_generic_findings(self):
-        prefix = P.SHARED_ROLE_PREFIX.lower()
+        prefix = _provider_protocol_module.SHARED_ROLE_PREFIX.lower()
         self.assertIn("vagueness", prefix)
         self.assertIn("worse than", prefix)
 
@@ -100,17 +102,17 @@ class RepairProposerPromptTest(unittest.TestCase):
     """The repair prompt must describe the machinery that actually judges it."""
 
     def setUp(self):
-        self.prompt = P.REPAIR_PROPOSER_SYSTEM
+        self.prompt = _provider_protocol_module.REPAIR_PROPOSER_SYSTEM
         self.lowered = self.prompt.lower()
 
     def test_wired_as_this_role_system_message(self):
         self.assertEqual(
-            P._system_prompt(RP.ROLE_NAME, schema_mode=False),
-            P.REPAIR_PROPOSER_SYSTEM,
+            _provider_protocol_module._system_prompt(RP.ROLE_NAME, schema_mode=False),
+            _provider_protocol_module.REPAIR_PROPOSER_SYSTEM,
         )
         # The role is a PROSE role: no findings tool is forced on it, so the
         # patch contract has to live in the prompt itself.
-        self.assertIn(RP.ROLE_NAME, P.PROSE_ROLES)
+        self.assertIn(RP.ROLE_NAME, _provider_protocol_module.PROSE_ROLES)
 
     def test_names_every_field_of_the_frozen_patch_model(self):
         for field in RepairPatch.model_fields:
@@ -193,20 +195,20 @@ class RepairProposerPromptTest(unittest.TestCase):
         # the drift this test exists to stop, and the derivation is the real one
         self.assertNotIn("files under populations/", self.prompt)
         self.assertEqual(self.prompt.count("ROUTE SCOPE"), 1)
-        self.assertIn(P.repair_route_scope_text(), self.prompt)
+        self.assertIn(_provider_protocol_module.repair_route_scope_text(), self.prompt)
         # a changed table changes the paragraph: it is derived, not copied
         widened = dict(RP.ROUTE_ALLOWLIST)
         widened[RepairRoute.POPULATION] = ("task_ir.json", "populations/")
         with mock.patch.object(RP, "ROUTE_ALLOWLIST", widened), mock.patch.object(
-            P, "ROUTE_ALLOWLIST", widened
+            _provider_protocol_module, "ROUTE_ALLOWLIST", widened
         ):
-            self.assertIn("files under populations/", P.repair_route_scope_text())
-        self.assertNotIn("files under populations/", P.repair_route_scope_text())
+            self.assertIn("files under populations/", _provider_protocol_module.repair_route_scope_text())
+        self.assertNotIn("files under populations/", _provider_protocol_module.repair_route_scope_text())
         inconsistent = dict(RP.ROUTE_ALLOWLIST)
         inconsistent[RepairRoute.SPECIFICATION] = ()  # fields without the file
-        with mock.patch.object(P, "ROUTE_ALLOWLIST", inconsistent):
+        with mock.patch.object(_provider_protocol_module, "ROUTE_ALLOWLIST", inconsistent):
             with self.assertRaises(ValueError):
-                P.repair_route_scope_text()
+                _provider_protocol_module.repair_route_scope_text()
 
     def test_states_that_gold_is_derived_and_never_patchable(self):
         self.assertIn("answer_key/gold/**", self.prompt)

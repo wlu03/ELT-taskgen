@@ -1,7 +1,6 @@
 """Build the status-cohort-union mart-plan shape."""
 
 from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from elt_taskgen.generation.witness import (
@@ -11,7 +10,7 @@ from elt_taskgen.generation.witness import (
 )
 
 if TYPE_CHECKING:
-    from elt_taskgen.generation.mart_plan import BuiltPlan, ChainEvidence
+    from elt_taskgen.generation.plan_ops import BuiltPlan, ChainEvidence
 
 __all__ = ["status_cohort_union"]
 
@@ -430,18 +429,10 @@ def status_cohort_union(
 
 # Resolve the builder's globals only after its definition so importing this
 # module first cannot create an import-time cycle with ``mart_plan``.
-from elt_taskgen.generation.mart_plan import (  # noqa: E402
+from elt_taskgen.generation.plan_ops import (
     BuiltPlan,
     ChainEvidence,
-    ColumnType,
     FactRoles,
-    JoinType,
-    MartBudgetError,
-    MartColumn,
-    MartColumnKind,
-    MartOp,
-    MartOpKind,
-    MartPlan,
     StarShape,
     _article,
     _in_list,
@@ -452,8 +443,17 @@ from elt_taskgen.generation.mart_plan import (  # noqa: E402
     budget_problems,
     group_by_op,
     kind_certification_problems,
-    op_problems,
     quote,
     ratio_op,
     relation_identifier,
 )
+from elt_taskgen.models import (
+    ColumnType,
+    JoinType,
+    MartColumn,
+    MartColumnKind,
+    MartOp,
+    MartOpKind,
+    MartPlan,
+)
+from elt_taskgen.generation.plan_validation import MartBudgetError, op_problems

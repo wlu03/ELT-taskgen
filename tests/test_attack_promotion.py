@@ -22,6 +22,8 @@ demo attack matrix is measured by.
 
 from __future__ import annotations
 
+from elt_taskgen.review import provider_backends as _provider_backends_module, provider_protocol as _provider_protocol_module
+
 import json
 import shutil
 import tempfile
@@ -1632,14 +1634,14 @@ def _wire_finding(proposal):
 
 class ProposalWireSchemaTest(unittest.TestCase):
     def test_every_critic_schema_carries_proposed_case(self):
-        for role in providers.PROPOSAL_ROLES:
-            schema = providers.findings_tool_schema(role)
+        for role in _provider_protocol_module.PROPOSAL_ROLES:
+            schema = _provider_protocol_module.findings_tool_schema(role)
             item = schema["properties"]["findings"]["items"]
             self.assertIn("proposed_case", item["properties"])
             self.assertIn("proposed_case", item["required"])
 
     def test_proposal_schema_requires_both_complete_stage_maps_only(self):
-        schema = providers.proposed_case_schema()
+        schema = _provider_protocol_module.proposed_case_schema()
         self.assertNotIn("expected_pass", schema["properties"])
         params_description = schema["properties"]["params"]["description"]
         self.assertIn("add_dedup", params_description)
@@ -1659,7 +1661,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
         )
 
     def test_valid_proposal_survives_normalization_and_parsing(self):
-        text = providers._normalized_findings_text(
+        text = _provider_protocol_module._normalized_findings_text(
             "population_adversary", {"findings": [_wire_finding(VALID_WIRE_PROPOSAL)]}
         )
         normalized_wire = json.loads(text)
@@ -1667,7 +1669,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
         self.assertIsInstance(wire_proposal["params"], str)
         self.assertNotIn("expected_pass", wire_proposal)
         self.assertIsNone(
-            providers.validate_payload_for(
+            _provider_protocol_module.validate_payload_for(
                 "population_adversary",
                 {"findings": normalized_wire["findings"]},
             )
@@ -1727,7 +1729,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
     def test_active_wire_rejects_legacy_redundant_combined_map(self):
         legacy = json.loads(json.dumps(VALID_WIRE_PROPOSAL))
         legacy["expected_pass"] = {p.value: True for p in PopulationName}
-        problem = providers._validate_findings_payload(
+        problem = _provider_protocol_module._validate_findings_payload(
             {"findings": [_wire_finding(legacy)]}
         )
         self.assertIsNotNone(problem)
@@ -1736,7 +1738,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
 
         # Historical records remain parseable by the compatibility normalizer,
         # but that path cannot admit active provider output.
-        proposal = providers._normalized_proposal(_wire_finding(legacy))
+        proposal = _provider_protocol_module._normalized_proposal(_wire_finding(legacy))
         self.assertFalse(proposal["expected_pass"]["primary"])
         self.assertTrue(proposal["expected_pass"]["development"])
 
@@ -1754,7 +1756,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
             ("decoded params object", decoded_params),
         ):
             with self.subTest(label=label):
-                problem = providers._validate_findings_payload(
+                problem = _provider_protocol_module._validate_findings_payload(
                     {"findings": [_wire_finding(proposal)]},
                     "population_adversary",
                 )
@@ -1765,11 +1767,11 @@ class ProposalWireSchemaTest(unittest.TestCase):
         explicit = _wire_finding(None)
         explicit["suggested_attack"] = None
         self.assertIsNone(
-            providers._validate_findings_payload(
+            _provider_protocol_module._validate_findings_payload(
                 {"findings": [explicit]}, "ambiguity_critic"
             )
         )
-        text = providers._normalized_findings_text(
+        text = _provider_protocol_module._normalized_findings_text(
             "ambiguity_critic", {"findings": [explicit]}
         )
         self.assertIn("proposed_case", json.loads(text)["findings"][0])
@@ -1777,7 +1779,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
 
         missing = _wire_finding(None)
         del missing["proposed_case"]
-        problem = providers._validate_findings_payload(
+        problem = _provider_protocol_module._validate_findings_payload(
             {"findings": [missing]}, "ambiguity_critic"
         )
         self.assertIn("missing required proposed_case", problem)
@@ -1796,7 +1798,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
     def test_runtime_validator_exactly_mirrors_closed_finding_schema(self):
         valid = _wire_finding(None)
         valid["suggested_attack"] = None
-        self.assertIsNone(providers._validate_findings_payload(
+        self.assertIsNone(_provider_protocol_module._validate_findings_payload(
             {"findings": [valid]}, "ambiguity_critic"
         ))
 
@@ -1811,7 +1813,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
             with self.subTest(missing=field):
                 item = dict(valid)
                 del item[field]
-                problem = providers._validate_findings_payload(
+                problem = _provider_protocol_module._validate_findings_payload(
                     {"findings": [item]}, "ambiguity_critic"
                 )
                 self.assertIsNotNone(problem)
@@ -1822,7 +1824,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
             ({"findings": [{**valid, "verdict": "pass"}]}, "verdict"),
         ):
             with self.subTest(unknown=unknown):
-                problem = providers._validate_findings_payload(
+                problem = _provider_protocol_module._validate_findings_payload(
                     payload, "ambiguity_critic"
                 )
                 self.assertIsNotNone(problem)
@@ -1832,7 +1834,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
         empty_summary = {**valid, "summary": "   "}
         self.assertIn(
             "summary is empty",
-            providers._validate_findings_payload(
+            _provider_protocol_module._validate_findings_payload(
                 {"findings": [empty_summary]}, "ambiguity_critic"
             ),
         )
@@ -1847,9 +1849,9 @@ class ProposalWireSchemaTest(unittest.TestCase):
         invalid = {**_wire_finding(None), "accept": True}
         transport = tp.FakeTransport(
             [tp.anthropic_tool_response([invalid])] *
-            (1 + providers.SCHEMA_RETRIES)
+            (1 + _provider_protocol_module.SCHEMA_RETRIES)
         )
-        backend = providers.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         with self.assertRaises(council.ProviderProtocolError) as caught:
             backend.complete(
                 role_name="ambiguity_critic",
@@ -1860,7 +1862,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
             )
         self.assertIn("unknown field", str(caught.exception))
         self.assertIn("accept", str(caught.exception))
-        self.assertEqual(len(transport.calls), 1 + providers.SCHEMA_RETRIES)
+        self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
 
     # -- malformed proposals are SCHEMA VIOLATIONS, never dropped fields ----
 
@@ -1893,13 +1895,13 @@ class ProposalWireSchemaTest(unittest.TestCase):
     def test_provider_payload_validation_flags_malformed_proposals(self):
         for label, proposal in self._malformed().items():
             with self.subTest(label):
-                problem = providers._validate_findings_payload(
+                problem = _provider_protocol_module._validate_findings_payload(
                     {"findings": [_wire_finding(proposal)]}
                 )
                 self.assertIsNotNone(problem, "malformed proposal accepted")
                 self.assertIn("proposed_case", problem)
         self.assertIsNone(
-            providers._validate_findings_payload(
+            _provider_protocol_module._validate_findings_payload(
                 {"findings": [_wire_finding(VALID_WIRE_PROPOSAL)]}
             )
         )
@@ -1914,16 +1916,16 @@ class ProposalWireSchemaTest(unittest.TestCase):
 
         bad = _wire_finding(self._malformed()["partial expectation"])
         transport = tp.FakeTransport(
-            [tp.anthropic_tool_response([bad])] * (1 + providers.SCHEMA_RETRIES)
+            [tp.anthropic_tool_response([bad])] * (1 + _provider_protocol_module.SCHEMA_RETRIES)
         )
-        backend = providers.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         with self.assertRaises(council.ProviderProtocolError) as ctx:
             backend.complete(
                 role_name="population_adversary", model="claude-sonnet-5",
                 prompt="THE VIEW", max_tokens=1024, effort="medium",
             )
         self.assertIn("proposed_case", str(ctx.exception))
-        self.assertEqual(len(transport.calls), 1 + providers.SCHEMA_RETRIES)
+        self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
 
     def test_backend_retries_then_rejects_legacy_only_proposal(self):
         """Compatibility fields never bypass the current provider protocol."""
@@ -1939,9 +1941,9 @@ class ProposalWireSchemaTest(unittest.TestCase):
         }
         bad = _wire_finding(legacy)
         transport = tp.FakeTransport(
-            [tp.anthropic_tool_response([bad])] * (1 + providers.SCHEMA_RETRIES)
+            [tp.anthropic_tool_response([bad])] * (1 + _provider_protocol_module.SCHEMA_RETRIES)
         )
-        backend = providers.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         with self.assertRaises(council.ProviderProtocolError) as ctx:
             backend.complete(
                 role_name="population_adversary",
@@ -1951,7 +1953,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
                 effort="medium",
             )
         self.assertIn("active wire schema", str(ctx.exception))
-        self.assertEqual(len(transport.calls), 1 + providers.SCHEMA_RETRIES)
+        self.assertEqual(len(transport.calls), 1 + _provider_protocol_module.SCHEMA_RETRIES)
 
     def test_backend_round_trips_a_valid_proposal_to_the_council(self):
         try:
@@ -1962,7 +1964,7 @@ class ProposalWireSchemaTest(unittest.TestCase):
         transport = tp.FakeTransport(
             [tp.anthropic_tool_response([_wire_finding(VALID_WIRE_PROPOSAL)])]
         )
-        backend = providers.AnthropicBackend("sk-test", transport=transport)
+        backend = _provider_backends_module.AnthropicBackend("sk-test", transport=transport)
         result = backend.complete(
             role_name="population_adversary", model="claude-sonnet-5",
             prompt="THE VIEW", max_tokens=1024, effort="medium",
