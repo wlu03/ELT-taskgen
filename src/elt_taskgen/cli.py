@@ -7,7 +7,6 @@ blocked measurement. Metrology commands use 1 for not admitted.
 from __future__ import annotations
 
 import argparse
-import functools
 import hashlib
 import json
 import math
@@ -23,18 +22,16 @@ from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
-from typing import Any, Literal, Protocol
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from elt_taskgen import demo_fixture
-from elt_taskgen import repair
+from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
+from elt_taskgen.generation.difficulty_profiles import DEFAULT_GENERATION_PROFILE
 from elt_taskgen.engine import (
-    BLOCKED_ON_ENVIRONMENT,
-    BLOCKED_ON_HUMAN,
     BLOCKED_ON_KEY,
     EVIDENCE_SUPERSESSION_KEY,
-    RETRY_GUARD_EXPLICIT,
     RETRY_GUARD_KEY,
     Engine,
     EngineError,
@@ -56,26 +53,156 @@ from elt_taskgen.engine import (
     variant_gate_stage,
 )
 from elt_taskgen.models import (
-    AttackKind,
-    CouncilRole,
     DifficultyMeasurement,
-    Finding,
-    FindingProvenance,
-    FindingScreenStatus,
     Origin,
     PopulationName,
-    ProposedAttackCase,
-    RepairRoute,
     RLVR_TASK_VARIANTS,
-    Severity,
     TaskIR,
-    TaskStatus,
     TaskVariant,
     canonical_json,
     readable_json,
     sha256_hex,
     task_from_json,
     validate_task_id_segment,
+)
+
+from elt_taskgen.pipeline import gates as _pipeline_gates
+from elt_taskgen.pipeline import generation as _pipeline_generation
+from elt_taskgen.pipeline import release as _pipeline_release
+from elt_taskgen.pipeline import review as _pipeline_review
+from elt_taskgen.pipeline import stages as _pipeline_stages
+from elt_taskgen.pipeline import support as _pipeline_support
+
+# Compatibility imports; implementations live in their owning modules.
+from elt_taskgen.pipeline.attacks import (
+    _SCHEMA_EQUIVALENT_DROP_FRAME_PROOF,
+    _SCHEMA_EQUIVALENT_ZERO_DEFAULT_PROOF,
+    _attack_finding_descriptor,
+    _attacker_corrected_in_session,
+    _blocking_proposal_failures,
+    _claim_suffix,
+    _drop_frame_equivalence_proof,
+    _names_add_dedup,
+    _names_zero_is_missing,
+    _population_blind_spot_refuted,
+    _proposal_failure_route,
+    _selected_blocking_finding,
+    _source_dedup_equivalence_proof,
+    _validated_executable_findings,
+    _zero_default_equivalence_proof,
+    _zero_default_identity_accepted,
+    _zero_is_missing_realized_targets,
+    run_attack_stage,
+)
+from elt_taskgen.pipeline.calibration import (
+    make_calibrate_runner,
+    make_structural_calibrate_runner,
+    run_calibrate,
+)
+from elt_taskgen.pipeline.gates import (
+    DUAL_BUILD_NOTES_FILENAME,
+    EL_EVIDENCE_NOTES_FILENAME,
+    STAGE_SUBCOMMANDS,
+    VARIANT_ACCEPTANCE_EVIDENCE,
+    _blocked_on_stale_evidence,
+    _ensure_canonical_reachability,
+    _ensure_independent_build,
+    _evidence_currency_block,
+    _independent_adjudication_block,
+    _is_currency_refusal,
+    _transport_marker,
+    make_gates_runner,
+    make_variant_gates_runner,
+)
+from elt_taskgen.pipeline.generation import (
+    _REBUILD_SCRATCH_DIR,
+    _REBUILD_STALE_SUFFIX,
+    _admitted_tasks,
+    _arm_contamination_index,
+    _attack_matrix_failure_detail,
+    _contamination_index,
+    _coverage_payload,
+    _pipeline_batch_intake_preflight,
+    _population_drift_failure,
+    _required_firewall_coverage,
+    _seed_embedded_deny_lists,
+    _task_was_admitted,
+    _with_execution_effect_filter,
+    _with_intake_filters,
+    run_contamination_pre,
+    run_execution_effect_filter,
+    run_generate,
+    run_intake_filters,
+    run_reference_stage,
+)
+from elt_taskgen.pipeline.handoff import (
+    CRITIC_AMBIGUITY_FAILURE_CODE,
+    CRITIC_DILIGENCE_FAILURE_CODE,
+    CRITIC_DILIGENCE_RECOVERY,
+    CRITIC_GOLD_DISAGREEMENT_CODE,
+    CRITIC_MANIFEST_FAILURE_CODE,
+    CRITIC_MANIFEST_RECOVERY,
+    CRITIC_PROTOCOL_FAILURE_CLASS,
+    CRITIC_PROTOCOL_FAILURE_CODE,
+    CRITIC_PROTOCOL_RECOVERY,
+    MUTATION_NAMES_NO_SECOND_HOP_SIGNAL,
+    MUTATION_TARGETS_NO_DECLARED_RULE_SIGNAL,
+    UNCOMPILABLE_AFTER_CORRECTIONS_SIGNAL,
+    UNCOMPILABLE_NO_CHANNEL_SIGNAL,
+    WITHDRAWN_BY_DISPOSITION_SIGNAL,
+    _claimed_critic_handoff,
+    _critic_adjudication_block,
+    _critic_protocol_block,
+    _proposal_names_a_hop_the_task_never_joins,
+    _proposal_targets_a_rule_the_task_never_states,
+    _seat_has_compile_channel,
+)
+from elt_taskgen.pipeline.payloads import (
+    AttackFindingDescriptor,
+    AttackPayload,
+    CalibratePayload,
+    ContaminationPayload,
+    ReviewPayload,
+)
+from elt_taskgen.pipeline.release import (
+    run_contamination_post,
+    run_release,
+    run_select,
+)
+from elt_taskgen.pipeline.review import (
+    AUTHOR_BEHAVIOR_SHA_KEY,
+    AUTHOR_DRAFTS_KEY,
+    AUTHOR_PROSE_SHA_KEY,
+    AUTHOR_REVISIONS_KEY,
+    AUTHOR_SESSION_REPORTS_REL,
+    AUTHOR_SESSION_SHA_KEY,
+    AUTHOR_SESSION_TERMINAL_KEY,
+    AUTHOR_SOURCE_CANDIDATE,
+    AUTHOR_SOURCE_KEY,
+    AUTHOR_SOURCE_PRESERVED,
+    AUTHOR_SOURCE_REVISED,
+    _accepts_keyword,
+    _admission_failure_detail,
+    _admission_gate,
+    _author_prose_for,
+    _author_session_block,
+    _begin_task_evidence,
+    _stamp_admission,
+    _structural_failure_detail,
+    _validated_review_manifest,
+    make_author_runner,
+    make_review_runner,
+)
+from elt_taskgen.pipeline.stages import build_stage_runners
+from elt_taskgen.pipeline.support import (
+    CliUsageError,
+    _answer_key_dir,
+    _atomic_replace_text,
+    _evidence_dir,
+    _force_stage_rerun,
+    _public_dir,
+    _require_pass_payload,
+    _workspace_rel,
 )
 
 #: Population column order for every human-readable matrix this module prints.
@@ -96,334 +223,8 @@ from elt_taskgen.workspace import (  # noqa: E402
 )
 
 
-class CliUsageError(ValueError):
-    """The caller asked a question this command cannot answer as posed.
-
-    A ValueError subclass so the `except ValueError` handlers that already wrap
-    these parsers keep working; `main()` turns it into 'error: <msg>' + exit 2 — a
-    usage error is not a rejected task, and a traceback is not an answer."""
-
-
 class _LockedRunRefusal(RuntimeError):
     """A lock-scoped pre-run check refused execution without judging the task."""
-
-
-CRITIC_PROTOCOL_FAILURE_CLASS = "protocol_failure"
-CRITIC_PROTOCOL_FAILURE_CODE = "critic_attack_handoff_invalid"
-CRITIC_PROTOCOL_RECOVERY = "correct_or_replace_critic_handoff"
-CRITIC_MANIFEST_FAILURE_CODE = "critic_transcript_manifest_invalid"
-CRITIC_MANIFEST_RECOVERY = "rebuild_or_correct_review_transcript_manifest"
-CRITIC_DILIGENCE_FAILURE_CODE = "critic_shortcut_diligence_incomplete"
-CRITIC_DILIGENCE_RECOVERY = "replace_shortcut_critic_handoff"
-CRITIC_AMBIGUITY_FAILURE_CODE = "critic_ambiguity_requires_adjudication"
-CRITIC_GOLD_DISAGREEMENT_CODE = "critic_gold_disagreement"
-#: Signal for a proposal still invalid after bounded compile correction.
-UNCOMPILABLE_AFTER_CORRECTIONS_SIGNAL = "uncompilable_after_corrections"
-
-#: The same void, for a seat that never had a correction channel at all: its
-#: declared `session:` block runs no compile validator on what it submits, so
-#: nothing upstream could tell it its proposal was malformed.
-UNCOMPILABLE_NO_CHANNEL_SIGNAL = "uncompilable_no_correction_channel"
-
-#: A MAJOR finding its own provider withdrew (structured `disposition`, R02)
-#: stays in the screen record but does not block. Explanation text never
-#: withdraws a finding.
-WITHDRAWN_BY_DISPOSITION_SIGNAL = "withdrawn_by_disposition"
-
-
-#: A proposal that removes behavior absent from the contract is not a fork;
-#: preserve the finding in the screen record without blocking.
-MUTATION_TARGETS_NO_DECLARED_RULE_SIGNAL = "mutation_targets_no_declared_rule"
-
-
-MUTATION_NAMES_NO_SECOND_HOP_SIGNAL = "mutation_names_no_second_hop"
-
-
-def _proposal_names_a_hop_the_task_never_joins(task, proposal) -> bool:
-    """Return whether a second-hop mutation targets a task with no second hop."""
-    from elt_taskgen.models import AttackKind, MartOpKind
-
-    kind = getattr(proposal, "kind", None)
-    if kind is not AttackKind.INNER_JOIN:
-        return False
-    params = getattr(proposal, "params", None) or {}
-    if str(params.get("variant", "") or "") != "second_hop":
-        return False
-    sources = {table.name for table in task.tables}
-    for mart in task.marts:
-        ops = getattr(getattr(mart, "plan", None), "ops", None) or ()
-        hops = [
-            op
-            for op in ops
-            if getattr(op, "kind", None) is MartOpKind.JOIN
-            and any(name in sources for name in tuple(op.tables)[1:])
-        ]
-        if len(hops) >= 2:
-            return False
-    return True
-
-
-def _proposal_targets_a_rule_the_task_never_states(task, proposal) -> bool:
-    from elt_taskgen.models import AttackKind, MartOpKind
-
-    kind = getattr(proposal, "kind", None)
-    if kind is not AttackKind.NO_DEDUP:
-        return False
-    declared = any(
-        getattr(op, "kind", None) is MartOpKind.DEDUPE
-        for mart in task.marts
-        for op in (getattr(getattr(mart, "plan", None), "ops", None) or ())
-    )
-    return not declared
-
-
-def _seat_has_compile_channel(role, *, agents_config=None) -> bool:
-    """Return whether a seat declares an enabled proposal or probe compiler."""
-    from elt_taskgen.review import providers as providers_mod
-    from elt_taskgen.review.tools import critic_validators as critic_tools
-
-    role_name = getattr(role, "value", str(role or ""))
-    if not role_name:
-        return False
-    try:
-        block = providers_mod.role_loop_limits(role_name, agents_config=agents_config)
-    except Exception:  # a role with no block, or an unreadable document
-        return False
-    if not (isinstance(block, dict) and block.get("enabled", False)):
-        return False
-    declared = {str(name) for name in (block.get("harness_validators") or ())}
-    return bool(
-        declared
-        & {critic_tools.COMPILE_PROPOSAL_TOOL, critic_tools.COMPILE_PROBE_TOOL}
-    )
-
-
-def _claimed_critic_handoff(
-    finding: Finding,
-) -> tuple[Severity, AttackKind | None, ProposedAttackCase | None]:
-    """Return a provider finding's preserved pre-screen executable claims.
-
-    Harness-voided proposals remain final after their bounded correction.
-    """
-
-    screen = finding.screen
-    if screen is None:
-        return finding.severity, finding.suggested_attack, finding.proposed_case
-    if (
-        screen.status is FindingScreenStatus.VOID
-        and UNCOMPILABLE_AFTER_CORRECTIONS_SIGNAL in tuple(screen.signals)
-    ):
-        return finding.severity, finding.suggested_attack, finding.proposed_case
-    severity = screen.claimed_severity or finding.severity
-    attack = finding.suggested_attack
-    proposal = finding.proposed_case
-    if screen.withheld_attack is not None:
-        attack = screen.withheld_attack
-    if screen.withheld_proposal is not None:
-        proposal = screen.withheld_proposal
-    return severity, attack, proposal
-
-
-def _critic_protocol_block(
-    detail: str,
-    *,
-    failure_code: str = CRITIC_PROTOCOL_FAILURE_CODE,
-    recovery_prerequisite: str = CRITIC_PROTOCOL_RECOVERY,
-) -> StageOutcome:
-    """A critic transport/compile contract failed; the task is not judged.
-
-    The digest is stable for an identical rejected handoff.  It gives the
-    orchestration layer an evidence key with which to refuse an unchanged
-    ordinary resume instead of repeatedly paying for/replaying the same bad
-    critic output.  Recovery must replace that handoff (or otherwise change the
-    protocol evidence), not retry it until it happens to pass.
-    """
-    handoff_digest = sha256_hex(
-        canonical_json(
-            {
-                "failure_code": failure_code,
-                "detail": detail,
-            }
-        )
-    )
-    return StageOutcome(
-        VERDICT_BLOCKED,
-        StagePayload(
-            error=detail,
-            data={
-                "failure_class": CRITIC_PROTOCOL_FAILURE_CLASS,
-                "failure_code": failure_code,
-                BLOCKED_ON_KEY: "provider",
-                "handoff_digest": handoff_digest,
-                "recovery_prerequisite": recovery_prerequisite,
-                RETRY_GUARD_KEY: RETRY_GUARD_EXPLICIT,
-            },
-        ),
-    )
-
-
-def _critic_adjudication_block(findings: list[Finding]) -> StageOutcome | None:
-    """Hold fatal ambiguity and reference disputes for human adjudication.
-
-    Major ambiguity claims route to specification repair; alternatives remain
-    evidence and are not promoted.
-    """
-    disputes: list[Finding] = []
-    for finding in findings:
-        if (
-            finding.screen is not None
-            and finding.screen.status
-            in {FindingScreenStatus.VOID, FindingScreenStatus.DUPLICATE}
-        ):
-            continue
-        claimed_severity, claimed_attack, claimed_proposal = (
-            _claimed_critic_handoff(finding)
-        )
-        if finding.provenance is not FindingProvenance.PROVIDER:
-            continue
-        if claimed_severity not in {Severity.MAJOR, Severity.FATAL}:
-            continue
-        gold_dispute = finding.route_hint is RepairRoute.REFERENCE
-        ambiguity = finding.role is CouncilRole.AMBIGUITY_CRITIC
-        if not (ambiguity or gold_dispute):
-            continue
-        if (
-            ambiguity
-            and not gold_dispute
-            and claimed_severity is Severity.MAJOR
-        ):
-            # Ambiguity proposals are evidence, not gate cases: withhold them
-            # from promotion and route the unresolved finding to specification
-            # repair. A bare `suggested_attack` remains informational only.
-            continue
-        disputes.append(finding)
-    if not disputes:
-        return None
-    is_gold_disagreement = any(
-        finding.route_hint is RepairRoute.REFERENCE for finding in disputes
-    )
-    failure_code = (
-        CRITIC_GOLD_DISAGREEMENT_CODE
-        if is_gold_disagreement
-        else CRITIC_AMBIGUITY_FAILURE_CODE
-    )
-    evidence_digest = sha256_hex(
-        canonical_json(
-            [
-                finding.model_dump(mode="json")
-                for finding in sorted(disputes, key=lambda item: item.finding_id)
-            ]
-        )
-    )
-    return StageOutcome(
-        VERDICT_BLOCKED,
-        StagePayload(
-            error=(
-                "critic evidence identifies an unresolved ambiguity or gold "
-                "disagreement; any attached executable alternative is held, "
-                "and the task, gold, and critic claim remain unjudged pending "
-                "explicit adjudication"
-            ),
-            data={
-                "failure_class": "pending_adjudication",
-                "failure_code": failure_code,
-                BLOCKED_ON_KEY: BLOCKED_ON_HUMAN,
-                "critic_evidence_sha256": evidence_digest,
-                "recovery_prerequisite": (
-                    "bound_adjudication_or_revised_critic_evidence"
-                ),
-                RETRY_GUARD_KEY: RETRY_GUARD_EXPLICIT,
-            },
-        ),
-    )
-
-
-class _CollisionLike(Protocol):
-    """Structural type shared by every adapter's contamination result."""
-
-    kind: str
-    against: str
-    detail: str
-    fatal: bool
-
-
-# --- Typed ledger payloads owned by the CLI's stage runners ---
-
-class ContaminationPayload(BaseModel):
-    """check_pre/check_post result recorded in the ledger."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    call_point: str
-    collisions: tuple[dict, ...] = ()
-    fatal_count: int = 0
-    seeded_embedded_deny_lists: bool = False
-    #: WHAT the index could see: grade plus the per-store, per-kind fingerprint
-    #: census. Recorded because "0 collisions" is meaningless without it.
-    coverage_level: str = ""
-    coverage: dict = Field(default_factory=dict)
-    detail: str = ""
-
-
-class ReviewPayload(BaseModel):
-    """Council findings recorded in the ledger (findings only, never a verdict
-    vocabulary — the council cannot accept)."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    findings: tuple[Finding, ...] = ()
-    fatal_count: int = 0
-    detail: str = ""
-    #: WHICH ADMISSION this review ran under. Recorded because revocation is
-    #: PROSPECTIVE: without it, an auditor who later revokes an admission cannot
-    #: list the reviews that ran on it. Defaulted, so old ledger rows still validate.
-    admission: dict[str, str] = Field(default_factory=dict)
-    #: Every council exchange consumed by this review, explicitly rebound to
-    #: this task identity. Empty only for non-routed test doubles/legacy callers.
-    transcript_manifest: tuple[dict, ...] = ()
-
-
-class AttackFindingDescriptor(BaseModel):
-    """One privacy-safe critic finding selected for an attack repair.
-
-    The attack payload is a ledger artifact, not a model view.  It retains only
-    the role/severity stamped by the harness and identifiers that the projector
-    proved belong to the task's public surface; no finding prose or promoter
-    reason is carried into the bounded repair session.
-    """
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    role: CouncilRole
-    severity: Severity
-    identifiers: tuple[str, ...] = Field(default=(), max_length=16)
-
-
-class AttackPayload(BaseModel):
-    """Measured per-population rewards of every executed attack case."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    rewards: dict[str, dict[str, float]] = Field(default_factory=dict)
-    #: Per-variant rewards from the same execution; variant gates never use legacy rewards.
-    rewards_by_variant: dict[str, dict[str, dict[str, float]]] = Field(
-        default_factory=dict
-    )
-    cases: tuple[str, ...] = ()
-    #: case -> no-surface reason, for informational probes this task's DATA offers
-    #: no surface for. They carry NO rewards entry (an empty one would read as
-    #: deleted evidence) but are named here, never silently skipped.
-    inapplicable_cases: dict[str, str] = Field(default_factory=dict)
-    #: Executed council attack-case PROPOSALS, promoted and rejected. Recorded so
-    #: a rejection is VISIBLE in the ledger, never merely absent.
-    promoted_proposals: tuple[str, ...] = ()
-    rejected_proposals: tuple[dict, ...] = ()
-    #: Full predicted/measured combined and EL/T matrices for every proposal,
-    #: promoted or rejected. Names alone are not audit evidence.
-    proposal_outcomes: tuple[dict, ...] = ()
-    #: Value-free repair subject for one blocked critic-to-mutation handoff.
-    blocking_finding: AttackFindingDescriptor | None = None
-    detail: str = ""
 
 
 # --- Small helpers ---
@@ -438,4548 +239,6 @@ def _open_engine(workspace: Path, **kwargs) -> Engine:
     workspace = Path(workspace).resolve()
     _assert_workspace_is_not_a_container(workspace)
     return Engine(workspace, **kwargs)
-
-
-def _answer_key_dir(engine: Engine, task: TaskIR) -> Path:
-    return engine.task_dir(task.task_id) / "answer_key"
-
-
-def _public_dir(engine: Engine, task: TaskIR) -> Path:
-    return engine.task_dir(task.task_id) / "task"
-
-
-def _evidence_dir(engine: Engine, task: TaskIR) -> Path:
-    d = engine.task_dir(task.task_id) / "reports"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
-def _workspace_rel(engine: Engine, path: Path) -> str:
-    """Workspace-relative POSIX path for report payloads — absolute paths must
-    never reach report copies or they break cross-location byte-identity."""
-    return path.relative_to(engine.workspace).as_posix()
-
-
-def _collision_fingerprint(collision: dict) -> str:
-    """Stable id of ONE recorded contamination collision: sha256 over the canonical
-    {kind, against, detail}. Approvals bind to these ids, so sign-off coverage is
-    checked mechanically, never by prose matching."""
-    return sha256_hex(
-        canonical_json(
-            {
-                "against": collision.get("against"),
-                "detail": collision.get("detail"),
-                "kind": collision.get("kind"),
-            }
-        )
-    )
-
-
-def _coverage_payload(engine: Engine, coverage) -> dict:
-    """IndexCoverage as JSON, with `index_dir` made WORKSPACE-RELATIVE.
-
-    Nothing reads the value (it is provenance), but the persisted absolute paths
-    outlived the directories they named. A path outside the workspace is left
-    absolute rather than guessed at."""
-    dumped = coverage.model_dump(mode="json")
-    raw = dumped.get("index_dir")
-    if isinstance(raw, str) and raw:
-        try:
-            dumped["index_dir"] = _workspace_rel(engine, Path(raw))
-        except ValueError:
-            pass  # not under this workspace: leave it as recorded
-    return dumped
-
-
-def _contamination_index(engine: Engine):
-    from elt_taskgen.verification.contamination import ContaminationIndex
-
-    return ContaminationIndex(engine.workspace / "state" / "contamination")
-
-
-def _seed_embedded_deny_lists(idx) -> None:
-    """Arm an empty index with the embedded benchmark family deny lists.
-
-    SEEDING IS NOT ARMING: this writes benchmark family NAMES and nothing
-    structural, so the index answers "is this task NAMED like a benchmark?".
-    Callers go through `_arm_contamination_index`, which says so out loud."""
-    from elt_taskgen.verification import contamination as cont
-
-    for name, families in (
-        ("eltbench", cont.ELTBENCH_FAMILIES),
-        ("spider2_dbt", cont.SPIDER2_DBT_FAMILIES),
-        ("ade_bench", cont.ADE_BENCH_FAMILIES),
-    ):
-        idx.add_benchmark(
-            name, sorted({f"family:{cont.normalize_name(f)}" for f in families})
-        )
-
-
-def _arm_contamination_index(idx, *, announce: bool = True):
-    """Seed an empty index, then REPORT what the firewall actually contains.
-
-    `is_armed()` is satisfied by this function's own seeding, so it proves nothing
-    — hence the coverage banner, and hence every caller records the returned
-    IndexCoverage beside its collisions. WARNS rather than refuses by default (the
-    tests have no benchmark checkout); `ELT_TASKGEN_REQUIRE_FIREWALL=1` refuses."""
-    if not idx.is_armed():
-        _seed_embedded_deny_lists(idx)
-    coverage = idx.coverage()
-    if announce and not coverage.is_firewall:
-        print(f"  {coverage.summary()}")
-    return coverage
-
-
-def _required_firewall_coverage():
-    """Minimum contamination coverage this process REFUSES below, or None."""
-    from elt_taskgen.verification import contamination as cont
-
-    return cont.required_coverage_from_env()
-
-
-def _require_pass_payload(engine: Engine, task: TaskIR, stage: StageName) -> dict:
-    """Latest ledger payload of `stage`, required to be a pass at the CURRENT
-    content hash. Missing/stale/failed evidence raises (fail closed)."""
-    row = engine.latest_report(task.task_id, stage.value)
-    if row is None:
-        raise RuntimeError(f"no {stage.value!r} report in the ledger (fail closed)")
-    if row.verdict != VERDICT_PASS:
-        raise RuntimeError(
-            f"latest {stage.value!r} report is {row.verdict!r}, not a pass (fail closed)"
-        )
-    if row.content_hash != task.content_hash():
-        raise RuntimeError(
-            f"latest {stage.value!r} report is stale (bound to {row.content_hash[:12]}, "
-            f"task is {task.content_hash()[:12]}) — re-run it (fail closed)"
-        )
-    return json.loads(row.payload_json)
-
-
-# --- Stage runners (engine.run executes these; cf. docs/INTERFACES.md) ---
-
-def run_contamination_pre(engine: Engine, task: TaskIR) -> StageOutcome:
-    """`contamination_pre`: pre-generation scan (fatal collision -> reject)."""
-    idx = _contamination_index(engine)
-    seeded = not idx.is_armed()
-    _arm_contamination_index(idx, announce=False)
-    result = idx.scan_pre(task, require=_required_firewall_coverage())
-    fatal = [c for c in result.collisions if c.fatal]
-    payload = ContaminationPayload(
-        call_point="pre",
-        collisions=tuple(c.model_dump(mode="json") for c in result.collisions),
-        fatal_count=len(fatal),
-        seeded_embedded_deny_lists=seeded,
-        coverage_level=result.coverage.level.value,
-        coverage=_coverage_payload(engine, result.coverage),
-        detail=(
-            result.detail()
-            + ("; index seeded with embedded deny lists" if seeded else "")
-        ),
-    )
-    if fatal:
-        return StageOutcome(VERDICT_FATAL, payload)
-    return StageOutcome(VERDICT_PASS, payload)
-
-
-#: Generation scratch is a sibling excluded from repair fingerprints after crashes.
-_REBUILD_SCRATCH_DIR = ".rebuild"
-_REBUILD_TMP_SUFFIX = ".rebuild-tmp"
-_REBUILD_STALE_SUFFIX = ".stale"
-
-
-def _drift_lines(derived: dict[str, str], on_disk: dict[str, str]) -> tuple[str, ...]:
-    """Human-readable difference between a fresh derivation and what is on disk."""
-    lines: list[str] = []
-    for rel in sorted(set(derived) | set(on_disk)):
-        if rel not in on_disk:
-            lines.append(f"{rel}: missing on disk")
-        elif rel not in derived:
-            lines.append(f"{rel}: not derived from the IR")
-        elif derived[rel] != on_disk[rel]:
-            lines.append(f"{rel}: differs")
-    return tuple(lines)
-
-
-def run_generate(engine: Engine, task: TaskIR) -> StageOutcome:
-    """Materialize all IR populations and replace only byte-different artifacts."""
-    from elt_taskgen.generation import populations as populations_mod
-    from elt_taskgen.generation import source_data
-
-    problems = populations_mod.validate_population_coverage(task)
-    if problems:
-        return StageOutcome(
-            VERDICT_FAIL,
-            StagePayload(error="population coverage: " + "; ".join(problems)),
-            route=RepairRoute.POPULATION,
-        )
-
-    tdir = engine.task_dir(task.task_id)
-    scratch = tdir / _REBUILD_SCRATCH_DIR
-    # Whatever a previous crash left behind goes first, including the pre-fix
-    # in-place scratch trees under populations/.
-    shutil.rmtree(scratch, ignore_errors=True)
-    for legacy in sorted((tdir / "populations").glob("*")):
-        if legacy.is_dir() and legacy.name.endswith(
-            (_REBUILD_TMP_SUFFIX, _REBUILD_STALE_SUFFIX)
-        ):
-            shutil.rmtree(legacy, ignore_errors=True)
-    scratch.mkdir(parents=True, exist_ok=True)
-    built: list[str] = []
-    reused: list[str] = []
-    data: dict[str, str] = {}
-    for pop_spec in sorted(task.populations, key=lambda p: p.name.value):
-        pop = pop_spec.name
-        pop_dir = tdir / "populations" / pop.value
-        tmp_dir = scratch / (pop.value + _REBUILD_TMP_SUFFIX)
-        stale_dir = scratch / (pop.value + _REBUILD_STALE_SUFFIX)
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-        shutil.rmtree(stale_dir, ignore_errors=True)
-        existed = pop_dir.is_dir()
-        hashes = source_data.materialize_population(task, pop, tmp_dir)
-        drift = _drift_lines(
-            source_data.tree_digest(tmp_dir), source_data.tree_digest(pop_dir)
-        )
-        if not drift:
-            # Byte-identical: leave the pinned tree alone, so artifact hashes and
-            # repair fingerprints do not move just because the stage re-attested.
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-            reused.append(pop.value)
-            continue
-        # Atomic swap, so a crash can never leave a half-written population. It
-        # also DELETES files the derivation no longer produces.
-        pop_dir.parent.mkdir(parents=True, exist_ok=True)
-        if pop_dir.exists():
-            pop_dir.rename(stale_dir)
-        tmp_dir.rename(pop_dir)
-        shutil.rmtree(stale_dir, ignore_errors=True)
-        for table_name in sorted(hashes):
-            engine.record_artifact(
-                task,
-                f"tasks/{task.task_id}/populations/{pop.value}/rows/{table_name}.jsonl",
-                hashes[table_name],
-            )
-        built.append(pop.value)
-        if existed:
-            # WHY it rebuilt, in the ledger — 'reused' is unfalsifiable without it.
-            # Only for a population that WAS there.
-            data[f"drift:{pop.value}"] = "; ".join(drift[:6]) + (
-                f" (+{len(drift) - 6} more)" if len(drift) > 6 else ""
-            )
-    shutil.rmtree(scratch, ignore_errors=True)
-    data.update({"built": ",".join(built), "reused": ",".join(reused)})
-    data["verified"] = "rederived"
-    return StageOutcome(
-        VERDICT_PASS,
-        StagePayload(
-            detail=(
-                f"populations re-derived from the IR: built={built or '[]'} "
-                f"reused(byte-identical)={reused or '[]'}"
-            ),
-            data=data,
-        ),
-    )
-
-
-def _population_drift_failure(engine: Engine, task: TaskIR) -> StageOutcome | None:
-    """A stage FAILURE when any population on disk is not the IR's derivation.
-
-    The populations are the graded EL surface and the input the gold was frozen
-    from, and the content hash covers the IR only — so this recomputation is the
-    check (one edited rendered/ file otherwise passed everything while the true
-    reference scored 0.0). Routed RUNTIME, which re-runs `generate`."""
-    from elt_taskgen.generation import source_data
-
-    populations_root = engine.task_dir(task.task_id) / "populations"
-    if not populations_root.is_dir():
-        # NOTHING MATERIALIZED AT ALL is `generate`'s business: the batteries
-        # already fail closed on absent sources. This check is for what the content
-        # hash cannot see — a tree that EXISTS but is no longer the IR's derivation.
-        return None
-    problems: list[str] = []
-    for pop_spec in sorted(task.populations, key=lambda p: p.name.value):
-        drift = source_data.population_drift(
-            task, pop_spec.name, populations_root / pop_spec.name.value
-        )
-        if drift:
-            shown = "; ".join(drift[:4]) + (
-                f" (+{len(drift) - 4} more)" if len(drift) > 4 else ""
-            )
-            problems.append(f"{pop_spec.name.value}: {shown}")
-    if not problems:
-        return None
-    return StageOutcome(
-        VERDICT_FAIL,
-        StagePayload(
-            error=(
-                "population artifacts drift: what is on disk is not what the "
-                "IR derives — " + " | ".join(problems) + ". Re-run `generate` "
-                "(it re-derives and rewrites); the gold and every battery must "
-                "then re-attest against the restored bytes."
-            ),
-            data={"drifted_populations": ",".join(p.split(":")[0] for p in problems)},
-        ),
-        route=RepairRoute.RUNTIME,
-    )
-
-
-def _ensure_perturbation_probe(engine: Engine, task: TaskIR, gold) -> None:
-    """Record the data-sensitivity scratch probe when the gate will demand it.
-
-    Only a 'provided-rows' task needs one, and cannot pass data-sensitivity without
-    it. Bound to the current content hash (a stale record is rejected); the probe
-    never writes the pinned population artifacts."""
-    from elt_taskgen.verification import gates as gates_mod
-    from elt_taskgen.verification import perturbation as perturb_mod
-
-    if not gates_mod.needs_perturbation_probe(task, engine.workspace):
-        return
-    perturb_mod.record_perturbation_probe(task, engine.workspace, gold)
-
-
-def run_reference_stage(engine: Engine, task: TaskIR) -> StageOutcome:
-    """`reference`: private reference execution + determinism evidence + gold freeze."""
-    from elt_taskgen.models import GateResult
-    from elt_taskgen.reference import gold as gold_mod
-    from elt_taskgen.reference import runner as runner_mod
-    from elt_taskgen.verification import gates as gates_mod
-
-    akd = _answer_key_dir(engine, task)
-    det_path = _evidence_dir(engine, task) / "determinism.json"
-    current = task.content_hash()
-
-    # Resume shortcut: gold already frozen AT THIS EXACT identity, with the
-    # determinism record bound to it. An unbound or stale record is rebuilt instead.
-    if det_path.is_file() and (akd / gold_mod.MANIFEST_FILENAME).is_file():
-        try:
-            frozen = gold_mod.load_gold(akd)
-            recorded = GateResult.model_validate_json(
-                det_path.read_text(encoding="utf-8")
-            )
-            det_bound = (
-                recorded.passed
-                and recorded.evidence.get("task_id") == task.task_id
-                and recorded.evidence.get(gates_mod.DETERMINISM_CONTENT_HASH_KEY)
-                == current
-            )
-            if (
-                det_bound
-                and frozen.task_id == task.task_id
-                and frozen.task_content_hash == current
-            ):
-                # RESUMING MEANS "the gold on disk is still the right answer to the
-                # data on disk", which the content hash cannot say — so the
-                # populations are re-derived and byte-compared first.
-                drifted = _population_drift_failure(engine, task)
-                if drifted is not None:
-                    return drifted
-                # The probe is bound to the same identity, so the resume path must
-                # (re)produce it or resuming drops the gate's only evidence.
-                _ensure_perturbation_probe(engine, task, frozen)
-                return StageOutcome(
-                    VERDICT_PASS,
-                    StagePayload(detail="gold already frozen at current content hash"),
-                )
-        except Exception:
-            pass  # stale/corrupt gold: fall through and rebuild (fail closed)
-
-    results = {}
-    for pop_spec in task.populations:
-        results[pop_spec.name] = runner_mod.run_reference(
-            task, pop_spec.name, engine.workspace
-        )
-
-    det = runner_mod.determinism_evidence(
-        task, PopulationName.PRIMARY, engine.workspace, runs=3
-    )
-    det = det.model_copy(
-        update={
-            "evidence": {
-                **det.evidence,
-                "task_id": task.task_id,
-                gates_mod.DETERMINISM_CONTENT_HASH_KEY: current,
-            }
-        }
-    )
-    det_path.write_text(
-        canonical_json(det.model_dump(mode="json")), encoding="utf-8"
-    )
-    if not det.passed:
-        # 'determinism' keyword routes RUNTIME via repair.route_for_failure.
-        return StageOutcome(VERDICT_FAIL, det)
-
-    gold = gold_mod.freeze_gold(task, results, akd)
-    _ensure_perturbation_probe(engine, task, gold)
-    for rel in sorted(gold.file_hashes):
-        engine.record_artifact(
-            task,
-            f"tasks/{task.task_id}/answer_key/{rel}",
-            gold.file_hashes[rel],
-        )
-    return StageOutcome(
-        VERDICT_PASS,
-        StagePayload(
-            detail=f"gold frozen for {len(results)} population(s); determinism x3 identical",
-            data={"gold_files": str(len(gold.file_hashes))},
-        ),
-    )
-
-
-def _admission_gate(provider, workspace: Path | None) -> tuple[str | None, dict[str, str]]:
-    """(failure detail or None, admission PROVENANCE) for one live-capable call site.
-
-    A LIVE-capable provider needs the council.live_admitted marker from a passing
-    `metrology` run, bound to the current critic routing; absent, unreadable or
-    mismatched fails the stage CLOSED. The provenance is returned because
-    revocation is PROSPECTIVE: unless each gated call records WHICH admission it
-    passed under, revoking one cannot list what ran on it."""
-    # EXEMPTION IS A POSITIVE CAPABILITY TEST, never absence of an attribute: exempt
-    # only when replay_only is True (cannot call live) or there is no `routing` at
-    # all. Anything routable to a real model must show a marker.
-    from elt_taskgen.review import metrology as metrology_mod
-
-    replay_only = getattr(provider, "replay_only", None)
-    routing = getattr(provider, "routing", None)
-    if replay_only is True:
-        return None, metrology_mod.AdmissionStatus(
-            ok=True, reason="replay-only: no live call is possible"
-        ).provenance(metrology_mod.ADMISSION_MODE_REPLAY_ONLY)
-    if replay_only is None and routing is None:
-        # not a live-capable provider: no endpoint, no exposure
-        return None, metrology_mod.AdmissionStatus(
-            ok=True, reason="no routing: not a live-capable provider"
-        ).provenance(metrology_mod.ADMISSION_MODE_NO_ROUTING)
-
-    fingerprint = (
-        metrology_mod.council_routing_fingerprint(routing)
-        if routing is not None
-        else None
-    )
-    status = metrology_mod.admission_status(
-        workspace,
-        routing_fingerprint=fingerprint,
-        # The record is checked against the agents document THIS provider's
-        # routing was loaded from (a custom --agents-config), never always
-        # the repository default.
-        agents_config=getattr(provider, "agents_config", None),
-        record_path=getattr(provider, "admission_reference", None),
-    )
-    if status.ok:
-        return None, status.provenance(metrology_mod.ADMISSION_MODE_ADMITTED)
-    # Name the ACTUAL cause: the five failure modes have different remedies, and a
-    # generic "absent or stale" sent operators hunting for the wrong fix.
-    return f"{metrology_mod.NOT_ADMITTED_MESSAGE}: {status.reason}", {}
-
-
-def _stamp_admission(provider, provenance: dict[str, str]) -> None:
-    """Carry the admission this call site passed into the provider, so every
-    transcript it records is stamped with it. Never fatal: provenance is evidence,
-    not a gate."""
-    if not provenance:
-        return
-    try:
-        provider.admission_provenance = dict(provenance)
-    except (AttributeError, TypeError):  # frozen/slotted stub: nothing to do
-        pass
-
-
-def _begin_task_evidence(provider, task: TaskIR) -> bool:
-    """Start a task-bound exchange manifest when the provider supports it.
-
-    A provider whose `begin_task_evidence` takes `task=` (the `RoutedProvider`)
-    receives the TaskIR too: that opens the TASK CONTEXT under which a
-    harness-validated critic seat (`providers.AGENTIC_ROLES`, its block
-    `enabled: true`) runs a bounded session inside `run_council`'s one
-    `complete` call; a double that takes the identity only stays valid."""
-    begin = getattr(provider, "begin_task_evidence", None)
-    if not callable(begin):
-        return False  # lightweight test doubles remain valid
-    if _accepts_keyword(begin, "task"):
-        begin(task.task_id, task.content_hash(), task=task)
-    else:
-        begin(task.task_id, task.content_hash())
-    return True
-
-
-def _accepts_keyword(fn, name: str) -> bool:
-    """Does callable `fn` accept keyword `name` (or `**kwargs`)?"""
-    import inspect
-
-    try:
-        parameters = inspect.signature(fn).parameters
-    except (TypeError, ValueError):
-        return False
-    if name in parameters:
-        return True
-    return any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values())
-
-
-def _validated_review_manifest(
-    provider, task: TaskIR, findings: list[Finding], *, required: bool
-) -> tuple[tuple[dict, ...], list[str]]:
-    """Validate one task-bound exchange row per critic role.
-
-    Accept legacy one-shot rows and schema-3 session rows only when their call
-    counts and finding counts reconcile exactly.
-    """
-    from elt_taskgen.review import providers as providers_mod
-    from elt_taskgen.review.providers import exchange_row_problems
-
-    raw = getattr(provider, "exchange_evidence", None)
-    if not required:
-        return (), []
-    if not isinstance(raw, list):
-        return (), ["routed provider exposed no exchange_evidence list"]
-    expected_roles = {
-        "ambiguity_critic",
-        "population_adversary",
-        "shortcut_attacker",
-        "feasibility_reviewer",
-    }
-    by_role: dict[str, list[dict]] = {}
-    problems: list[str] = []
-    for item in raw:
-        if not isinstance(item, dict):
-            problems.append("exchange manifest contains a non-object entry")
-            continue
-        role = str(item.get("role") or "")
-        if role in expected_roles:
-            by_role.setdefault(role, []).append(dict(item))
-    for role in sorted(expected_roles):
-        entries = by_role.get(role, [])
-        if len(entries) != 1:
-            problems.append(f"{role}: expected one exchange, found {len(entries)}")
-            continue
-        entry = entries[0]
-        if entry.get("task_id") != task.task_id:
-            problems.append(f"{role}: task_id binding mismatch")
-        if entry.get("task_content_hash") != task.content_hash():
-            problems.append(f"{role}: task_content_hash binding mismatch")
-        for field in ("prompt_sha256", "response_sha256"):
-            value = str(entry.get(field) or "")
-            if len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
-                problems.append(f"{role}: invalid {field}")
-        agents_document = getattr(provider, "agents_document", None)
-        current_manifest = providers_mod.role_behavior_manifest(
-            role, agents_config=agents_document
-        )
-        try:
-            entry_schema = int(entry.get("entry_schema") or 0)
-        except (TypeError, ValueError):
-            entry_schema = 0
-        if entry_schema >= providers_mod.SESSION_TRANSCRIPT_ENTRY_SCHEMA:
-            from elt_taskgen.review.tools import critic_validators as critic_tools
-
-            if role in critic_tools.CRITIC_VALIDATOR_ROLES:
-                current_policy = critic_tools.critic_policy(
-                    role,
-                    critic_tools.critic_limits(
-                        role, agents_config=agents_document
-                    ),
-                    agents_config=agents_document,
-                )
-            else:
-                current_policy = providers_mod.session_policy_for(
-                    role, agents_config=agents_document
-                )
-            current_tools_sha256 = current_policy.tools_sha256()
-            current_policy_sha256 = current_policy.sha256()
-        else:
-            current_tools_sha256 = sha256_hex(
-                canonical_json(current_manifest["tools"])
-            )
-            current_policy_sha256 = str(current_manifest["policy_sha256"])
-        expected_bindings = {
-            "behavior_sha256": providers_mod.role_behavior_sha256(
-                role, agents_config=agents_document
-            ),
-            "tools_sha256": current_tools_sha256,
-            "policy_sha256": current_policy_sha256,
-        }
-        for field, expected in expected_bindings.items():
-            actual = str(entry.get(field) or "")
-            if actual != expected:
-                problems.append(
-                    f"{role}: {field} does not match current role behavior"
-                )
-        if str(entry.get("diagnostics_version") or "") != str(
-            providers_mod.DIAGNOSTICS_VERSION
-        ):
-            problems.append(
-                f"{role}: diagnostics_version does not match current runtime"
-            )
-        row = dict(entry)
-        model_calls = row.get("model_call_count")
-        if "attempt_count" not in row and isinstance(model_calls, int) and not isinstance(model_calls, bool):
-            # OQ-19: the alias `attempt_count := model_call_count`, one release.
-            row["attempt_count"] = model_calls
-        problems.extend(exchange_row_problems(row))
-        role_count = sum(1 for finding in findings if finding.role.value == role)
-        if entry.get("finding_count") != role_count:
-            problems.append(
-                f"{role}: transcript finding_count={entry.get('finding_count')!r}, "
-                f"parsed={role_count}"
-            )
-        if entry.get("zero_findings") is not (role_count == 0):
-            problems.append(f"{role}: zero_findings outcome is inconsistent")
-    manifest = tuple(
-        by_role[role][0] for role in sorted(expected_roles) if len(by_role.get(role, [])) == 1
-    )
-    return manifest, problems
-
-
-def _write_review_transcript_manifest(
-    engine: Engine, task: TaskIR, manifest: tuple[dict, ...], problems: list[str]
-) -> None:
-    """Persist the same deterministic evidence carried by ReviewPayload."""
-    reports = engine.task_dir(task.task_id) / "reports"
-    reports.mkdir(parents=True, exist_ok=True)
-    (reports / "review_transcript_manifest.json").write_text(
-        readable_json(
-            {
-                "task_id": task.task_id,
-                "task_content_hash": task.content_hash(),
-                "roles": list(manifest),
-                "integrity_problems": list(problems),
-            }
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-
-
-def _admission_failure_detail(provider, engine) -> str | None:
-    """Back-compatible wrapper: the failure detail only (see `_admission_gate`)."""
-    return _admission_gate(provider, getattr(engine, "workspace", None))[0]
-
-
-def _structural_failure_detail(task: TaskIR) -> str | None:
-    """Deterministic structural-completeness precondition on live spend.
-
-    "Every table, key and relationship the rules or the mart reference is published
-    in the source schemas" is static analysis, not judgment, so it is certified
-    ABOVE the provider: a plan naming an unpublished table is refused before the
-    author writes a word. Returns the failure detail naming every missing object
-    and its reference site, or None. Routes to SPECIFICATION."""
-    from elt_taskgen.verification import structural_completeness
-
-    problems = structural_completeness.check_structural_completeness(task)
-    if not problems:
-        return None
-    return (
-        f"{structural_completeness.GATE_NAME}: {len(problems)} referenced "
-        "object(s) absent from the published bundle — no live call was made; "
-        + "; ".join(problems)
-    )
-
-
-def _attribution_failure_detail(engine: Engine, task: TaskIR) -> str | None:
-    """Deterministic column-lineage precondition on live spend.
-
-    The author states where each passthrough column comes from; the frozen
-    reference is what actually produces gold. When they disagree, a solver that
-    believes the prose cannot reproduce gold — which the dual-build gate would only
-    discover one council run later. Returns the failure detail, or None, including
-    when either side says nothing, which is NOT a certification. SPECIFICATION."""
-    from elt_taskgen.verification import attribution
-
-    workspace = getattr(engine, "workspace", None)
-    if workspace is None:
-        return None
-    return attribution.check_attribution(task, workspace)
-
-
-def _attack_matrix_failure_detail(engine: Engine, task: TaskIR) -> str | None:
-    """Deterministic attack-matrix precondition on live spend.
-
-    `expected_pass` is a claim about data the adapter never measured, and executing
-    a mutant needs no provider (deterministic DuckDB against the gold `reference`
-    froze a stage earlier), so it is checked at the earliest point the data allows
-    rather than at `gates`, two live stages later. The comparison IS the gate's own
-    on a subset of the cases, so it can only move a refusal EARLIER and never
-    invent one. Returns the detail, or None — including when gold is absent, which
-    is NOT a certification. Routes to POPULATION."""
-    from elt_taskgen.verification import attack_matrix
-
-    # Duck-typed stand-ins (the stage-logic unit tests drive these runners with no
-    # workspace on disk) carry neither accessor: no measurement, never a refusal.
-    workspace = getattr(engine, "workspace", None)
-    task_dir = getattr(engine, "task_dir", None)
-    if workspace is None or task_dir is None:
-        return None
-    return attack_matrix.check_declared_matrix_if_measurable(
-        task, _answer_key_dir(engine, task), workspace
-    )
-
-
-#: sha256 of the prose an `author` PASS produced — THE ONLY RECORD of what
-#: authoring last wrote, and the sole basis for telling "this prose came from me"
-#: from "this prose was repaired since I last ran".
-AUTHOR_PROSE_SHA_KEY = "prose_sha256"
-AUTHOR_BEHAVIOR_SHA_KEY = "behavior_sha256"
-
-#: Payload key naming WHERE that prose came from. `AUTHOR_SOURCE_PRESERVED` means
-#: the stage kept prose a certified repair patch committed, and it must be STICKY:
-#: otherwise a later re-attestation matches its own recorded sha, re-authors from
-#: the unchanged view and quietly undoes the repair one stage later.
-AUTHOR_SOURCE_KEY = "source"
-AUTHOR_SOURCE_PRESERVED = "repair_patch_preserved"
-
-#: A draft the author submitted but the deterministic prose-fidelity gate
-#: rejected.  It is still the exact artifact a SPECIFICATION repair must edit;
-#: dropping it leaves the proposer staring at an empty ``solver_prompt`` and
-#: makes every otherwise-repairable author failure an inert round.
-AUTHOR_SOURCE_CANDIDATE = "authored_candidate"
-
-#: Provenance keys for bounded author revisions. One-shot rows omit them and
-#: remain byte-identical when the session is disabled.
-AUTHOR_SOURCE_REVISED = "authored_revised"
-AUTHOR_REVISIONS_KEY = "revisions"
-AUTHOR_DRAFTS_KEY = "drafts"
-AUTHOR_SESSION_TERMINAL_KEY = "session_terminal"
-AUTHOR_SESSION_SHA_KEY = "session_sha256"
-AUTHOR_SESSION_REPORTS_REL = Path("reports") / "sessions"
-
-
-def _author_session_block(provider) -> dict | None:
-    """The author's declared `session:` block, read from the agents document
-    THIS provider's routing was loaded from, or None unless the bounded
-    revision is enabled — `enabled` AND `max_revisions > 0`
-    (`validators.author_session_enabled`; either key alone is the rollback)
-    — and the provider can run a session. Under the shipped config this is
-    None and the stage calls `council.author_prose` byte for byte."""
-    from elt_taskgen.review import providers as providers_mod
-    from elt_taskgen.review.tools import validators as author_tools
-
-    if not callable(getattr(provider, "run_session", None)):
-        return None  # one-shot providers and lightweight doubles stay one-shot
-    try:
-        block = providers_mod.role_loop_limits(
-            "semantic_author", agents_config=getattr(provider, "agents_config", None)
-        )
-    except Exception:  # noqa: BLE001 - an unreadable declaration enables nothing
-        return None
-    return dict(block) if author_tools.author_session_enabled(block) else None
-
-
-def _persist_author_session(workspace: Path | None, task: TaskIR, record: dict) -> None:
-    """Write the session record under `tasks/<id>/reports/sessions/` (the
-    stage runner's job per `RoutedProvider.run_session`; `reports/` is outside
-    the repair snapshot). The transcript entries and the evidence row are the
-    records of authority, so a write failure loses a convenience copy only."""
-    result = record.get("result")
-    if workspace is None or result is None:
-        return
-    as_dict = getattr(result, "as_dict", None)
-    precheck = record.get("precheck")
-    document = {
-        "role": "semantic_author",
-        "session": as_dict() if callable(as_dict) else None,
-        "revisions": int(record.get("revisions", 0) or 0),
-        "drafts": int(record.get("drafts", 0) or 0),
-        "terminal": str(record.get("terminal", "") or ""),
-        "contamination_precheck": (
-            precheck.model_dump(mode="json") if hasattr(precheck, "model_dump") else None
-        ),
-    }
-    digest = str(getattr(result, "session_sha256", "") or "")[:12] or "session"
-    target = Path(workspace) / "tasks" / task.task_id / AUTHOR_SESSION_REPORTS_REL
-    try:
-        target.mkdir(parents=True, exist_ok=True)
-        (target / f"semantic_author.{digest}.json").write_text(
-            json.dumps(document, indent=2, sort_keys=True, default=str) + "\n",
-            encoding="utf-8",
-        )
-    except OSError:
-        return
-
-
-def _development_snapshot_for(engine: Engine, task: TaskIR) -> str:
-    """Example DEVELOPMENT rows for the author's view, or '' when unavailable.
-
-    Two tasks of one library shape were described in the same sentences while
-    the author saw no data; those repeats then queued as borderline collisions
-    between our own tasks (batch50, 2026-09-19). Duck-typed stand-ins without a
-    task directory, and stages that run before `generate`, simply get no rows.
-    """
-    from elt_taskgen.generation import dataset_context
-
-    task_dir = getattr(engine, "task_dir", None)
-    if not callable(task_dir):
-        return ""
-    try:
-        return dataset_context.development_snapshot(
-            task, Path(task_dir(task.task_id)) / "populations"
-        )
-    except OSError:
-        return ""
-
-
-def _author_prose_for(engine: Engine, task: TaskIR, provider) -> tuple[str, dict[str, str]]:
-    """The author's prose and the ledger data its provenance adds: the
-    unchanged `council.author_prose` (no data) unless the bounded revision
-    session is enabled, then `council.author_prose_session` under the author
-    tools and policy (`validators.author_policy`), the workspace's
-    contamination index armed for the final-draft precheck, and the session
-    record persisted beside the task's reports."""
-    from elt_taskgen.review import council
-    from elt_taskgen.review.tools import validators as author_tools
-
-    snapshot = _development_snapshot_for(engine, task)
-    block = _author_session_block(provider)
-    if block is None:
-        return council.author_prose(task, provider, dataset_snapshot=snapshot), {}
-# Salt reruns from the current ledger count so each gets a distinct transcript.
-    counter = getattr(engine, "session_limit_reruns", None)
-    salt = int(counter(task.task_id, "author")) if callable(counter) else 0
-    policy = author_tools.author_policy(author_tools.author_limits(block), session_salt=salt)
-    workspace = getattr(engine, "workspace", None)
-    index = None
-    if workspace is not None:
-        index = _contamination_index(engine)
-        _arm_contamination_index(index, announce=False)
-    record: dict = {}
-    try:
-        prose = council.author_prose_session(
-            task,
-            provider,
-            tools=policy.tools,
-            policy=policy,
-            contamination_index=index,
-            coverage_requirement=_required_firewall_coverage(),
-            record=record,
-            dataset_snapshot=snapshot,
-        )
-    except council.AuthorSessionLimitStop as exc:
-# Persist capped sessions and return a salted BLOCKED result without a repair round.
-        _persist_author_session(workspace, task, exc.record)
-        raise
-    _persist_author_session(workspace, task, record)
-    data = {
-        AUTHOR_SOURCE_KEY: AUTHOR_SOURCE_REVISED,
-        AUTHOR_REVISIONS_KEY: str(int(record.get("revisions", 0) or 0)),
-        AUTHOR_DRAFTS_KEY: str(int(record.get("drafts", 0) or 0)),
-        AUTHOR_SESSION_TERMINAL_KEY: str(record.get("terminal", "") or ""),
-    }
-    digest = str(getattr(record.get("result"), "session_sha256", "") or "")
-    if digest:
-        data[AUTHOR_SESSION_SHA_KEY] = digest
-    return prose, data
-
-
-def _author_answered_current_state(engine: Engine, task_id: str) -> bool:
-    """True iff the LATEST `author` ledger row is a pass.
-
-    After `repair.apply_repair` the latest row is the invalidation FAIL it appended,
-    so False means "the outstanding repair has not been answered yet". No ledger, no
-    proof anything answered anything — fail closed to False."""
-    latest = getattr(engine, "latest_report", None)
-    if latest is None:
-        return False
-    row = latest(task_id, "author")
-    return row is not None and row.verdict == VERDICT_PASS
-
-
-def _last_author_prose_record(engine: Engine, task_id: str) -> tuple[str | None, str]:
-    """Return the latest authored prose digest and source, excluding admin rows."""
-    latest = getattr(engine, "latest_report", None)
-    by_verdict = getattr(engine, "latest_report_with_verdict", None)
-    if latest is None or by_verdict is None:
-        return None, ""
-
-    history = getattr(engine, "report_history", None)
-    if callable(history):
-        rows = list(history(task_id, "author"))
-    else:
-        # Older engines/doubles have no history reader.  Inspect the latest row
-        # first (it may itself be an authored candidate), then the most recent
-        # PASS as the compatibility fallback.  De-duplication is by object id
-        # because minimal doubles need not carry a ledger ``id`` attribute.
-        rows = []
-        current = latest(task_id, "author")
-        passing = by_verdict(task_id, "author", VERDICT_PASS)
-        for row in (current, passing):
-            if row is not None and all(row is not seen for seen in rows):
-                rows.append(row)
-
-    for row in rows:
-        try:
-            payload = json.loads(row.payload_json)
-        except (json.JSONDecodeError, TypeError, AttributeError):
-            continue
-        data = payload.get("data") if isinstance(payload, dict) else None
-        if not isinstance(data, dict):
-            continue
-        value = data.get(AUTHOR_PROSE_SHA_KEY)
-        source = data.get(AUTHOR_SOURCE_KEY)
-        source = str(source) if isinstance(source, str) else ""
-        if not isinstance(value, str) or not value:
-            continue
-        # A FAIL is authored provenance only when the author runner explicitly
-        # labels it.  This excludes repair invalidations, proposer adjudication
-        # rows and arbitrary stage failures even if a future payload happens to
-        # grow a similarly named digest.  PASS rows predate ``source`` and keep
-        # their compatibility semantics.
-        if row.verdict == VERDICT_FAIL and source not in {
-            AUTHOR_SOURCE_CANDIDATE,
-            AUTHOR_SOURCE_REVISED,
-        }:
-            continue
-        if row.verdict not in (VERDICT_PASS, VERDICT_FAIL):
-            continue
-        return value, source
-    return None, ""
-
-
-def make_author_runner(provider):
-    """Build semantic prose, then require deterministic fidelity to the TaskIR.
-
-    Preserve repaired prose. Reject unchanged prose after an unresolved
-    specification repair.
-    """
-
-    def run_author(engine: Engine, task: TaskIR) -> StageOutcome:
-        from elt_taskgen.review import council, prose_fidelity
-        from elt_taskgen.review.model_specification import author_if_configured
-        from elt_taskgen.review import providers as providers_mod
-
-        author_behavior = {
-            AUTHOR_BEHAVIOR_SHA_KEY: providers_mod.role_behavior_sha256(
-                "semantic_author",
-                agents_config=getattr(provider, "agents_document", None),
-            )
-        }
-
-        # FIRST, before the provider is consulted at all: a task referencing a
-        # table, column, key or relationship the published bundle does not contain
-        # cannot be authored into a solvable spec, and code certifies that.
-        incomplete = _structural_failure_detail(task)
-        if incomplete is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                StagePayload(error=incomplete),
-                route=RepairRoute.SPECIFICATION,
-            )
-
-        # Verify required mutants before provider spend.
-        unreproducible = _attack_matrix_failure_detail(engine, task)
-        if unreproducible is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                StagePayload(error=unreproducible),
-                route=RepairRoute.POPULATION,
-            )
-
-        # Same admission gate as the review stage: no live authoring spend
-        # before the council is proven effective (replay-only is exempt).
-        not_admitted, admission = _admission_gate(
-            provider, getattr(engine, "workspace", None)
-        )
-        if not_admitted is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                StagePayload(error=not_admitted, infrastructure="not_admitted"),
-            )
-        _stamp_admission(provider, admission)
-        _begin_task_evidence(provider, task)
-
-        stored = task.solver_prompt or ""
-        last_sha, last_source = _last_author_prose_record(engine, task.task_id)
-        stored_sha = hashlib.sha256(stored.encode("utf-8")).hexdigest()
-        # (A) The prose moved since authoring last wrote it => a certified
-        # SPECIFICATION patch committed. Do not call the provider: the only
-        # completion it can return is the one the patch replaced. And once
-        # preserved, STAY preserved while the bytes are unchanged.
-        repaired_externally = (
-            bool(stored)
-            and last_sha is not None
-            and (last_sha != stored_sha or last_source == AUTHOR_SOURCE_PRESERVED)
-        )
-        if repaired_externally:
-            problems = prose_fidelity.check_prose_fidelity(task)
-            if problems:
-                return StageOutcome(
-                    VERDICT_FAIL,
-                    StagePayload(
-                        error=(
-                            f"prose fidelity: {len(problems)} MartSpec item(s) "
-                            "not represented in the REPAIRED prose — "
-                            + "; ".join(problems)
-                        ),
-                        data={"gate": prose_fidelity.GATE_NAME, **author_behavior},
-                    ),
-                    route=RepairRoute.SPECIFICATION,
-                )
-            try:
-                public_task = author_if_configured(task, provider)
-            except ValueError as exc:
-                return StageOutcome(VERDICT_FAIL, StagePayload(error=str(exc)),
-                                    route=RepairRoute.SPECIFICATION)
-            return StageOutcome(
-                VERDICT_PASS,
-                StagePayload(
-                    detail=(
-                        f"repaired solver prose PRESERVED ({len(stored)} "
-                        f"chars, sha {stored_sha[:12]}): "
-                        + (
-                            "still the repaired text this stage preserved "
-                            "before"
-                            if last_sha == stored_sha
-                            else "it was patched since this stage last "
-                            f"authored (recorded {last_sha[:12]})"
-                        )
-                        + "; re-authoring would revert it, because the author "
-                        "view does not contain solver_prompt. Fidelity gate "
-                        "green"
-                    ),
-                    data={
-                        AUTHOR_PROSE_SHA_KEY: stored_sha,
-                        AUTHOR_SOURCE_KEY: AUTHOR_SOURCE_PRESERVED,
-                        **author_behavior,
-                        **admission,
-                    },
-                ),
-                task=public_task if public_task != task else None,
-            )
-
-        # Use bounded revisions only when enabled; otherwise keep one-shot rows
-        # unchanged. A cap with no draft blocks the seat without starting a round.
-        try:
-            prose, session_data = _author_prose_for(engine, task, provider)
-        except council.AuthorSessionLimitStop as exc:
-            return council.author_session_limit_outcome(exc, engine, task)
-        updated = task.model_copy(update={"solver_prompt": prose})
-
-        prose_sha = hashlib.sha256(prose.encode("utf-8")).hexdigest()
-        problems = prose_fidelity.check_prose_fidelity(updated)
-        if problems:
-            return StageOutcome(
-                VERDICT_FAIL,
-                StagePayload(
-                    error=(
-                        f"prose fidelity: {len(problems)} MartSpec item(s) "
-                        "not represented in the authored prose — "
-                        + "; ".join(problems)
-                    ),
-                    data={
-                        "gate": prose_fidelity.GATE_NAME,
-                        AUTHOR_PROSE_SHA_KEY: prose_sha,
-                        AUTHOR_SOURCE_KEY: AUTHOR_SOURCE_CANDIDATE,
-                        **author_behavior,
-                        # A bounded-session candidate retains the more precise
-                        # ``authored_revised`` source and its trajectory fields;
-                        # the one-shot rollback path uses authored_candidate.
-                        **session_data,
-                    },
-                ),
-                route=RepairRoute.SPECIFICATION,
-                # A red draft is not accepted prose, but it is the exact
-                # specification artifact the repair route must see and edit.
-                # Engine persists an outcome task before invoking the proposer,
-                # binding this candidate and its provenance row to one hash.
-                task=updated,
-            )
-
-        try:
-            updated = author_if_configured(updated, provider)
-        except ValueError as exc:
-            return StageOutcome(VERDICT_FAIL, StagePayload(error=str(exc)),
-                                route=RepairRoute.SPECIFICATION, task=updated)
-
-        if prose == stored:
-            # (B) Unchanged prose is only honest OUTSIDE an UNANSWERED repair;
-            # `_author_answered_current_state` keeps an ordinary re-attestation from
-            # being read as the repair's first, empty answer.
-            spec_repair = _pending_specification_repair(task)
-            if spec_repair is not None and not _author_answered_current_state(
-                engine, task.task_id
-            ):
-                return StageOutcome(
-                    VERDICT_FAIL,
-                    StagePayload(
-                        error=(
-                            "INERT SPECIFICATION REPAIR: revision "
-                            f"{spec_repair.revision} was a specification repair "
-                            f"({spec_repair.reason!r}) whose whole purpose is "
-                            "new solver prose, and re-authoring produced "
-                            f"BYTE-IDENTICAL prose (sha {prose_sha[:12]}). "
-                            "Nothing patched task_ir.json, and the author view "
-                            "is a pure function of an IR the repair did not "
-                            "touch, so the rendered view — and therefore the "
-                            "transcript key and the provider's answer — could "
-                            "not move. Failing on this round rather than "
-                            "recording 'solver prose unchanged' as a PASS and "
-                            "handing the same prose back to the same council: "
-                            "the defect is in the repair path, not the prose."
-                        ),
-                        data={
-                            AUTHOR_PROSE_SHA_KEY: prose_sha,
-                            "repair_route": spec_repair.route.value,
-                            "repair_revision": str(spec_repair.revision),
-                            **author_behavior,
-                        },
-                    ),
-                    # EXPLICIT route, never keyword-guessed ("rendered view" would
-                    # read as RUNTIME evidence). The engine's inert-repair rule then
-                    # rejects on the unchanged fingerprint — ONE round, not three.
-                    route=RepairRoute.SPECIFICATION,
-                )
-            return StageOutcome(
-                VERDICT_PASS,
-                StagePayload(
-                    detail="solver prose unchanged; fidelity gate green",
-                    data={
-                        AUTHOR_PROSE_SHA_KEY: prose_sha,
-                        **author_behavior,
-                        **admission,
-                        **session_data,
-                    },
-                ),
-                task=updated if updated != task else None,
-            )
-        return StageOutcome(
-            VERDICT_PASS,
-            StagePayload(
-                detail=f"solver prose authored ({len(prose)} chars); fidelity "
-                "gate green; content hash moves, all stages re-attest",
-                data={
-                    AUTHOR_PROSE_SHA_KEY: prose_sha,
-                    **author_behavior,
-                    **admission,
-                    **session_data,
-                },
-            ),
-            task=updated,
-        )
-
-    return run_author
-
-
-def _pending_specification_repair(task: TaskIR):
-    """The task's current revision when it is a SPECIFICATION repair, else None.
-
-    Read off `TaskIR.revisions`, so it survives a crash, a resume and a trial copy
-    with no ledger query. Revision 1 is the intake anchor, never a repair."""
-    if not task.revisions:
-        return None
-    entry = task.revisions[-1]
-    return entry if entry.route is RepairRoute.SPECIFICATION else None
-
-
-def make_review_runner(provider):
-    """`review`: council review. Findings only; the council can block (fatal
-    findings fail the stage) but has no acceptance vocabulary."""
-
-    def run_review(engine: Engine, task: TaskIR) -> StageOutcome:
-        from elt_taskgen.models import CouncilRole
-        from elt_taskgen.review import council
-
-        # BEFORE THE FOUR CRITICS ARE PAID: the structural half of the feasibility
-        # question is certified by code, not by a seat — a plan naming an object the
-        # published schemas lack is refused here, with the reference site named.
-        incomplete = _structural_failure_detail(task)
-        if incomplete is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                ReviewPayload(findings=(), fatal_count=0, detail=incomplete),
-                route=RepairRoute.SPECIFICATION,
-            )
-
-        # Independently verify required mutants before paying critics.
-        unreproducible = _attack_matrix_failure_detail(engine, task)
-        if unreproducible is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                ReviewPayload(findings=(), fatal_count=0, detail=unreproducible),
-                route=RepairRoute.POPULATION,
-            )
-
-        # Reject prose attribution that contradicts the frozen reference before spend.
-        misattributed = _attribution_failure_detail(engine, task)
-        if misattributed is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                ReviewPayload(findings=(), fatal_count=0, detail=misattributed),
-                route=RepairRoute.SPECIFICATION,
-            )
-
-        not_admitted, admission = _admission_gate(
-            provider, getattr(engine, "workspace", None)
-        )
-        if not_admitted is not None:
-            return StageOutcome(
-                VERDICT_FAIL,
-                ReviewPayload(findings=(), fatal_count=0, detail=not_admitted),
-                # STRUCTURED, because the detail text must not be keyword-
-                # scanned: a council finding is free prose and may say anything.
-                infrastructure="not_admitted",
-            )
-        _stamp_admission(provider, admission)
-        manifest_required = _begin_task_evidence(provider, task)
-
-        try:
-            findings = council.run_council(task, provider)
-            # The same protocol boundary protects one-shot and harness-validated
-            # critics. It runs before a finding can be mistaken for a task defect.
-            validated_findings = _validated_executable_findings(task, findings)
-        except council.ProviderProtocolError as exc:
-            return _critic_protocol_block(
-                f"critic protocol failure: {type(exc).__name__}: {exc}"
-            )
-        fatal = [f for f in findings if f.severity is Severity.FATAL]
-        transcript_manifest, manifest_problems = _validated_review_manifest(
-            provider, task, findings, required=manifest_required
-        )
-        if manifest_required:
-            _write_review_transcript_manifest(
-                engine, task, transcript_manifest, manifest_problems
-            )
-        payload = ReviewPayload(
-            findings=tuple(findings),
-            fatal_count=len(fatal),
-            detail=f"{len(findings)} finding(s), {len(fatal)} fatal",
-            admission=admission,
-            transcript_manifest=transcript_manifest,
-        )
-        if manifest_problems:
-            return _critic_protocol_block(
-                payload.detail
-                + "; transcript manifest integrity failure: "
-                + "; ".join(manifest_problems),
-                failure_code=CRITIC_MANIFEST_FAILURE_CODE,
-                recovery_prerequisite=CRITIC_MANIFEST_RECOVERY,
-            )
-        # The screened list: a voided finding (withdrawn by its provider's
-        # disposition, or a proposal against a rule no mart declares) is INFO
-        # and holds nothing.
-        pending_adjudication = _critic_adjudication_block(validated_findings)
-        if pending_adjudication is not None:
-            return pending_adjudication
-        if fatal:
-            # A prose leak is repairable by rewriting the prose (specification
-            # route); the bounded repair budget rejects a non-converging task.
-            return StageOutcome(
-                VERDICT_FAIL, payload, route=RepairRoute.SPECIFICATION
-            )
-        # Diligence requires a validated executable probe; prose and bare
-        # suggestions are not evidence. Use the shared predicate everywhere.
-        shortcut = [
-            finding
-            for finding in validated_findings
-            if finding.role is CouncilRole.SHORTCUT_ATTACKER
-        ]
-        probes = [finding for finding in shortcut if council.is_executable_probe(finding)]
-        if not probes:
-            diligence_detail = (
-                "diligence protocol failure: shortcut_attacker returned "
-                f"{len(shortcut)} finding(s) and zero executable probes "
-                "(requires severity minor or higher plus a matching validated "
-                "suggested_attack/proposed_case) — no evidence the shortcut "
-                "surface was examined"
-            )
-            if _attacker_corrected_in_session(transcript_manifest):
-                # A corrected session that still lacks a probe is a repairable
-                # seat outcome. Fail on its route so review can rerun fresh.
-                return StageOutcome(
-                    VERDICT_FAIL,
-                    payload.model_copy(
-                        update={
-                            "detail": (
-                                payload.detail + "; " + diligence_detail
-                                + "; the attacker session was corrected in-session "
-                                "and still handed off no executable probe"
-                            )
-                        }
-                    ),
-                    route=RepairRoute.SPECIFICATION,
-                )
-            return _critic_protocol_block(
-                diligence_detail,
-                failure_code=CRITIC_DILIGENCE_FAILURE_CODE,
-                recovery_prerequisite=CRITIC_DILIGENCE_RECOVERY,
-            )
-        return StageOutcome(VERDICT_PASS, payload)
-
-    return run_review
-
-
-def _attacker_corrected_in_session(transcript_manifest) -> bool:
-    """Whether the shortcut attacker's exchange row is a harness-validated
-    SESSION row (entry schema 3) on which the seat was corrected: a compile
-    correction was issued (`correction_kinds.compile`), or the accepted
-    payload was still red at submit and voided post-session
-    (`submitted_with_red_validators`).  A one-shot row, a duck-typed
-    provider without evidence, or a session that was never corrected says
-    False — the diligence failure then stays the protocol block it was."""
-    for row in tuple(transcript_manifest or ()):
-        if not isinstance(row, dict) or str(row.get("role") or "") != "shortcut_attacker":
-            continue
-        try:
-            if int(row.get("entry_schema") or 0) < 3:
-                return False
-            kinds = row.get("correction_kinds")
-            compile_corrections = (
-                int(kinds.get("compile") or 0) if isinstance(kinds, dict) else 0
-            )
-            red_at_submit = int(row.get("submitted_with_red_validators") or 0)
-        except (TypeError, ValueError):
-            return False
-        return compile_corrections > 0 or red_at_submit > 0
-    return False
-
-
-def _recorded_variant_rewards(
-    engine: Engine, task: TaskIR, rewards: dict[str, dict[str, float]]
-) -> dict[str, dict[str, dict[str, float]]]:
-    """variant -> case -> population -> reward, read back from attacks/*/rewards.json.
-
-    Reading back (never re-scoring) keeps the composite diagnostic and both unit
-    rewards on ONE execution. A record whose `task_content_hash` is not the current
-    one is DROPPED, so the batteries see MISSING evidence rather than stale."""
-    current = task.content_hash()
-    out: dict[str, dict[str, dict[str, float]]] = {}
-    attacks_root = engine.task_dir(task.task_id) / "attacks"
-    for case_name in sorted(rewards):
-        path = attacks_root / case_name / "rewards.json"
-        if not path.is_file():
-            continue
-        try:
-            record = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            continue
-        if record.get("task_content_hash") != current:
-            continue
-        by_variant = record.get("rewards_by_variant")
-        if not isinstance(by_variant, dict):
-            continue
-        # Transpose to the shape the batteries consume: they ask for ONE
-        # variant's whole attack matrix, so the variant is the outer key.
-        for variant_value, per_population in by_variant.items():
-            if isinstance(per_population, dict):
-                out.setdefault(str(variant_value), {})[case_name] = {
-                    str(pop): float(value)
-                    for pop, value in per_population.items()
-                }
-    return out
-
-
-_ATTACK_FINDING_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_.\-]{0,127}")
-_MAX_ATTACK_FINDING_IDENTIFIERS = 16
-
-
-def _confirmed_live_exploit(finding: Finding, outcomes_by_id: dict[str, object]) -> bool:
-    """Whether measurement proved this finding's wrong program passes everywhere."""
-    outcome = outcomes_by_id.get(finding.finding_id)
-    return bool(
-        outcome is not None
-        and not outcome.promoted
-        and outcome.measured_pass
-        and all(outcome.measured_pass.values())
-    )
-
-
-def _selected_blocking_finding(findings: list[Finding], outcomes=()) -> Finding | None:
-    """Select exactly one repair subject without consulting model-authored prose.
-
-    A measured live exploit has priority because it is the strongest artifact
-    and retains the historical POPULATION rule.  Otherwise the finding id that
-    the harness assigned is the stable order; role and severity are tie-breakers
-    only for malformed hand-built inputs with duplicate ids.
-    """
-    by_id = {outcome.finding_id: outcome for outcome in outcomes}
-    ordered = sorted(
-        findings,
-        key=lambda finding: (
-            finding.finding_id,
-            finding.role.value,
-            finding.severity.value,
-        ),
-    )
-    measured = [
-        finding for finding in ordered if _confirmed_live_exploit(finding, by_id)
-    ]
-    if measured:
-        return measured[0]
-    return ordered[0] if ordered else None
-
-
-def _attack_finding_descriptor(task: TaskIR, finding: Finding) -> AttackFindingDescriptor:
-    """Project one finding to role/severity plus public identifiers in its text.
-
-    Token extraction sees only ``summary`` and ``detail``.  Exact membership in
-    ``PublicIdentifierSet`` removes hidden population names, literal values,
-    paths and arbitrary prose.  Sorting/deduplication and the fixed cap make the
-    projection canonical and keep the repair evidence bounded.
-    """
-    from elt_taskgen.review.tools.projection import PublicIdentifierSet
-
-    public = PublicIdentifierSet(task)
-    text = f"{finding.summary}\n{finding.detail}"
-    identifiers = tuple(
-        sorted(
-            {
-                token
-                for token in _ATTACK_FINDING_TOKEN_RE.findall(text)
-                if token in public
-            }
-        )[:_MAX_ATTACK_FINDING_IDENTIFIERS]
-    )
-    return AttackFindingDescriptor(
-        role=finding.role,
-        severity=finding.severity,
-        identifiers=identifiers,
-    )
-
-
-def _proposal_failure_route(findings: list[Finding], outcomes=()) -> RepairRoute:
-    """Route blocking handoff failures from trusted role and promoter evidence."""
-    outcomes = tuple(outcomes)
-    selected = _selected_blocking_finding(findings, outcomes)
-    if selected is None:
-        return RepairRoute.SPECIFICATION
-    by_id = {outcome.finding_id: outcome for outcome in outcomes}
-    if _confirmed_live_exploit(selected, by_id):
-        return RepairRoute.POPULATION
-    if selected.role is CouncilRole.POPULATION_ADVERSARY:
-        return RepairRoute.POPULATION
-    return RepairRoute.SPECIFICATION
-
-
-_SCHEMA_EQUIVALENT_SOURCE_DEDUP_PROOF = (
-    "source_distinct_over_declared_primary_key_v1"
-)
-#: ``zero_is_missing`` is an identity when every touched default is zero, so it
-#: cannot be treated as a live exploit for that task.
-_SCHEMA_EQUIVALENT_ZERO_DEFAULT_PROOF = "zero_is_missing_over_zero_defaults_v1"
-
-
-def _zero_default_equivalence_proof(task: TaskIR, finding: Finding, outcome, attacks_mod) -> dict[str, object] | None:
-    """Prove every realized ``zero_is_missing`` rewrite is a zero-default identity."""
-    import sqlglot
-    from sqlglot import exp
-
-    proposal = finding.proposed_case
-    if not _names_zero_is_missing(proposal):
-        return None
-    if not _measured_all_true_with_fidelity(outcome):
-        return None
-    compiler = outcome.fidelity.get("compiler")
-    if not isinstance(compiler, dict) or compiler.get("passed") is not True:
-        return None
-    targets = _zero_is_missing_realized_targets(compiler.get("realized"))
-    if targets is None:
-        return None
-    marts = {mart.name: mart for mart in task.marts}
-    sites = 0
-    for name in targets:
-        mart = marts.get(str(name))
-        gold_sql = dict(task.reference.sql_by_mart).get(str(name))
-        if mart is None or not gold_sql:
-            return None
-        try:
-            mutated = attacks_mod._apply_kind(
-                AttackKind.NO_NULL_DEFAULT, gold_sql, mart, "zero_is_missing"
-            )
-        except Exception:  # noqa: BLE001 - a compiler error is not a proof
-            return None
-        if not mutated:
-            return None
-        try:
-            ast = sqlglot.parse_one(mutated, read="duckdb")
-            gold_ast = sqlglot.parse_one(gold_sql, read="duckdb")
-        except Exception:  # noqa: BLE001
-            return None
-        # The gold's OWN NULLIFs (a divisor guard such as `x / NULLIF(n, 0)`)
-        # are not sites the variant introduced; they must survive unchanged.
-        gold_nullifs = [node.sql(dialect="duckdb") for node in gold_ast.find_all(exp.Nullif)]
-        for nullif in ast.find_all(exp.Nullif):
-            parent = nullif.parent
-            zero = nullif.expression
-            if not (isinstance(parent, exp.Coalesce) and parent.this is nullif):
-                if nullif.sql(dialect="duckdb") in gold_nullifs:
-                    gold_nullifs.remove(nullif.sql(dialect="duckdb"))
-                    continue
-                return None
-            if not (
-                isinstance(zero, exp.Literal)
-                and not zero.is_string
-                and float(zero.name) == 0.0
-            ):
-                return None
-            defaults = list(parent.expressions)
-            if len(defaults) != 1:
-                return None
-            default = defaults[0]
-            if not (isinstance(default, exp.Literal) and not default.is_string):
-                return None
-            try:
-                if float(default.name) != 0.0:
-                    return None
-            except ValueError:
-                return None
-            sites += 1
-        if gold_nullifs:
-            # A gold NULLIF the mutant no longer carries: not this variant.
-            return None
-    if sites == 0:
-        return None
-    return {
-        "proved": True,
-        "proof": _SCHEMA_EQUIVALENT_ZERO_DEFAULT_PROOF,
-        "operation": "zero_is_missing",
-        "form": (
-            "variant"
-            if "variant" in dict(proposal.params)
-            else "operation_key"
-        ),
-        "marts": [str(name) for name in targets],
-        "sites": sites,
-    }
-
-
-def _names_zero_is_missing(proposal) -> bool:
-    """Recognize either schema spelling of only the ``zero_is_missing`` rewrite."""
-    if proposal is None:
-        return False
-    params = dict(proposal.params)
-    if params.get("zero_is_missing") is True:
-        # The compiler admits the operation key under `no_null_default` or
-        # `custom` and materializes both through the same rewrite.
-        if proposal.kind not in (AttackKind.NO_NULL_DEFAULT, AttackKind.CUSTOM):
-            return False
-        return not (set(params) - {"zero_is_missing"})
-    if params.get("variant") == "zero_is_missing":
-        if proposal.kind is not AttackKind.NO_NULL_DEFAULT:
-            return False
-        return not (set(params) - {"variant"})
-    return False
-
-
-def _zero_is_missing_realized_targets(realized) -> list[str] | None:
-    """The marts the compiler's fidelity record says the `zero_is_missing`
-    rewrite changed, read from either record shape the compiler emits for
-    it: `{"operation": "zero_is_missing", "marts": [...]}` for the
-    operation-key proposal and `{"operation": "kind", "kind":
-    "no_null_default", "variant": "zero_is_missing", "target_marts": [...]}`
-    for the variant proposal. None when the record is not this rewrite or
-    names no mart."""
-    if not isinstance(realized, dict):
-        return None
-    if realized.get("operation") == "zero_is_missing":
-        targets = realized.get("marts")
-    elif (
-        realized.get("operation") == "kind"
-        and realized.get("kind") == AttackKind.NO_NULL_DEFAULT.value
-        and realized.get("variant") == "zero_is_missing"
-    ):
-        targets = realized.get("target_marts")
-    else:
-        return None
-    if not isinstance(targets, list) or not targets:
-        return None
-    if not all(isinstance(target, str) and target for target in targets):
-        return None
-    return [str(target) for target in targets]
-
-
-#: Dropping the frame is an identity for MAX/DESC or MIN/ASC over the same
-#: column, so those cases are not live exploits.
-_SCHEMA_EQUIVALENT_DROP_FRAME_PROOF = "drop_frame_over_self_ordered_extremes_v1"
-
-
-def _names_drop_frame(proposal) -> bool:
-    if proposal is None or proposal.kind is not AttackKind.WRONG_WINDOW:
-        return False
-    params = dict(proposal.params)
-    if str(params.get("variant", "") or "") != "drop_frame":
-        return False
-    return not (set(params) - {"variant"})
-
-
-def _drop_frame_equivalence_proof(task: TaskIR, finding: Finding, outcome, attacks_mod) -> dict[str, object] | None:
-    """Prove `drop_frame` is an identity on this task's gold: every framed
-    window the variant touches is MAX(c) ordered by c DESC or MIN(c) ordered
-    by c ASC, with that one ordering key. Anything else fails closed."""
-    import sqlglot
-    from sqlglot import exp
-
-    if not _names_drop_frame(finding.proposed_case):
-        return None
-    if not _measured_all_true_with_fidelity(outcome):
-        return None
-    compiler = outcome.fidelity.get("compiler")
-    if not isinstance(compiler, dict) or compiler.get("passed") is not True:
-        return None
-    realized = compiler.get("realized")
-    if not isinstance(realized, dict) or realized.get("variant") != "drop_frame":
-        return None
-    targets = realized.get("target_marts")
-    if not isinstance(targets, list) or not targets:
-        return None
-    sites = 0
-    for name in targets:
-        gold_sql = dict(task.reference.sql_by_mart).get(str(name))
-        if not gold_sql:
-            return None
-        try:
-            ast = sqlglot.parse_one(gold_sql, read="duckdb")
-        except Exception:  # noqa: BLE001
-            return None
-        for window in ast.find_all(exp.Window):
-            if window.args.get("spec") is None:
-                continue
-            func = window.this
-            if not isinstance(func, (exp.Max, exp.Min)):
-                return None
-            column = func.this
-            if not isinstance(column, exp.Column):
-                return None
-            order = window.args.get("order")
-            keys = list(order.expressions) if order is not None else []
-            if len(keys) != 1 or not isinstance(keys[0], exp.Ordered):
-                return None
-            key = keys[0]
-            if not (isinstance(key.this, exp.Column) and key.this.name == column.name):
-                return None
-            descending = bool(key.args.get("desc"))
-            if isinstance(func, exp.Max) and not descending:
-                return None
-            if isinstance(func, exp.Min) and descending:
-                return None
-            sites += 1
-    if sites == 0:
-        return None
-    return {
-        "proved": True,
-        "proof": _SCHEMA_EQUIVALENT_DROP_FRAME_PROOF,
-        "operation": "drop_frame",
-        "marts": [str(name) for name in targets],
-        "sites": sites,
-    }
-
-
-def _drop_frame_identity_accepted(proposal, outcome) -> bool:
-    """The read-side check of `_drop_frame_equivalence_proof`'s record."""
-    if not _names_drop_frame(proposal):
-        return False
-    proof = outcome.fidelity.get("schema_equivalence")
-    if not isinstance(proof, dict):
-        return False
-    if (
-        proof.get("proved") is not True
-        or proof.get("proof") != _SCHEMA_EQUIVALENT_DROP_FRAME_PROOF
-        or proof.get("operation") != "drop_frame"
-    ):
-        return False
-    sites = proof.get("sites")
-    marts = proof.get("marts")
-    if not isinstance(sites, int) or sites < 1:
-        return False
-    if not isinstance(marts, list) or not marts or not all(isinstance(m, str) and m for m in marts):
-        return False
-    return _measured_all_true_with_fidelity(outcome)
-
-
-def _zero_default_identity_accepted(proposal, outcome) -> bool:
-    """The read-side check of `_zero_default_equivalence_proof`'s record."""
-    if not _names_zero_is_missing(proposal):
-        return False
-    proof = outcome.fidelity.get("schema_equivalence")
-    if not isinstance(proof, dict):
-        return False
-    if (
-        proof.get("proved") is not True
-        or proof.get("proof") != _SCHEMA_EQUIVALENT_ZERO_DEFAULT_PROOF
-        or proof.get("operation") != "zero_is_missing"
-    ):
-        return False
-    sites = proof.get("sites")
-    marts = proof.get("marts")
-    if not isinstance(sites, int) or sites < 1:
-        return False
-    if not isinstance(marts, list) or not marts or not all(isinstance(m, str) and m for m in marts):
-        return False
-    return _measured_all_true_with_fidelity(outcome)
-
-
-def _validated_executable_findings(
-    task: TaskIR, findings: list[Finding]
-) -> list[Finding]:
-    """Return compiler-valid executable findings or a protocol failure.
-
-    Malformed executable content blocks as provider protocol. Missing major or
-    fatal proposals remain unresolved claims for bounded repair; bare prose
-    observations remain reviewable.
-    """
-    from elt_taskgen.review.council import ProviderProtocolError
-    from elt_taskgen.verification import attacks as attacks_mod
-
-    # Preserve the provider's exact kind and parameters.  The closed compiler
-    # either accepts that handoff as written or reports a protocol failure; it
-    # never rewrites a kind merely to reach a compatible implementation.
-    from elt_taskgen.review.council import _void
-
-    executable = list(findings)
-    problems: list[str] = []
-    # Malformed output after an available compile correction is a protocol
-    # failure. One-shot output is voided while unresolved major claims still repair.
-    voided: dict[int, Finding] = {}
-
-    def _refuse(index: int, finding: Finding, detail: str) -> None:
-        if _seat_has_compile_channel(finding.role):
-            problems.append(detail)
-            return
-        voided[index] = _void(
-            finding,
-            [UNCOMPILABLE_NO_CHANNEL_SIGNAL],
-            "proposal withheld: this seat runs no compile validator, so it "
-            "was never told its executable content was malformed",
-        )
-
-    for index, finding in enumerate(executable):
-        claimed_severity, claimed_attack, claimed_proposal = (
-            _claimed_critic_handoff(finding)
-        )
-        if (
-            claimed_severity in {Severity.MAJOR, Severity.FATAL}
-            and claimed_proposal is not None
-            and _proposal_targets_a_rule_the_task_never_states(task, claimed_proposal)
-        ):
-            voided[index] = _void(
-                finding,
-                [MUTATION_TARGETS_NO_DECLARED_RULE_SIGNAL],
-                "the proposed mutation removes a rule no mart of this task "
-                "declares, so omitting it is not a wrong implementation and "
-                "there is no fork; the claim is kept on record and does not block",
-            )
-            continue
-        if (
-            claimed_severity in {Severity.MAJOR, Severity.FATAL}
-            and claimed_proposal is not None
-            and _proposal_names_a_hop_the_task_never_joins(task, claimed_proposal)
-        ):
-            voided[index] = _void(
-                finding,
-                [MUTATION_NAMES_NO_SECOND_HOP_SIGNAL],
-                "the proposed mutation flips a second source-table join that no "
-                "mart of this task has, so it realizes no wrong implementation; "
-                "the claim is kept on record and does not block",
-            )
-            continue
-        if (
-            claimed_severity in {Severity.MAJOR, Severity.FATAL}
-            and claimed_proposal is None
-            and finding.withdrawn
-        ):
-            # Only the provider's structured disposition withdraws a finding,
-            # and only its own. A withdrawal never withholds an executable
-            # proposal here: a finding that carries one is measured as usual.
-            voided[index] = _void(
-                finding,
-                [WITHDRAWN_BY_DISPOSITION_SIGNAL],
-                "the providing critic filed this finding with disposition "
-                "'withdrawn'; the claim is kept on record and does not block",
-            )
-            continue
-        claimed = finding.model_copy(
-            update={
-                "severity": claimed_severity,
-                "suggested_attack": claimed_attack,
-                "proposed_case": claimed_proposal,
-                "screen": None,
-            }
-        )
-        if claimed_severity is Severity.INFO:
-            if claimed_proposal is not None:
-                _refuse(
-                    index,
-                    finding,
-                    f"{finding.finding_id}: informational finding carries a "
-                    "proposed_case even though informational findings are not "
-                    "executable",
-                )
-            continue
-
-        proposal = claimed_proposal
-        if proposal is None:
-            if claimed_attack is None:
-                # A bare observation: reviewed as prose, and at MAJOR an
-                # unresolved claim the repair route answers.
-                continue
-            if claimed_severity in {Severity.MAJOR, Severity.FATAL}:
-                # An unresolved major claim naming a coarse attack: routed
-                # to repair by `_blocking_proposal_failures`, never guessed
-                # into a probe and never a protocol block.
-                continue
-            _refuse(
-                index,
-                finding,
-                f"{finding.finding_id}: actionable {claimed_severity.value} "
-                "finding names an attack but has no proposed_case",
-            )
-            continue
-        if set(proposal.expected_pass_by_stage) != set(RLVR_TASK_VARIANTS):
-            _refuse(
-                index,
-                finding,
-                f"{finding.finding_id}: proposed_case has no complete exact "
-                "extract_load and transform prediction matrix",
-            )
-            continue
-        try:
-            _case, fidelity = attacks_mod.validate_proposed_case(
-                task, claimed, proposal, required=False
-            )
-        except ValueError as exc:
-            _refuse(
-                index,
-                finding,
-                f"{finding.finding_id}: proposed_case is not executable "
-                f"({type(exc).__name__}: {exc})",
-            )
-            continue
-        if not bool(fidelity.get("passed")):
-            errors = tuple(str(value) for value in fidelity.get("errors", ()))
-            _refuse(
-                index,
-                finding,
-                f"{finding.finding_id}: proposed_case failed claim fidelity"
-                + (f" ({'; '.join(errors)})" if errors else ""),
-            )
-    if problems:
-        raise ProviderProtocolError(
-            "critic-to-attack protocol failure: " + "; ".join(problems)
-        )
-    for index, replacement in voided.items():
-        executable[index] = replacement
-    return executable
-
-
-def _claim_suffix(finding) -> str:
-    """Return value-free critic prose needed to describe a blocking claim."""
-    claim = f"{(finding.summary or '').strip()} {(finding.detail or '').strip()}".strip()
-    if not claim:
-        return ""
-    # Apply the repair view's leak screen here so unsafe claim details are
-    # removed before they can halt the entire repair.
-    from elt_taskgen.review.tools import projection as projection_mod
-
-    # Redact refused value shapes but retain the actionable claim text.
-    claim = _redact_claim_shapes(claim, projection_mod)
-    detector = getattr(projection_mod, "_detect_value_shapes", None)
-    if detector is not None and detector(claim) is not None:
-        return ""
-    if projection_mod._MEASURED_VALUE_RE.search(claim):  # noqa: SLF001
-        return ""
-    return f" — the claim to resolve is: {claim}"
-
-
-_CLAIM_WITHHELD = "[withheld]"
-
-
-def _redact_claim_shapes(claim: str, projection_mod) -> str:
-    """Replace every refused value shape in a critic's claim with a marker.
-
-    A count-vector cell keeps its name and loses its number
-    (`child_count=3` -> `child_count=[withheld]`), so the sentence still says
-    which column the critic meant; a key tuple and a measured per-population
-    value are replaced whole. The caller re-runs the detectors afterwards, so
-    anything this misses still costs only the claim, never the repair.
-    """
-    text = claim
-    count_vector = getattr(projection_mod, "_COUNT_VECTOR_RE", None)
-    if count_vector is not None:
-        text = count_vector.sub(
-            lambda m: m.group(0).split("=", 1)[0].rstrip() + "=" + _CLAIM_WITHHELD,
-            text,
-        )
-    key_tuple = getattr(projection_mod, "_KEY_TUPLE_RE", None)
-    if key_tuple is not None:
-        text = key_tuple.sub(_CLAIM_WITHHELD, text)
-    measured = getattr(projection_mod, "_MEASURED_VALUE_RE", None)
-    if measured is not None:
-        text = measured.sub(_CLAIM_WITHHELD, text)
-    return text
-
-
-def _blocking_proposal_failures(
-    findings: list[Finding], outcomes
-) -> tuple[list[Finding], list[str]]:
-    """Return unresolved major claims and confirmed live exploits.
-
-    Discharge only compiler-faithful proposals with confirmed matrices, plus
-    shortcuts killed by every applicable variant on graded populations.
-    """
-    def schema_equivalent_non_exploit(finding: Finding, outcome) -> bool:
-        """Accept only exact identity proofs measured by the harness.
-
-        Fidelity evidence can prove ``DISTINCT`` over primary-keyed rows,
-        zero-default, and drop-frame identities. Require complete, all-true
-        combined and EL/T measurements with passing fidelity through
-        ``_measured_all_true_with_fidelity``. Critic forecasts cannot satisfy
-        this exception or excuse other all-pass shortcuts or mismatches.
-        """
-        proposal = finding.proposed_case
-        if _zero_default_identity_accepted(proposal, outcome):
-            return True
-        if _drop_frame_identity_accepted(proposal, outcome):
-            return True
-        if _names_add_dedup(proposal) is None:
-            return False
-        proof = outcome.fidelity.get("schema_equivalence")
-        if not isinstance(proof, dict):
-            return False
-        if (
-            proof.get("proved") is not True
-            or proof.get("proof") != _SCHEMA_EQUIVALENT_SOURCE_DEDUP_PROOF
-            or proof.get("operation") != "add_dedup"
-        ):
-            return False
-        proof_tables = proof.get("tables")
-        if not isinstance(proof_tables, list) or not proof_tables:
-            return False
-        for table in proof_tables:
-            if not isinstance(table, dict) or set(table) != {
-                "name",
-                "key_kind",
-                "columns",
-            }:
-                return False
-            if table["key_kind"] != "primary_key":
-                return False
-            if not isinstance(table["name"], str) or not table["name"]:
-                return False
-            columns = table["columns"]
-            if (
-                not isinstance(columns, list)
-                or not columns
-                or not all(isinstance(column, str) and column for column in columns)
-            ):
-                return False
-
-        return _measured_all_true_with_fidelity(outcome)
-
-    outcomes = {outcome.finding_id: outcome for outcome in outcomes}
-    blocking_findings: list[Finding] = []
-    problems: list[str] = []
-    for finding in findings:
-        if (
-            finding.screen is not None
-            and finding.screen.status is FindingScreenStatus.VOID
-        ):
-            continue
-        outcome = outcomes.get(finding.finding_id)
-        if outcome is not None and schema_equivalent_non_exploit(finding, outcome):
-            continue
-        is_blocking = False
-        if finding.severity is Severity.MAJOR:
-            if finding.proposed_case is None:
-                is_blocking = True
-                problems.append(
-                    # Include the critic's complaint, not just its ID, so the
-                    # specification repair has actionable evidence. Revalidate
-                    # the public prose before transport to keep it value-free.
-                    f"{finding.finding_id}: major finding has no structured "
-                    f"proposed_case; it is unresolved{_claim_suffix(finding)}"
-                )
-            elif outcome is None and finding.role is CouncilRole.AMBIGUITY_CRITIC:
-                is_blocking = True
-                problems.append(
-                    f"{finding.finding_id}: major ambiguity claim; its executable "
-                    "alternative is withheld from promotion (a two-reading fork is "
-                    "repaired in the prose, never frozen by a mutant), so the claim "
-                    f"is unresolved{_claim_suffix(finding)}"
-                )
-            elif outcome is None:
-                is_blocking = True
-                problems.append(
-                    f"{finding.finding_id}: major proposal has no promotion "
-                    f"outcome{_claim_suffix(finding)}"
-                )
-            elif (
-                not outcome.promoted
-                and not _faithful_shortcut_is_empirically_killed(finding, outcome)
-                and not _population_blind_spot_refuted(finding, outcome)
-            ):
-                is_blocking = True
-                problems.append(
-                    f"{finding.finding_id}: major proposal unresolved — "
-                    f"{outcome.reason}{_claim_suffix(finding)}"
-                )
-            elif set(outcome.predicted_by_stage) != {
-                TaskVariant.EXTRACT_LOAD.value,
-                TaskVariant.TRANSFORM.value,
-            }:
-                is_blocking = True
-                problems.append(
-                    f"{finding.finding_id}: major proposal has no exact EL/T "
-                    f"prediction matrix{_claim_suffix(finding)}"
-                )
-            elif not bool(outcome.fidelity.get("passed")):
-                is_blocking = True
-                problems.append(
-                    f"{finding.finding_id}: major proposal lacks passing mutation "
-                    f"fidelity evidence{_claim_suffix(finding)}"
-                )
-        # Even a minor critic may discover an exploit that keeps full reward
-        # everywhere. It is not safe merely because the severity label was low.
-        if (
-            outcome is not None
-            and not outcome.promoted
-            and outcome.measured_pass
-            and all(outcome.measured_pass.values())
-        ):
-            is_blocking = True
-            problems.append(
-                f"{finding.finding_id}: confirmed attack keeps FULL reward on "
-                f"every population{_claim_suffix(finding)}"
-            )
-        if is_blocking:
-            blocking_findings.append(finding)
-    return blocking_findings, problems
-
-
-def _population_blind_spot_refuted(finding: Finding, outcome) -> bool:
-    """Return whether trusted complete matrices refute a blind-spot claim."""
-    proposal = finding.proposed_case
-    if (
-        finding.role is not CouncilRole.POPULATION_ADVERSARY
-        or proposal is None
-        or outcome.promoted is not False
-        or outcome.kind != proposal.kind.value
-        or outcome.fidelity.get("passed") is not True
-    ):
-        return False
-    populations = {population.value for population in PopulationName}
-
-    def complete_bool_map(values) -> bool:
-        return (
-            isinstance(values, dict)
-            and set(values) == populations
-            and all(type(value) is bool for value in values.values())
-        )
-
-    by_stage = outcome.measured_pass_by_stage
-    transform = (
-        by_stage.get(TaskVariant.TRANSFORM.value) if isinstance(by_stage, dict) else None
-    )
-    if not complete_bool_map(outcome.measured_pass) or not complete_bool_map(transform):
-        return False
-    hidden = [p.value for p in PopulationName if p is not PopulationName.DEVELOPMENT]
-    return any(
-        outcome.measured_pass[p] is False and transform[p] is False for p in hidden
-    )
-
-
-def _measured_all_true_with_fidelity(outcome) -> bool:
-    """Was one rejected proposal MEASURED all-pass on EL and T, with passing
-    fidelity, whatever it predicted? A proved schema identity does not need
-    the critic's forecast to be right: the population adversary on
-    synsql__educational (batch10 run P, 2026-09-11) predicted that stress
-    would catch an added DISTINCT, measured FULL everywhere, and the
-    primary-key proof was never consulted because the forecast mismatched."""
-    populations = {population.value for population in PopulationName}
-
-    def complete_all_true(values) -> bool:
-        return (
-            isinstance(values, dict)
-            and set(values) == populations
-            and all(value is True for value in values.values())
-        )
-
-    stages = {variant.value for variant in RLVR_TASK_VARIANTS}
-    return (
-        outcome.promoted is False
-        and bool(outcome.fidelity.get("passed"))
-        and complete_all_true(outcome.measured_pass)
-        and set(outcome.measured_pass_by_stage) == stages
-        and all(complete_all_true(outcome.measured_pass_by_stage[stage]) for stage in stages)
-    )
-
-
-def _complete_all_true_promotion(outcome) -> bool:
-    """Did one promoter outcome fully predict and measure all-pass EL and T?"""
-    populations = {population.value for population in PopulationName}
-
-    def complete_all_true(values) -> bool:
-        return (
-            isinstance(values, dict)
-            and set(values) == populations
-            and all(value is True for value in values.values())
-        )
-
-    stages = {variant.value for variant in RLVR_TASK_VARIANTS}
-    return (
-        outcome.promoted is False
-        and not outcome.mismatches
-        and bool(outcome.fidelity.get("passed"))
-        and complete_all_true(outcome.predicted)
-        and complete_all_true(outcome.measured_pass)
-        and set(outcome.predicted_by_stage) == stages
-        and set(outcome.measured_pass_by_stage) == stages
-        and all(
-            complete_all_true(outcome.predicted_by_stage[stage])
-            and complete_all_true(outcome.measured_pass_by_stage[stage])
-            for stage in stages
-        )
-    )
-
-
-def _faithful_shortcut_is_empirically_killed(finding: Finding, outcome) -> bool:
-    """Return whether complete faithful matrices kill a shortcut in every applicable variant."""
-    proposal = finding.proposed_case
-    if (
-        finding.role is not CouncilRole.SHORTCUT_ATTACKER
-        or proposal is None
-        or outcome.promoted is not False
-        or outcome.kind != proposal.kind.value
-        or outcome.fidelity.get("passed") is not True
-    ):
-        return False
-
-    populations = {population.value for population in PopulationName}
-    stages = {variant.value for variant in RLVR_TASK_VARIANTS}
-
-    def complete_bool_map(values) -> bool:
-        return (
-            isinstance(values, dict)
-            and set(values) == populations
-            and all(type(value) is bool for value in values.values())
-        )
-
-    combined = outcome.measured_pass
-    measured_by_stage = outcome.measured_pass_by_stage
-    if (
-        not complete_bool_map(combined)
-        or not isinstance(measured_by_stage, dict)
-        or set(measured_by_stage) != stages
-        or not all(
-            complete_bool_map(measured_by_stage[stage]) for stage in stages
-        )
-    ):
-        return False
-
-    extract_load = measured_by_stage[TaskVariant.EXTRACT_LOAD.value]
-    transform = measured_by_stage[TaskVariant.TRANSFORM.value]
-    if any(
-        combined[population] is not (
-            extract_load[population] and transform[population]
-        )
-        for population in populations
-    ):
-        return False
-
-    # Import at the seam so the CLI keeps its existing module dependency shape;
-    # these are the exact kind sets whose gates consume the same measurements.
-    from elt_taskgen.verification import gates as gates_mod
-
-    applicable_stages: list[str] = []
-    if proposal.kind in gates_mod.EL_SHORTCUT_KINDS:
-        applicable_stages.append(TaskVariant.EXTRACT_LOAD.value)
-    if proposal.kind in gates_mod.TRANSFORM_SHORTCUT_KINDS:
-        applicable_stages.append(TaskVariant.TRANSFORM.value)
-    if not applicable_stages:
-        return False
-
-    graded = {population.value for population in gates_mod.GRADED_POPULATIONS}
-    return all(
-        any(measured_by_stage[stage][population] is False for population in graded)
-        for stage in applicable_stages
-    )
-
-
-def _names_add_dedup(proposal) -> str | None:
-    """Return whether a proposal uses the operation-key or variant dedup spelling."""
-    if proposal is None:
-        return None
-    params = dict(proposal.params)
-    # The critic schema uses ``no_dedup`` for the dedup mutation family even
-    # when ``add_dedup=true`` asks the compiler for the inverse operation.
-    # ``custom`` is retained for hand-authored/internal proposals.  The exact
-    # compiler requested/realized operation checks in the proof remain
-    # authoritative.
-    if params.get("add_dedup") is True:
-        if proposal.kind.value not in {"custom", "no_dedup"}:
-            return None
-        if set(params) - {"add_dedup", "dedup_table"}:
-            return None
-        return "operation_key"
-    if params.get("variant") == "add_dedup":
-        if proposal.kind is not AttackKind.CUSTOM:
-            return None
-        if set(params) - {"variant"}:
-            return None
-        return "variant"
-    return None
-
-
-def _source_dedup_equivalence_proof(
-    task: TaskIR, finding: Finding, outcome, attacks_mod=None
-) -> dict[str, object] | None:
-    """Prove deduplication is an identity on scans with declared primary keys."""
-    proposal = finding.proposed_case
-    form = _names_add_dedup(proposal)
-    if form is None:
-        return None
-    if not _measured_all_true_with_fidelity(outcome):
-        return None
-
-    compiler = outcome.fidelity.get("compiler")
-    if not isinstance(compiler, dict) or compiler.get("passed") is not True:
-        return None
-    requested = compiler.get("requested")
-    realized = compiler.get("realized")
-    if not isinstance(requested, dict) or not isinstance(realized, dict):
-        return None
-    target: str | None = None
-    variant_targets: list[str] = []
-    if form == "operation_key":
-        if requested.get("operation") != "add_dedup":
-            return None
-        if realized.get("operation") != "add_dedup":
-            return None
-        if not isinstance(realized.get("distinct_source_scans"), int) or int(
-            realized["distinct_source_scans"]
-        ) < 1:
-            return None
-        target_raw = requested.get("dedup_table")
-        target = str(target_raw) if target_raw else None
-        if target != (
-            str(proposal.params.get("dedup_table"))
-            if proposal.params.get("dedup_table")
-            else None
-        ):
-            return None
-    else:
-        # The kind-directive record names no DISTINCT count and no table; the
-        # rewrite is re-derived from the gold below and must match the marts
-        # the compiler says it changed.
-        for record in (requested, realized):
-            if (
-                record.get("operation") != "kind"
-                or record.get("kind") != AttackKind.CUSTOM.value
-                or record.get("variant") != "add_dedup"
-            ):
-                return None
-        raw_targets = realized.get("target_marts")
-        if not isinstance(raw_targets, list) or not raw_targets:
-            return None
-        if not all(isinstance(name, str) and name for name in raw_targets):
-            return None
-        variant_targets = sorted(str(name) for name in raw_targets)
-
-    import sqlglot
-    from sqlglot import exp
-
-    table_specs = {table.name: table for table in task.tables}
-    folded_table_names: dict[str, str] = {}
-    for name in table_specs:
-        folded = name.casefold()
-        if folded in folded_table_names:
-            return None
-        folded_table_names[folded] = name
-    affected: set[str] = set()
-    for sql in task.reference.sql_by_mart.values():
-        try:
-            ast = sqlglot.parse_one(sql, read="duckdb")
-        except Exception:  # noqa: BLE001 - inability to prove is simply red
-            return None
-        cte_names = {
-            cte.alias_or_name.casefold()
-            for cte in ast.find_all(exp.CTE)
-            if cte.alias_or_name
-        }
-        # DuckDB resolves unquoted identifiers case-insensitively. A differently
-        # cased CTE can therefore shadow a physical TaskIR table even though
-        # sqlglot preserves their distinct spellings.
-        if cte_names & set(folded_table_names):
-            return None
-        for table in ast.find_all(exp.Table):
-            name = table.name
-            if name not in table_specs:
-                if form == "variant":
-                    # `custom@add_dedup` wraps this scan too (a CTE reference,
-                    # a function table, anything the reference names), and
-                    # no declared key proves DISTINCT is an identity there.
-                    return None
-                continue
-            if target is not None and name != target:
-                continue
-            # The admitted compiler reconstructs the outer alias from
-            # ``table.alias``.  It cannot preserve qualified/table-valued
-            # identifiers or an alias column list such as ``c(x, y)``.  Those
-            # rewrites may rebind columns, so PK uniqueness is not an identity
-            # proof for them even when today's five populations all pass.
-            if not isinstance(table.this, exp.Identifier):
-                return None
-            alias = table.args.get("alias")
-            if alias is not None:
-                if not isinstance(alias, exp.TableAlias) or not isinstance(
-                    alias.this, exp.Identifier
-                ):
-                    return None
-                if any(
-                    key != "this" and value not in (None, False, (), [])
-                    for key, value in alias.args.items()
-                ):
-                    return None
-            # Only a raw local scan with an optional alias earns the identity
-            # proof; table modifiers can change rows inside the DISTINCT query.
-            if any(
-                key not in {"this", "alias"}
-                and value not in (None, False, (), [])
-                for key, value in table.args.items()
-            ):
-                return None
-            affected.add(name)
-    if not affected:
-        return None
-
-    proof_tables: list[dict[str, object]] = []
-    for name in sorted(affected):
-        primary_key = table_specs[name].primary_key
-        if not primary_key:
-            return None
-        proof_tables.append(
-            {
-                "name": name,
-                "key_kind": "primary_key",
-                "columns": list(primary_key),
-            }
-        )
-    if form == "variant":
-        # Re-derive the directive exactly as the compiler does and require
-        # that it changes precisely the recorded marts, each with at least
-        # one DISTINCT scan; anything else is not this rewrite.
-        if attacks_mod is None:
-            from elt_taskgen.verification import attacks as attacks_mod
-        changed: list[str] = []
-        for mart in task.marts:
-            gold_sql = dict(task.reference.sql_by_mart).get(mart.name)
-            if not gold_sql:
-                return None
-            try:
-                mutated = attacks_mod._apply_kind(
-                    AttackKind.CUSTOM, gold_sql, mart, "add_dedup"
-                )
-            except Exception:  # noqa: BLE001 - a compiler error is not a proof
-                return None
-            if mutated is None:
-                continue
-            try:
-                mutated_ast = sqlglot.parse_one(mutated, read="duckdb")
-            except Exception:  # noqa: BLE001
-                return None
-            distincts = sum(
-                1
-                for select in mutated_ast.find_all(exp.Select)
-                if select.args.get("distinct") is not None
-            )
-            if distincts < 1:
-                return None
-            changed.append(mart.name)
-        if sorted(changed) != variant_targets:
-            return None
-    return {
-        "proved": True,
-        "proof": _SCHEMA_EQUIVALENT_SOURCE_DEDUP_PROOF,
-        "operation": "add_dedup",
-        "form": form,
-        "tables": proof_tables,
-    }
-
-
-def _normalize_schema_equivalent_promotions(
-    task: TaskIR,
-    findings: list[Finding],
-    workspace: Path,
-    promotion,
-    attacks_mod,
-):
-    """Reclassify only compiler-proved, fully measured relational identities.
-
-    The promoter correctly refuses to create a required attack that predicts no
-    kill. Usually that is a blocking live exploit. For the one schema identity
-    proved above, retain the rejected outcome but attach the proof, correct its
-    reason, and rewrite the audit sidecar with that normalized evidence.
-    """
-    findings_by_id = {finding.finding_id: finding for finding in findings}
-    normalized: dict[str, object] = {}
-    for outcome in promotion.outcomes:
-        finding = findings_by_id.get(outcome.finding_id)
-        if finding is None:
-            continue
-        proof = _source_dedup_equivalence_proof(task, finding, outcome, attacks_mod)
-        if proof is None:
-            proof = _zero_default_equivalence_proof(task, finding, outcome, attacks_mod)
-        if proof is None:
-            proof = _drop_frame_equivalence_proof(task, finding, outcome, attacks_mod)
-        if proof is None:
-            continue
-        updated = outcome.model_copy(
-            update={
-                "reason": (
-                    "proposal is provably output-equivalent on the declared "
-                    "primary-key domain, and was confirmed to keep FULL combined "
-                    "reward on all five populations; record as a non-exploit"
-                    if proof.get("proof") == _SCHEMA_EQUIVALENT_SOURCE_DEDUP_PROOF
-                    else "proposal is provably an identity on this task's gold "
-                    "(every window it unframes is an extreme ordered by its own "
-                    "column), and was confirmed to keep FULL combined reward on "
-                    "all five populations; record as a non-exploit"
-                    if proof.get("proof") == _SCHEMA_EQUIVALENT_DROP_FRAME_PROOF
-                    else "proposal is provably an identity on this task's gold "
-                    "(every default it rewrites is the number 0), and was "
-                    "confirmed to keep FULL combined reward on all five "
-                    "populations; record as a non-exploit"
-                ),
-                "fidelity": {
-                    **outcome.fidelity,
-                    "schema_equivalence": proof,
-                },
-            }
-        )
-        normalized[outcome.finding_id] = updated
-        attacks_mod._record_rejected_proposal(workspace, task, updated)
-    if not normalized:
-        return promotion
-
-    replace = lambda outcome: normalized.get(outcome.finding_id, outcome)
-    return attacks_mod.PromotionResult(
-        task=promotion.task,
-        promoted=promotion.promoted,
-        rejected=tuple(replace(outcome) for outcome in promotion.rejected),
-        outcomes=tuple(replace(outcome) for outcome in promotion.outcomes),
-        rewards=promotion.rewards,
-    )
-
-
-def _normalize_inapplicable_promotion(
-    task: TaskIR,
-    findings: list[Finding],
-    workspace: Path,
-    promotion,
-    attacks_mod,
-):
-    """Bind an inapplicable promotion to a deterministic failed-fidelity record."""
-    by_id = {finding.finding_id: finding for finding in findings}
-    normalized = []
-    changed = False
-    for outcome in promotion.outcomes:
-        if (
-            outcome.promoted
-            or outcome.measured
-            or "FileNotFoundError" not in outcome.reason
-            or attacks_mod.MUTATION_FIDELITY_FILENAME not in outcome.reason
-        ):
-            normalized.append(outcome)
-            continue
-        finding = by_id.get(outcome.finding_id)
-        proposal = finding.proposed_case if finding is not None else None
-        if finding is None or proposal is None:
-            normalized.append(outcome)
-            continue
-        attack_dir = (
-            Path(workspace)
-            / "tasks"
-            / task.task_id
-            / "attacks"
-            / outcome.case_name
-        )
-        inapplicable_path = attack_dir / "inapplicable.json"
-        try:
-            inapplicable = json.loads(inapplicable_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            normalized.append(outcome)
-            continue
-        if (
-            inapplicable.get("case") != outcome.case_name
-            or inapplicable.get("task_content_hash") != task.content_hash()
-        ):
-            normalized.append(outcome)
-            continue
-        detail = str(inapplicable.get("inapplicable") or "").strip()
-        if not detail:
-            normalized.append(outcome)
-            continue
-
-        candidate = attacks_mod._candidate_case(finding, proposal, required=False)
-        mutation = candidate.mutation.strip()
-        exception_name = "InertAstMutationError"
-        if mutation.startswith(attacks_mod.LOAD_DIRECTIVE_PREFIX):
-            exception_name = "InapplicableLoadMutationError"
-        elif mutation.startswith(attacks_mod.STRUCTURED_DIRECTIVE_PREFIX):
-            structured = attacks_mod.parse_structured_directive(
-                mutation[len(attacks_mod.STRUCTURED_DIRECTIVE_PREFIX):]
-            )
-            if structured.get("operation") in {"skip_backend", "skip_tables"}:
-                exception_name = "InapplicableLoadMutationError"
-
-        claim = dict(outcome.fidelity)
-        compiler = attacks_mod._write_fidelity_record(
-            workspace,
-            task,
-            candidate,
-            passed=False,
-            requested={"mutation": mutation},
-            realized={},
-            checks=("mutation applicability checked before reward execution",),
-            errors=(detail,),
-        )
-        fidelity = {
-            "passed": False,
-            "claim": claim,
-            "compiler": compiler,
-        }
-        replacement = outcome.model_copy(
-            update={
-                "reason": (
-                    "proposal could not be executed: "
-                    f"{exception_name}: {detail}"
-                ),
-                "fidelity": fidelity,
-            }
-        )
-        attacks_mod._record_rejected_proposal(workspace, task, replacement)
-        normalized.append(replacement)
-        changed = True
-
-    if not changed:
-        return promotion
-    outcomes = tuple(normalized)
-    return attacks_mod.PromotionResult(
-        task=promotion.task,
-        promoted=promotion.promoted,
-        rejected=tuple(outcome for outcome in outcomes if not outcome.promoted),
-        outcomes=outcomes,
-        rewards=promotion.rewards,
-    )
-
-
-def run_attack_stage(engine: Engine, task: TaskIR) -> StageOutcome:
-    """Compile, measure, and promote exactly confirmed attack proposals.
-
-    Promotion changes task identity, so all attack evidence is remeasured at the
-    new hash.
-    """
-    from elt_taskgen.reference import gold as gold_mod
-    from elt_taskgen.review.council import ProviderProtocolError
-    from elt_taskgen.verification import attacks as attacks_mod
-
-    gold = gold_mod.load_gold(_answer_key_dir(engine, task))
-    review_payload = _require_pass_payload(engine, task, StageName.REVIEW)
-    findings = [Finding.model_validate(f) for f in review_payload.get("findings", [])]
-    # Revalidate persisted review evidence too: older/current ledgers may have
-    # been produced before the critic protocol enforced explicit variants.
-    try:
-        executable_findings = _validated_executable_findings(task, findings)
-    except ProviderProtocolError as exc:
-        return _critic_protocol_block(
-            f"critic protocol failure: {type(exc).__name__}: {exc}"
-        )
-    pending_adjudication = _critic_adjudication_block(findings)
-    if pending_adjudication is not None:
-        return pending_adjudication
-
-    original_hash = task.content_hash()
-    promoted: tuple[str, ...] = ()
-    rejected: tuple[dict, ...] = ()
-    proposal_outcomes: dict[str, object] = {}
-    # Two passes at most: the second re-measures everything at the identity
-    # promotion produced. A third would mean promotion is not idempotent.
-    for _pass in range(2):
-        cases = attacks_mod.compile_attacks(task, executable_findings)
-        rewards: dict[str, dict[str, float]] = {}
-        inapplicable: dict[str, str] = {}
-        for case in cases:
-            measured = attacks_mod.run_attack(task, case, gold, engine.workspace)
-            if not measured:
-                # An informational probe whose surface this task's DATA does not
-                # offer. run_attack recorded the reason; it must NOT enter the
-                # measured payload, where an empty entry would read as deleted
-                # evidence. A REQUIRED case can never take this path.
-                record_path = (
-                    engine.task_dir(task.task_id)
-                    / "attacks" / case.name / "inapplicable.json"
-                )
-                record = json.loads(record_path.read_text(encoding="utf-8"))
-                inapplicable[case.name] = str(record.get("inapplicable", ""))
-                continue
-            rewards[case.name] = {p.value: float(r) for p, r in measured.items()}
-
-        promotion = _normalize_inapplicable_promotion(
-            task,
-            findings,
-            engine.workspace,
-            attacks_mod.promote_proposed_cases(
-                task,
-            # Withhold ambiguity alternatives from promotion; route the claim to prose repair.
-                [f for f in executable_findings if f.role is not CouncilRole.AMBIGUITY_CRITIC],
-                engine.workspace,
-                gold,
-            ),
-            attacks_mod,
-        )
-        promotion = _normalize_schema_equivalent_promotions(
-            task,
-            findings,
-            engine.workspace,
-            promotion,
-            attacks_mod,
-        )
-        for proposal_outcome in promotion.outcomes:
-            previous = proposal_outcomes.get(proposal_outcome.finding_id)
-            if previous is None or proposal_outcome.fidelity or proposal_outcome.measured:
-                proposal_outcomes[proposal_outcome.finding_id] = proposal_outcome
-        # Rejected proposals keep their measured rewards in the payload: their
-        # probes exist on disk, and evidence for a probe that ran is never missing.
-        for name, measured in promotion.rewards.items():
-            rewards.setdefault(
-                name, {p.value: float(r) for p, r in measured.items()}
-            )
-        # Read the outcomes, not just this pass's new promotions: on the re-measure
-        # pass an already-promoted case reports promoted with no fresh AttackCase.
-        promoted = tuple(o.case_name for o in promotion.outcomes if o.promoted)
-        rejected = tuple(o.model_dump(mode="json") for o in promotion.rejected)
-        if not promotion.task_changed:
-            break
-        task = promotion.task
-    else:  # pragma: no cover - promotion is idempotent by construction
-        raise RuntimeError(
-            f"task {task.task_id!r}: attack-case promotion did not converge "
-            "after two passes (fail closed)"
-        )
-
-    changed = task.content_hash() != original_hash
-    by_variant = _recorded_variant_rewards(engine, task, rewards)
-    detail = (
-        f"{len(cases) - len(inapplicable)} attack case(s) executed on "
-        f"{len(task.populations)} population(s); {len(promoted)} proposal(s) "
-        f"promoted, {len(rejected)} rejected"
-        + (
-            f"; {len(inapplicable)} probe(s) recorded inapplicable "
-            f"({', '.join(sorted(inapplicable))})"
-            if inapplicable
-            else ""
-        )
-    )
-        # Pass only screened findings so voided claims cannot block promotion.
-    blocking_findings, proposal_problems = _blocking_proposal_failures(
-        executable_findings, proposal_outcomes.values()
-    )
-    if proposal_problems:
-        outcomes = tuple(proposal_outcomes.values())
-        selected = _selected_blocking_finding(blocking_findings, outcomes)
-        # A non-empty problem list must have a finding.  Keep the assertion at
-        # this producer boundary: emitting an opaque attack failure would send
-        # the repair proposer back to the abstention loop this descriptor closes.
-        if selected is None:  # pragma: no cover - guarded by the builder above
-            raise RuntimeError("blocking proposal failure has no finding")
-        route = _proposal_failure_route(blocking_findings, outcomes)
-        return StageOutcome(
-            VERDICT_FATAL if route is RepairRoute.FATAL else VERDICT_FAIL,
-            AttackPayload(
-                rewards=rewards,
-                rewards_by_variant=by_variant,
-                cases=tuple(c.name for c in cases if c.name not in inapplicable),
-                inapplicable_cases=inapplicable,
-                promoted_proposals=promoted,
-                rejected_proposals=rejected,
-                proposal_outcomes=tuple(
-                    outcome.model_dump(mode="json")
-                    for outcome in sorted(
-                        proposal_outcomes.values(), key=lambda value: value.finding_id
-                    )
-                ),
-                blocking_finding=_attack_finding_descriptor(task, selected),
-                detail=(
-                    detail
-                    + "; critic-to-mutation handoff BLOCKED: "
-                    + "; ".join(proposal_problems)
-                ),
-            ),
-            route=route,
-            task=task if changed else None,
-        )
-    return StageOutcome(
-        VERDICT_PASS,
-        AttackPayload(
-            rewards=rewards,
-            rewards_by_variant=by_variant,
-            cases=tuple(c.name for c in cases if c.name not in inapplicable),
-            inapplicable_cases=inapplicable,
-            promoted_proposals=promoted,
-            rejected_proposals=rejected,
-            proposal_outcomes=tuple(
-                outcome.model_dump(mode="json")
-                for outcome in sorted(
-                    proposal_outcomes.values(), key=lambda value: value.finding_id
-                )
-            ),
-            detail=detail,
-        ),
-        task=task if changed else None,
-    )
-
-
-def _ensure_independent_build(engine: Engine, task: TaskIR, gold, provider) -> str:
-    """Run or reuse the independent build for the current task hash.
-
-    Missing results fail gates; harness faults are recorded as transport halts.
-    """
-    from elt_taskgen.reference import adjudication as independent_adjudication
-    from elt_taskgen.reference import independent
-    from elt_taskgen.review import providers as providers_mod
-    from elt_taskgen.review.session import SessionFault
-
-    existing = independent.load_build_result(engine.workspace, task.task_id)
-    recovery_generation = 0
-    decision_digest = ""
-    if (
-        existing is not None
-        and existing.get("task_id") == task.task_id
-        and existing.get("task_content_hash") == task.content_hash()
-    ):
-        if existing.get("status") != independent.STATUS_NEEDS_ADJUDICATION:
-            return f"recorded independent build reused (status={existing.get('status')!r})"
-        try:
-            decision = independent_adjudication.load_fresh_build_decision(
-                engine.workspace,
-                task,
-            )
-        except ValueError as exc:
-            return (
-                "recorded independent build reused "
-                f"(status={existing.get('status')!r}); invalid bound "
-                f"adjudication decision: {type(exc).__name__}: {exc}"
-            )
-        if decision is None:
-            return f"recorded independent build reused (status={existing.get('status')!r})"
-        # The decision cannot green-light anything. It only permits one fresh
-        # blind reconstruction, under a transcript generation that differs
-        # from the disputed witness while exposing no diagnostic material.
-        recovery_generation = independent.next_recovery_generation(
-            engine.workspace,
-            task.task_id,
-        )
-        decision_digest = decision.digest()
-    try:
-        result = independent.run_independent_build(
-            task,
-            engine.workspace,
-            provider,
-            gold,
-            recovery_generation=recovery_generation,
-        )
-    except (
-        providers_mod.TranscriptMissingError,
-        providers_mod.MissingCredentialsError,
-        SessionFault,
-    ) as exc:
-        # Prefix the note with the canonical exception marker from the MRO so
-        # transport failures route as infrastructure even for subclasses.
-        # SessionFault messages contain only boundary and code metadata.
-        from elt_taskgen.engine import _infra_marker_for
-
-        name = type(exc).__name__
-        marker = _infra_marker_for(exc)
-        head = f"{marker}: {name}" if marker and marker != name else name
-        return f"independent build not performed: {head}: {exc}"
-    independent.record_build_result(engine.workspace, task, result)
-    recovery_note = (
-        f", fresh blind generation={recovery_generation}, "
-        f"decision={decision_digest[:12]}"
-        if recovery_generation
-        else ""
-    )
-    return f"independent build recorded (status={result.status!r}{recovery_note})"
-
-
-def _independent_adjudication_block(
-    engine: Engine, task: TaskIR
-) -> StageOutcome | None:
-    """Block a current dual-build disagreement pending adjudication or new evidence."""
-    from elt_taskgen.reference import independent
-
-    record = independent.load_build_result(engine.workspace, task.task_id)
-    if not isinstance(record, dict):
-        return None
-    if (
-        record.get("task_id") != task.task_id
-        or record.get("task_content_hash") != task.content_hash()
-        or record.get("status") != independent.STATUS_NEEDS_ADJUDICATION
-    ):
-        return None
-    evidence_digest = sha256_hex(canonical_json(record))
-    return StageOutcome(
-        VERDICT_BLOCKED,
-        StagePayload(
-            error=(
-                "the current independent transformation build passes the public "
-                "development examples but disagrees with hidden gold; the task, "
-                "reference, data, comparator, and witness remain unjudged until "
-                "the disagreement is explicitly adjudicated"
-            ),
-            data={
-                "failure_class": "pending_adjudication",
-                "failure_code": "independent_gold_disagreement",
-                BLOCKED_ON_KEY: BLOCKED_ON_HUMAN,
-                "independent_build_sha256": evidence_digest,
-                "recovery_prerequisite": (
-                    "bound_adjudication_or_new_independent_build"
-                ),
-                RETRY_GUARD_KEY: RETRY_GUARD_EXPLICIT,
-            },
-        ),
-    )
-
-
-#: A gate whose failure names a RE-RUN as its remedy is refusing STALE EVIDENCE,
-#: not judging the task. Every currency refusal gates.py writes ends in one; a
-#: genuine defect never does.
-_EVIDENCE_RERUN_MARKER = "re-run"
-
-
-def _is_currency_refusal(gate) -> bool:
-    """Is this failing gate refusing STALE EVIDENCE rather than judging?
-
-    ONE reader, shared with the repair router (`repair.is_currency_refusal`), so the
-    BLOCKED answer here and the route the engine picks can never disagree about what
-    "not measured yet" means. Prefers a structured flag over the prose match."""
-    return repair.is_currency_refusal(gate)
-
-
-def _evidence_currency_block(report) -> str | None:
-    """The remedy text when a battery refused ONLY because its evidence is not
-    current, else None.
-
-    A fix that legitimately makes recorded evidence stale must produce "run the
-    stage again", never a rejection: this is a wait on the operator or on a stage
-    re-run, i.e. BLOCKED. Measured — one refusal naming contamination was read as a
-    contamination REJECTION and a certified drive was rejected outright."""
-    gates = getattr(report, "gates", None)
-    if not gates:
-        return None
-    failing = [g for g in gates if not getattr(g, "passed", False)]
-    if not failing:
-        return None
-    if not all(_is_currency_refusal(g) for g in failing):
-        return None
-    return "; ".join(
-        f"{getattr(g, 'gate', '?')}: {getattr(g, 'details', '')}" for g in failing
-    )
-
-
-#: Remedy phrase -> the ladder stage that RE-DERIVES that evidence.
-#: `measure-target` is deliberately absent: it needs an ELT-Bench checkout, so no
-#: stage in the ladder can clear it and only the operator can.
-_EVIDENCE_PRODUCER_STAGES: tuple[tuple[str, StageName], ...] = (
-    ("re-run reference-run", StageName.REFERENCE),
-    ("re-run contamination-post", StageName.CONTAMINATION_POST),
-    ("re-run validate-el", StageName.GATES_EXTRACT_LOAD),
-    ("re-run validate-t", StageName.GATES_TRANSFORM),
-)
-
-#: Ledger stage -> the CLI subcommand that runs it (for remedy messages).
-STAGE_SUBCOMMANDS: dict[str, str] = {
-    StageName.GENERATE.value: "generate",
-    StageName.REFERENCE.value: "reference-run",
-    # The author runs inside `review` (no `author` subcommand exists), so a
-    # block or refusal at that stage is re-run through `review`.
-    StageName.AUTHOR.value: "review",
-    StageName.REVIEW.value: "review",
-    StageName.ATTACK.value: "attack",
-    StageName.TASK_INTEGRITY.value: "validate",
-    StageName.GATES_EXTRACT_LOAD.value: "validate-el",
-    StageName.GATES_TRANSFORM.value: "validate-t",
-    StageName.CALIBRATE.value: "calibrate",
-    StageName.SELECT.value: "select",
-    StageName.RELEASE.value: "release",
-    StageName.CONTAMINATION_POST.value: "release",
-}
-
-
-def _shadow_stale_evidence_producers(
-    engine: Engine, task: TaskIR, stage: StageName, remedies: str
-) -> tuple[str, ...]:
-    """Shadow the upstream stages a currency refusal names. Returns their names.
-
-    THE REMEDY HAS TO BE REACHABLE: `engine.run` skips a stage whose latest row is a
-    PASS at the current hash, so the re-run a refusal named did nothing. Shadowing
-    the producer here is APPEND-ONLY (the idiom `repair.apply_repair` uses), spends
-    no repair round and rejects nothing. Only stages STRICTLY UPSTREAM are shadowed
-    — a battery cannot be its own producer, and a downstream stage has not attested."""
-    order = [s.value for s in STAGE_ORDER]
-    here = order.index(stage.value)
-    text = remedies.lower()
-    shadowed: list[str] = []
-    for phrase, producer in _EVIDENCE_PRODUCER_STAGES:
-        if phrase not in text or order.index(producer.value) >= here:
-            continue
-        row = engine.latest_report(task.task_id, producer.value)
-        if row is None or not engine.report_is_current(task, producer, row)[0]:
-            continue  # already going to run: nothing to shadow
-        _force_stage_rerun(
-            engine,
-            task,
-            producer,
-            f"stale evidence for {stage.value!r}: {phrase}",
-        )
-        shadowed.append(producer.value)
-    return tuple(shadowed)
-
-
-def _blocked_on_stale_evidence(
-    engine: Engine, task: TaskIR, stage: StageName, remedies: str
-) -> StageOutcome:
-    """BLOCKED because recorded evidence is not current — and the producer of
-    that evidence is scheduled to re-run so the block can actually clear."""
-    scheduled = _shadow_stale_evidence_producers(engine, task, stage, remedies)
-    if scheduled:
-        remedy = (
-            "already scheduled: "
-            + ", ".join(sorted(scheduled))
-            + " will re-derive on the next run of this workspace — just re-run "
-            "the same command"
-        )
-    else:
-        subcommand = STAGE_SUBCOMMANDS.get(stage.value, stage.value)
-        remedy = (
-            "no ladder stage can re-derive this: run what the refusal names "
-            f"(e.g. `elt-taskgen measure-target --workspace {engine.workspace} "
-            "--bench-root <ELT-Bench checkout>`), then re-run `elt-taskgen "
-            f"{subcommand} --workspace {engine.workspace} --task-id "
-            f"{task.task_id}`"
-        )
-    data = {BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT}
-    if scheduled:
-        data["rerun_scheduled"] = ",".join(sorted(scheduled))
-    return StageOutcome(
-        VERDICT_BLOCKED,
-        StagePayload(
-            error=(
-                "recorded evidence is not current, so this battery could not "
-                "judge the task — nothing is rejected and no repair round is "
-                f"spent. Refusals: {remedies}. Remedy: {remedy}."
-            ),
-            data=data,
-        ),
-    )
-
-
-def _canonical_block(error: str, *, blocked_on: str, failure_code: str) -> StageOutcome:
-    return StageOutcome(
-        VERDICT_BLOCKED,
-        StagePayload(
-            error=error + " Nothing is rejected and no repair round is spent.",
-            data={BLOCKED_ON_KEY: blocked_on, "failure_code": failure_code},
-        ),
-    )
-
-
-def _ensure_canonical_reachability(
-    engine: Engine, task: TaskIR, variant_out_dir: Path
-) -> StageOutcome | None:
-    """Derive and score the canonical Terraform + dbt artifact for the T unit,
-    once per destination the task ships.
-
-    Writes ``reports/canonical_reachability.json`` and the private artifacts
-    under ``answer_key/runtime/canonical/<destination>/`` for the battery's
-    canonical-reachability gate to judge, then returns None. It RECORDS only
-    outcomes that describe the task on the workspace channel: a full score and
-    a measured shortfall or an emitter gap. Anything that says nothing about
-    the task returns BLOCKED without recording: the pinned dbt runtime
-    missing, a substrate or IO failure, a harness, infrastructure or
-    real-runtime failure, a timeout of the reference solution (environment),
-    or the grader refusing the task package (human). No outcome rejects.
-    """
-    import tempfile
-
-    from elt_taskgen.training import canonical
-    from elt_taskgen.training.package import WorkspacePackageError, shipped_destinations
-
-    task_root = engine.task_dir(task.task_id)
-    answer_key_dir = _answer_key_dir(engine, task)
-    # A previous identity's or run's evidence never survives into this one.
-    stale_evidence = task_root / canonical.REACHABILITY_EVIDENCE_REL
-    if stale_evidence.is_file() and not stale_evidence.is_symlink():
-        stale_evidence.unlink()
-    stale_artifacts = answer_key_dir / canonical.CANONICAL_ARTIFACT_REL
-    if stale_artifacts.exists():
-        canonical.remove_scratch_tree(stale_artifacts)
-
-    runtime_config = canonical.default_dbt_runtime_config()
-    if not canonical.dbt_runtime_available(runtime_config):
-        return _canonical_block(
-            "The canonical-reachability check needs the pinned dbt runtime at "
-            f"{canonical.DBT_RUNTIME_ROOT}; provision it with: uv sync --project "
-            "runtime-images/dbt-duckdb --locked.",
-            blocked_on=BLOCKED_ON_ENVIRONMENT,
-            failure_code="canonical_runtime_unavailable",
-        )
-    try:
-        destinations = shipped_destinations(answer_key_dir)
-    except Exception as exc:  # noqa: BLE001 - the private tree is unreadable
-        return _canonical_block(
-            "The task's private connector contracts could not be read "
-            f"({type(exc).__name__}: {exc}).",
-            blocked_on=BLOCKED_ON_ENVIRONMENT,
-            failure_code="canonical_substrate_failed",
-        )
-
-    records: dict[str, canonical.CanonicalReachabilityRecord] = {}
-    files_by_destination: dict[str, dict[str, str]] = {}
-    scratch = Path(tempfile.mkdtemp(prefix="canonical-reachability-"))
-    try:
-        for destination in destinations:
-            name = destination.value
-            try:
-                package = canonical.build_workspace_substrate(
-                    task=task,
-                    answer_key_dir=answer_key_dir,
-                    public_dir=_public_dir(engine, task),
-                    populations_root=task_root / "populations",
-                    oracle_dir=Path(variant_out_dir) / "task" / _warehouse_dirname(),
-                    scratch=scratch / f"substrate-{name}",
-                    destination=destination,
-                )
-            except WorkspacePackageError as exc:
-                return _canonical_block(
-                    "The workspace grader refused the exported task package while "
-                    f"preparing the canonical-reachability check for {name} ({exc}).",
-                    blocked_on=BLOCKED_ON_HUMAN,
-                    failure_code="canonical_task_package_invalid",
-                )
-            except Exception as exc:  # noqa: BLE001 - environment, never a judgement
-                return _canonical_block(
-                    "The canonical-reachability workspace could not be laid out for "
-                    f"{name} ({type(exc).__name__}: {exc}).",
-                    blocked_on=BLOCKED_ON_ENVIRONMENT,
-                    failure_code="canonical_substrate_failed",
-                )
-            try:
-                files = canonical.render_canonical_project(package)
-            except canonical.CanonicalArtifactError as exc:
-                records[name] = canonical.build_render_failure_record(
-                    task,
-                    destination=destination,
-                    runtime_config=runtime_config,
-                    error=f"{type(exc).__name__}: {exc}",
-                    airbyte_contract_sha256=package.airbyte_contract_sha256,
-                )
-                files_by_destination[name] = {}
-                continue
-            try:
-                sealed, result = canonical.score_canonical_artifact(
-                    package,
-                    files,
-                    scratch=scratch / f"score-{name}",
-                    runtime_config=runtime_config,
-                )
-            except Exception as exc:  # noqa: BLE001 - install/seal/scorer faults
-                return _canonical_block(
-                    "Scoring the canonical artifact failed inside the workspace "
-                    f"harness for {name} ({type(exc).__name__}: {exc}).",
-                    blocked_on=BLOCKED_ON_ENVIRONMENT,
-                    failure_code="canonical_harness_failed",
-                )
-            outcome = canonical.classify_score(result)
-            if outcome == canonical.OUTCOME_ENVIRONMENT:
-                return _canonical_block(
-                    "The workspace grader produced no label for the canonical "
-                    f"artifact on {name} ({canonical.shortfall_summary(result)}); this "
-                    "describes the host or the harness, not the task.",
-                    blocked_on=BLOCKED_ON_ENVIRONMENT,
-                    failure_code="canonical_grader_unavailable",
-                )
-            if outcome == canonical.OUTCOME_TASK_PACKAGE:
-                return _canonical_block(
-                    "The workspace grader refused the task package for the canonical "
-                    f"artifact on {name} ({canonical.shortfall_summary(result)}).",
-                    blocked_on=BLOCKED_ON_HUMAN,
-                    failure_code="canonical_task_package_invalid",
-                )
-            records[name] = canonical.build_reachability_record(
-                package,
-                files=files,
-                sealed=sealed,
-                result=result,
-                runtime_config=runtime_config,
-            )
-            files_by_destination[name] = dict(files)
-        canonical.record_canonical_reachability(
-            task_dir=task_root,
-            answer_key_dir=answer_key_dir,
-            records=records,
-            files=files_by_destination,
-        )
-        return None
-    finally:
-        canonical.remove_scratch_tree(scratch)
-
-
-def _warehouse_dirname() -> str:
-    from elt_taskgen.export import eltbench as eltbench_mod
-
-    return eltbench_mod.WAREHOUSE_DIRNAME
-
-
-def _configured_destination_of(engine: Engine, task: TaskIR) -> str:
-    """The bundle-root destination of the exported public task, else snowflake."""
-    import yaml
-
-    from elt_taskgen.export import eltbench as eltbench_mod
-
-    try:
-        config = yaml.safe_load(
-            (_public_dir(engine, task) / "config.yaml").read_text(encoding="utf-8")
-        )
-        return eltbench_mod.destination_from_config(config).value
-    except Exception:  # noqa: BLE001 - a missing bundle is reported by the gate
-        return "snowflake"
-
-
-def make_gates_runner(provider, *, destination="snowflake", extra_destinations=()):
-    """`gates` (TASK_INTEGRITY): shared project-integrity evidence and checks.
-
-    The stage value stays ``gates`` for workspace compatibility, but this runner
-    does NOT create a FULL RLVR task: its composite checks are internal diagnostics,
-    and EL and T are admitted only by the two unit batteries that follow."""
-
-    def run_gates_stage(engine: Engine, task: TaskIR) -> StageOutcome:
-        from elt_taskgen.export import eltbench as eltbench_mod
-        from elt_taskgen.reference import gold as gold_mod
-        from elt_taskgen.verification import gates as gates_mod
-
-        akd = _answer_key_dir(engine, task)
-        public = _public_dir(engine, task)
-        gold = gold_mod.load_gold(akd)
-
-        # Emit the public bundle + private evaluation artifacts (upstream
-        # shape); the post-generation scan and two gates read these trees.
-        eltbench_mod.export_task(
-            task,
-            gold,
-            public,
-            akd,
-            destination=destination,
-            extra_destinations=tuple(extra_destinations),
-        )
-
-        idx = _contamination_index(engine)
-        # ARMING BANNER at the gate: a reader watching the run must see what the
-        # firewall contained at the moment the contamination-clean gate read it.
-        coverage = _arm_contamination_index(idx)
-        result = idx.scan_post(
-            task, public, akd, require=_required_firewall_coverage()
-        )
-        collisions = list(result.collisions)
-        evidence = {
-            "task_id": task.task_id,
-            "task_content_hash": task.content_hash(),
-            "collisions": [c.model_dump(mode="json") for c in collisions],
-            "coverage": _coverage_payload(engine, coverage),
-            "coverage_summary": coverage.summary(),
-        }
-        (_evidence_dir(engine, task) / "contamination_post.json").write_text(
-            canonical_json(evidence), encoding="utf-8"
-        )
-        if any(c.fatal for c in collisions):
-            return StageOutcome(
-                VERDICT_FATAL,
-                ContaminationPayload(
-                    call_point="post",
-                    collisions=tuple(c.model_dump(mode="json") for c in collisions),
-                    fatal_count=sum(1 for c in collisions if c.fatal),
-                    coverage_level=coverage.level.value,
-                    coverage=_coverage_payload(engine, coverage),
-                    detail=(
-                        "fatal contamination collision in emitted artifacts; "
-                        + coverage.summary()
-                    ),
-                ),
-            )
-
-        # Dual-build evidence for the trusted-solution/dual-build-agreement gates:
-        # run and record here (or reuse the record at this exact identity). The note
-        # is PERSISTED, so why a witness is missing survives in the workspace.
-        build_note = _ensure_independent_build(engine, task, gold, provider)
-        _write_evidence_notes(engine, task, DUAL_BUILD_NOTES_FILENAME, [build_note])
-
-        attack_payload = _require_pass_payload(engine, task, StageName.ATTACK)
-        report = gates_mod.run_gates(
-            task, engine.workspace, gold, attack_payload.get("rewards", {})
-        )
-        (
-            _evidence_dir(engine, task)
-            / VARIANT_ACCEPTANCE_EVIDENCE.format(variant=TaskVariant.FULL.value)
-        ).write_text(
-            readable_json(report.model_dump(mode="json")), encoding="utf-8"
-        )
-        if report.accepted:
-            return StageOutcome(VERDICT_PASS, report)
-        adjudication = _independent_adjudication_block(engine, task)
-        if adjudication is not None:
-            return adjudication
-        stale = _evidence_currency_block(report)
-        if stale is not None:
-            return _blocked_on_stale_evidence(
-                engine, task, StageName.TASK_INTEGRITY, stale
-            )
-        return StageOutcome(
-            VERDICT_FAIL,
-            report,
-            # A witness the TRANSPORT could not produce is not a task defect: halt
-            # naming the transport instead of spending a repair round on a
-            # deterministic re-run that reproduces it.
-            infrastructure=_transport_marker([build_note]),
-        )
-
-    return run_gates_stage
-
-
-# Per-variant acceptance batteries. Each subtask has its own ledger stage,
-# reward, witnesses, and parent hash for resumable repair and release checks.
-
-#: Per-variant AcceptanceReport copy under tasks/<id>/reports/.
-VARIANT_ACCEPTANCE_EVIDENCE = "acceptance_{variant}.json"
-
-
-def _variants_root(engine: Engine, task: TaskIR) -> Path:
-    return engine.task_dir(task.task_id) / "variants"
-
-
-def _ensure_el_evidence(engine: Engine, task: TaskIR, gold, provider) -> list[str]:
-    """Run both extract/load witnesses for the current content hash.
-
-    ``el-artifact-census`` independently counts each format without solution
-    readers. ``el-independent-load`` gives a cross-family model only the public
-    EL bundle. Neither witness substitutes for the other. If either producer
-    cannot run, record no evidence and return notes; missing evidence fails the
-    gates."""
-    notes: list[str] = []
-
-    from elt_taskgen.reference import independent
-
-    census_writer = None
-    try:
-        from elt_taskgen.verification import el_probes  # type: ignore
-
-        census_writer = getattr(el_probes, "record_artifact_census", None)
-    except ImportError:
-        pass
-    if census_writer is None:
-        notes.append(
-            "artifact census not performed: verification/el_probes.py provides "
-            "no record_artifact_census (el-artifact-census will be RED)"
-        )
-    else:
-        try:
-            census_writer(engine.workspace, task, gold)
-            notes.append("artifact census recorded")
-        except Exception as exc:  # noqa: BLE001 — a producer failure is evidence
-        # Persist census-production errors for the owning gate to report.
-            notes.append(f"artifact census FAILED: {type(exc).__name__}: {exc}")
-
-    load_build = getattr(independent, "run_independent_load_build", None)
-    recorder = getattr(independent, "record_load_build_result", None)
-    if load_build is None or recorder is None:
-        notes.append(
-            "independent LOAD build not performed: reference/independent.py "
-            "provides no independent_loader role (el-independent-load will be RED)"
-        )
-        return notes
-    from elt_taskgen.review import providers as providers_mod
-
-    loader = getattr(independent, "load_load_build_result", None)
-    existing = loader(engine.workspace, task.task_id) if loader else None
-    if (
-        existing is not None
-        and existing.get("task_id") == task.task_id
-        and existing.get("task_content_hash") == task.content_hash()
-    ):
-        notes.append("recorded independent LOAD build reused")
-        return notes
-    try:
-        result = load_build(task, engine.workspace, provider, gold)
-    except providers_mod.BudgetExceededError as exc:
-        # Preserve task/total budget scope for coordinator handling.
-        if str(getattr(exc, "scope", "") or "").strip().lower() in {
-            "task",
-            "total",
-        }:
-            raise
-        notes.append(
-            f"independent LOAD build FAILED: {type(exc).__name__}: {exc}"
-        )
-        return notes
-    except (
-        providers_mod.TranscriptMissingError,
-        providers_mod.MissingCredentialsError,
-    ) as exc:
-        # Class name first — see _ensure_independent_build for why.
-        notes.append(
-            f"independent LOAD build not performed: {type(exc).__name__}: {exc}"
-        )
-        return notes
-    except Exception as exc:  # noqa: BLE001 — same rule as the census above
-        notes.append(
-            f"independent LOAD build FAILED: {type(exc).__name__}: {exc}"
-        )
-        return notes
-    recorder(engine.workspace, task, result)
-    notes.append("independent LOAD build recorded")
-    return notes
-
-
-#: Producer-notes files, bound to (task_id, task_content_hash). The gates read
-#: them to say WHY a witness is missing; they can never make a gate green.
-EL_EVIDENCE_NOTES_FILENAME = "el_evidence_notes.json"
-DUAL_BUILD_NOTES_FILENAME = "independent_build_notes.json"
-
-
-def _write_evidence_notes(
-    engine: Engine, task: TaskIR, filename: str, notes: list[str]
-) -> None:
-    """Persist what a witness producer did (or why it could not).
-
-    A breadcrumb, not a gate and not evidence FOR one: the gates read the census and
-    independent-build records themselves and go red on absence. This names the
-    producer's own error instead of only its consequence."""
-    (_evidence_dir(engine, task) / filename).write_text(
-        canonical_json(
-            {
-                "task_id": task.task_id,
-                "task_content_hash": task.content_hash(),
-                "notes": list(notes),
-            }
-        ),
-        encoding="utf-8",
-    )
-
-
-def _write_el_evidence_notes(engine: Engine, task: TaskIR, notes: list[str]) -> None:
-    """Back-compatible alias for the EL witness notes file."""
-    _write_evidence_notes(engine, task, EL_EVIDENCE_NOTES_FILENAME, notes)
-
-
-def _transport_marker(notes: Iterable[str]) -> str:
-    """Return the first anchored transport or harness marker in a producer note."""
-    from elt_taskgen.engine import _INFRA_EXCEPTION_NAMES
-
-    names = sorted(_INFRA_EXCEPTION_NAMES, key=lambda name: (-len(name), name))
-    for note in notes:
-        text = str(note)
-        hits = [(text.find(name), rank, name) for rank, name in enumerate(names) if name in text]
-        if hits:
-            return min(hits)[2]
-    return ""
-
-
-def make_variant_gates_runner(
-    variant: TaskVariant,
-    provider=None,
-    *,
-    destination="snowflake",
-    extra_destinations=(),
-):
-    """Stage runner for one subtask variant's acceptance battery.
-
-    EL and T are BOTH MANDATORY: a stage PASS requires this variant's own battery to
-    accept with complete coverage, and any refusal is a stage FAIL entering bounded
-    repair (a PASS/accepted=false row would be skipped forever on resume and could
-    leave a one-unit parent). A refused variant's emitted bundle is DELETED."""
-    variant = TaskVariant(variant)
-    stage = variant_gate_stage(variant)
-
-    def run_variant_gates_stage(engine: Engine, task: TaskIR) -> StageOutcome:
-        from elt_taskgen.export import eltbench as eltbench_mod
-        from elt_taskgen.reference import gold as gold_mod
-        from elt_taskgen.verification import variant_battery as battery_mod
-
-        gold = gold_mod.load_gold(_answer_key_dir(engine, task))
-        out_dir = _variants_root(engine, task) / variant.value
-
-        # THE BUNDLE IS EMITTED FROM THE POPULATIONS, so what is on disk must BE the
-        # IR's derivation before a byte is measured: an edited rendered/ file
-        # otherwise sails through while the true reference scores 0.0 against gold.
-        drifted = _population_drift_failure(engine, task)
-        if drifted is not None:
-            return drifted
-
-        # Emit the bundle FIRST so the battery measures the artifact that would
-        # actually ship — this closes the export-time drift hole: the gate sees the
-        # same bytes release re-verifies.
-        eltbench_mod.emit_variant(
-            task,
-            gold,
-            variant,
-            out_dir,
-            populations_dir=engine.task_dir(task.task_id) / "populations",
-            destination=destination,
-            extra_destinations=tuple(extra_destinations),
-        )
-
-        transport = ""
-        if variant is TaskVariant.EXTRACT_LOAD:
-            notes = _ensure_el_evidence(engine, task, gold, provider)
-            _write_el_evidence_notes(engine, task, notes)
-            transport = _transport_marker(notes)
-        if variant is TaskVariant.TRANSFORM:
-            # The canonical Terraform + dbt artifact is derived from the answer
-            # key and scored through the real workspace grader HERE, so the
-            # battery's canonical-reachability gate judges evidence bound to
-            # the bundle just emitted (the T oracles it reads are under out_dir).
-            blocked = _ensure_canonical_reachability(engine, task, out_dir)
-            if blocked is not None:
-                return blocked
-
-        attack_payload = _require_pass_payload(engine, task, StageName.ATTACK)
-        # NEVER the legacy `rewards` field: reusing it would make this battery a
-        # relabelling of the parent battery. `rewards_by_variant` is computed from
-        # the SAME execution, and its absence is a RED battery, not a green one.
-        rewards_by_variant = attack_payload.get("rewards_by_variant", {})
-
-        report = battery_mod.run_variant_battery(
-            variant, task, engine.workspace, gold, rewards_by_variant
-        )
-        (
-            _evidence_dir(engine, task)
-            / VARIANT_ACCEPTANCE_EVIDENCE.format(variant=variant.value)
-        ).write_text(
-            readable_json(report.model_dump(mode="json")), encoding="utf-8"
-        )
-
-        if report.accepted:
-            try:
-                battery_mod.verify_coverage(variant, report)
-            except ValueError as exc:
-                # An ACCEPTED battery with a roster hole is the fail-open shape
-                # itself: it claims a verdict it never measured. Task-level.
-                shutil.rmtree(out_dir, ignore_errors=True)
-                return StageOutcome(
-                    VERDICT_FAIL, StagePayload(error=f"roster coverage: {exc}")
-                )
-            return StageOutcome(VERDICT_PASS, report)
-
-        stale = _evidence_currency_block(report)
-        if stale is not None:
-            # Evidence that is not current is a WAIT, not a refusal: keep the emitted
-            # bundle and schedule the producer stage that re-derives what went stale.
-            return _blocked_on_stale_evidence(engine, task, stage, stale)
-
-        shutil.rmtree(out_dir, ignore_errors=True)
-        # Variant refusals fail for repair; witness transport faults halt instead.
-        judging = [
-            g for g in report.gates if not g.passed and not _is_currency_refusal(g)
-        ]
-        if [g.gate for g in judging] == ["canonical-reachability"]:
-            # Task repair cannot change unsupported compiler or connector
-            # capabilities. Wait for a pipeline change and rescore afterward.
-            return StageOutcome(
-                VERDICT_BLOCKED,
-                StagePayload(
-                    error=(
-                        "the task's own canonical Terraform + dbt solution is not "
-                        "reachable through the RLVR workspace channel: "
-                        f"{judging[0].details} Extend the portable dbt subset "
-                        "(training/dbt_runner.py) or the canonical emitter "
-                        "(training/canonical.py), then run validate-t again. "
-                        "Nothing is rejected and no repair round is spent."
-                    ),
-                    data={
-                        BLOCKED_ON_KEY: BLOCKED_ON_HUMAN,
-                        "failure_code": "canonical_workspace_unreachable",
-                    },
-                ),
-            )
-        return StageOutcome(VERDICT_FAIL, report, infrastructure=transport)
-
-    run_variant_gates_stage.__name__ = f"run_{stage.value}_stage"
-    return run_variant_gates_stage
-
-
-class CalibratePayload(BaseModel):
-    """Stage-9 ledger payload: the measurement plus what calibration did."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    measurement: DifficultyMeasurement
-    #: '' when only the structural measurement was taken.
-    roster_fingerprint: str = ""
-    #: variant value -> {model_key: measured pass rate}.
-    pass_rates: dict[str, dict[str, float]] = Field(default_factory=dict)
-    variants_from_cache: tuple[str, ...] = ()
-    impossible_variants: tuple[str, ...] = ()
-    trivial_variants: tuple[str, ...] = ()
-    #: Non-empty when the empirical campaign was skipped (visible, never a
-    #: silent pass and never fabricated numbers).
-    skipped_reason: str = ""
-    detail: str = ""
-
-
-def _write_difficulty(engine: Engine, task: TaskIR, measurement) -> None:
-    (_evidence_dir(engine, task) / "difficulty.json").write_text(
-        canonical_json(measurement.model_dump(mode="json")), encoding="utf-8"
-    )
-
-
-def _calibrate_outcome(engine: Engine, task: TaskIR, measurement, result) -> StageOutcome:
-    """THE ONE place a calibration result becomes a ledger verdict.
-
-    Shared by the structural runner (reading the cache) and the empirical one, so
-    "no pinned solver can pass this task" means the same thing whichever command
-    ran. Difficulty evidence is written here from the MERGED measurement — the
-    structural runner used to overwrite difficulty.json with `empirical: null`."""
-    from elt_taskgen.corpus import difficulty as difficulty_mod
-
-    if result.empirical is not None:
-        # The seam (never model_copy): with_empirical re-checks the
-        # content-hash binding and refuses stale evidence.
-        measurement = difficulty_mod.with_empirical(measurement, result.empirical)
-    _write_difficulty(engine, task, measurement)
-
-    pass_rates = {
-        variant: record.pass_rate_vector()
-        for variant, record in sorted(result.records.items())
-    }
-    if not result.records:
-        detail = (
-            f"structural difficulty only — {result.skipped_reason}"
-            if result.skipped_reason
-            else "structural difficulty only (empirical calibration not requested)"
-        )
-    else:
-        detail = (
-            f"calibrated {len(result.records)} variant(s) on roster "
-            f"{result.roster_fingerprint[:12]}"
-            + (f"; cached: {', '.join(result.from_cache)}" if result.from_cache else "")
-            + (
-                f"; IMPOSSIBLE: {', '.join(result.impossible_variants)} "
-                "(routed to feasibility re-review)"
-                if result.impossible_variants
-                else ""
-            )
-            + (
-                f"; trivial: {', '.join(result.trivial_variants)}"
-                if result.trivial_variants
-                else ""
-            )
-            + (f"; {result.skipped_reason}" if result.skipped_reason else "")
-        )
-    payload = CalibratePayload(
-        measurement=measurement,
-        # NOTHING MEASURED, NOTHING TO FINGERPRINT: an empty roster fingerprint says
-        # "no campaign stands behind this row", the structural-only case.
-        roster_fingerprint=result.roster_fingerprint if result.records else "",
-        pass_rates=pass_rates,
-        variants_from_cache=result.from_cache,
-        impossible_variants=result.impossible_variants,
-        trivial_variants=result.trivial_variants,
-        skipped_reason=result.skipped_reason,
-        detail=detail,
-    )
-    if result.impossible_variants:
-    # Route measured infeasibility to specification repair and re-review.
-        return StageOutcome(VERDICT_FAIL, payload, route=RepairRoute.SPECIFICATION)
-    return StageOutcome(VERDICT_PASS, payload)
-
-
-def make_structural_calibrate_runner(agents_config: Path | None = None):
-    """The default, offline calibrate runner: structural difficulty, plus any
-    empirical result ALREADY CACHED at this identity.
-
-    Nothing here calls a provider, but a campaign that already ran at this content
-    hash and roster is EVIDENCE, and another command must not erase it."""
-
-    def run_calibrate_structural(engine: Engine, task: TaskIR) -> StageOutcome:
-        from elt_taskgen.corpus import calibration as calibration_mod
-        from elt_taskgen.corpus import difficulty as difficulty_mod
-
-        measurement = difficulty_mod.structural_difficulty(task)
-        result = calibration_mod.cached_calibration(
-            task, engine.workspace, agents_config=agents_config
-        )
-        return _calibrate_outcome(engine, task, measurement, result)
-
-    return run_calibrate_structural
-
-
-#: Module-level default so `cli.run_calibrate` stays importable by name.
-run_calibrate = make_structural_calibrate_runner()
-
-
-def make_calibrate_runner(
-    provider,
-    *,
-    empirical: bool = False,
-    variants: tuple[TaskVariant, ...] | None = None,
-    refresh: bool = False,
-    agents_config: Path | None = None,
-):
-    """`calibrate` with the SolverCalibrator wired in (`--empirical`).
-
-    Each requested variant is calibrated SEPARATELY on the PUBLIC bundle, scored
-    solely by upstream_eval and cached by (content hash, variant, roster). Without
-    credentials AND transcripts the campaign is a VISIBLE SKIP with the reason
-    recorded; no empirical number is ever invented."""
-    if not empirical:
-        return make_structural_calibrate_runner(agents_config)
-
-    def run_calibrate_empirical(engine: Engine, task: TaskIR) -> StageOutcome:
-        from elt_taskgen.corpus import calibration as calibration_mod
-        from elt_taskgen.corpus import difficulty as difficulty_mod
-        from elt_taskgen.reference import gold as gold_mod
-
-        measurement = difficulty_mod.structural_difficulty(task)
-        gold = gold_mod.load_gold(_answer_key_dir(engine, task))
-        result = calibration_mod.calibrate_task(
-            task,
-            gold,
-            engine.workspace,
-            provider,
-            variants=variants or calibration_mod.DEFAULT_VARIANTS,
-            refresh=refresh,
-            agents_config=agents_config,
-        )
-        return _calibrate_outcome(engine, task, measurement, result)
-
-    # Tagged for the repair proposer's trial certifier (review/repair_proposer
-    # `CALIBRATE_EMPIRICAL_TAG`): `trial_phase` substitutes the structural
-    # runner over the same roster document on the trial copy, so a failure at
-    # `calibrate` or later never launches the solver campaign inside a trial.
-    run_calibrate_empirical.calibrate_empirical = True
-    run_calibrate_empirical.agents_config = agents_config
-    return run_calibrate_empirical
-
-
-def run_contamination_post(engine: Engine, task: TaskIR) -> StageOutcome:
-    """`contamination_post`: post-generation scan verdict row (same service as check_pre)."""
-    idx = _contamination_index(engine)
-    _arm_contamination_index(idx, announce=False)
-    result = idx.scan_post(
-        task,
-        _public_dir(engine, task),
-        _answer_key_dir(engine, task),
-        require=_required_firewall_coverage(),
-    )
-    collisions = list(result.collisions)
-    evidence = {
-        "task_id": task.task_id,
-        "task_content_hash": task.content_hash(),
-        "collisions": [c.model_dump(mode="json") for c in collisions],
-        # The contamination-clean gate reads this file; the coverage travels with it
-        # so the evidence can never be a bare "0 collisions".
-        "coverage": _coverage_payload(engine, result.coverage),
-        "coverage_summary": result.coverage.summary(),
-    }
-    (_evidence_dir(engine, task) / "contamination_post.json").write_text(
-        canonical_json(evidence), encoding="utf-8"
-    )
-    fatal = [c for c in collisions if c.fatal]
-    payload = ContaminationPayload(
-        call_point="post",
-        collisions=tuple(c.model_dump(mode="json") for c in collisions),
-        fatal_count=len(fatal),
-        coverage_level=result.coverage.level.value,
-        coverage=_coverage_payload(engine, result.coverage),
-        detail=result.detail(),
-    )
-    if fatal:
-        return StageOutcome(VERDICT_FATAL, payload)
-    return StageOutcome(VERDICT_PASS, payload)
-
-
-def _accepted_variants(engine: Engine, task: TaskIR) -> frozenset[str]:
-    """Variant values whose OWN battery passed at the CURRENT content hash.
-
-    Read through export.release.variant_acceptance so selection, release and this
-    CLI share one acceptance semantics — a second opinion would be a second one."""
-    from elt_taskgen.export import release as release_mod
-
-    records = release_mod.variant_acceptance(engine, task)
-    return frozenset(name for name, rec in records.items() if rec.accepted)
-
-
-def run_select(engine: Engine, task: TaskIR) -> StageOutcome:
-    """`select`: corpus selection. Per-task orchestration selects a pool of
-    one; corpus-wide quota selection over many tasks uses corpus/selection.py
-    directly with the same predicate."""
-    from elt_taskgen.adapters import eltbench_anchor
-    from elt_taskgen.corpus import selection as selection_mod
-
-    diff_path = _evidence_dir(engine, task) / "difficulty.json"
-    if not diff_path.is_file():
-        return StageOutcome(
-            VERDICT_FAIL,
-            StagePayload(error=f"no difficulty measurement at {diff_path} (fail closed)"),
-        )
-    measurement = DifficultyMeasurement.model_validate_json(
-        diff_path.read_text(encoding="utf-8")
-    )
-    require_empirical = bool(
-        getattr(engine, "require_empirical_difficulty", False)
-    )
-    if require_empirical:
-        problem = selection_mod.empirical_evidence_problem(
-            measurement,
-            expected_campaign_fingerprint=getattr(
-                engine, "expected_campaign_fingerprint", None
-            ),
-        )
-        if problem is not None:
-            return StageOutcome(
-                VERDICT_BLOCKED,
-                StagePayload(
-                    error=(
-                        f"selection requires empirical difficulty: {problem}; "
-                        "run `calibrate --empirical` and resume"
-                    ),
-                    data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT},
-                ),
-            )
-    try:
-        anchors = eltbench_anchor.load_anchor_store(engine.workspace)
-    except FileNotFoundError:
-        anchors = []
-
-    quotas = selection_mod.Quotas(size=1, val_fraction=0.0)
-    result = selection_mod.select(
-        [task],
-        {task.task_id: measurement},
-        anchors,
-        quotas,
-        accepted_variants={task.task_id: _accepted_variants(engine, task)},
-        require_empirical=require_empirical,
-        expected_campaign_fingerprint=getattr(
-            engine, "expected_campaign_fingerprint", None
-        ),
-    )
-    if task.task_id in result.rejected:
-        return StageOutcome(
-            VERDICT_FAIL,
-            StagePayload(error=f"selection rejected: {result.rejected[task.task_id]}"),
-        )
-    _atomic_replace_text(
-        _evidence_dir(engine, task) / "selection.json",
-        canonical_json(result.model_dump(mode="json")),
-    )
-    return StageOutcome(VERDICT_PASS, result)
-
-
-def _release_names_el_sources(recorded: dict, task: TaskIR) -> bool:
-    """Does an existing release manifest carry this task's EL source roots?
-
-    The EL reward is computed over EVERY graded population, so a manifest WITHOUT
-    them is a stale release and 'already released' would be a false statement.
-    Capability-checked, so a tree whose exporter predates the field is unaffected
-    rather than permanently blocked."""
-    from elt_taskgen.export import release as release_mod
-
-    if "el_sources" not in release_mod.ReleaseManifest.model_fields:
-        return True  # exporter predates EL source shipping: nothing to require
-    return bool(recorded.get("el_sources", {}).get(task.task_id))
-
-
-def _release_coverage_refusal(engine: Engine) -> str | None:
-    """Why `release` must not ship from this workspace's firewall, or None.
-
-    RELEASE IS THE ONLY STAGE THAT EMITS TRAINABLE DATA, so ARMED coverage is
-    required UNCONDITIONALLY here while every other call point stays warn-only (the
-    tests and offline paths have no benchmark checkout). A name-only index answers
-    "is this task NAMED like a benchmark", which is not a firewall."""
-    from elt_taskgen.verification import contamination as _cont
-    if not _cont.enforcing():
-        return None  # coverage is recorded, not required
-    from elt_taskgen.verification import contamination as cont
-
-    coverage = _contamination_index(engine).coverage()
-    if coverage.level is cont.CoverageLevel.ARMED:
-        return None
-    return (
-        "contamination coverage is "
-        f"{coverage.level.value!r}, not ARMED — release is the only stage that "
-        "emits trainable data and it will not ship behind a name-only check. "
-        f"{coverage.summary()} Run: elt-taskgen measure-target --workspace "
-        "<ws> --bench-root <ELT-Bench checkout>."
-    )
-
-
-def _environment_drift_refusal(args_allow_unlocked: bool) -> tuple[str | None, dict[str, str]]:
-    """(refusal or None, recorded environment provenance).
-
-    A release cut from an environment that does not match uv.lock either says so or
-    does not happen; `--allow-unlocked-env` records the drift instead of hiding it.
-    The check itself lives in export/release.py; this pre-check exists so the answer
-    is BLOCKED(environment) — a wait on `uv sync --frozen` — instead of a FAIL that
-    spends a repair round and rejects the task for an environment condition."""
-    from elt_taskgen.export import release as release_mod
-
-    drift_fn = getattr(release_mod, "environment_drift", None)
-    if drift_fn is None:  # exporter predates the provenance check
-        return None, {}
-    drift = drift_fn()
-    if not drift:
-        return None, {}
-    described = ", ".join(
-        f"{pkg} installed {installed!r} != locked {locked!r}"
-        for pkg, (installed, locked) in sorted(drift.items())
-    )
-    if args_allow_unlocked:
-        return None, {"environment_drift": described}
-    return (
-        f"runtime environment does not match uv.lock: {described}. Run "
-        "`uv sync --frozen`, or pass --allow-unlocked-env to release anyway "
-        "(the drift is then RECORDED in the release manifest, never hidden)."
-    ), {}
-
-
-def _existing_certified_attestation_problem(
-    engine: Engine,
-    task: TaskIR,
-    recorded: dict,
-) -> str | None:
-    """Why a supplied attestation cannot authorize an existing certified tree."""
-    from elt_taskgen.export import release as release_mod
-    from elt_taskgen.export.attestation_gate import (
-        AttestationRefusal,
-        require_attestation_for_labels,
-    )
-    from elt_taskgen.runtime.attestation import (
-        SandboxAttestationError,
-        seal_sandbox_attestation,
-        verify_sandbox_attestation,
-    )
-    from elt_taskgen.verification import contamination as contamination_mod
-
-    supplied = getattr(engine, "sandbox_attestation", None)
-    if supplied is None:
-        return "the requested certified release has no sandbox attestation"
-    release_id = str(recorded.get("release_id") or "")
-    if not release_id:
-        return "the existing certified release has no release identity"
-    try:
-        supplied = verify_sandbox_attestation(supplied)
-        if not supplied.run_id:
-            supplied = seal_sandbox_attestation(
-                supplied.model_copy(
-                    update={"run_id": release_id, "attestation_digest": ""}
-                )
-            )
-        decision = require_attestation_for_labels(
-            {
-                "corpus_profile": release_mod.COMBINED_CORPUS_PROFILE,
-                "public_layout": release_mod.COMBINED_PUBLIC_LAYOUT,
-                "variants": {
-                    task.task_id: tuple(v.value for v in RLVR_TASK_VARIANTS)
-                },
-            },
-            supplied,
-            contamination_mode=contamination_mod.enforcement(),
-            run_id=release_id,
-        )
-    except (AttestationRefusal, SandboxAttestationError, ValueError) as exc:
-        return (
-            "the requested sandbox attestation is not current for this release: "
-            f"{exc}"
-        )
-    recorded_digest = str(recorded.get("sandbox_attestation_digest") or "")
-    if decision.attestation_digest != recorded_digest:
-        return (
-            "the requested sandbox attestation does not match the existing "
-            "certified release"
-        )
-    return None
-
-
-def run_release(engine: Engine, task: TaskIR) -> StageOutcome:
-    """`release`: frozen release (immutable tree; freeze never decides
-    acceptance — it re-verifies the ledger and refuses anything unaccepted)."""
-    from elt_taskgen.corpus.selection import SelectionResult
-    from elt_taskgen.export import release as release_mod
-
-    sel_path = _evidence_dir(engine, task) / "selection.json"
-    if not sel_path.is_file():
-        return StageOutcome(
-            VERDICT_FAIL,
-            StagePayload(error=f"no selection record at {sel_path} (fail closed)"),
-        )
-    selection = SelectionResult.model_validate_json(
-        sel_path.read_text(encoding="utf-8")
-    )
-    requested_release_mode = str(getattr(engine, "release_mode", "development"))
-    require_empirical = bool(
-        getattr(engine, "require_empirical_difficulty", False)
-    ) or requested_release_mode == release_mod.CERTIFIED_RELEASE_MODE
-    difficulty_digest = ""
-    if require_empirical:
-        if not selection.empirical_required:
-            return StageOutcome(
-                VERDICT_BLOCKED,
-                StagePayload(
-                    error=(
-                        "release requires an empirical selection record; the "
-                        "current selection was structural-only — re-run `select`"
-                    ),
-                    data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT},
-                ),
-            )
-        diff_path = _evidence_dir(engine, task) / "difficulty.json"
-        if not diff_path.is_file():
-            return StageOutcome(
-                VERDICT_BLOCKED,
-                StagePayload(
-                    error="release requires empirical difficulty evidence",
-                    data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT},
-                ),
-            )
-        from elt_taskgen.corpus import selection as selection_mod
-
-        measurement = DifficultyMeasurement.model_validate_json(
-            diff_path.read_text(encoding="utf-8")
-        )
-        if (
-            measurement.task_id != task.task_id
-            or measurement.task_content_hash != task.content_hash()
-        ):
-            problem = "difficulty evidence is not bound to the current task identity"
-        else:
-            problem = selection_mod.empirical_evidence_problem(
-                measurement,
-                expected_campaign_fingerprint=getattr(
-                    engine, "expected_campaign_fingerprint", None
-                ),
-            )
-        if problem is not None:
-            return StageOutcome(
-                VERDICT_BLOCKED,
-                StagePayload(
-                    error=f"release requires empirical difficulty: {problem}",
-                    data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT},
-                ),
-            )
-        difficulty_digest = sha256_hex(
-            canonical_json(measurement.model_dump(mode="json"))
-        )
-
-    out_dir = engine.workspace / "release"
-    if out_dir.exists():
-        manifest_path = out_dir / "release_manifest.json"
-        if manifest_path.is_file():
-            recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
-            expected_units = [v.value for v in RLVR_TASK_VARIANTS]
-            recorded_mode = str(
-                recorded.get("release_mode")
-                or release_mod.DEVELOPMENT_RELEASE_MODE
-            )
-            policy_problem = None
-            if recorded_mode != requested_release_mode:
-                policy_problem = (
-                    f"existing release mode is {recorded_mode!r}, but this run "
-                    f"requires {requested_release_mode!r}"
-                )
-            elif require_empirical and (
-                recorded.get("difficulty_measurements", {}).get(task.task_id)
-                != difficulty_digest
-            ):
-                policy_problem = (
-                    "existing release does not bind the current empirical "
-                    "difficulty measurement"
-                )
-            elif requested_release_mode == release_mod.CERTIFIED_RELEASE_MODE:
-                policy_problem = _existing_certified_attestation_problem(
-                    engine, task, recorded
-                )
-            if (
-                policy_problem is None
-                and recorded.get("tasks", {}).get(task.task_id) == task.content_hash()
-                and recorded.get("corpus_profile")
-                == release_mod.COMBINED_CORPUS_PROFILE
-                and recorded.get("public_layout")
-                == release_mod.COMBINED_PUBLIC_LAYOUT
-                and recorded.get("variants", {}).get(task.task_id) == expected_units
-                and _release_names_el_sources(recorded, task)
-            ):
-                # NAMING THIS TASK IS NOT THE SAME AS CONTAINING IT: the shortcut
-                # trusted the manifest's own words while a tampered file left
-                # verify_release ok=False. Re-verify the BYTES before saying done.
-                result = release_mod.verify_release(out_dir)
-                if not result.ok:
-                    # SAME CONDITION AS ITS SIBLING BELOW: a corrupt tree in the way
-                    # is the ENVIRONMENT, not a task defect. As an ordinary FAIL it
-                    # spends the budget re-running deterministic stages and ends in
-                    # the inert/budget FATAL that rejects a certified task.
-                    return StageOutcome(
-                        VERDICT_BLOCKED,
-                        StagePayload(
-                            error=(
-                                f"release dir {out_dir} names this task at the "
-                                "current content hash but FAILS byte "
-                                "verification: "
-                                + "; ".join(result.failures[:3])
-                                + " — release output is immutable; move it "
-                                "aside to re-release"
-                            ),
-                            data={
-                                "release_dir": _workspace_rel(engine, out_dir),
-                                BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT,
-                            },
-                        ),
-                    )
-                # Idempotent on the shortcut path too: the admitted-corpus index is
-                # what stops a later near-duplicate from being ingested.
-                _contamination_index(engine).add_admitted_task(task)
-                return StageOutcome(
-                    VERDICT_PASS,
-                    StagePayload(
-                        detail=(
-                            f"already released as {recorded.get('release_id', '?')} "
-                            f"({result.files_checked} file(s) re-verified)"
-                        ),
-                        data={"release_dir": _workspace_rel(engine, out_dir)},
-                    ),
-                )
-            if policy_problem is not None:
-                return StageOutcome(
-                    VERDICT_BLOCKED,
-                    StagePayload(
-                        error=(
-                            f"release dir {out_dir} cannot satisfy the requested "
-                            f"release policy: {policy_problem} — release output is "
-                            "immutable; move it aside to re-release"
-                        ),
-                        data={
-                            "release_dir": _workspace_rel(engine, out_dir),
-                            BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT,
-                        },
-                    ),
-                )
-        # NOT A DEFECT AND NOT A REPAIR: a directory in the way is the ENVIRONMENT.
-        # Routed as an ordinary failure this rejected a certified task; the operator
-        # moves it aside and re-runs.
-        return StageOutcome(
-            VERDICT_BLOCKED,
-            StagePayload(
-                error=f"release dir {out_dir} exists with different content; "
-                "release output is immutable (move it aside to re-release)",
-                data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT},
-            ),
-        )
-
-    unarmed = _release_coverage_refusal(engine)
-    if unarmed is not None:
-    # Block environmental contamination-readiness refusals; do not route them fatal.
-        return StageOutcome(
-            VERDICT_BLOCKED,
-            StagePayload(
-                error=unarmed, data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT}
-            ),
-        )
-    drift, environment_data = _environment_drift_refusal(
-        bool(getattr(engine, "allow_unlocked_env", False))
-    )
-    if drift is not None:
-        return StageOutcome(
-            VERDICT_BLOCKED,
-            StagePayload(
-                error=drift, data={BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT}
-            ),
-        )
-
-    try:
-        manifest = release_mod.freeze_release(
-            engine,
-            selection,
-            out_dir,
-            release_mode=str(getattr(engine, "release_mode", "development")),
-            sandbox_attestation=getattr(engine, "sandbox_attestation", None),
-            agents_config=getattr(engine, "agents_config", None),
-        )
-    except Exception as exc:  # map evidence/isolation refusals to a resumable wait
-        from elt_taskgen.export.attestation_gate import AttestationRefusal
-
-        if isinstance(exc, AttestationRefusal):
-            return StageOutcome(
-                VERDICT_BLOCKED,
-                StagePayload(
-                    error=f"release attestation refused [{exc.code}]: {exc}",
-                    data={
-                        BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT,
-                        "refusal_code": exc.code,
-                    },
-                ),
-            )
-        raise
-    # SELF-CHECK THE FREEZE: verify_release was called from nowhere in src/, and the
-    # README's `shasum -c` remedy skips every census-pinned .duckdb warehouse. A
-    # partial write must fail the stage, not be discovered by a consumer.
-    verified = release_mod.verify_release(out_dir)
-    if not verified.ok:
-        # A HALF-WRITTEN TREE IS THE ENVIRONMENT, NOT THE TASK: no edit to prose,
-        # reference SQL or population conditions can make a partial write verify, so
-        # a repair round here ends in the FATAL that rejects a certified task.
-        return StageOutcome(
-            VERDICT_BLOCKED,
-            StagePayload(
-                error=(
-                    f"the freeze at {out_dir} does not verify against its own "
-                    "manifest: " + "; ".join(verified.failures[:3])
-                    + " — release output is immutable; move it aside and "
-                    "re-run `release`"
-                ),
-                data={
-                    "release_dir": _workspace_rel(engine, out_dir),
-                    BLOCKED_ON_KEY: BLOCKED_ON_ENVIRONMENT,
-                },
-            ),
-        )
-    _contamination_index(engine).add_admitted_task(task)
-    return StageOutcome(
-        VERDICT_PASS,
-        StagePayload(
-            detail=f"frozen release {manifest.release_id} "
-            f"({len(manifest.tasks)} task(s), {len(manifest.checksums)} files)",
-            data={
-                "release_id": manifest.release_id,
-                "release_dir": _workspace_rel(engine, out_dir),
-                "scorer_version": manifest.scorer_version,
-                "generator_version": manifest.generator_version,
-                "verified_files": str(verified.files_checked),
-                **environment_data,
-            },
-        ),
-    )
-
-
-# Deterministic pre-council filters run before provider calls. Every result is
-# recorded and either routes for repair or rejects according to configuration.
-
-def _filter_config():
-    from elt_taskgen.verification import filters as filters_mod
-
-    return filters_mod.load_filter_config()
-
-
-def _record_filter_report(engine: Engine, task: TaskIR, report) -> str:
-    """Write + ledger-record one filter artifact; returns its workspace path."""
-    from elt_taskgen.verification import filters as filters_mod
-
-    path, sha = filters_mod.write_filter_report(report, _evidence_dir(engine, task))
-    rel = _workspace_rel(engine, path)
-    engine.record_artifact(task, rel, sha)
-    return rel
-
-
-def _filter_outcome(report, rel_path: str) -> StageOutcome:
-    """Turn a tripped filter into the configured stage outcome (never a pass)."""
-    from elt_taskgen.verification import filters as filters_mod
-
-    summaries = "; ".join(f.summary for f in report.findings)
-    payload = StagePayload(
-        error=f"{report.filter} filter: {summaries}",
-        data={
-            "filter": report.filter,
-            "artifact": rel_path,
-            "action": report.action.value if report.action else "",
-            "findings": str(len(report.findings)),
-            "config": report.config_source,
-        },
-    )
-    if report.action is filters_mod.FilterAction.REJECT:
-        return StageOutcome(VERDICT_FATAL, payload)
-    return StageOutcome(VERDICT_FAIL, payload, route=report.route)
-
-
-def _task_was_admitted(engine: Engine, task_id: str) -> bool:
-    """Did this corpus already admit this task? (near-duplicate firewall only)
-
-    HASH-BOUND, DELIBERATELY NOT ROSTER-AWARE: `final_verdict` answers "may this
-    ship RIGHT NOW under the CURRENT scorer", and reusing it made the admitted
-    corpus shrink on every SCORER_VERSION bump — a fail-OPEN direction for a
-    firewall. So: a frozen `release` PASS at this identity, or both RLVR unit
-    batteries recorded PASS claiming acceptance. Both hash-bound, so an EDITED task
-    stops counting."""
-    from elt_taskgen.models import TaskStatus
-
-    try:
-        other = engine.load_task(task_id)
-    except EngineError:
-        return False
-    if other.status is TaskStatus.REJECTED:
-        # A rejected task is not in the corpus, and refusing a fresh candidate for
-        # resembling one is a yield loss with nothing behind it.
-        return False
-    current = other.content_hash()
-
-    def _passed_here(stage: StageName):
-        row = engine.latest_report(task_id, stage.value)
-        if row is None or row.verdict != VERDICT_PASS:
-            return None
-        if engine.report_is_superseded(other, row):
-            return None
-        return row if row.content_hash == current else None
-
-    if _passed_here(StageName.RELEASE) is not None:
-        return True
-    for variant in RLVR_TASK_VARIANTS:
-        row = _passed_here(variant_gate_stage(variant))
-        if row is None:
-            return False
-        try:
-            payload = json.loads(row.payload_json)
-        except (json.JSONDecodeError, TypeError, ValueError):
-            return False
-        if payload.get("accepted") is not True:
-            return False
-    return True
-
-
-def _admitted_tasks(engine: Engine, task: TaskIR) -> list[TaskIR]:
-    """Every OTHER registered task this corpus has already admitted.
-
-    Admission is read from the ledger, never from a side file: a task that was never
-    admitted cannot make a later candidate a duplicate. See `_task_was_admitted` for
-    why the test is hash-bound rather than roster-aware."""
-    tasks_root = engine.workspace / "tasks"
-    if not tasks_root.is_dir():
-        return []
-    admitted: list[TaskIR] = []
-    for tdir in sorted(tasks_root.iterdir()):
-        if tdir.name == task.task_id or not (tdir / "task_ir.json").is_file():
-            continue
-        try:
-            if not _task_was_admitted(engine, tdir.name):
-                continue
-            admitted.append(engine.load_task(tdir.name))
-        except Exception:  # noqa: BLE001 - an unreadable task is not evidence
-            continue
-    return admitted
-
-
-def _record_intake_filter_reports(
-    engine: Engine, task: TaskIR, reports: Iterable
-) -> StageOutcome | None:
-    """Record a complete intake-filter bundle and return its strongest block."""
-    from elt_taskgen.verification import filters as filters_mod
-
-    blocked: list[tuple] = []
-    for report in reports:
-        rel = _record_filter_report(engine, task, report)
-        if not report.passed:
-            blocked.append((report, rel))
-    if not blocked:
-        return None
-    report, rel = next(
-        (
-            (r, p)
-            for r, p in blocked
-            if r.action is filters_mod.FilterAction.REJECT
-        ),
-        blocked[0],
-    )
-    return _filter_outcome(report, rel)
-
-
-def run_intake_filters(engine: Engine, task: TaskIR) -> StageOutcome | None:
-    """Intake format blacklist + near-duplicate dedup. None => admitted.
-
-    BOTH artifacts are recorded even when the first already blocks — the ledger must
-    show what was checked, not just what stopped the task. When both trip, the
-    strongest consequence wins: a REJECT is never softened into a repairable route."""
-    from elt_taskgen.verification import filters as filters_mod
-
-    reports = filters_mod.run_intake_filters(
-        task, _admitted_tasks(engine, task), _filter_config()
-    )
-    return _record_intake_filter_reports(engine, task, reports)
-
-
-def _pipeline_batch_intake_preflight(
-    engine: Engine,
-    scheduled_tasks: dict[str, TaskIR],
-) -> tuple[frozenset[str], tuple[dict, ...]]:
-    """Serially filter fresh candidates before concurrent pipeline intake.
-
-    Stable ordering makes each admitted candidate a comparator for later peers.
-    Current contamination passes remain resume incumbents.
-    """
-    from elt_taskgen.verification import filters as filters_mod
-
-    if not scheduled_tasks:
-        return frozenset(), ()
-
-    ordered_ids = tuple(sorted(scheduled_tasks))
-    stopped: set[str] = set()
-    results: list[dict] = []
-    with engine.task_locks(ordered_ids):
-        current_tasks: dict[str, TaskIR] = {}
-        for task_id in ordered_ids:
-            engine.recover_pending_repair(task_id)
-            current = engine.load_task(task_id)
-            expected = scheduled_tasks[task_id]
-            if current.content_hash() != expected.content_hash():
-                raise CliUsageError(
-                    f"pipeline task {task_id!r} changed during intake preflight; "
-                    "no workers were started — re-run the pipeline"
-                )
-            current_tasks[task_id] = current
-
-        incumbents: dict[str, TaskIR] = {}
-        fresh: list[TaskIR] = []
-        for task_id in ordered_ids:
-            task = current_tasks[task_id]
-    # Ignore REJECTED only under an exact, still-valid evidence supersession.
-            final = engine.final_verdict(task_id)
-            reopen = (
-                task.status is TaskStatus.REJECTED
-                and final != FINAL_REJECTED
-                and engine.has_active_report_supersession(task)
-            )
-            if final == FINAL_REJECTED or (
-                task.status is TaskStatus.REJECTED and not reopen
-            ):
-                stopped.add(task_id)
-                results.append(
-                    {
-                        "task_id": task_id,
-                        "ok": False,
-                        "state": FINAL_REJECTED,
-                        "detail": (
-                            "task was already rejected before candidate preparation"
-                        ),
-                        "usd": 0.0,
-                    }
-                )
-                continue
-            row = engine.latest_report(task_id, StageName.CONTAMINATION_PRE.value)
-            current_pass = (
-                row is not None
-                and engine.report_is_current(
-                    task, StageName.CONTAMINATION_PRE, row
-                )[0]
-            )
-            if current_pass:
-                # A resumed task already crossed intake. It is an incumbent for
-                # fresh scheduled candidates even if later stages are unfinished.
-                incumbents[task_id] = task
-            else:
-                fresh.append(task)
-
-        # Preserve the existing ledger-derived admitted-index check. The first
-        # fresh task cannot itself be admitted (otherwise its hash-bound stage
-        # evidence would already be current), so it is a safe scan subject.
-        if fresh:
-            for admitted in _admitted_tasks(engine, fresh[0]):
-                incumbents[admitted.task_id] = admitted
-
-        config = _filter_config()
-        provisional: dict[str, TaskIR] = {}
-        for task in fresh:
-            comparators = [
-                candidate
-                for task_id, candidate in sorted(
-                    {**incumbents, **provisional}.items()
-                )
-                if task_id != task.task_id
-            ]
-            reports = filters_mod.run_intake_filters(task, comparators, config)
-
-            def run_preflight_intake(
-                locked_engine: Engine,
-                locked_task: TaskIR,
-                *,
-                frozen_reports=reports,
-            ) -> StageOutcome:
-                blocked = _record_intake_filter_reports(
-                    locked_engine, locked_task, frozen_reports
-                )
-                if blocked is not None:
-                    return blocked
-                return run_contamination_pre(locked_engine, locked_task)
-
-            engine.set_stage_runner(
-                StageName.CONTAMINATION_PRE, run_preflight_intake
-            )
-            try:
-                engine.run(task.task_id, until=StageName.CONTAMINATION_PRE.value)
-            except InfrastructureFailure as exc:
-                stopped.add(task.task_id)
-                results.append(
-                    {
-                        "task_id": task.task_id,
-                        "ok": False,
-                        "state": "infrastructure",
-                        "detail": str(exc),
-                        "usd": 0.0,
-                    }
-                )
-                continue
-
-            current = engine.load_task(task.task_id)
-            row = engine.latest_report(
-                task.task_id, StageName.CONTAMINATION_PRE.value
-            )
-            current_pass = (
-                row is not None
-                and engine.report_is_current(
-                    current, StageName.CONTAMINATION_PRE, row
-                )[0]
-            )
-            if current_pass:
-                provisional[current.task_id] = current
-                continue
-
-            stopped.add(task.task_id)
-            final = engine.final_verdict(task.task_id)
-            state = FINAL_REJECTED if final == FINAL_REJECTED else "blocked"
-            detail = "candidate intake did not pass"
-            if row is not None:
-                try:
-                    payload = json.loads(row.payload_json)
-                    detail = str(
-                        payload.get("error") or payload.get("detail") or detail
-                    )
-                except (json.JSONDecodeError, TypeError, ValueError):
-                    pass
-            results.append(
-                {
-                    "task_id": task.task_id,
-                    "ok": False,
-                    "state": state,
-                    "detail": detail,
-                    "usd": 0.0,
-                }
-            )
-
-    return frozenset(stopped), tuple(results)
-
-
-def run_execution_effect_filter(engine: Engine, task: TaskIR) -> StageOutcome | None:
-    """Counterfactual/stress populations must move an observable output."""
-    from elt_taskgen.reference import gold as gold_mod
-    from elt_taskgen.verification import filters as filters_mod
-
-    gold = gold_mod.load_gold(_answer_key_dir(engine, task))
-    report = filters_mod.execution_effect_filter(task, gold, _filter_config())
-    rel = _record_filter_report(engine, task, report)
-    return None if report.passed else _filter_outcome(report, rel)
-
-
-def _with_intake_filters(inner):
-    """Run the intake filters BEFORE the wrapped stage does any work."""
-
-    def wrapped(engine: Engine, task: TaskIR) -> StageOutcome:
-        blocked = run_intake_filters(engine, task)
-        if blocked is not None:
-            return blocked
-        return inner(engine, task)
-
-    return wrapped
-
-
-def _with_execution_effect_filter(inner):
-    """Run the execution-effect filter on the outputs the stage just froze."""
-
-    def wrapped(engine: Engine, task: TaskIR) -> StageOutcome:
-        outcome = inner(engine, task)
-        if outcome.verdict != VERDICT_PASS:
-            return outcome
-        blocked = run_execution_effect_filter(engine, outcome.task or task)
-        return blocked if blocked is not None else outcome
-
-    return wrapped
-
-
-def _with_attack_matrix_precheck(inner):
-    """Measure the declared attack matrix the moment gold exists.
-
-    The reference stage freezes gold; that is the first point at which every
-    required mutant can be executed against every population, deterministically
-    and at no provider cost. A declared kill that does not reproduce is refused
-    HERE, routed to POPULATION, rather than two stages later at the author's
-    own precheck (which stays: it protects standalone runs of that stage and
-    is a memo hit after this one).
-    """
-
-    def wrapped(engine: Engine, task: TaskIR) -> StageOutcome:
-        outcome = inner(engine, task)
-        if outcome.verdict != VERDICT_PASS:
-            return outcome
-        unreproducible = _attack_matrix_failure_detail(engine, outcome.task or task)
-        if unreproducible is None:
-            return outcome
-        return StageOutcome(
-            VERDICT_FAIL,
-            StagePayload(error=unreproducible),
-            route=RepairRoute.POPULATION,
-        )
-
-    return wrapped
-
-
-def build_stage_runners(
-    provider,
-    *,
-    echo=None,
-    calibrate_options=None,
-    destination="snowflake",
-    extra_destinations=(),
-):
-    """Wire a runner for every ledger stage except the built-in intake.
-
-    `calibrate_options` opts `calibrate` into the empirical SolverCalibrator;
-    omitted, calibration stays structural-only — a solver campaign is never a side
-    effect of running the pipeline."""
-    runners = {
-        # The intake filters gate `contamination_pre` and the execution-effect filter
-        # gates `reference`: deterministic, and before any provider call.
-        StageName.CONTAMINATION_PRE: _with_intake_filters(run_contamination_pre),
-        StageName.GENERATE: run_generate,
-        StageName.REFERENCE: _with_attack_matrix_precheck(
-            _with_execution_effect_filter(run_reference_stage)
-        ),
-        StageName.AUTHOR: make_author_runner(provider),
-        StageName.REVIEW: make_review_runner(provider),
-        StageName.ATTACK: run_attack_stage,
-        StageName.TASK_INTEGRITY: make_gates_runner(
-            provider, destination=destination, extra_destinations=extra_destinations
-        ),
-        # The two subtask batteries: same frozen artifacts, same content hash,
-        # their OWN rewards, rosters and witnesses (design R1/R2).
-        StageName.GATES_EXTRACT_LOAD: make_variant_gates_runner(
-            TaskVariant.EXTRACT_LOAD,
-            provider,
-            destination=destination,
-            extra_destinations=extra_destinations,
-        ),
-        StageName.GATES_TRANSFORM: make_variant_gates_runner(
-            TaskVariant.TRANSFORM,
-            provider,
-            destination=destination,
-            extra_destinations=extra_destinations,
-        ),
-        StageName.CALIBRATE: make_calibrate_runner(
-            provider, **(dict(calibrate_options or {}))
-        ),
-        StageName.CONTAMINATION_POST: run_contamination_post,
-        StageName.SELECT: run_select,
-        StageName.RELEASE: run_release,
-    }
-    if echo is None:
-        return runners
-
-    def logged(stage: StageName, runner):
-        # `wraps` carries the runner's tags (the empirical `calibrate` tag the
-        # proposer's trial certifier reads) through the echo wrapper.
-        @functools.wraps(runner)
-        def wrapped(engine: Engine, task: TaskIR) -> StageOutcome:
-            echo(f"  -> {stage.value} ...")
-            outcome = runner(engine, task)
-            echo(f"     {stage.value}: {outcome.verdict}")
-            return outcome
-
-        return wrapped
-
-    return {stage: logged(stage, runner) for stage, runner in runners.items()}
 
 
 def _resolve_provider(
@@ -5001,34 +260,15 @@ def _resolve_provider(
     from elt_taskgen.review import providers as providers_mod
 
     retry_values = {
-        "http_retries": getattr(args, "http_retries", None),
-        "schema_retries": getattr(args, "schema_retries", None),
-        "http_timeout_seconds": getattr(args, "http_timeout_seconds", None),
-        "http_backoff_seconds": getattr(args, "http_backoff_seconds", None),
-    }
-    if any(value is not None for value in retry_values.values()):
-        providers_mod.configure_retry_policy(
-            http_retries=(
-                4
-                if retry_values["http_retries"] is None
-                else retry_values["http_retries"]
-            ),
-            schema_retries=(
-                2
-                if retry_values["schema_retries"] is None
-                else retry_values["schema_retries"]
-            ),
-            http_timeout_seconds=(
-                600.0
-                if retry_values["http_timeout_seconds"] is None
-                else retry_values["http_timeout_seconds"]
-            ),
-            http_backoff_seconds=(
-                2.0
-                if retry_values["http_backoff_seconds"] is None
-                else retry_values["http_backoff_seconds"]
-            ),
+        name: getattr(args, name)
+        for name in (
+            "http_retries", "schema_retries",
+            "http_timeout_seconds", "http_backoff_seconds",
         )
+        if getattr(args, name, None) is not None
+    }
+    if retry_values:
+        providers_mod.configure_retry_policy(**retry_values)
 
     routing = providers_mod.load_role_routing(
         getattr(args, "agents_config", None) or None
@@ -5086,14 +326,14 @@ def _resolve_provider(
     )
     requested_refresh = bool(getattr(args, "record", False))
     if requested_refresh and resolved_replay_only:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--record and --replay-only are contradictory: --record forces "
             "fresh LIVE calls, --replay-only forbids live calls. Pick one "
             "(drop --record to replay recorded transcripts)."
         )
     resolved_refresh = requested_refresh if refresh is None else bool(refresh)
     if resolved_refresh and resolved_replay_only:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "fresh provider calls and replay-only are contradictory (internal "
             "provider resolution refused the combination)"
         )
@@ -5151,7 +391,7 @@ def _active_campaign_fingerprint(args) -> str | None:
     try:
         roster = calibration_mod.load_calibration_roster(config)
     except (OSError, ValueError) as exc:
-        raise CliUsageError(f"invalid active calibration campaign: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"invalid active calibration campaign: {exc}") from None
     return calibration_mod.roster_fingerprint(roster)
 
 
@@ -5174,7 +414,7 @@ def _make_repair_proposer(args, provider):
 
     mode = str(getattr(args, "repair_proposer_mode", None) or DEFAULT_REPAIR_PROPOSER_MODE)
     if mode not in REPAIR_PROPOSER_MODES:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"--repair-proposer-mode {mode!r} is not one of {list(REPAIR_PROPOSER_MODES)}"
         )
     cls = AgenticRepairProposer if mode == "bounded" else RepairProposer
@@ -5192,7 +432,7 @@ def _make_engine(args, provider=None, *, echo=None) -> Engine:
     engine = _open_engine(
         workspace,
         max_repair_rounds=getattr(args, "max_repair_rounds", 3),
-        stage_runners=build_stage_runners(
+        stage_runners=_pipeline_stages.build_stage_runners(
             provider,
             echo=echo,
             calibrate_options=_calibrate_options(args),
@@ -5229,10 +469,10 @@ def _make_engine(args, provider=None, *, echo=None) -> Engine:
             )
         except (OSError, ValueError, SandboxAttestationError) as exc:
             engine.close()
-            raise CliUsageError(f"invalid sandbox attestation: {exc}") from None
+            raise _pipeline_support.CliUsageError(f"invalid sandbox attestation: {exc}") from None
     if engine.release_mode == "certified" and engine.sandbox_attestation is None:
         engine.close()
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "certified release requires --sandbox-attestation; use "
             "--development-release only for an explicitly unlabelled local cut"
         )
@@ -5289,73 +529,6 @@ def _print_stage_report(engine: Engine, task_id: str) -> None:
         if len(detail) > 76:
             detail = detail[:73] + "..."
         print(f"  {stage.value:<20} {row.verdict:<7} rev={row.revision}  {detail}")
-
-
-def _measured_rewards(engine: Engine, task_id: str) -> dict[str, dict[str, float]]:
-    row = engine.latest_report(task_id, StageName.ATTACK.value)
-    if row is None:
-        return {}
-    return json.loads(row.payload_json).get("rewards", {})
-
-
-def _trusted_rewards(engine: Engine, task_id: str) -> dict[str, float]:
-    row = engine.latest_report(task_id, StageName.GATES.value)
-    if row is None:
-        return {}
-    payload = json.loads(row.payload_json)
-    for gate in payload.get("gates", []):
-        if gate.get("gate") == "trusted-solution":
-            return {
-                key.split(":", 1)[1]: float(value)
-                for key, value in gate.get("evidence", {}).items()
-                if key.startswith("reward:")
-            }
-    return {}
-
-
-def _print_attack_matrix(engine: Engine, task: TaskIR) -> bool:
-    """Print the measured attack matrix and verify it reproduces every expected_pass
-    map exactly (full reward where True, lost where False). True iff reproduced."""
-    rewards = _measured_rewards(engine, task.task_id)
-    trusted = _trusted_rewards(engine, task.task_id)
-
-    name_w = max(
-        [len("correct (reference)")] + [len(c.name) for c in task.attack_cases]
-    ) + 2
-    header = "case".ljust(name_w) + "".join(p.value.ljust(16) for p in POP_ORDER)
-    print("\nAttack matrix (measured reward; '(exp pass/fail)' = spec expectation):")
-    print("  " + header)
-    print("  " + "-" * len(header))
-
-    ok = True
-
-    def cell(reward: float | None, expect: bool | None) -> str:
-        nonlocal ok
-        if reward is None:
-            if expect is not None:
-                ok = False
-            return "MISSING".ljust(16)
-        text = f"{reward:.2f}"
-        if expect is None:
-            return text.ljust(16)
-        matches = (reward == 1.0) if expect else (reward < 1.0)
-        if not matches:
-            ok = False
-        text += f" ({'pass' if expect else 'fail'}{'' if matches else ' VIOLATED'})"
-        return text.ljust(16)
-
-    line = "correct (reference)".ljust(name_w)
-    for pop in POP_ORDER:
-        line += cell(trusted.get(pop.value), True)
-    print("  " + line)
-
-    for case in task.attack_cases:
-        measured = rewards.get(case.name, {})
-        line = case.name.ljust(name_w)
-        for pop in POP_ORDER:
-            line += cell(measured.get(pop.value), case.expected_pass.get(pop))
-        print("  " + line)
-    return ok
 
 
 # --- Subcommand implementations ---
@@ -5464,7 +637,7 @@ def cmd_record_transcripts(args) -> int:
 
     # Apply the review admission gate before live author and critic seeding.
     if not loader_only:
-        detail, admission = _admission_gate(provider, workspace)
+        detail, admission = _pipeline_review._admission_gate(provider, workspace)
         if detail is not None:
             # 1, not 2: the same "blocked, the council is not admitted" answer
             # metrology itself reports, and no live call was made.
@@ -5474,7 +647,7 @@ def cmd_record_transcripts(args) -> int:
                 "ELT_TASKGEN_ADMISSION (or re-run it in this workspace)."
             )
             return 1
-        _stamp_admission(provider, admission)
+        _pipeline_review._stamp_admission(provider, admission)
 
     print(f"recording live transcripts for task {task.task_id!r} into {out_dir}")
     from elt_taskgen.reference import independent
@@ -5497,14 +670,14 @@ def cmd_record_transcripts(args) -> int:
 
     findings: list = []
     if not loader_only:
-        _begin_task_evidence(provider, task)
+        _pipeline_review._begin_task_evidence(provider, task)
         # Seed the exact author protocol the review stage will replay.  A bounded
         # author stores a session/trajectory key, not the historical one-shot
         # exchange key; recording the latter made an enabled-by-default author
         # impossible to use with ``--replay-only``.
         author_engine = _open_engine(workspace)
         try:
-            prose, _author_session_data = _author_prose_for(
+            prose, _author_session_data = _pipeline_review._author_prose_for(
                 author_engine, task, provider
             )
         finally:
@@ -5527,7 +700,7 @@ def cmd_record_transcripts(args) -> int:
             )
             for problem in fidelity_problems:
                 print(f"  - {problem}")
-        _begin_task_evidence(provider, authored)
+        _pipeline_review._begin_task_evidence(provider, authored)
         findings = council.run_council(authored, provider)
         # Seed the cross-family independent-implementer exchange (sample 0): the
         # demo's gates stage replays exactly this prompt when it runs the dual build
@@ -5557,7 +730,7 @@ def cmd_record_transcripts(args) -> int:
     loader_engine = _open_engine(workspace)
     try:
         stored = loader_engine.load_task(task.task_id)
-        answer_key = _answer_key_dir(loader_engine, stored)
+        answer_key = _pipeline_support._answer_key_dir(loader_engine, stored)
         populations = loader_engine.task_dir(stored.task_id) / "populations"
         if not (answer_key.is_dir() and populations.is_dir()):
             print(
@@ -5607,7 +780,7 @@ def cmd_record_transcripts(args) -> int:
                         stored,
                         gold_bundle,
                         TaskVariant.EXTRACT_LOAD,
-                        _variants_root(loader_engine, stored)
+                        _pipeline_gates._variants_root(loader_engine, stored)
                         / TaskVariant.EXTRACT_LOAD.value,
                         populations_dir=populations,
                     )
@@ -6234,7 +1407,7 @@ def _print_task_summary(task) -> None:
 
 
 def _report_ingest_collisions(
-    task_id: str, collisions: Iterable[_CollisionLike]
+    task_id: str, collisions: Iterable[_pipeline_generation._CollisionLike]
 ) -> int:
     """Print the one ingest refusal format and return its fatal count.
 
@@ -6270,6 +1443,8 @@ def cmd_ingest_five(args) -> int:
             workspace=Path(args.workspace),
             reingest=bool(getattr(args, "reingest", False)),
             dry_run=bool(args.dry_run),
+            difficulty_profile=DEFAULT_GENERATION_PROFILE.name,
+            recipe_selection=DEFAULT_GENERATION_CONFIG.recipe_selection(),
         )
     except (FiveSourceIngestError, OSError, ValueError) as exc:
         print(f"ERROR: five-source ingest refused: {exc}")
@@ -6385,13 +1560,19 @@ def cmd_ingest_dbt(args) -> int:
     # The SAME service the pipeline's stage-2 runner uses, at ingest time. A dry run
     # opens no engine, so the index is built from the workspace path directly.
     idx = ContaminationIndex(workspace / "state" / "contamination")
-    _arm_contamination_index(idx)
+    _pipeline_generation._arm_contamination_index(idx)
     engine = _open_engine(workspace) if not args.dry_run else None
     try:
         registered = 0
         refused = 0
         clean = 0
         for task in tasks:
+            try:
+                task = _apply_generation_semantics(task, args)
+            except ValueError as exc:
+                print(f"refused semantic generation for {task.task_id}: {exc}")
+                refused += 1
+                continue
             collisions = idx.check_pre(task)
             fatal_count = _report_ingest_collisions(task.task_id, collisions)
             if fatal_count:
@@ -6409,7 +1590,7 @@ def cmd_ingest_dbt(args) -> int:
             engine.close()
 
     source = args.package or str(manifest_path)
-    tail = f" ({refused} refused by the contamination pre-check)" if refused else ""
+    tail = f" ({refused} refused by semantic admission or the contamination pre-check)" if refused else ""
     if args.dry_run:
         print(
             f"dry run: {clean} ingestible candidate task(s) of {len(tasks)} extracted "
@@ -6431,15 +1612,17 @@ def cmd_ingest_synsql(args) -> int:
     from elt_taskgen.verification import contamination as cont
 
     task, trusted_schema_atoms = synsql.to_task_ir_with_schema_atoms(
-        args.db_id, Path(args.tables).resolve(), pool=args.pool
+        args.db_id, Path(args.tables).resolve(), pool=args.pool,
+        difficulty_profile=DEFAULT_GENERATION_PROFILE,
     )
+    task = _apply_generation_semantics(task, args)
 
     workspace = Path(args.workspace).resolve()
     index_dir = workspace / "state" / "contamination"
     idx = cont.ContaminationIndex(index_dir)
     if not idx.is_armed():
         print("contamination index seeded with the embedded benchmark deny lists")
-    _arm_contamination_index(idx)
+    _pipeline_generation._arm_contamination_index(idx)
     try:
         borderline = synsql.assert_uncontaminated(task, index_dir)
     except synsql.SynSQLContaminationError as exc:
@@ -6556,6 +1739,7 @@ def cmd_ingest_schemapile(args) -> int:
         if args.source
         else catalog.pool(args.pool).root_path() / schemapile.SOURCE_FILENAME
     )
+
     task = schemapile.task_from_index(
         index,
         source=source,
@@ -6564,7 +1748,9 @@ def cmd_ingest_schemapile(args) -> int:
         pool=args.pool,
         filt=filt,
         catalog=catalog,
+        difficulty_profile=DEFAULT_GENERATION_PROFILE,
     )
+    task = _apply_generation_semantics(task, args)
 
     # Contamination is ONE service with TWO call points; the pre call point runs here
     # so a colliding candidate is refused BEFORE it costs a workspace entry.
@@ -6574,7 +1760,7 @@ def cmd_ingest_schemapile(args) -> int:
     idx = cont.ContaminationIndex(workspace / "state" / "contamination")
     if not idx.is_armed():
         print("contamination index was empty — seeded with the embedded deny lists")
-    _arm_contamination_index(idx)
+    _pipeline_generation._arm_contamination_index(idx)
     collisions = idx.check_pre(task)
     # Canonical refusal shape and exit code (INGEST EXIT-CODE CONTRACT): a
     # per-command dialect returning 1 made `if [ $? -eq 2 ]` miss a refusal here.
@@ -6686,7 +1872,7 @@ def cmd_ingest_anchor(args) -> int:
     store_dir = eltbench_anchor.anchor_store_dir(workspace)
 
     idx = cont.ContaminationIndex(workspace / "state" / "contamination")
-    _arm_contamination_index(idx, announce=False)
+    _pipeline_generation._arm_contamination_index(idx, announce=False)
     fingerprints: set[str] = set()
     for task in tasks:
         fingerprints |= cont.task_fingerprints(task)
@@ -6801,7 +1987,8 @@ def cmd_ingest_wikidbs(args) -> int:
             wikidbs_root=None if args.no_verify_nodes else root,
             catalog=catalog,
         )
-    except (wikidbs.WikiDbsIngestError, wikidbs.ProvenanceLeakError) as exc:
+        task = _apply_generation_semantics(task, args)
+    except (wikidbs.WikiDbsIngestError, wikidbs.ProvenanceLeakError, ValueError) as exc:
         print(f"ERROR: {exc}")
         return 2
 
@@ -6809,7 +1996,7 @@ def cmd_ingest_wikidbs(args) -> int:
     idx = cont.ContaminationIndex(workspace / "state" / "contamination")
     if not idx.is_armed():
         print("contamination index seeded with the embedded benchmark deny lists")
-    _arm_contamination_index(idx)
+    _pipeline_generation._arm_contamination_index(idx)
     collisions = idx.check_pre(task)
     if _report_ingest_collisions(task.task_id, collisions):
         return 2
@@ -6910,7 +2097,7 @@ def cmd_ingest_dlt(args) -> int:
     idx = cont.ContaminationIndex(index_dir)
     if not idx.is_armed():
         print("contamination index seeded with the embedded benchmark deny lists")
-    _arm_contamination_index(idx)
+    _pipeline_generation._arm_contamination_index(idx)
 
     registered = 0
     skipped: list[tuple[str, str]] = []
@@ -6943,6 +2130,7 @@ def cmd_ingest_dlt(args) -> int:
                 task = dlt_adapter.to_task_ir(
                     manifest, pool=args.pool, selection=selection
                 )
+                task = _apply_generation_semantics(task, args)
                 borderline = dlt_adapter.assert_uncontaminated(task, index_dir)
             except dlt_adapter.DltContaminationError as exc:
                 # A REFUSAL, not a skip: print the canonical shape and take the exit
@@ -6983,65 +2171,6 @@ def cmd_ingest_dlt(args) -> int:
     return 0
 
 
-def _force_stage_rerun(engine: Engine, task: TaskIR, stage: StageName, reason: str) -> None:
-    """Shadow a stage's current PASS so `engine.run` executes it again.
-
-    APPEND-ONLY: a new FAIL row under MAX(id), exactly the way `repair.apply_repair`
-    invalidates a stage; it never mutates or deletes the row it supersedes. Calling
-    the runner directly instead bypassed `_handle_failure`, so a measured IMPOSSIBLE
-    verdict was appended with no route, no repair round and no rejection — and the
-    next command painted a PASS over it."""
-    if not engine.task_lock_held(task.task_id):
-        raise EngineError(
-            "force-stage invalidation must run under the task's execution lock"
-        )
-    engine.record_report(
-        task,
-        stage.value,
-        VERDICT_FAIL,
-        StagePayload(
-            detail=f"superseded: {reason}",
-            data={"reason": reason, "stage": stage.value},
-        ),
-    )
-
-
-def _atomic_replace_text(path: Path, text: str) -> None:
-    """Durably publish a small workspace record with temp + rename.
-
-    Corpus and per-task selection records are resumable coordinator state.  A
-    process death may leave an unreferenced private temp file, but never a torn
-    JSON document at the public path.
-    """
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(text)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        temporary = None
-        if os.name != "nt":
-            descriptor = os.open(path.parent, os.O_RDONLY)
-            try:
-                os.fsync(descriptor)
-            finally:
-                os.close(descriptor)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
-
-
 def _report_blocked(
     engine: Engine, task_id: str, until: StageName | None = None
 ) -> bool:
@@ -7069,7 +2198,7 @@ def _report_blocked(
         f"{payload.get('error') or payload.get('detail') or ''}"
     )
     scheduled = str(data.get("rerun_scheduled", "") or "")
-    subcommand = STAGE_SUBCOMMANDS.get(row.stage, row.stage)
+    subcommand = _pipeline_gates.STAGE_SUBCOMMANDS.get(row.stage, row.stage)
     rerun = (
         f"elt-taskgen {subcommand} --workspace {engine.workspace} "
         f"--task-id {task_id}"
@@ -7097,7 +2226,7 @@ def _schedule_required_empirical_evidence(engine: Engine, task: TaskIR) -> str |
     """
     from elt_taskgen.corpus import selection as selection_mod
 
-    diff_path = _evidence_dir(engine, task) / "difficulty.json"
+    diff_path = _pipeline_support._evidence_dir(engine, task) / "difficulty.json"
     problem = "difficulty evidence is missing"
     if diff_path.is_file():
         try:
@@ -7115,7 +2244,7 @@ def _schedule_required_empirical_evidence(engine: Engine, task: TaskIR) -> str |
             )
         except (OSError, ValueError) as exc:
             problem = f"difficulty evidence is unreadable: {exc}"
-    selection_path = _evidence_dir(engine, task) / "selection.json"
+    selection_path = _pipeline_support._evidence_dir(engine, task) / "selection.json"
     selection_is_empirical = False
     if selection_path.is_file():
         try:
@@ -7139,7 +2268,7 @@ def _schedule_required_empirical_evidence(engine: Engine, task: TaskIR) -> str |
         if row is not None and engine.report_is_current(
             task, StageName.CALIBRATE, row
         )[0]:
-            _force_stage_rerun(
+            _pipeline_support._force_stage_rerun(
                 engine,
                 task,
                 StageName.CALIBRATE,
@@ -7150,7 +2279,7 @@ def _schedule_required_empirical_evidence(engine: Engine, task: TaskIR) -> str |
         if row is not None and engine.report_is_current(
             task, StageName.SELECT, row
         )[0]:
-            _force_stage_rerun(
+            _pipeline_support._force_stage_rerun(
                 engine,
                 task,
                 StageName.SELECT,
@@ -7194,7 +2323,7 @@ def _run_until(args, until: StageName | None) -> int:
                     locked_engine.report_is_current(task, until, row)[0]
                     or same_identity_guard
                 ):
-                    _force_stage_rerun(
+                    _pipeline_support._force_stage_rerun(
                         locked_engine,
                         task,
                         until,
@@ -7292,7 +2421,7 @@ def cmd_calibrate(args) -> int:
                 or bool(getattr(args, "recalibrate", False))
             )
             if incomplete:
-                _force_stage_rerun(
+                _pipeline_support._force_stage_rerun(
                     locked_engine,
                     task,
                     StageName.CALIBRATE,
@@ -7431,7 +2560,7 @@ def _pipeline_worker(payload: dict) -> dict:
             if isinstance(prior, dict) and prior.get("state") == "RUNNING":
                 prior["state"] = "INTERRUPTED"
                 prior["detail"] = "unfinished attempt observed before resume"
-                _atomic_replace_text(
+                _pipeline_support._atomic_replace_text(
                     prior_path, readable_json(prior) + "\n"
                 )
         attempt_id = uuid.uuid4().hex
@@ -7442,7 +2571,7 @@ def _pipeline_worker(payload: dict) -> dict:
             "target_stage": target_stage.value,
             "state": "RUNNING",
         }
-        _atomic_replace_text(
+        _pipeline_support._atomic_replace_text(
             attempt_path, readable_json(attempt_document) + "\n"
         )
 
@@ -7465,7 +2594,7 @@ def _pipeline_worker(payload: dict) -> dict:
                 value = str(result.get(key, "") or "").strip()
                 if value:
                     final_attempt[key] = value
-            _atomic_replace_text(
+            _pipeline_support._atomic_replace_text(
                 attempt_path, readable_json(final_attempt) + "\n"
             )
         return result
@@ -7476,7 +2605,7 @@ def _pipeline_worker(payload: dict) -> dict:
         task = engine.load_task(worker_args.task_id)
         if attempt_path is not None:
             attempt_document["task_content_hash"] = task.content_hash()
-            _atomic_replace_text(
+            _pipeline_support._atomic_replace_text(
                 attempt_path, readable_json(attempt_document) + "\n"
             )
         require_empirical = bool(
@@ -7496,7 +2625,7 @@ def _pipeline_worker(payload: dict) -> dict:
                     through=target_stage,
                     spec=configured_spec,
                 ):
-                    _force_stage_rerun(
+                    _pipeline_support._force_stage_rerun(
                         locked_engine,
                         locked_task,
                         check.stage,
@@ -7518,7 +2647,7 @@ def _pipeline_worker(payload: dict) -> dict:
                     if row is not None and locked_engine.report_is_current(
                         locked_task, stage, row
                     )[0]:
-                        _force_stage_rerun(
+                        _pipeline_support._force_stage_rerun(
                             locked_engine,
                             locked_task,
                             stage,
@@ -7636,7 +2765,7 @@ def _pipeline_worker(payload: dict) -> dict:
                 getattr(getattr(provider, "meter", None), "total_usd", 0.0)
             ),
         })
-    except CliUsageError as exc:
+    except _pipeline_support.CliUsageError as exc:
         return finish({
             "task_id": str(getattr(worker_args, "task_id", "?")),
             "ok": False,
@@ -7665,7 +2794,7 @@ def _registered_task_ids(
             )
         )
     if not task_ids:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "pipeline found no registered tasks; ingest candidates from the source "
             "adapters first"
         )
@@ -7673,14 +2802,14 @@ def _registered_task_ids(
         try:
             validate_task_id_segment(task_id)
         except (TypeError, ValueError) as exc:
-            raise CliUsageError(f"unsafe pipeline task id {task_id!r}: {exc}") from None
+            raise _pipeline_support.CliUsageError(f"unsafe pipeline task id {task_id!r}: {exc}") from None
     missing = [
         task_id
         for task_id in task_ids
         if not (workspace / "tasks" / task_id / "task_ir.json").is_file()
     ]
     if missing:
-        raise CliUsageError(f"pipeline task ids are not registered: {missing}")
+        raise _pipeline_support.CliUsageError(f"pipeline task ids are not registered: {missing}")
     return task_ids
 
 
@@ -7791,7 +2920,7 @@ def _cmd_pipeline_legacy(args) -> int:
         if args.allow_unlocked_env:
             release_only_flags.append("--allow-unlocked-env")
         if release_only_flags:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"{', '.join(release_only_flags)} require --release-dir; "
                 "without an output directory pipeline prepares and selects "
                 "the corpus but does not freeze a release"
@@ -7800,22 +2929,22 @@ def _cmd_pipeline_legacy(args) -> int:
     # Refuse argument/configuration errors before a typed ingest can mutate the
     # workspace. Roster-dependent bounds remain below, after task discovery.
     if args.workers < 1:
-        raise CliUsageError("--workers must be at least 1")
+        raise _pipeline_support.CliUsageError("--workers must be at least 1")
     if args.size is not None and args.size < 1:
-        raise CliUsageError("--size must be at least 1")
+        raise _pipeline_support.CliUsageError("--size must be at least 1")
     per_task_limit = float(args.budget_per_task)
     if not math.isfinite(per_task_limit) or per_task_limit <= 0.0:
-        raise CliUsageError("--budget-per-task must be a finite positive number")
+        raise _pipeline_support.CliUsageError("--budget-per-task must be a finite positive number")
     val_fraction = float(args.val_fraction)
     if not math.isfinite(val_fraction) or not 0.0 <= val_fraction <= 1.0:
-        raise CliUsageError("--val-fraction must be a finite number between 0 and 1")
+        raise _pipeline_support.CliUsageError("--val-fraction must be a finite number between 0 and 1")
     if bool(args.record) and bool(args.replay_only):
-        raise CliUsageError("--record and --replay-only cannot be used together")
+        raise _pipeline_support.CliUsageError("--record and --replay-only cannot be used together")
     aggregate_limit = None
     if args.budget_total is not None:
         aggregate_limit = float(args.budget_total)
         if not math.isfinite(aggregate_limit) or aggregate_limit <= 0.0:
-            raise CliUsageError("--budget-total must be a finite positive number")
+            raise _pipeline_support.CliUsageError("--budget-total must be a finite positive number")
 
     allowed_sources = {
         Origin.DBT.value,
@@ -7831,27 +2960,27 @@ def _cmd_pipeline_legacy(args) -> int:
     }
     unknown_sources = sorted(required_source_values - allowed_sources)
     if unknown_sources:
-        raise CliUsageError(f"unknown --require-sources values: {unknown_sources}")
+        raise _pipeline_support.CliUsageError(f"unknown --require-sources values: {unknown_sources}")
 
     release_mode = "development" if args.development_release else "certified"
     if args.release_dir is not None:
         if release_mode == "certified" and not required_source_values:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "a certified pipeline release requires at least one "
                 "--require-sources origin; an empty source policy is development-only"
             )
         if release_mode == "certified" and args.allow_structural_difficulty:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "--allow-structural-difficulty is development-only; pair it with "
                 "--development-release or enable empirical calibration"
             )
         if release_mode == "certified" and args.sandbox_attestation is None:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "certified pipeline release requires --sandbox-attestation; "
                 "use --development-release only for an explicitly unlabelled local cut"
             )
         if release_mode == "development" and args.sandbox_attestation is not None:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "--sandbox-attestation is only valid for a certified release"
             )
         requested_release_dir = Path(args.release_dir).resolve()
@@ -7859,7 +2988,7 @@ def _cmd_pipeline_legacy(args) -> int:
             requested_release_dir.is_dir()
             and (requested_release_dir / "release_manifest.json").is_file()
         ):
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "pipeline release directory already exists without a complete "
                 "manifest (immutable output; move it aside): "
                 f"{requested_release_dir}"
@@ -7869,7 +2998,7 @@ def _cmd_pipeline_legacy(args) -> int:
     ingest_manifest = getattr(args, "ingest_manifest", None)
     ingest_reingest = bool(getattr(args, "reingest", False))
     if ingest_reingest and ingest_manifest is None:
-        raise CliUsageError("pipeline --reingest requires --ingest-manifest")
+        raise _pipeline_support.CliUsageError("pipeline --reingest requires --ingest-manifest")
     if ingest_manifest is not None:
         from elt_taskgen.ingest_manifest import (
             FiveSourceIngestError,
@@ -7881,9 +3010,11 @@ def _cmd_pipeline_legacy(args) -> int:
                 Path(ingest_manifest),
                 workspace=workspace,
                 reingest=ingest_reingest,
+                difficulty_profile=DEFAULT_GENERATION_PROFILE.name,
+                recipe_selection=DEFAULT_GENERATION_CONFIG.recipe_selection(getattr(args, "selection_seed", None) or 0),
             )
         except (FiveSourceIngestError, OSError, ValueError) as exc:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"five-source ingest preflight refused: {exc}"
             ) from None
         print(
@@ -7892,7 +3023,7 @@ def _cmd_pipeline_legacy(args) -> int:
         )
     task_ids = _registered_task_ids(workspace, args.task_id)
     if args.size is not None and args.size > len(task_ids):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"--size must be between 1 and the {len(task_ids)} scheduled tasks"
         )
     requested_size = int(args.size or len(task_ids))
@@ -7917,11 +3048,11 @@ def _cmd_pipeline_legacy(args) -> int:
     present_sources = {task.origin.value for task in scheduled_tasks.values()}
     missing_sources = sorted(required_source_values - present_sources)
     if missing_sources:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"registered pipeline roster is missing required sources: {missing_sources}"
         )
     if len(required_source_values) > requested_size:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"--size {requested_size} cannot represent {len(required_source_values)} "
             "required sources"
         )
@@ -7965,14 +3096,14 @@ def _cmd_pipeline_legacy(args) -> int:
                 SandboxAttestationError,
                 AttestationRefusal,
             ) as exc:
-                raise CliUsageError(f"invalid sandbox attestation: {exc}") from None
+                raise _pipeline_support.CliUsageError(f"invalid sandbox attestation: {exc}") from None
 
     # The duplicate firewall must serialize admission of fresh candidates. If
     # this happened inside workers, two clones could each observe an admitted
     # corpus that did not yet contain the other and both incur provider spend.
     intake_engine = _open_engine(workspace, max_repair_rounds=0)
     try:
-        preflight_stopped, preflight_results = _pipeline_batch_intake_preflight(
+        preflight_stopped, preflight_results = _pipeline_generation._pipeline_batch_intake_preflight(
             intake_engine, scheduled_tasks
         )
     finally:
@@ -8075,7 +3206,7 @@ def _cmd_pipeline_legacy(args) -> int:
             measurements: dict[str, DifficultyMeasurement] = {}
             accepted_variants: dict[str, frozenset[str]] = {}
             for current_task in current_tasks:
-                path = _evidence_dir(coordinator, current_task) / "difficulty.json"
+                path = _pipeline_support._evidence_dir(coordinator, current_task) / "difficulty.json"
                 try:
                     measurements[current_task.task_id] = (
                         DifficultyMeasurement.model_validate_json(
@@ -8083,11 +3214,11 @@ def _cmd_pipeline_legacy(args) -> int:
                         )
                     )
                 except (OSError, ValueError) as exc:
-                    raise CliUsageError(
+                    raise _pipeline_support.CliUsageError(
                         "difficulty evidence for prepared task "
                         f"{current_task.task_id!r} is unreadable: {exc}"
                     ) from None
-                accepted_variants[current_task.task_id] = _accepted_variants(
+                accepted_variants[current_task.task_id] = _pipeline_release._accepted_variants(
                     coordinator, current_task
                 )
             try:
@@ -8167,8 +3298,8 @@ def _cmd_pipeline_legacy(args) -> int:
                     VERDICT_FATAL,
                     StagePayload(error="task is outside the global corpus selection"),
                 )
-            _atomic_replace_text(
-                _evidence_dir(_engine, task) / "selection.json",
+            _pipeline_support._atomic_replace_text(
+                _pipeline_support._evidence_dir(_engine, task) / "selection.json",
                 canonical_json(selection.model_dump(mode="json")),
             )
             return StageOutcome(VERDICT_PASS, selection)
@@ -8188,7 +3319,7 @@ def _cmd_pipeline_legacy(args) -> int:
                 if row is not None and locked_engine.report_is_current(
                     task, stage, row
                 )[0]:
-                    _force_stage_rerun(
+                    _pipeline_support._force_stage_rerun(
                         locked_engine,
                         task,
                         stage,
@@ -8250,7 +3381,7 @@ def _cmd_pipeline_legacy(args) -> int:
                 if locked_selection.model_dump(mode="json") != selection.model_dump(
                     mode="json"
                 ):
-                    raise CliUsageError(
+                    raise _pipeline_support.CliUsageError(
                         "pipeline selection inputs changed between selection "
                         "and publication; nothing was published — re-run the "
                         "pipeline"
@@ -8267,13 +3398,13 @@ def _cmd_pipeline_legacy(args) -> int:
                         row = coordinator.latest_report(task_id, stage.value)
                         current, why = coordinator.report_is_current(task, stage, row)
                         if not current:
-                            raise CliUsageError(
+                            raise _pipeline_support.CliUsageError(
                                 f"task {task_id!r} changed before corpus "
                                 f"publication: stage {stage.value!r}: {why}"
                             )
                     final = coordinator.final_verdict(task_id)
                     if final != FINAL_ACCEPTED:
-                        raise CliUsageError(
+                        raise _pipeline_support.CliUsageError(
                             f"task {task_id!r} changed before corpus publication: "
                             f"final verdict is {final!r}"
                         )
@@ -8294,11 +3425,11 @@ def _cmd_pipeline_legacy(args) -> int:
                     readable_json(selection.model_dump(mode="json")) + "\n"
                 )
                 selection_path = workspace / "state" / "corpus_selection.json"
-                _atomic_replace_text(selection_path, serialized_selection)
+                _pipeline_support._atomic_replace_text(selection_path, serialized_selection)
                 for task_id in locked_selected:
                     task = coordinator.load_task(task_id)
-                    _atomic_replace_text(
-                        _evidence_dir(coordinator, task) / "selection.json",
+                    _pipeline_support._atomic_replace_text(
+                        _pipeline_support._evidence_dir(coordinator, task) / "selection.json",
                         canonical_json(selection.model_dump(mode="json")),
                     )
                 print(
@@ -8313,7 +3444,7 @@ def _cmd_pipeline_legacy(args) -> int:
                 if out.exists():
                     verification = release_mod.verify_release(out)
                     if not verification.ok:
-                        raise CliUsageError(
+                        raise _pipeline_support.CliUsageError(
                             "existing immutable release failed verification: "
                             + "; ".join(verification.failures[:3])
                         )
@@ -8324,7 +3455,7 @@ def _cmd_pipeline_legacy(args) -> int:
                             )
                         )
                     except (OSError, ValueError) as exc:
-                        raise CliUsageError(
+                        raise _pipeline_support.CliUsageError(
                             f"existing release manifest is unreadable: {exc}"
                         ) from None
                     expected_splits = {
@@ -8361,7 +3492,7 @@ def _cmd_pipeline_legacy(args) -> int:
                     ):
                         mismatch.append("difficulty evidence differs")
                     if mismatch:
-                        raise CliUsageError(
+                        raise _pipeline_support.CliUsageError(
                             "pipeline release directory already contains a "
                             "different immutable release (move it aside): "
                             + "; ".join(mismatch)
@@ -8379,10 +3510,10 @@ def _cmd_pipeline_legacy(args) -> int:
                             agents_config=args.agents_config,
                         )
                     except (OSError, ValueError) as exc:
-                        raise CliUsageError(str(exc)) from None
+                        raise _pipeline_support.CliUsageError(str(exc)) from None
                     verification = release_mod.verify_release(out)
                     if not verification.ok:
-                        raise CliUsageError(
+                        raise _pipeline_support.CliUsageError(
                             "new release failed self-verification: "
                             + "; ".join(verification.failures[:3])
                         )
@@ -8421,7 +3552,7 @@ def _cmd_pipeline_legacy(args) -> int:
                             StageName.RELEASE,
                             configured_readiness_spec,
                         )
-                _atomic_replace_text(
+                _pipeline_support._atomic_replace_text(
                     workspace / "state" / "corpus_release.json",
                     readable_json(
                         {
@@ -8454,27 +3585,27 @@ def _parse_source_allocation(value: str | None) -> dict[str, int] | None:
         if not item:
             continue
         if "=" not in item:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "--source-allocation must be a comma list such as dbt=2,dlt=1"
             )
         family, raw_count = (part.strip() for part in item.split("=", 1))
         if not family or family in allocation:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"invalid or repeated source allocation family {family!r}"
             )
         try:
             count = int(raw_count)
         except ValueError as exc:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"source allocation for {family!r} is not an integer"
             ) from exc
         if count < 0:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"source allocation for {family!r} must be non-negative"
             )
         allocation[family] = count
     if not allocation:
-        raise CliUsageError("--source-allocation must not be empty")
+        raise _pipeline_support.CliUsageError("--source-allocation must not be empty")
     return allocation
 
 
@@ -8498,7 +3629,7 @@ def current_agent_harness() -> str:
     if declared in AGENT_HARNESS_MODES:
         return declared
     if declared:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"${AGENT_HARNESS_ENV}={declared!r} is not one of {list(AGENT_HARNESS_MODES)}"
         )
     headless = _AGENT_HARNESS_PROVIDERS["headless"]
@@ -8515,7 +3646,7 @@ def apply_agent_harness(mode: str | None) -> str:
 
     resolved = str(mode or current_agent_harness()).strip().lower()
     if resolved not in AGENT_HARNESS_MODES:
-        raise CliUsageError(f"--agent-harness must be one of {list(AGENT_HARNESS_MODES)}, not {resolved!r}")
+        raise _pipeline_support.CliUsageError(f"--agent-harness must be one of {list(AGENT_HARNESS_MODES)}, not {resolved!r}")
     os.environ[AGENT_HARNESS_ENV] = resolved
     for name, value in _AGENT_HARNESS_PROVIDERS[resolved].items():
         os.environ[name] = value
@@ -8580,7 +3711,7 @@ def _repin_default_pool_if_stale(pool_path: Path, pool):
     import yaml
 
     repinned = repin_current_implementation(pool)
-    _atomic_replace_text(
+    _pipeline_support._atomic_replace_text(
         pool_path,
         yaml.safe_dump(repinned.model_dump(mode="json"), sort_keys=False, width=4096),
     )
@@ -8639,7 +3770,7 @@ def _ensure_firewall_armed(args, workspace: Path) -> None:
         )
     )
     if code != 0:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"contamination firewall could not be armed from {bench_root} "
             f"(measure-target exit {code})"
         )
@@ -8664,9 +3795,9 @@ def _configured_run_spec(args):
         try:
             loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, yaml.YAMLError) as exc:
-            raise CliUsageError(f"invalid --run-config {path}: {exc}") from None
+            raise _pipeline_support.CliUsageError(f"invalid --run-config {path}: {exc}") from None
         if not isinstance(loaded, dict):
-            raise CliUsageError("--run-config must contain a mapping")
+            raise _pipeline_support.CliUsageError("--run-config must contain a mapping")
         data.update(loaded)
 
         # Filesystem references in a portable run document are relative to the
@@ -8707,7 +3838,7 @@ def _configured_run_spec(args):
     if candidate_count is not None:
         data["candidate_count"] = candidate_count
     if "candidate_count" not in data:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "configured pipeline requires --candidate-count N or "
             "candidate_count in --run-config"
         )
@@ -8805,7 +3936,7 @@ def _configured_run_spec(args):
     try:
         return GenerationRunSpec.model_validate(data)
     except (TypeError, ValueError) as exc:
-        raise CliUsageError(f"invalid configured pipeline request: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"invalid configured pipeline request: {exc}") from None
 
 
 def _repository_run_identity(root: Path) -> dict:
@@ -8840,6 +3971,30 @@ def _repository_run_identity(root: Path) -> dict:
             hashlib.sha256(status_out).hexdigest() if status_code == 0 else ""
         ),
     }
+
+
+def _configured_worker_args(args, spec, run_id: str) -> argparse.Namespace:
+    """Apply validated run settings to either configured execution path."""
+    options = vars(args).copy()
+    options.update(
+        workers=spec.workers,
+        max_repair_rounds=spec.max_repair_rounds,
+        repair_attempts=spec.repair_attempts,
+        budget_per_task=spec.budget_per_task,
+        budget_total=spec.budget_total,
+        agents_config=Path(spec.agents_config) if spec.agents_config else None,
+        admission_reference=spec.admission_reference,
+        destination=spec.destination,
+        extra_destinations=spec.extra_destinations,
+        http_retries=spec.http_retries,
+        schema_retries=spec.schema_retries,
+        http_timeout_seconds=spec.http_timeout_seconds,
+        http_backoff_seconds=spec.http_backoff_seconds,
+        global_budget_run_id=run_id if spec.budget_total is not None else "",
+        global_budget_total=spec.budget_total,
+        allow_structural_difficulty=not bool(spec.empirical),
+    )
+    return argparse.Namespace(**options)
 
 
 def _configured_results(
@@ -8880,7 +4035,7 @@ def _configured_results(
                 continue
             prior["state"] = "INTERRUPTED"
             prior["detail"] = detail
-            _atomic_replace_text(path, readable_json(prior) + "\n")
+            _pipeline_support._atomic_replace_text(path, readable_json(prior) + "\n")
 
     workspace = Path(args.workspace).resolve()
     preflight_engine = _open_engine(workspace, max_repair_rounds=0)
@@ -8888,7 +4043,7 @@ def _configured_results(
         scheduled = {
             task_id: preflight_engine.load_task(task_id) for task_id in task_ids
         }
-        stopped, preflight_results = _pipeline_batch_intake_preflight(
+        stopped, preflight_results = _pipeline_generation._pipeline_batch_intake_preflight(
             preflight_engine, scheduled
         )
     finally:
@@ -8900,23 +4055,7 @@ def _configured_results(
     per_task_total = None
     # Feed the validated typed configuration to the existing provider/engine
     # boundary without changing legacy pipeline semantics.
-    worker_args = argparse.Namespace(**vars(args))
-    worker_args.workers = spec.workers
-    worker_args.max_repair_rounds = spec.max_repair_rounds
-    worker_args.repair_attempts = spec.repair_attempts
-    worker_args.budget_per_task = spec.budget_per_task
-    worker_args.budget_total = spec.budget_total
-    worker_args.agents_config = Path(spec.agents_config) if spec.agents_config else None
-    worker_args.admission_reference = spec.admission_reference
-    worker_args.destination = spec.destination
-    worker_args.extra_destinations = spec.extra_destinations
-    worker_args.http_retries = spec.http_retries
-    worker_args.schema_retries = spec.schema_retries
-    worker_args.http_timeout_seconds = spec.http_timeout_seconds
-    worker_args.http_backoff_seconds = spec.http_backoff_seconds
-    worker_args.global_budget_run_id = run_id if spec.budget_total is not None else ""
-    worker_args.global_budget_total = spec.budget_total
-    worker_args.allow_structural_difficulty = not bool(spec.empirical)
+    worker_args = _configured_worker_args(args, spec, run_id)
     payloads = [
         _pipeline_worker_payload(
             worker_args,
@@ -9084,7 +4223,7 @@ def _configured_live_provider_problems(args, spec) -> tuple[str, ...]:
             "budget_total (--budget-total USD or budget_total in --run-config)",
         )
 
-    from elt_taskgen.review import providers as providers_mod
+    from elt_taskgen.review import provider_accounting, providers as providers_mod
 
     roles = list(_CONFIGURED_LIVE_ROLES)
     if bool(getattr(args, "repair_proposer", False)):
@@ -9142,7 +4281,7 @@ def _configured_live_provider_problems(args, spec) -> tuple[str, ...]:
 
     for (provider_key, model), route_roles in sorted(priced_routes.items()):
         try:
-            providers_mod.rate_card_for(
+            provider_accounting.rate_card_for(
                 provider_key,
                 model,
                 routing.provider_config.get(provider_key) or {},
@@ -9191,7 +4330,7 @@ def _canonical_configured_package_receipt(
         / f"{task_id}.json"
     )
     if candidate is not None and Path(candidate).absolute() != expected:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"{task_id}: package verification receipt path is not the "
             "canonical run/task location"
         )
@@ -9205,7 +4344,7 @@ def _canonical_configured_package_receipt(
             ):
                 raise ValueError(f"unsafe receipt ancestor: {current}")
     except (OSError, ValueError) as exc:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"{task_id}: package verification receipt path is unsafe: {exc}"
         ) from None
     return expected
@@ -9535,7 +4674,7 @@ def _write_configured_report(
         )
         if migration_receipt is not None:
             if migration_receipt_path is None:
-                raise CliUsageError("implementation revalidation receipt path is missing")
+                raise _pipeline_support.CliUsageError("implementation revalidation receipt path is missing")
             report = report.model_copy(
                 update={
                     "active_source_manifest_sha256": (
@@ -9772,7 +4911,7 @@ def _publish_immutable_run_document(
     while True:
         metadata = current.lstat()
         if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
-            raise CliUsageError(f"{label} store has an unsafe path: {current}")
+            raise _pipeline_support.CliUsageError(f"{label} store has an unsafe path: {current}")
         if current == current.parent:
             break
         # The run evidence parents have just been checked; walking to the root
@@ -9784,9 +4923,9 @@ def _publish_immutable_run_document(
         existing = None
     if existing is not None:
         if stat.S_ISLNK(existing.st_mode) or not stat.S_ISREG(existing.st_mode):
-            raise CliUsageError(f"{label} destination is unsafe: {destination}")
+            raise _pipeline_support.CliUsageError(f"{label} destination is unsafe: {destination}")
         if destination.read_bytes() != payload:
-            raise CliUsageError(f"{label} destination contains different bytes")
+            raise _pipeline_support.CliUsageError(f"{label} destination contains different bytes")
         return destination
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent
@@ -9801,7 +4940,7 @@ def _publish_immutable_run_document(
             os.link(temporary, destination)
         except FileExistsError:
             if destination.is_symlink() or destination.read_bytes() != payload:
-                raise CliUsageError(f"concurrent {label} publisher wrote different bytes")
+                raise _pipeline_support.CliUsageError(f"concurrent {label} publisher wrote different bytes")
         os.chmod(destination, destination.stat().st_mode & 0o555)
     finally:
         temporary.unlink(missing_ok=True)
@@ -9812,7 +4951,7 @@ def _workspace_relative(workspace: Path, path: Path, *, label: str) -> str:
     try:
         return Path(path).absolute().relative_to(Path(workspace).absolute()).as_posix()
     except ValueError:
-        raise CliUsageError(f"{label} is outside the configured workspace") from None
+        raise _pipeline_support.CliUsageError(f"{label} is outside the configured workspace") from None
 
 
 def _bound_workspace_path(workspace: Path, relative: str, *, label: str) -> Path:
@@ -9822,7 +4961,7 @@ def _bound_workspace_path(workspace: Path, relative: str, *, label: str) -> Path
         or "\\" in relative
         or any(part in {"", ".", ".."} for part in rel.parts)
     ):
-        raise CliUsageError(f"{label} path is unsafe")
+        raise _pipeline_support.CliUsageError(f"{label} path is unsafe")
     return Path(workspace).absolute().joinpath(*rel.parts)
 
 
@@ -9897,11 +5036,11 @@ def _prepare_generator_authorization(
         pending.authoritative_selected, pending.reproduced_selected
     )
     if transition_problem:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation revalidation refused: " + transition_problem
         )
     if manifest_transitions != pending.adapter_transitions:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation transition changed after run-identity preflight"
         )
     implementation_v2 = bool(manifest_transitions)
@@ -9909,7 +5048,7 @@ def _prepare_generator_authorization(
         report_revalidation_request is not None
         or report_revalidation_request_path is not None
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "report revalidation requests are not supported while adapter "
             "implementation pins move"
         )
@@ -9921,13 +5060,15 @@ def _prepare_generator_authorization(
             manifest_path=pool_path,
             workspace=Path(temp) / "empty-workspace",
             retain_task_local_fatals=True,
+            difficulty_profile=DEFAULT_GENERATION_PROFILE.name,
+            recipe_selection=spec.generation.recipe_selection(spec.seed),
         )
     expected_ids = tuple(
         entry.expected_task_id
         for entry in pending.reproduced_selected.ordered_entries()
     )
     if tuple(item.task.task_id for item in prepared) != expected_ids:
-        raise CliUsageError("implementation revalidation rebuilt a different task roster")
+        raise _pipeline_support.CliUsageError("implementation revalidation rebuilt a different task roster")
 
     engine = _open_engine(workspace, max_repair_rounds=0)
     bindings = []
@@ -9935,7 +5076,7 @@ def _prepare_generator_authorization(
         for item in prepared:
             current_task = engine.load_task(item.task.task_id)
             if lineage_root_hash(current_task) != item.task.content_hash():
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     f"implementation revalidation changed intake TaskIR for "
                     f"{item.task.task_id!r}"
                 )
@@ -9975,7 +5116,7 @@ def _prepare_generator_authorization(
                 else generator_equivalence_problem(authoritative, item.provenance)
             )
             if problem:
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     f"implementation revalidation changed "
                     f"{item.task.task_id!r}: {problem}"
                 )
@@ -10104,7 +5245,7 @@ def _load_report_revalidation_request(
     try:
         source.relative_to(expected_root)
     except ValueError:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "report revalidation request must be in this run's canonical request store"
         ) from None
     try:
@@ -10115,9 +5256,9 @@ def _load_report_revalidation_request(
         )
         request = GeneratorReportRevalidationRequest.model_validate_json(payload)
     except ValueError as exc:
-        raise CliUsageError(f"report revalidation request is invalid: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"report revalidation request is invalid: {exc}") from None
     if payload != request.deterministic_bytes() or source.name != f"{request.evidence_digest()}.json":
-        raise CliUsageError("report revalidation request is not content-addressed")
+        raise _pipeline_support.CliUsageError("report revalidation request is not content-addressed")
     expected = {
         "run_id": run_id,
         "config_sha256": spec.fingerprint(),
@@ -10129,7 +5270,7 @@ def _load_report_revalidation_request(
     observed = request.model_dump(mode="json")
     mismatches = [key for key, value in expected.items() if observed[key] != value]
     if mismatches:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "report revalidation request differs from this migration: "
             + ", ".join(mismatches)
         )
@@ -10154,7 +5295,7 @@ def _regular_json_bytes(path: Path, *, label: str, max_bytes: int = 32 * 1024 * 
     try:
         return payload, json.loads(payload)
     except (UnicodeError, ValueError) as exc:
-        raise CliUsageError(f"{label} is not valid JSON: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"{label} is not valid JSON: {exc}") from None
 
 
 def _build_defect_revalidation(
@@ -10188,9 +5329,9 @@ def _build_defect_revalidation(
         != authorization.report_revalidation_request_sha256
         or request_bytes != request.deterministic_bytes()
     ):
-        raise CliUsageError("authorized report revalidation request changed")
+        raise _pipeline_support.CliUsageError("authorized report revalidation request changed")
     if request.task_id not in authorization.ordered_task_ids:
-        raise CliUsageError("report revalidation target is outside the exact roster")
+        raise _pipeline_support.CliUsageError("report revalidation target is outside the exact roster")
 
     engine = _open_engine(workspace, max_repair_rounds=0)
     candidates = []
@@ -10228,40 +5369,40 @@ def _build_defect_revalidation(
             error = str(cause_payload.get("error") or "")
             if not (
                 cause_data.get("gate") == prose_fidelity.GATE_NAME
-                and cause_data.get(AUTHOR_SOURCE_KEY) == AUTHOR_SOURCE_REVISED
+                and cause_data.get(_pipeline_review.AUTHOR_SOURCE_KEY) == _pipeline_review.AUTHOR_SOURCE_REVISED
                 and "function-call" in error
                 and "count" in error.casefold()
             ):
                 continue
             candidates.append((task, cause, fatal, cause_data))
         if len(candidates) != 1:
-            raise CliUsageError("requested obsolete author fatal did not match exactly")
+            raise _pipeline_support.CliUsageError("requested obsolete author fatal did not match exactly")
         task, cause, fatal, cause_data = candidates[0]
         prompt = task.solver_prompt or ""
         prompt_sha = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
-        if not prompt or cause_data.get(AUTHOR_PROSE_SHA_KEY) != prompt_sha:
-            raise CliUsageError("obsolete author report is not bound to stored prose")
+        if not prompt or cause_data.get(_pipeline_review.AUTHOR_PROSE_SHA_KEY) != prompt_sha:
+            raise _pipeline_support.CliUsageError("obsolete author report is not bound to stored prose")
         if prompt_sha != request.prose_sha256:
-            raise CliUsageError("report revalidation request names other prose")
-        structural = _structural_failure_detail(task)
-        attack = _attack_matrix_failure_detail(engine, task)
+            raise _pipeline_support.CliUsageError("report revalidation request names other prose")
+        structural = _pipeline_review._structural_failure_detail(task)
+        attack = _pipeline_generation._attack_matrix_failure_detail(engine, task)
         findings = tuple(prose_fidelity.check_prose_fidelity(task))
         if structural is not None or attack is not None or findings:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "fixed author validator did not reproduce a fully green local result"
             )
 
-        session_sha = str(cause_data.get(AUTHOR_SESSION_SHA_KEY) or "")
+        session_sha = str(cause_data.get(_pipeline_review.AUTHOR_SESSION_SHA_KEY) or "")
         if not re.fullmatch(r"[0-9a-f]{64}", session_sha):
-            raise CliUsageError("obsolete author report has no valid session digest")
+            raise _pipeline_support.CliUsageError("obsolete author report has no valid session digest")
         if session_sha != request.author_session_sha256:
-            raise CliUsageError("report revalidation request names another session")
+            raise _pipeline_support.CliUsageError("report revalidation request names another session")
         if (
             error != request.expected_old_error
             or hashlib.sha256(error.encode("utf-8")).hexdigest()
             != request.expected_old_error_sha256
         ):
-            raise CliUsageError("obsolete validator findings differ from request")
+            raise _pipeline_support.CliUsageError("obsolete validator findings differ from request")
         session_path = _bound_workspace_path(
             workspace,
             request.session_summary_path,
@@ -10271,7 +5412,7 @@ def _build_defect_revalidation(
             session_path, label="author session summary"
         )
         if hashlib.sha256(session_bytes).hexdigest() != request.session_summary_sha256:
-            raise CliUsageError("author session summary differs from request")
+            raise _pipeline_support.CliUsageError("author session summary differs from request")
 
         transcript_records = []
         for relative, expected_sha in zip(
@@ -10284,7 +5425,7 @@ def _build_defect_revalidation(
                 transcript_path, label="semantic-author transcript"
             )
             if hashlib.sha256(transcript_bytes).hexdigest() != expected_sha:
-                raise CliUsageError("semantic-author transcript differs from request")
+                raise _pipeline_support.CliUsageError("semantic-author transcript differs from request")
             transcript_records.append((transcript_path, transcript_bytes, transcript_document))
         transcript_path, transcript_bytes, transcript_document = transcript_records[-1]
         session_index_path = _bound_workspace_path(
@@ -10294,7 +5435,7 @@ def _build_defect_revalidation(
             session_index_path, label="author session index"
         )
         if hashlib.sha256(session_index_bytes).hexdigest() != request.session_index_sha256:
-            raise CliUsageError("author session index differs from request")
+            raise _pipeline_support.CliUsageError("author session index differs from request")
         trajectory_path = _bound_workspace_path(
             workspace, request.trajectory_path, label="author trajectory"
         )
@@ -10302,7 +5443,7 @@ def _build_defect_revalidation(
             trajectory_path, label="author trajectory"
         )
         if hashlib.sha256(trajectory_bytes).hexdigest() != request.trajectory_sha256:
-            raise CliUsageError("author trajectory differs from request")
+            raise _pipeline_support.CliUsageError("author trajectory differs from request")
         try:
             record_bindings = validate_author_revalidation_records(
                 task_id=task.task_id,
@@ -10327,16 +5468,16 @@ def _build_defect_revalidation(
                 session_summary=session_document,
             )
         except (TypeError, ValueError) as exc:
-            raise CliUsageError(str(exc)) from None
+            raise _pipeline_support.CliUsageError(str(exc)) from None
         if (
             session_document.get("drafts")
-            != int(cause_data.get(AUTHOR_DRAFTS_KEY) or 0)
+            != int(cause_data.get(_pipeline_review.AUTHOR_DRAFTS_KEY) or 0)
             or session_document.get("revisions")
-            != int(cause_data.get(AUTHOR_REVISIONS_KEY) or 0)
+            != int(cause_data.get(_pipeline_review.AUTHOR_REVISIONS_KEY) or 0)
             or session_document.get("terminal")
-            != str(cause_data.get(AUTHOR_SESSION_TERMINAL_KEY) or "")
+            != str(cause_data.get(_pipeline_review.AUTHOR_SESSION_TERMINAL_KEY) or "")
         ):
-            raise CliUsageError("author session summary counters differ from report")
+            raise _pipeline_support.CliUsageError("author session summary counters differ from report")
 
         cause_sha = hashlib.sha256(cause.payload_json.encode("utf-8")).hexdigest()
         fatal_sha = hashlib.sha256(fatal.payload_json.encode("utf-8")).hexdigest()
@@ -10347,7 +5488,7 @@ def _build_defect_revalidation(
             or fatal.id != request.target_report_id
             or fatal_sha != request.target_payload_sha256
         ):
-            raise CliUsageError("requested author report identity or payload changed")
+            raise _pipeline_support.CliUsageError("requested author report identity or payload changed")
         authorization_sha = authorization.evidence_digest()
         reason = request.reason
         migration_id = sha256_hex(
@@ -10375,9 +5516,9 @@ def _build_defect_revalidation(
         }
         replacement_data.update(
             {
-                AUTHOR_PROSE_SHA_KEY: prompt_sha,
-                AUTHOR_SOURCE_KEY: str(cause_data[AUTHOR_SOURCE_KEY]),
-                AUTHOR_SESSION_SHA_KEY: session_sha,
+                _pipeline_review.AUTHOR_PROSE_SHA_KEY: prompt_sha,
+                _pipeline_review.AUTHOR_SOURCE_KEY: str(cause_data[_pipeline_review.AUTHOR_SOURCE_KEY]),
+                _pipeline_review.AUTHOR_SESSION_SHA_KEY: session_sha,
                 "transcript_path": _workspace_relative(
                     workspace, transcript_path, label="author transcript"
                 ),
@@ -10427,11 +5568,11 @@ def _build_defect_revalidation(
         original_evidence = {
             "prose_sha256": prompt_sha,
             "session_sha256": session_sha,
-            "source": str(cause_data[AUTHOR_SOURCE_KEY]),
-            "drafts": str(cause_data.get(AUTHOR_DRAFTS_KEY) or ""),
-            "revisions": str(cause_data.get(AUTHOR_REVISIONS_KEY) or ""),
+            "source": str(cause_data[_pipeline_review.AUTHOR_SOURCE_KEY]),
+            "drafts": str(cause_data.get(_pipeline_review.AUTHOR_DRAFTS_KEY) or ""),
+            "revisions": str(cause_data.get(_pipeline_review.AUTHOR_REVISIONS_KEY) or ""),
             "session_terminal": str(
-                cause_data.get(AUTHOR_SESSION_TERMINAL_KEY) or ""
+                cause_data.get(_pipeline_review.AUTHOR_SESSION_TERMINAL_KEY) or ""
             ),
             "transcript_path": replacement_data["transcript_path"],
             "transcript_sha256": replacement_data["transcript_sha256"],
@@ -10571,7 +5712,7 @@ def _commit_generator_equivalences(
             try:
                 attestation = attestation_type.model_validate_json(payload)
             except ValueError as exc:
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     f"implementation provenance equivalence is invalid: {exc}"
                 ) from None
             current_task = engine.load_task(binding.task_id)
@@ -10600,7 +5741,7 @@ def _commit_generator_equivalences(
                     != binding.adapter_transition
                 )
             ):
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     "implementation provenance equivalence differs from its exact "
                     f"authorization for {binding.task_id!r}"
                 )
@@ -10719,12 +5860,12 @@ def _finalize_generator_migration(
             engine.supersede_report(task, supersession)
             after = (engine.task_dir(task.task_id) / "task_ir.json").read_bytes()
             if after != before:
-                raise CliUsageError("report supersession changed TaskIR bytes")
+                raise _pipeline_support.CliUsageError("report supersession changed TaskIR bytes")
             if engine.final_verdict(task.task_id) == FINAL_REJECTED:
-                raise CliUsageError("locally revalidated fatal remains active")
+                raise _pipeline_support.CliUsageError("locally revalidated fatal remains active")
             replacement = engine._matching_supersession(task, supersession)
             if replacement is None:
-                raise CliUsageError("locally revalidated replacement PASS is missing")
+                raise _pipeline_support.CliUsageError("locally revalidated replacement PASS is missing")
             replacement_report_id = replacement.id
             replacement_payload_sha256 = hashlib.sha256(
                 replacement.payload_json.encode("utf-8")
@@ -10762,7 +5903,7 @@ def _finalize_generator_migration(
     )
     budget_after_sha = sha256_hex(canonical_json(budget_after))
     if budget_after_sha != authorization.budget_snapshot_sha256:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "durable provider budget changed during implementation revalidation"
         )
     receipt_type = (
@@ -10957,21 +6098,6 @@ def _selected_implementation_transition(
     return "", tuple(transitions)
 
 
-def _generator_only_selected_transition_problem(
-    authoritative: Any, reproduced: Any
-) -> str:
-    """Why a historical v1 transition is not strictly generator-only."""
-
-    problem, transitions = _selected_implementation_transition(
-        authoritative, reproduced
-    )
-    if problem:
-        return problem
-    if transitions:
-        return "source entries changed adapter version or digest"
-    return ""
-
-
 def _pool_reconstructed_at_selected_implementation(
     pool_manifest: Any, selected_manifest: Any
 ) -> Any:
@@ -11002,7 +6128,7 @@ def _pool_reconstructed_at_selected_implementation(
             for entry in pool_entries
         }
         if len(selected_pins) != 1 or len(current_pins) != 1:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"cannot reconstruct {origin.value} pool from inconsistent "
                 "adapter pins"
             )
@@ -11211,9 +6337,9 @@ def _load_committed_generator_migration(
 
     report = pending.prior_report
     if _depth >= 64:
-        raise CliUsageError("implementation migration ancestry exceeds 64 receipts")
+        raise _pipeline_support.CliUsageError("implementation migration ancestry exceeds 64 receipts")
     if not report.generator_revalidation_receipt or not report.identity_migration_sha256:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "active implementation migration has no committed run receipt"
         )
     receipt_path = Path(report.generator_revalidation_receipt).absolute()
@@ -11228,7 +6354,7 @@ def _load_committed_generator_migration(
     try:
         receipt_path.relative_to(expected_root)
     except ValueError:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation revalidation receipt path is not canonical"
         ) from None
     try:
@@ -11251,7 +6377,7 @@ def _load_committed_generator_migration(
             )
         receipt = receipt_type.model_validate(receipt_document)
     except (UnicodeError, ValueError) as exc:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"implementation revalidation receipt is invalid: {exc}"
         ) from None
     if (
@@ -11259,12 +6385,12 @@ def _load_committed_generator_migration(
         or receipt.evidence_digest() != report.identity_migration_sha256
         or receipt_path.name != f"{receipt.evidence_digest()}.json"
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation revalidation receipt is not content-addressed"
         )
     receipt_digest = receipt.evidence_digest()
     if receipt_digest in _seen:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation migration ancestry contains a receipt cycle"
         )
     ancestry = _seen | {receipt_digest}
@@ -11285,7 +6411,7 @@ def _load_committed_generator_migration(
         or receipt.reproduced_selected_path != str(expected_reproduced_path)
         or report.active_selected_manifest_path != str(expected_reproduced_path)
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation revalidation selected-manifest paths differ"
         )
     for path, manifest, label in (
@@ -11294,25 +6420,25 @@ def _load_committed_generator_migration(
     ):
         payload = _read_bounded_regular_bytes(path, label=label, max_bytes=32 * 1024 * 1024)
         if hashlib.sha256(canonical_json(manifest.model_dump(mode="json")).encode("utf-8")).hexdigest() != manifest.manifest_sha256():
-            raise CliUsageError(f"{label} model digest is inconsistent")
+            raise _pipeline_support.CliUsageError(f"{label} model digest is inconsistent")
         parsed = type(manifest).model_validate_json(payload)
         if parsed != manifest:
-            raise CliUsageError(f"{label} bytes changed")
+            raise _pipeline_support.CliUsageError(f"{label} bytes changed")
     transition_problem, manifest_transitions = _selected_implementation_transition(
         pending.authoritative_selected, pending.reproduced_selected
     )
     if transition_problem:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "committed implementation transition is invalid: "
             + transition_problem
         )
     implementation_v2 = isinstance(receipt, _ImplementationRevalidationReceipt)
     if implementation_v2 != bool(manifest_transitions):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "committed receipt schema does not match its adapter transitions"
         )
     if pending.adapter_transitions and pending.adapter_transitions != manifest_transitions:
-        raise CliUsageError("committed adapter transition set changed")
+        raise _pipeline_support.CliUsageError("committed adapter transition set changed")
     expected = {
         "run_id": report.run_id,
         "config_sha256": report.config_sha256,
@@ -11330,7 +6456,7 @@ def _load_committed_generator_migration(
     observed = receipt.model_dump(mode="json")
     mismatches = [key for key, value in expected.items() if observed[key] != value]
     if mismatches:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation revalidation receipt differs from this run: "
             + ", ".join(mismatches)
         )
@@ -11371,7 +6497,7 @@ def _load_committed_generator_migration(
         or float(authorization.budget_snapshot.get("uncertain_usd", 0.0))
         != receipt.budget_uncertain_usd
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "committed implementation authorization does not match receipt"
         )
     if implementation_v2:
@@ -11414,7 +6540,7 @@ def _load_committed_generator_migration(
                     != expected_transition.reproduced_source_entry_sha256
                 )
             if mismatch:
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     "committed implementation authorization changed adapter/source "
                     f"binding for {binding.task_id!r}"
                 )
@@ -11436,7 +6562,7 @@ def _load_committed_generator_migration(
     try:
         commit = commit_type.model_validate_json(commit_bytes)
     except ValueError as exc:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"implementation equivalence commit is invalid: {exc}"
         ) from None
     if (
@@ -11453,7 +6579,7 @@ def _load_committed_generator_migration(
             for row in receipt.tasks
         )
     ):
-        raise CliUsageError("committed implementation equivalence roster changed")
+        raise _pipeline_support.CliUsageError("committed implementation equivalence roster changed")
     verified_commit, verified_commit_path = _commit_generator_equivalences(
         workspace=workspace,
         run_id=receipt.run_id,
@@ -11464,7 +6590,7 @@ def _load_committed_generator_migration(
         verified_commit != commit
         or verified_commit_path.absolute() != commit_path.absolute()
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "committed implementation equivalence evidence no longer verifies"
         )
     by_id = {task.task_id: task for task in receipt.tasks}
@@ -11477,7 +6603,7 @@ def _load_committed_generator_migration(
             or row.reproduced_provenance_sha256
             != binding.reproduced_provenance_sha256
         ):
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"committed generator task binding changed for {binding.task_id!r}"
             )
         evidence_path = _bound_workspace_path(
@@ -11489,7 +6615,7 @@ def _load_committed_generator_migration(
             max_bytes=16 * 1024 * 1024,
         )
         if hashlib.sha256(evidence).hexdigest() != row.equivalence_sha256:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"generator provenance equivalence changed for {binding.task_id!r}"
             )
     history_path = (
@@ -11504,12 +6630,12 @@ def _load_committed_generator_migration(
         history_path, label="prior configured readiness", max_bytes=32 * 1024 * 1024
     )
     if hashlib.sha256(history).hexdigest() != receipt.prior_readiness_sha256:
-        raise CliUsageError("prior configured readiness history changed")
+        raise _pipeline_support.CliUsageError("prior configured readiness history changed")
     try:
         historical_report = type(report).model_validate_json(history)
         historical_document = json.loads(history)
     except ValueError as exc:
-        raise CliUsageError(f"prior configured readiness history is invalid: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"prior configured readiness history is invalid: {exc}") from None
     historical_counts = (
         historical_document.get("counts")
         if isinstance(historical_document, dict)
@@ -11540,7 +6666,7 @@ def _load_committed_generator_migration(
         or historical_report.counts.requested != len(receipt.ordered_task_ids)
         or historical_selected_problem
     ):
-        raise CliUsageError("prior configured readiness history identity differs")
+        raise _pipeline_support.CliUsageError("prior configured readiness history identity differs")
 
     head = {
         "active_source_manifest_sha256": (
@@ -11556,7 +6682,7 @@ def _load_committed_generator_migration(
     }
     present = {name: bool(value) for name, value in head.items()}
     if any(present.values()) and not all(present.values()):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "prior configured readiness has a partial implementation migration head"
         )
     if all(present.values()):
@@ -11569,7 +6695,7 @@ def _load_committed_generator_migration(
         if historical_report.active_selected_manifest_path != str(
             previous_selected_path
         ):
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "prior implementation migration active selected path is not canonical"
             )
         try:
@@ -11582,19 +6708,19 @@ def _load_committed_generator_migration(
                 previous_selected_bytes
             )
         except (OSError, UnicodeError, ValueError) as exc:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"prior active selected manifest is invalid: {exc}"
             ) from None
         if (
             previous_selected.manifest_sha256()
             != historical_report.active_source_manifest_sha256
         ):
-            raise CliUsageError("prior active selected manifest digest changed")
+            raise _pipeline_support.CliUsageError("prior active selected manifest digest changed")
         if (
             previous_selected.manifest_sha256()
             == pending.reproduced_selected.manifest_sha256()
         ):
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "implementation migration ancestry repeats its active head"
             )
         prior_transition_problem, prior_adapter_transitions = (
@@ -11603,7 +6729,7 @@ def _load_committed_generator_migration(
             )
         )
         if prior_transition_problem:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "prior implementation migration is invalid: "
                 + prior_transition_problem
             )
@@ -11625,7 +6751,7 @@ def _load_committed_generator_migration(
         )
     if receipt.superseded_report_ids:
         if not receipt.revalidation_artifact_path:
-            raise CliUsageError("committed report supersession has no revalidation artifact")
+            raise _pipeline_support.CliUsageError("committed report supersession has no revalidation artifact")
         artifact_path = _bound_workspace_path(
             workspace,
             receipt.revalidation_artifact_path,
@@ -11639,14 +6765,14 @@ def _load_committed_generator_migration(
         try:
             artifact = ReportRevalidationEvidence.model_validate_json(artifact_bytes)
         except ValueError as exc:
-            raise CliUsageError(f"local report revalidation is invalid: {exc}") from None
+            raise _pipeline_support.CliUsageError(f"local report revalidation is invalid: {exc}") from None
         if (
             artifact_bytes != artifact.deterministic_bytes()
             or hashlib.sha256(artifact_bytes).hexdigest()
             != receipt.revalidation_artifact_sha256
             or (artifact.target_report_id,) != receipt.superseded_report_ids
         ):
-            raise CliUsageError("local report revalidation changed")
+            raise _pipeline_support.CliUsageError("local report revalidation changed")
         engine = _open_engine(workspace, max_repair_rounds=0)
         try:
             task = engine.load_task(artifact.task_id)
@@ -11659,14 +6785,14 @@ def _load_committed_generator_migration(
                 or hashlib.sha256(replacement.payload_json.encode("utf-8")).hexdigest()
                 != receipt.replacement_payload_sha256
             ):
-                raise CliUsageError("committed replacement PASS changed")
+                raise _pipeline_support.CliUsageError("committed replacement PASS changed")
             if not _committed_supersession_or_forward_pass_is_current(
                 engine=engine,
                 task=task,
                 artifact=artifact,
                 receipt=receipt,
             ):
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     "committed report supersession is neither active nor "
                     "intact historical ancestry"
                 )
@@ -11700,7 +6826,7 @@ def _assert_configured_run_identity(
 
     run_root = workspace / "state" / "pipeline_runs" / run_id
     if run_root.is_symlink():
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} resolves through an unsafe state symlink; "
             "use a different --run-id"
         )
@@ -11708,7 +6834,7 @@ def _assert_configured_run_identity(
         return None
     report_path = run_root / "readiness.json"
     if not report_path.is_file() or report_path.is_symlink():
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} already has state without a safe readiness "
             "identity; use a different --run-id"
         )
@@ -11719,7 +6845,7 @@ def _assert_configured_run_identity(
         prior_report_document = json.loads(prior_report_bytes)
         report = PipelineReadinessReport.model_validate_json(prior_report_bytes)
     except (OSError, UnicodeError, ValueError) as exc:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} has an invalid prior readiness report; use a "
             f"different --run-id: {exc}"
         ) from None
@@ -11734,12 +6860,12 @@ def _assert_configured_run_identity(
     ):
         problems.append("configuration fingerprint differs")
     if problems:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} is already bound to a different run identity "
             f"({'; '.join(problems)}); use a different --run-id"
         )
     if not spec.resume:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} already exists but resume=false; use a "
             "different --run-id or enable resume"
         )
@@ -11753,16 +6879,16 @@ def _assert_configured_run_identity(
         )
     )
     if any(head_present) and not all(head_present):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "prior readiness has a partial implementation migration head"
         )
     if report.source_manifest_sha256 == expected_selection:
         if any(head_present):
-            raise CliUsageError("prior readiness has a conflicting active selection")
+            raise _pipeline_support.CliUsageError("prior readiness has a conflicting active selection")
         return None
     committed_resume = report.active_source_manifest_sha256 == expected_selection
     if not report.active_source_manifest_sha256 and not reingest:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} selected-roster fingerprint differs: bound to "
             f"{report.source_manifest_sha256[:12]}, not {expected_selection[:12]}; "
             "a code-only continuation requires explicit --reingest"
@@ -11775,7 +6901,7 @@ def _assert_configured_run_identity(
         / f"{report.source_manifest_sha256}.json"
     )
     if str(authoritative_path) != report.selected_manifest_path:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "prior readiness does not name its canonical immutable selected manifest"
         )
     try:
@@ -11788,11 +6914,11 @@ def _assert_configured_run_identity(
             authoritative_bytes
         )
     except (OSError, UnicodeError, ValueError) as exc:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"authoritative selected manifest is invalid: {exc}"
         ) from None
     if authoritative.manifest_sha256() != report.source_manifest_sha256:
-        raise CliUsageError("authoritative selected manifest digest changed")
+        raise _pipeline_support.CliUsageError("authoritative selected manifest digest changed")
     authoritative_ids = tuple(
         entry.expected_task_id for entry in authoritative.ordered_entries()
     )
@@ -11812,7 +6938,7 @@ def _assert_configured_run_identity(
         or report.counts.requested != len(authoritative_ids)
         or selected_count_problem
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "prior readiness task roster/order/count differs from its "
             "authoritative selected manifest"
         )
@@ -11830,7 +6956,7 @@ def _assert_configured_run_identity(
             / f"{report.active_source_manifest_sha256}.json"
         )
         if str(active_path) != report.active_selected_manifest_path:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "prior readiness does not name its canonical active selected manifest"
             )
         try:
@@ -11841,22 +6967,22 @@ def _assert_configured_run_identity(
             )
             active = SelectedSourceIngestManifest.model_validate_json(active_bytes)
         except (OSError, UnicodeError, ValueError) as exc:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"active selected manifest is invalid: {exc}"
             ) from None
         if active.manifest_sha256() != report.active_source_manifest_sha256:
-            raise CliUsageError("active selected manifest digest changed")
+            raise _pipeline_support.CliUsageError("active selected manifest digest changed")
         if authoritative_ids != tuple(
             entry.expected_task_id for entry in active.ordered_entries()
         ):
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "active implementation migration changed ordered task ids"
             )
         active_problem, active_adapter_transitions = (
             _selected_implementation_transition(authoritative, active)
         )
         if active_problem:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "active implementation migration is invalid: " + active_problem
             )
         committed = _load_committed_generator_migration(
@@ -11879,7 +7005,7 @@ def _assert_configured_run_identity(
             report.active_source_manifest_sha256
             or report.source_manifest_sha256
         )
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"run id {run_id!r} selected-roster fingerprint differs: bound to "
             f"{bound[:12]}, not {expected_selection[:12]}; a code-only "
             "continuation requires explicit --reingest"
@@ -11889,13 +7015,13 @@ def _assert_configured_run_identity(
         authoritative, selected_manifest
     )
     if transition_problem:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "implementation revalidation refused: " + transition_problem
         )
     old_parent = authoritative.parent_manifest_sha256
     new_parent = selected_manifest.parent_manifest_sha256
     if selected_manifest.parent_manifest_sha256 != pool_manifest.manifest_sha256():
-        raise CliUsageError("selected manifest does not bind the supplied pool")
+        raise _pipeline_support.CliUsageError("selected manifest does not bind the supplied pool")
     reconstructed_old_pool = (
         _pool_reconstructed_at_selected_implementation(
             pool_manifest, authoritative
@@ -11904,7 +7030,7 @@ def _assert_configured_run_identity(
         else pool_manifest.model_copy(update={"generator": authoritative.generator})
     )
     if reconstructed_old_pool.manifest_sha256() != old_parent:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "supplied repinned pool differs from the authoritative pool beyond "
             "its explicitly rederived implementation pins"
         )
@@ -11913,7 +7039,7 @@ def _assert_configured_run_identity(
             _selected_implementation_transition(authoritative, active)
         )
         if active_transition_problem:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "active implementation migration is invalid: "
                 + active_transition_problem
             )
@@ -11921,7 +7047,7 @@ def _assert_configured_run_identity(
             _selected_implementation_transition(active, selected_manifest)
         )
         if active_to_selected_problem:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "implementation revalidation differs from the active head: "
                 + active_to_selected_problem
             )
@@ -11938,7 +7064,7 @@ def _assert_configured_run_identity(
             reconstructed_active_pool.manifest_sha256()
             != active.parent_manifest_sha256
         ):
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "supplied repinned pool differs from the active migration pool "
                 "beyond its explicitly rederived implementation pins"
             )
@@ -11977,18 +7103,18 @@ def _cmd_pipeline_configured(args) -> int:
     if default_pool:
         pool_path = _default_candidate_pool()
         if not pool_path.is_file():
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"configured pipeline: default candidate pool {pool_path} is "
                 "missing; pass --ingest-manifest pointing to a pinned "
                 "five-source-ingest-v2 candidate pool"
             )
     if getattr(args, "task_id", None):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--task-id cannot be combined with candidate-count mode; the seeded "
             "source plan is the complete candidate roster"
         )
     if getattr(args, "size", None) is not None:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--size retains its legacy post-selection meaning and cannot be mixed "
             "with candidate-count mode"
         )
@@ -12004,7 +7130,7 @@ def _cmd_pipeline_configured(args) -> int:
             seed=spec.seed,
         )
     except (FiveSourceIngestError, OSError, ValueError) as exc:
-        raise CliUsageError(f"candidate selection refused: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"candidate selection refused: {exc}") from None
 
     requested_run_id = str(getattr(args, "run_id", "") or "")
     run_id = requested_run_id or (
@@ -12021,11 +7147,20 @@ def _cmd_pipeline_configured(args) -> int:
     try:
         validate_task_id_segment(run_id)
     except (TypeError, ValueError) as exc:
-        raise CliUsageError(f"unsafe --run-id {run_id!r}: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"unsafe --run-id {run_id!r}: {exc}") from None
 
     if getattr(args, "reingest", False) and not spec.resume:
-        raise CliUsageError("--reingest cannot be combined with resume=false")
+        raise _pipeline_support.CliUsageError("--reingest cannot be combined with resume=false")
     _ensure_firewall_armed(args, workspace)
+    def write_report(**fields) -> Path:
+        return _write_configured_report(
+            workspace=workspace,
+            run_id=run_id,
+            spec=spec,
+            selected_manifest=selected,
+            **fields,
+        )
+
     migration = _assert_configured_run_identity(
         workspace=workspace,
         run_id=run_id,
@@ -12044,7 +7179,7 @@ def _cmd_pipeline_configured(args) -> int:
     effective_reingest = bool(getattr(args, "reingest", False))
     requested_revalidation_path = getattr(args, "report_revalidation_request", None)
     if requested_revalidation_path is not None and migration is None:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--report-revalidation-request requires a code-only --reingest migration"
         )
     if (
@@ -12052,7 +7187,7 @@ def _cmd_pipeline_configured(args) -> int:
         and migration is not None
         and migration.adapter_transitions
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--report-revalidation-request is limited to a historical "
             "generator-only migration and cannot be used while adapter "
             "implementation pins move"
@@ -12060,7 +7195,7 @@ def _cmd_pipeline_configured(args) -> int:
     if migration is not None:
         if migration.committed_receipt is not None:
             if requested_revalidation_path is not None:
-                raise CliUsageError(
+                raise _pipeline_support.CliUsageError(
                     "--report-revalidation-request cannot be reused after its "
                     "implementation migration is committed"
                 )
@@ -12102,6 +7237,8 @@ def _cmd_pipeline_configured(args) -> int:
             continue_on_candidate_error=True,
             equivalence_authorization=authorization,
             equivalence_authorization_path=authorization_path,
+            difficulty_profile=DEFAULT_GENERATION_PROFILE.name,
+            recipe_selection=spec.generation.recipe_selection(spec.seed),
         )
     except (FiveSourceIngestError, OSError, ValueError) as exc:
         if migration is not None:
@@ -12116,15 +7253,11 @@ def _cmd_pipeline_configured(args) -> int:
         # Selection was valid, so persist the precise global blocker even when
         # no candidate could safely be registered.
         workspace.mkdir(parents=True, exist_ok=True)
-        path = _write_configured_report(
-            workspace=workspace,
-            run_id=run_id,
-            spec=spec,
+        path = write_report(
             task_ids=tuple(
                 entry.expected_task_id for entry in selected.ordered_entries()
             ),
             state="BLOCKED",
-            selected_manifest=selected,
             results=tuple(
                 {
                     "task_id": entry.expected_task_id,
@@ -12246,13 +7379,9 @@ def _cmd_pipeline_configured(args) -> int:
         + adopted_results
         + terminal_rejection_results
     )
-    running_report = _write_configured_report(
-        workspace=workspace,
-        run_id=run_id,
-        spec=spec,
+    running_report = write_report(
         task_ids=task_ids,
         state="RUNNING",
-        selected_manifest=selected,
         results=initial_results,
         ingest_outcomes=ingested.candidate_outcomes,
         packages=hydrated_packages,
@@ -12269,13 +7398,9 @@ def _cmd_pipeline_configured(args) -> int:
     )
 
     if spec.profile is ReadinessProfile.DRAFT:
-        path = _write_configured_report(
-            workspace=workspace,
-            run_id=run_id,
-            spec=spec,
+        path = write_report(
             task_ids=task_ids,
             state=("COMPLETE_WITH_ISSUES" if ingest_failures else "COMPLETE"),
-            selected_manifest=selected,
             results=ingest_failures,
             ingest_outcomes=ingested.candidate_outcomes,
             blockers=tuple(
@@ -12307,13 +7432,9 @@ def _cmd_pipeline_configured(args) -> int:
             }
             for task_id in pending_task_ids
         )
-        path = _write_configured_report(
-            workspace=workspace,
-            run_id=run_id,
-            spec=spec,
+        path = write_report(
             task_ids=task_ids,
             state="BLOCKED",
-            selected_manifest=selected,
             results=blocked_results,
             ingest_outcomes=ingested.candidate_outcomes,
             blockers=tuple(
@@ -12333,13 +7454,9 @@ def _cmd_pipeline_configured(args) -> int:
 
     if spec.profile in {ReadinessProfile.RELEASE_READY, ReadinessProfile.RELEASE}:
         if not runnable_task_ids:
-            path = _write_configured_report(
-                workspace=workspace,
-                run_id=run_id,
-                spec=spec,
+            path = write_report(
                 task_ids=task_ids,
                 state="COMPLETE_WITH_ISSUES",
-                selected_manifest=selected,
                 results=ingest_failures,
                 ingest_outcomes=ingested.candidate_outcomes,
                 blockers=tuple(
@@ -12350,18 +7467,11 @@ def _cmd_pipeline_configured(args) -> int:
             )
             print(f"no candidate TaskIR was created; report: {path}")
             return 2
-        legacy = argparse.Namespace(**vars(args))
+        legacy = _configured_worker_args(args, spec, run_id)
         legacy.task_id = list(runnable_task_ids)
         legacy.ingest_manifest = None
         legacy.reingest = False
         legacy.size = len(runnable_task_ids)
-        legacy.workers = spec.workers
-        legacy.max_repair_rounds = spec.max_repair_rounds
-        legacy.repair_attempts = spec.repair_attempts
-        legacy.budget_per_task = spec.budget_per_task
-        legacy.budget_total = spec.budget_total
-        legacy.agents_config = Path(spec.agents_config) if spec.agents_config else None
-        legacy.admission_reference = spec.admission_reference
         legacy.require_sources = ",".join(
             origin.value
             for origin, count in selected.source_allocation.items()
@@ -12370,23 +7480,9 @@ def _cmd_pipeline_configured(args) -> int:
         legacy.allow_structural_difficulty = False
         legacy.empirical = True
         legacy.require_empirical = True
-        legacy.destination = spec.destination
-        legacy.extra_destinations = spec.extra_destinations
-        # `args` may contain None for every CLI retry flag while the typed
-        # --run-config supplies non-default values.  This branch delegates to
-        # the legacy corpus coordinator, so copy the validated values exactly
-        # as `_configured_results` does for local-ready/packaged/calibrated.
-        legacy.http_retries = spec.http_retries
-        legacy.schema_retries = spec.schema_retries
-        legacy.http_timeout_seconds = spec.http_timeout_seconds
-        legacy.http_backoff_seconds = spec.http_backoff_seconds
         legacy.configured_run_spec = spec.model_dump(mode="json")
         legacy.configured_run_id = run_id
         legacy.allow_partial_candidates = True
-        legacy.global_budget_run_id = (
-            run_id if spec.budget_total is not None else ""
-        )
-        legacy.global_budget_total = spec.budget_total
         legacy.release_dir = (
             Path(spec.export_dir) if spec.profile is ReadinessProfile.RELEASE else None
         )
@@ -12403,13 +7499,9 @@ def _cmd_pipeline_configured(args) -> int:
             and (Path(spec.export_dir).resolve() / "release_manifest.json").is_file()
             else None
         )
-        path = _write_configured_report(
-            workspace=workspace,
-            run_id=run_id,
-            spec=spec,
+        path = write_report(
             task_ids=task_ids,
             state=state,
-            selected_manifest=selected,
             results=ingest_failures,
             ingest_outcomes=ingested.candidate_outcomes,
             packages=release_packages,
@@ -12478,13 +7570,9 @@ def _cmd_pipeline_configured(args) -> int:
                 # Fresh verification may take long enough for an interruption
                 # to matter.  Checkpoint each outcome before starting the next
                 # package so an already verified receipt is durable progress.
-                _write_configured_report(
-                    workspace=workspace,
-                    run_id=run_id,
-                    spec=spec,
+                write_report(
                     task_ids=task_ids,
                     state="RUNNING",
-                    selected_manifest=selected,
                     results=tuple(results),
                     ingest_outcomes=ingested.candidate_outcomes,
                     packages=packages,
@@ -12518,13 +7606,9 @@ def _cmd_pipeline_configured(args) -> int:
     ]
     rejected = [row for row in results if row.get("state") == FINAL_REJECTED]
     state = "COMPLETE" if not operational and not rejected else "COMPLETE_WITH_ISSUES"
-    path = _write_configured_report(
-        workspace=workspace,
-        run_id=run_id,
-        spec=spec,
+    path = write_report(
         task_ids=task_ids,
         state=state,
-        selected_manifest=selected,
         results=tuple(results),
         ingest_outcomes=ingested.candidate_outcomes,
         packages=packages,
@@ -12583,7 +7667,7 @@ def cmd_pipeline_status(args) -> int:
     try:
         validate_task_id_segment(run_id)
     except (TypeError, ValueError) as exc:
-        raise CliUsageError(f"unsafe --run-id {run_id!r}: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"unsafe --run-id {run_id!r}: {exc}") from None
     path = workspace / "state" / "pipeline_runs" / run_id / "readiness.json"
     try:
         report = PipelineReadinessReport.model_validate_json(
@@ -12594,7 +7678,7 @@ def cmd_pipeline_status(args) -> int:
             )
         )
     except (OSError, UnicodeError, ValueError) as exc:
-        raise CliUsageError(f"readiness report is missing or invalid: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"readiness report is missing or invalid: {exc}") from None
     problems: list[str] = []
     if report.run_id != run_id:
         problems.append(
@@ -12673,7 +7757,7 @@ def cmd_pipeline_status(args) -> int:
                 relative,
                 label=f"{recorded.task_id} package verification receipt",
             )
-        except CliUsageError as exc:
+        except _pipeline_support.CliUsageError as exc:
             problems.append(str(exc))
             return None
         try:
@@ -12683,7 +7767,7 @@ def cmd_pipeline_status(args) -> int:
                 task_id=recorded.task_id,
                 candidate=candidate,
             )
-        except CliUsageError as exc:
+        except _pipeline_support.CliUsageError as exc:
             problems.append(str(exc))
             return None
 
@@ -12828,13 +7912,13 @@ def _parse_variants(spec: str) -> tuple[TaskVariant, ...]:
             continue
         variant = _VARIANT_TOKENS.get(token)
         if variant is None:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"unknown variant {token!r} (choose from: full, el, t)"
             )
         if variant not in out:
             out.append(variant)
     if not out:
-        raise CliUsageError("--variants must name at least one variant")
+        raise _pipeline_support.CliUsageError("--variants must name at least one variant")
     return tuple(out)
 
 
@@ -12856,7 +7940,7 @@ def cmd_export(args) -> int:
     try:
         task = engine.load_task(args.task_id)
         try:
-            accepted = _accepted_variants(engine, task)
+            accepted = _pipeline_release._accepted_variants(engine, task)
         except ValueError as exc:
             # An internally inconsistent battery record (claims acceptance, never ran
             # a roster gate) is a refusal to answer, not a crash: this used to end in
@@ -12888,7 +7972,7 @@ def cmd_export(args) -> int:
                 "content hash; the emitted bundle is a working artifact, not a "
                 "releasable one (freeze_release will refuse it)."
             )
-        gold = gold_mod.load_gold(_answer_key_dir(engine, task))
+        gold = gold_mod.load_gold(_pipeline_support._answer_key_dir(engine, task))
         variants_root = engine.task_dir(task.task_id) / "variants"
         emits_combined_parent = (
             TaskVariant.FULL in variants
@@ -12898,12 +7982,12 @@ def cmd_export(args) -> int:
             eltbench_mod.export_task(
                 task,
                 gold,
-                _public_dir(engine, task),
-                _answer_key_dir(engine, task),
+                _pipeline_support._public_dir(engine, task),
+                _pipeline_support._answer_key_dir(engine, task),
                 destination=args.destination,
             )
-            print(f"exported public bundle: {_public_dir(engine, task)}")
-            print(f"private answer key:     {_answer_key_dir(engine, task)}")
+            print(f"exported public bundle: {_pipeline_support._public_dir(engine, task)}")
+            print(f"private answer key:     {_pipeline_support._answer_key_dir(engine, task)}")
         if TaskVariant.FULL in variants:
             eltbench_mod.emit_variant(
                 task, gold, TaskVariant.FULL, variants_root / TaskVariant.FULL.value
@@ -13000,7 +8084,7 @@ def _training_package(args):
     try:
         return load_workspace_package(Path(args.release).resolve(), args.task_id)
     except Exception as error:
-        raise CliUsageError("training package could not be verified") from error
+        raise _pipeline_support.CliUsageError("training package could not be verified") from error
 
 
 def cmd_training_install(args) -> int:
@@ -13010,7 +8094,7 @@ def cmd_training_install(args) -> int:
     try:
         attempt = install_workspace(package, Path(args.attempt).resolve())
     except WorkspaceLifecycleError as error:
-        raise CliUsageError(error.code.value) from None
+        raise _pipeline_support.CliUsageError(error.code.value) from None
     print(canonical_json({"attempt": str(attempt.root), "claim": "deterministic_protocol_workflow_proxy", "task_id": package.task_id}))
     return 0
 
@@ -13023,7 +8107,7 @@ def cmd_training_seal(args) -> int:
         attempt = load_attempt_workspace(package, Path(args.attempt).resolve())
         sealed = seal_workspace(attempt, package, Path(args.output).resolve())
     except WorkspaceLifecycleError as error:
-        raise CliUsageError(error.code.value) from None
+        raise _pipeline_support.CliUsageError(error.code.value) from None
     print(canonical_json({"artifact_sha256": sealed.submission.artifact_sha256, "seal": str(sealed.root), "seal_sha256": sealed.seal_sha256, "task_id": package.task_id}))
     return 0
 
@@ -13034,7 +8118,7 @@ def cmd_training_score(args) -> int:
     package = _training_package(args)
     profile = warehouse_profile(args.destination)
     if profile.destination.value != package.destination.value:
-        raise CliUsageError("destination personality does not match the release")
+        raise _pipeline_support.CliUsageError("destination personality does not match the release")
     attempts = Path(args.attempts_dir).resolve()
     attempts.mkdir(parents=True, exist_ok=True)
     runtime = DbtRuntimeConfig(python=Path(args.dbt_python).resolve(), manifest=Path(args.dbt_manifest).resolve())
@@ -13045,10 +8129,10 @@ def cmd_training_score(args) -> int:
                 sealed = seal_workspace(attempt, package, Path(root) / "sealed")
                 result = score_workspace(package, sealed, attempts_root=attempts, runtime_config=runtime)
         except WorkspaceLifecycleError as error:
-            raise CliUsageError(error.code.value) from None
+            raise _pipeline_support.CliUsageError(error.code.value) from None
     else:
         if not args.seal_sha256:
-            raise CliUsageError("--seal requires --seal-sha256 authentication")
+            raise _pipeline_support.CliUsageError("--seal requires --seal-sha256 authentication")
         result = score_workspace(package, Path(args.seal).resolve(), expected_seal_sha256=args.seal_sha256, attempts_root=attempts, runtime_config=runtime)
     print(canonical_json(result.model_dump(mode="json")))
     return 0 if result.reward is not None else 2
@@ -13064,7 +8148,7 @@ def cmd_training_inspect(args) -> int:
         try:
             sealed = load_sealed_workspace(Path(args.seal).resolve(), expected_seal_sha256=args.seal_sha256)
         except WorkspaceLifecycleError as error:
-            raise CliUsageError(error.code.value) from None
+            raise _pipeline_support.CliUsageError(error.code.value) from None
         payload["submission"] = sealed.submission.model_dump(mode="json")
         payload["seal_sha256"] = sealed.seal_sha256
     print(canonical_json(payload))
@@ -13202,12 +8286,12 @@ def cmd_bench_verify_corpus(args) -> int:
     bench_root = Path(args.bench_root).resolve()
     corpus_root = bench_root / "elt-bench"
     if not corpus_root.is_dir():
-        raise CliUsageError(f"no elt-bench/ directory under {bench_root}")
+        raise _pipeline_support.CliUsageError(f"no elt-bench/ directory under {bench_root}")
     if not any(
         (corpus_root / name).is_dir()
         for name in ("snowflake", "databricks", "redshift")
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"{corpus_root} contains none of the destination dirs "
             "snowflake/databricks/redshift — not an ELT-Bench corpus"
         )
@@ -13221,7 +8305,7 @@ def cmd_bench_verify_corpus(args) -> int:
         scanned += corpus_mod.count_artifacts(root)
         failures.extend(corpus_mod.strict_parse_failures(root))
     if scanned == 0:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"zero YAML/JSON artifacts under {bench_root} — an empty corpus "
             "cannot pass the gate"
         )
@@ -13238,9 +8322,9 @@ def _runtime_json(path: Path, *, label: str) -> dict:
     try:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
-        raise CliUsageError(f"invalid {label} JSON: {path}") from None
+        raise _pipeline_support.CliUsageError(f"invalid {label} JSON: {path}") from None
     if not isinstance(value, dict):
-        raise CliUsageError(f"invalid {label} JSON: {path}")
+        raise _pipeline_support.CliUsageError(f"invalid {label} JSON: {path}")
     return value
 
 
@@ -13250,9 +8334,9 @@ def _runtime_yaml(path: Path, *, label: str) -> dict:
     try:
         value = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     except (OSError, UnicodeError, yaml.YAMLError):
-        raise CliUsageError(f"invalid {label} YAML: {path}") from None
+        raise _pipeline_support.CliUsageError(f"invalid {label} YAML: {path}") from None
     if not isinstance(value, dict):
-        raise CliUsageError(f"invalid {label} YAML: {path}")
+        raise _pipeline_support.CliUsageError(f"invalid {label} YAML: {path}")
     return value
 
 
@@ -13272,7 +8356,7 @@ def _runtime_secret_output(path: Path) -> Iterator[Callable[[dict], None]]:
     try:
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError:
-        raise CliUsageError(f"credential output already exists: {path}") from None
+        raise _pipeline_support.CliUsageError(f"credential output already exists: {path}") from None
     committed = False
 
     def commit(value: dict) -> None:
@@ -13317,7 +8401,7 @@ def _refuse_confined_work_dir(work_dir: Path, release: Path) -> Path:
     resolved = Path(work_dir).resolve()
     release = Path(release).resolve()
     if path_under_runs(resolved):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--work-dir may not lie under the repository's runs/ directory "
             "(live credentials are installed there; ledgers, exports and tools "
             f"read it): {resolved}"
@@ -13327,7 +8411,7 @@ def _refuse_confined_work_dir(work_dir: Path, release: Path) -> Path:
         or release in resolved.parents
         or path_under_release_root(resolved)
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "--work-dir may not lie under a release root (the --release tree or "
             f"any tree carrying release_manifest.json): {resolved}"
         )
@@ -13349,17 +8433,17 @@ def _require_runtime_release(release_dir: Path) -> None:
             (release_dir / "release_manifest.json").read_text(encoding="utf-8")
         )
     except (OSError, ValueError) as exc:
-        raise CliUsageError(f"cannot verify runtime release: {exc}") from None
+        raise _pipeline_support.CliUsageError(f"cannot verify runtime release: {exc}") from None
     if not result.ok:
         detail = "; ".join(result.failures[:3])
         if len(result.failures) > 3:
             detail += f"; and {len(result.failures) - 3} more"
-        raise CliUsageError(f"release verification failed: {detail}")
+        raise _pipeline_support.CliUsageError(f"release verification failed: {detail}")
     if (
         manifest.corpus_profile != COMBINED_CORPUS_PROFILE
         or manifest.public_layout != COMBINED_PUBLIC_LAYOUT
     ):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "runtime commands require a schema-3 combined ELT-Bench release; "
             "legacy __el/__t DuckDB releases use the legacy score command"
         )
@@ -13378,7 +8462,7 @@ def _airbyte_client_from_credentials(url: str, credentials: dict):
     username = credentials.get("username") or credentials.get("email")
     password = credentials.get("password")
     if not isinstance(username, str) or not username or not isinstance(password, str) or not password:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "Airbyte credential JSON requires username/email + password or "
             "client_id + client_secret"
         )
@@ -13405,7 +8489,7 @@ def cmd_runtime_install_airbyte(args) -> int:
                 payload["client_secret"] = credentials.client_secret
             commit(payload)
     except (BootstrapError, ProcessFailure, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"Airbyte is running; credentials written to {args.credential_out}")
     return 0
 
@@ -13438,7 +8522,7 @@ def cmd_runtime_bootstrap_task(args) -> int:
                 output["api_definition_id"] = result.custom_api_definition_id
             commit(output)
     except (AirbyteError, BootstrapError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"workspace_id: {result.workspace_id}")
     if result.custom_api_definition_id:
         print(f"custom_api_definition_id: {result.custom_api_definition_id}")
@@ -13449,7 +8533,7 @@ def cmd_runtime_bootstrap_task(args) -> int:
 def _task_workspace_id(credentials: dict, *, label: str) -> str:
     workspace_id = credentials.get("workspace_id")
     if not isinstance(workspace_id, str) or not workspace_id:
-        raise CliUsageError(f"{label} JSON carries no workspace_id")
+        raise _pipeline_support.CliUsageError(f"{label} JSON carries no workspace_id")
     return workspace_id
 
 
@@ -13467,7 +8551,7 @@ def cmd_runtime_airbyte_gateway(args) -> int:
     upstream_credential = _runtime_json(args.airbyte_credential, label="Airbyte credential")
     host, _, port_text = str(args.listen).rpartition(":")
     if not host or not port_text.isdigit():
-        raise CliUsageError("--listen must be host:port")
+        raise _pipeline_support.CliUsageError("--listen must be host:port")
     try:
         basic = load_basic_credential(args.gateway_credential, create=args.create_credential)
         tokens = TokenSource(
@@ -13479,7 +8563,7 @@ def cmd_runtime_airbyte_gateway(args) -> int:
         gateway = AirbyteGateway(args.upstream, tokens, basic)
         server = serve(gateway, host, int(port_text), log=None if args.quiet else log_to_stderr)
     except (GatewayError, OSError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"airbyte gateway on {host}:{port_text} -> {args.upstream}", flush=True)
     try:
         server.serve_forever()
@@ -13504,24 +8588,24 @@ def cmd_runtime_teardown_task(args) -> int:
     if args.base_credential is not None:
         base = _runtime_json(args.base_credential, label="base Airbyte credential")
         if base.get("workspace_id") == workspace_id:
-            raise CliUsageError("refusing to delete the base Airbyte workspace")
+            raise _pipeline_support.CliUsageError("refusing to delete the base Airbyte workspace")
     client = _airbyte_client_from_credentials(args.airbyte_url, credentials)
     try:
         client.delete_workspace(workspace_id)
         state = "deleted"
     except AirbyteError as exc:
         if "HTTP 404" not in str(exc):
-            raise CliUsageError(str(exc)) from None
+            raise _pipeline_support.CliUsageError(str(exc)) from None
         state = "already absent"
     except ValueError as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     if args.remove_credential:
         try:
             Path(args.airbyte_credential).unlink()
         except FileNotFoundError:
             pass
         except OSError as exc:
-            raise CliUsageError(f"could not remove {args.airbyte_credential}: {exc}") from None
+            raise _pipeline_support.CliUsageError(f"could not remove {args.airbyte_credential}: {exc}") from None
     print(f"airbyte workspace {workspace_id}: {state}")
     return 0
 
@@ -13540,12 +8624,12 @@ def cmd_runtime_purge_workspaces(args) -> int:
         for path in sorted(Path(match) for match in _glob.glob(pattern)):
             try:
                 keep_ids.add(_task_workspace_id(_runtime_json(path, label="kept credential"), label=str(path)))
-            except CliUsageError:
+            except _pipeline_support.CliUsageError:
                 continue
     try:
         workspaces = client.iter_workspaces()
     except AirbyteError as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     targets = []
     for workspace in workspaces:
         workspace_id = workspace.get("workspaceId")
@@ -13592,9 +8676,9 @@ def cmd_runtime_verify_process(args) -> int:
     agent_dir = Path(args.agent_dir).resolve()
     inputs_dir = Path(args.inputs_dir).resolve()
     if not agent_dir.is_dir():
-        raise CliUsageError(f"agent dir is not a directory: {agent_dir}")
+        raise _pipeline_support.CliUsageError(f"agent dir is not a directory: {agent_dir}")
     if not inputs_dir.is_dir():
-        raise CliUsageError(f"inputs dir is not a directory: {inputs_dir}")
+        raise _pipeline_support.CliUsageError(f"inputs dir is not a directory: {inputs_dir}")
     public_config = _runtime_yaml(
         release / "public" / args.task_id / "config.yaml", label="public task config"
     )
@@ -13615,14 +8699,14 @@ def cmd_runtime_verify_process(args) -> int:
             answer_key, None, args.population, selected
         )
     except (EvaluationError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     credentials = _runtime_json(args.airbyte_credential, label="task Airbyte credential")
     workspace_id = _task_workspace_id(credentials, label="task Airbyte credential")
     client = _airbyte_client_from_credentials(args.airbyte_url, credentials)
     try:
         listed = client.list_connections(workspace_id)
     except AirbyteError as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     intent = None
     if not args.skip_terraform_intent:
         intent = terraform_intent_report(
@@ -13639,7 +8723,7 @@ def cmd_runtime_verify_process(args) -> int:
             ignore_top_level=ignore,
         )
     except ProcessComplianceError as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     payload = result.to_json()
     payload["task_id"] = args.task_id
     payload["workspace_id"] = workspace_id
@@ -13708,7 +8792,7 @@ def cmd_runtime_prepare(args) -> int:
                 "--snowflake-credential cannot install a non-Snowflake task"
             )
     except ValueError as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     destination_values = _runtime_json(
         credential_paths[0], label=f"{selected.value} credential"
     )
@@ -13736,7 +8820,7 @@ def cmd_runtime_prepare(args) -> int:
     except (SourceEnvironmentError, OSError, ValueError) as exc:
         if created_environment:
             shutil.rmtree(environment_dir, ignore_errors=True)
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"solver task:        {work_dir}")
     print(f"source environment: {environment.environment_dir}")
     return 0
@@ -13795,11 +8879,11 @@ def cmd_runtime_source_up(args) -> int:
         )
     )
     if stability_window >= readiness_timeout:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "Airbyte stability window must be shorter than the readiness timeout"
         )
     if readiness_poll_interval > stability_window / 2.0:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "Airbyte readiness poll interval cannot exceed half the stability window"
         )
 
@@ -13827,7 +8911,7 @@ def cmd_runtime_source_up(args) -> int:
         detail = str(exc)
         if not cleanup_succeeded:
             detail += "; automatic source cleanup failed"
-        raise CliUsageError(detail) from None
+        raise _pipeline_support.CliUsageError(detail) from None
     except BaseException:
         cleanup_started_environment()
         raise
@@ -13846,7 +8930,7 @@ def cmd_runtime_source_down(args) -> int:
         environment = _runtime_source_environment(args)
         environment.stop(airbyte_container=args.airbyte_container)
     except (ProcessFailure, SourceEnvironmentError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"stopped source environment: {environment.environment_dir}")
     return 0
 
@@ -13873,7 +8957,7 @@ def cmd_runtime_provision_snowflake(args) -> int:
                 connection.close()
             commit(solver)
     except (SnowflakeRuntimeError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"fresh scoped Snowflake attempt: {args.database}")
     print(f"solver credentials: {args.credential_out}")
     return 0
@@ -13895,7 +8979,7 @@ def cmd_runtime_reset_snowflake(args) -> int:
         finally:
             connection.close()
     except (SnowflakeRuntimeError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"fresh Snowflake database: {args.database}")
     return 0
 
@@ -13949,7 +9033,7 @@ def cmd_runtime_provision_databricks(args) -> int:
                 connection.close()
             commit(scoped)
     except (DatabricksRuntimeError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"fresh scoped Databricks schema: {args.catalog}.{args.schema}")
     print(f"solver credentials: {args.credential_out}")
     return 0
@@ -13983,13 +9067,13 @@ def cmd_runtime_provision_redshift(args) -> int:
                 connection.close()
             commit(scoped)
     except (RedshiftRuntimeError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(f"fresh scoped Redshift database/schema: {args.database}.{args.schema}")
     print(f"solver credentials: {args.credential_out}")
     return 0
 
 
-class _UsageArgumentError(CliUsageError, argparse.ArgumentTypeError):
+class _UsageArgumentError(_pipeline_support.CliUsageError, argparse.ArgumentTypeError):
     """A usage error raised inside argparse's type conversion. argparse reports
     the message itself and exits 2 (the `CliUsageError` code) before `main()`
     runs any command, so nothing is read and no container is started."""
@@ -14053,7 +9137,7 @@ def _runtime_sandbox_lane(explicit: str | None, *, airbyte_url: str | None) -> s
 
     if explicit is not None:
         if explicit not in DOCKER_LANES:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"unknown sandbox lane {explicit!r}; expected one of "
                 f"{sorted(DOCKER_LANES)}"
             )
@@ -14079,7 +9163,7 @@ def _runtime_stage2_sandbox_lane(explicit: str | None) -> str:
     lane = DOCKER_LANE_NONE if explicit is None else str(explicit)
     allowed = frozenset({DOCKER_LANE_NONE, DOCKER_LANE_CLOUD_EGRESS})
     if lane not in allowed:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             f"unknown Stage 2 sandbox lane {lane!r}; expected one of "
             f"{sorted(allowed)}"
         )
@@ -14108,16 +9192,16 @@ def _runtime_stage2_environment(
     try:
         destination = destination_from_config(config)
     except ValueError as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     if destination is not Destination.SNOWFLAKE:
         if destination_credential is not None:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "--destination-credential environment forwarding is currently "
                 "only needed for Snowflake Stage 2"
             )
         return {}
     if destination_credential is None:
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "Snowflake Stage 2 requires --destination-credential so dbt "
             "env_var references can be populated"
         )
@@ -14130,10 +9214,10 @@ def _runtime_stage2_environment(
     try:
         credential = load_credentials(destination_credential)
     except (SnowflakeRuntimeError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     installed = (config.get("snowflake") or {}).get("config")
     if not isinstance(installed, dict):
-        raise CliUsageError(
+        raise _pipeline_support.CliUsageError(
             "installed task config has no snowflake.config mapping"
         )
 
@@ -14153,19 +9237,19 @@ def _runtime_stage2_environment(
     for credential_key, config_key, env_key in fields:
         configured = installed.get(config_key)
         if not isinstance(configured, str) or not configured:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"installed Snowflake config has an empty/missing field: {config_key}"
             )
         supplied = credential.get(credential_key)
         if supplied is not None and supplied != configured:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 "Snowflake Stage 2 credential does not match the installed "
                 f"attempt field: {credential_key}"
             )
         if credential_key in {"account", "user", "password"} and supplied is None:
             # load_credentials already enforces these; keep the local invariant
             # explicit if its contract changes.
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"Snowflake credential has an empty/missing field: {credential_key}"
             )
         environment[env_key] = str(supplied or configured)
@@ -14236,14 +9320,14 @@ def cmd_runtime_run_stage1(args) -> int:
     config = _runtime_yaml(work_dir / "config.yaml", label="installed task config")
     airbyte_config = (config.get("Airbyte") or {}).get("config")
     if not isinstance(airbyte_config, dict):
-        raise CliUsageError("installed task config has no Airbyte.config mapping")
+        raise _pipeline_support.CliUsageError("installed task config has no Airbyte.config mapping")
     if args.airbyte_credential:
         credentials = _runtime_json(args.airbyte_credential, label="Airbyte credential")
     else:
         credentials = dict(airbyte_config)
     url = args.airbyte_url or airbyte_config.get("server_url")
     if not isinstance(url, str) or not url:
-        raise CliUsageError("no Airbyte API URL was supplied or installed")
+        raise _pipeline_support.CliUsageError("no Airbyte API URL was supplied or installed")
     client = _airbyte_client_from_credentials(url, credentials)
     # `terraform apply` must reach the Airbyte control plane, so with a server
     # URL (always the case here) stage 1 defaults to the proxy-bridge lane;
@@ -14268,7 +9352,7 @@ def cmd_runtime_run_stage1(args) -> int:
         )
         payload = _runtime_stage1_receipt_payload(result)
     except (AirbyteError, ExecutionError, ProcessFailure, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
@@ -14283,7 +9367,7 @@ def cmd_runtime_resync_stage1(args) -> int:
     config = _runtime_yaml(work_dir / "config.yaml", label="installed task config")
     airbyte_config = (config.get("Airbyte") or {}).get("config")
     if not isinstance(airbyte_config, dict):
-        raise CliUsageError("installed task config has no Airbyte.config mapping")
+        raise _pipeline_support.CliUsageError("installed task config has no Airbyte.config mapping")
     if args.airbyte_credential:
         credentials = _runtime_json(
             args.airbyte_credential, label="Airbyte credential"
@@ -14292,7 +9376,7 @@ def cmd_runtime_resync_stage1(args) -> int:
         credentials = dict(airbyte_config)
     url = args.airbyte_url or airbyte_config.get("server_url")
     if not isinstance(url, str) or not url:
-        raise CliUsageError("no Airbyte API URL was supplied or installed")
+        raise _pipeline_support.CliUsageError("no Airbyte API URL was supplied or installed")
     client = _airbyte_client_from_credentials(url, credentials)
     try:
         result = rerun_stage1_syncs(
@@ -14304,7 +9388,7 @@ def cmd_runtime_resync_stage1(args) -> int:
         )
         payload = _runtime_stage1_receipt_payload(result)
     except (AirbyteError, ExecutionError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
@@ -14345,7 +9429,7 @@ def cmd_runtime_run_stage2(args) -> int:
         )
         payload = _runtime_stage2_receipt_payload(result)
     except (ExecutionError, ProcessFailure, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
@@ -14461,7 +9545,7 @@ def _runtime_verify(args, *, stage: int) -> int:
         finally:
             connection.close()
     except (EvaluationError, RuntimeError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     if args.curator_details:
         payload = asdict(result)
     elif stage == 1:
@@ -14546,7 +9630,7 @@ def _runtime_certification_call(callback, /, **kwargs):
     try:
         return callback(**kwargs)
     except (CertificationLifecycleError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
 
 
 def cmd_runtime_certification_attest(args) -> int:
@@ -14771,7 +9855,7 @@ def cmd_runtime_certify_difficulty(args) -> int:
             workspace=(Path(args.workspace).resolve() if args.workspace else None),
         )
     except (CertifiedDifficultyError, OSError, ValueError) as exc:
-        raise CliUsageError(str(exc)) from None
+        raise _pipeline_support.CliUsageError(str(exc)) from None
     payload = report.model_dump(mode="json")
     rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if args.out is not None:
@@ -14779,53 +9863,16 @@ def cmd_runtime_certify_difficulty(args) -> int:
         try:
             publish_immutable_json(out, payload)
         except CertificationLifecycleError:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"certified difficulty output already exists (immutable): {out}"
             ) from None
         except OSError as exc:
-            raise CliUsageError(
+            raise _pipeline_support.CliUsageError(
                 f"could not create certified difficulty output {out}: {exc}"
             ) from None
     print(rendered, end="")
     return 0
 
-
-
-def _projected_gate_lines(task: TaskIR, payload: dict) -> list[str]:
-    """The gate rows of the triage view: `{gate, passed, code}` and nothing else.
-
-    Built on `review/tools/projection.project_gate_battery`, so a gate's raw
-    `details` and `evidence` (count vectors, key tuples, per-population reward
-    values, DuckDB text, paths) never enter the prompt. Every row is serialized
-    by the projector and re-checked by the gatekeeper; a trip halts the triage
-    as a harness fault rather than rendering the row."""
-    from elt_taskgen.review.tools import projection
-
-    lines: list[str] = []
-    for row in projection.project_gate_battery(payload):
-        diag = projection.Diagnostic(
-            source=projection.DiagnosticSource.GATE,
-            ok=bool(row["passed"]),
-            code=str(row["code"]),
-            subject=str(row["gate"]),
-        )
-        wire = projection.serialize_for_transport(diag, task=task, package=None)
-        projection.assert_value_free(wire.encode("utf-8"), task=task, route=None)
-        state = "PASS" if diag.ok else "FAIL"
-        lines.append(f"  [{state}] {diag.subject}: {diag.code}")
-    return lines
-
-
-def _projected_adjudication_lines(task: TaskIR, adjudication: dict) -> list[str]:
-    """The pending dual-build adjudication as ONE code: its raw `detail` is the
-    independent build's own text (per-population outcomes, expected-versus-got
-    row counts, DuckDB errors) and stays with the human adjudicator."""
-    from elt_taskgen.review.tools import projection
-
-    diag = projection.project_dual_build(adjudication)
-    wire = projection.serialize_for_transport(diag, task=task, package=None)
-    projection.assert_value_free(wire.encode("utf-8"), task=task, route=None)
-    return [f"  code: {diag.code}"]
 
 
 def _stamped_records(transcripts: Path):
@@ -14975,6 +10022,15 @@ class _CliArgumentParser(argparse.ArgumentParser):
 
 
 # --- Parser ---
+
+def _apply_generation_semantics(task, args):
+    from elt_taskgen.generation.semantic_difficulty import SemanticDifficultyError
+
+    try:
+        return DEFAULT_GENERATION_CONFIG.apply(task, seed=getattr(args, "selection_seed", None) or 0)
+    except SemanticDifficultyError as exc:
+        raise _pipeline_support.CliUsageError(f"semantic generation refused for {task.task_id}: {exc}") from exc
+
 
 def build_parser() -> argparse.ArgumentParser:
     budget_flag, budget_usd = _metrology_budget_guidance()
@@ -15620,7 +10676,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="selection_seed",
         type=int,
         default=None,
-        help="candidate-count mode: reproducible source/entry selection seed",
+        help="reproducible source/entry and mart recipe selection seed",
     )
     p.add_argument(
         "--readiness-profile",
@@ -16865,7 +11921,7 @@ def main(argv: list[str] | None = None) -> int:
         if hasattr(args, "agent_harness"):
             apply_agent_harness(getattr(args, "agent_harness", None))
         return int(args.func(args))
-    except CliUsageError as exc:
+    except _pipeline_support.CliUsageError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     except InfrastructureFailure as exc:

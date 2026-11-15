@@ -1069,7 +1069,7 @@ class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
         )
 
     def test_stage2_strict_diagnostic_flags_each_erasure_class(self) -> None:
-        """Legacy reward stays byte-identical while strict codes name the drift."""
+        """Numeric errors fail reward; strict diagnostics still describe every drift."""
         marts = [
             self._typed_mart("m_tol", [("id", "integer"), ("total", "decimal")]),
             self._typed_mart("m_bigint", [("id", "integer"), ("total", "decimal")]),
@@ -1117,13 +1117,13 @@ class RuntimeSnowflakeEvaluationTests(unittest.TestCase):
 
         result = evaluate_stage2(connection, self.public, self.answer_key)
 
-        # The legacy reward is untouched by every strict mismatch.
+        # The default reward now rejects tolerance abuse and rounded identities.
         self.assertEqual(
             result.mart_scores,
-            {name: True for name in gold},
+            {name: name not in {"m_tol", "m_bigint"} for name in gold},
         )
-        self.assertEqual(result.reward, 1.0)
-        self.assertTrue(result.passed)
+        self.assertEqual(result.reward, 3/5)
+        self.assertFalse(result.passed)
         self.assertEqual(result.errors, {})
         # The driver type fingerprint the legacy path discards is captured.
         self.assertEqual(

@@ -11,6 +11,8 @@ from unittest import mock
 from elt_taskgen.review import headless as H
 from elt_taskgen.review import providers as P
 
+from elt_taskgen.review import provider_transport as _review_provider_transport
+
 
 class ScriptedDriver(H.HarnessDriver):
     """A driver whose 'model' is a script: on start and on every follow-up
@@ -209,7 +211,7 @@ class RetryPolicyTests(unittest.TestCase):
         self.assertNotIn("invalid_request", H._CLAUDE_TRANSIENT_ERRORS)
         self.assertNotIn("authentication_failed", H._CLAUDE_TRANSIENT_ERRORS)
         self.assertEqual([H._retry_backoff_seconds(i) for i in range(3)], [2.0, 4.0, 8.0])
-        self.assertEqual(H.HARNESS_RETRIES, P._HTTP_RETRIES)
+        self.assertEqual(H.HARNESS_RETRIES, _review_provider_transport._HTTP_RETRIES)
 
 
 class OneShotTests(unittest.TestCase):

@@ -53,6 +53,8 @@ from elt_taskgen.verification import gates as gates_mod
 from elt_taskgen.verification import variant_battery as battery_mod
 from elt_taskgen.verification.gates import GATE_NAMES, ROSTER_DIGEST, SCORER_VERSION
 
+from elt_taskgen.pipeline import gates as _pipeline_gates
+
 V = TaskVariant
 
 REPO = Path(__file__).resolve().parents[1]
@@ -1095,7 +1097,7 @@ class VariantStageRunnerTests(unittest.TestCase):
             # routing under test is the battery's, so it is stubbed here and
             # exercised on real artifacts in tests/test_training_canonical.py.
             with mock.patch.object(
-                cli, "_ensure_canonical_reachability", return_value=canonical_outcome
+                _pipeline_gates, "_ensure_canonical_reachability", return_value=canonical_outcome
             ):
                 runner = cli.make_variant_gates_runner(variant)
                 return runner(self.engine, self.task), emitted

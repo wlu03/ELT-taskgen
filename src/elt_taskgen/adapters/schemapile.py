@@ -18,6 +18,7 @@ from sqlglot import exp
 
 from elt_taskgen.catalog import SourceCatalog, load_source_catalog
 from elt_taskgen.adapters.evidence import (
+    build_branched_marts,
     build_marts,
     chain_candidates,
     declared_key_parents,
@@ -327,7 +328,7 @@ def _resolved_foreign_keys(tables: Mapping[str, Any]) -> list[tuple[str, tuple[s
             if not target_raw:
                 continue
             target = lookup.get(str(target_raw).lower())
-            if target is None or target == tname:
+            if target is None:
                 continue
             child_cols = [str(c) for c in (fk.get("COLUMNS") or []) if c]
             parent_cols = [str(c) for c in (fk.get("REFERRED_COLUMNS") or []) if c]
@@ -923,8 +924,12 @@ def _build_marts(
     label: str,
     difficulty_profile: GenerationDifficultyProfile = STANDARD_DIFFICULTY_PROFILE,
 ) -> tuple[tuple[MartSpec, ...], tuple[StarShape, ...]]:
-    """Build marts from FK chains, preferring a distinct parent for each."""
+    """Build chain marts, reserving an opt-in slot for independent fact branches."""
     key_parents = _measured_key_parents(tables)
+    branched_marts, branched_shapes = (
+        build_branched_marts(tables, rels)
+        if difficulty_profile.branched_fact_rollups else ((), ())
+    )
     candidates = chain_candidates(tables, rels, key_parents=key_parents)
     if candidates:
         max_marts, spread_grains, max_per_shape = difficulty_profile.mart_parameters(
@@ -938,7 +943,7 @@ def _build_marts(
             prefix=lambda e, suffix: normalize_identifier(
                 f"{e.parent}_{e.bridge}_{suffix}"
             ),
-            max_marts=max_marts,
+            max_marts=max_marts - len(branched_marts),
             spread_grains=spread_grains,
             max_per_shape=max_per_shape,
             description=lambda suffix, e: _MART_PROSE[suffix].format(
@@ -950,7 +955,9 @@ def _build_marts(
             ),
         )
         if marts:
-            return marts, shapes
+            return branched_marts + marts, branched_shapes + shapes
+    if branched_marts:
+        return branched_marts, branched_shapes
     # Fallback for a record funding no library shape: it still has a join
     # surface, and the SAME key_parents gate still REFUSES a non-PK grain.
     mart, shape = _build_legacy_star(tables, rels, label=label, key_parents=key_parents)

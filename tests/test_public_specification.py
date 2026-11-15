@@ -81,22 +81,23 @@ class PublicSpecificationTest(unittest.TestCase):
         self.assertNotIn("PRIVATE AUTHOR WALKTHROUGH", view)
         self.assertNotIn("carried_fields", view)
 
-    def test_diagnostic_filter_labels_do_not_become_public_requirements(self):
-        from elt_taskgen.models import MartOp
+    def test_semantic_composer_does_not_publish_diagnostic_relation_labels(self):
+        from elt_taskgen.generation.semantic_difficulty import SemanticEvidence, semantic_plan
 
-        task = demo_fixture.demo_task()
-        mart = task.marts[0]
-        diagnostic = MartOp(
-            kind=MartOpKind.FILTER, description="semantic known groups",
-            tables=("orders",), details={"name": "semantic_known_groups"},
+        built = mart_plan.fan_out_rollup(EVIDENCE, mart="studio_activity")
+        task = build_task(built, "proof__public_semantic")
+        evidence = SemanticEvidence(
+            parent="studios", keys=("id",), fact="films", links=("studio_id",),
+            row_key=("film_id",), measure="runtime_minutes", group="release_state",
         )
-        changed = task.model_copy(update={"marts": (
-            mart.model_copy(update={"plan": mart.plan.model_copy(update={
-                "ops": (*mart.plan.ops, diagnostic),
-            })}),
-        )})
-        self.assertEqual(data_model(changed), data_model(task))
-        self.assertIn("status = 'completed'", str(data_model(changed)))
+        mart = semantic_plan(task, evidence, "studio_activity")
+        task = task.model_copy(update={"marts": (mart,)})
+        text = eltbench._dump_yaml(data_model(task))
+        self.assertNotIn("semantic_known_groups", text)
+        self.assertNotIn("semantic known groups", text)
+        self.assertIn("Exclude missing", text)
+        self.assertIn("mean non-missing", text)
+        self.assertIn("NULL when no record exists", text)
 
 
 if __name__ == "__main__":

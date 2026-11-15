@@ -1,6 +1,6 @@
 {
   "census_version": "2",
-  "created_utc": "2026-09-23T07:29:08+00:00",
+  "created_utc": "2026-10-30T23:49:59+00:00",
   "destination": "snowflake",
   "environment": {
     "duckdb": "1.5.5",
@@ -30,9 +30,9 @@
       "event_wide": "ef6ce1d8e8ebcf495eefabc91c25a55702530bd0fd753dabda688155fd096a0e"
     }
   },
-  "reference_result_digest": "c286b7912bae8f42f737cbf9d5e2d6a43a1f417ffd5de0282e1453d7a2221b14",
-  "release_id": "release-363d515e796cb44c",
+  "reference_result_digest": "cbe783b3bd4f41e48d40e3f7176800d629db56eb057d4205336619a2b987bd16",
+  "release_id": "release-fb89351df6396418",
   "schema_version": "3.5",
-  "semantic_scorer_version": "1.0.0",
+  "semantic_scorer_version": "1.1.0",
   "task_id": "gate__five_backend_probe"
 }

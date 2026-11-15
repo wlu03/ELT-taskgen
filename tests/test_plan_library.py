@@ -483,7 +483,7 @@ class PlanLibraryShapes(unittest.TestCase):
         )
         self.assertIn("ordering measure has no value", nullable_contract)
         self.assertIn("winning value is missing", nullable_contract)
-        self.assertIn("none of those rows carries", nullable_contract)
+        self.assertIn("0 when there are no values", nullable_contract)
 
         # Contract specialization must not remove the defensive SQL or the
         # childless-parent discriminator for the required default mutation.
@@ -589,13 +589,14 @@ class PlanLibraryShapes(unittest.TestCase):
         absent_filter = next(
             op
             for op in built.plan.ops
-            if op.kind is MartOpKind.FILTER and "absent measure-state" in op.description
+            if op.kind is MartOpKind.FILTER and op.predicate == '"link_amount" IS NULL'
         )
         state = built.column_named("measure_state")
         state_column = next(c for c in built.columns if c.name == state)
-        for text in (absent_filter.description, state_column.description):
-            self.assertIn("belongs only to the present state", text)
-            self.assertIn("never to", text)
+        self.assertIn("rows with missing amount", absent_filter.description)
+        self.assertIn("records with no associated subscriptions rows", absent_filter.description)
+        self.assertIn("'present' when amount has a value", state_column.description)
+        self.assertIn("'absent' when it is missing", state_column.description)
 
     def test_multi_mart_childless_conditions_are_scoped_and_execute(self) -> None:
         """Both marts own a public row-B claim and both INNER mutants lose."""
@@ -1339,9 +1340,8 @@ class RoleDistinctness(unittest.TestCase):
         # And the ordinary evidence still ships the row identifier + clause.
         full = mp.argmax_profile(EVIDENCE, mart="argmax_full")
         self.assertIn(full.column_named("top_row_id"), [c.name for c in full.columns])
-        self.assertTrue(
-            any("WHICH row won" in c.description for c in full.columns)
-        )
+        winner = next(c for c in full.columns if c.name == full.column_named("top_row_id"))
+        self.assertIn("subscription_id of the row selected for", winner.description)
         # It validates, compiles, and every claimed attack is still killed.
         task = build_task(built, "proof__argmax_fk")
         self.assertEqual([], mp.validate_plan(task, built.plan))
@@ -1585,7 +1585,7 @@ class TemporalGridGrain(unittest.TestCase):
 class ProseStatesEveryReachableArm(unittest.TestCase):
     """N-mart_plan-3: every default that fires on a NON-EMPTY group is stated."""
 
-    ARM = re.compile(r"none of .*?rows carries|lacks a .* value|itself (is )?missing")
+    ARM = re.compile(r"none of .*?rows carries|lacks a .* value|itself (is )?missing|when there are no (qualifying )?values")
 
     def test_prose_states_every_default_that_fires_on_a_non_empty_group(self) -> None:
         tables = _nullable(TABLES, "subscriptions", "amount")

@@ -2504,7 +2504,7 @@ class _Session:
             return
         needed = float(cap) + self.limits.nested_ceiling_usd
         if float(headroom) < needed:
-            from elt_taskgen.review.providers import BudgetExceededError
+            from elt_taskgen.review.provider_accounting import BudgetExceededError
 
             raise BudgetExceededError(
                 f"session INIT for role {self.role!r} refused: the remaining task "
@@ -2714,7 +2714,7 @@ class _Session:
         canonical `tool_result` turn, so the prefix a runner-driven session
         keys its next turn on is byte-for-byte the prefix a resumed or
         replayed session rebuilds from the store."""
-        from elt_taskgen.review.providers import _with_tool_results
+        from elt_taskgen.review.provider_types import _with_tool_results
 
         self.messages = _with_tool_results(
             self.messages,

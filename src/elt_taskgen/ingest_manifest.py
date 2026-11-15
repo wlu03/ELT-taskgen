@@ -33,6 +33,7 @@ from pydantic import (
 from elt_taskgen import __version__
 from elt_taskgen.catalog import SourceCatalog, load_source_catalog
 from elt_taskgen.engine import Engine
+from elt_taskgen.generation.recipe_registry import RecipeSelection, resolve_recipe_selection
 from elt_taskgen.models import (
     Origin,
     TaskIR,
@@ -2115,13 +2116,16 @@ def _build_dlt_task(
 
 
 def _build_synsql_task(
-    entry: SynSQLIngest, paths: dict[str, Path], catalog: SourceCatalog
+    entry: SynSQLIngest, paths: dict[str, Path], catalog: SourceCatalog,
+    *, difficulty_profile: str = "standard",
 ) -> TaskIR:
     from elt_taskgen.adapters import synsql
+    from elt_taskgen.generation.difficulty_profiles import difficulty_profile as resolve_profile
 
     _catalog_row(catalog, entry)
     task, _trusted_schema_atoms = synsql.to_task_ir_with_schema_atoms(
-        entry.selector, paths["tables"], pool=entry.pool
+        entry.selector, paths["tables"], pool=entry.pool,
+        **({"difficulty_profile": resolve_profile(difficulty_profile)} if difficulty_profile != "standard" else {}),
     )
     # Deliberately do not accept data.json in this production manifest.  It is
     # answer-bearing; the schema-only adapter is the stronger trust boundary.
@@ -2129,9 +2133,11 @@ def _build_synsql_task(
 
 
 def _build_schemapile_task(
-    entry: SchemaPileIngest, paths: dict[str, Path], catalog: SourceCatalog
+    entry: SchemaPileIngest, paths: dict[str, Path], catalog: SourceCatalog,
+    *, difficulty_profile: str = "standard",
 ) -> TaskIR:
     from elt_taskgen.adapters import schemapile
+    from elt_taskgen.generation.difficulty_profiles import difficulty_profile as resolve_profile
 
     _catalog_row(catalog, entry)
     index = schemapile.load_index(paths["index"])
@@ -2189,6 +2195,7 @@ def _build_schemapile_task(
         pool=entry.pool,
         filt=index.filter,
         catalog=catalog,
+        **({"difficulty_profile": resolve_profile(difficulty_profile)} if difficulty_profile != "standard" else {}),
     )
 
 
@@ -2292,7 +2299,7 @@ def wikidbs_node_inventory_sha256(root: Path) -> str:
     )
 
 
-_TaskBuilder = Callable[[_SourceEntry, dict[str, Path], SourceCatalog], TaskIR]
+_TaskBuilder = Callable[..., TaskIR]
 
 
 def _builder(entry: _SourceEntry) -> _TaskBuilder:
@@ -2347,6 +2354,8 @@ def _identity(
     *,
     adapter_name: str,
     manifest: FiveSourceManifest,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> SourceIdentity:
     source = _primary_artifact(entry)
     selection_inputs: dict[str, ProvenanceArtifact] = {
@@ -2368,6 +2377,18 @@ def _identity(
             digest_kind=manifest.catalog.digest_kind,
         ),
     }
+    selection = resolve_recipe_selection(difficulty_profile, recipe_selection)
+    if selection is not None:
+        from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
+        contract = DEFAULT_GENERATION_CONFIG.canonical_contract(selection.seed)
+        # Local proof scripts may constrain an individual recipe; bind the
+        # actual selection too. Normal ingestion always uses the full registry.
+        contract["recipe_ids"] = list(selection.enabled_recipes)
+        selection_inputs["generation_config"] = ProvenanceArtifact(
+            locator="mart-generation:automatic",
+            digest=sha256_hex(canonical_json(contract)),
+            digest_kind="sha256-canonical-json-v1",
+        )
     if _generator_pinned(manifest):
         selection_inputs["generator_code"] = ProvenanceArtifact(
             locator=(
@@ -2925,11 +2946,16 @@ def prepare_five_sources(
     allow_workspace_extras: bool = False,
     equivalence_authorization: EquivalenceAuthorization | None = None,
     retain_task_local_fatals: bool = False,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> tuple[PreparedSource, ...]:
     """Build and contamination-check the roster without modifying the workspace."""
 
     manifest_path = Path(manifest_path).absolute()
     workspace = Path(workspace).absolute()
+    if difficulty_profile not in ("standard", "semantic"):
+        raise FiveSourceIngestError(f"unsupported pipeline difficulty profile {difficulty_profile!r}")
+    recipe_selection = resolve_recipe_selection(difficulty_profile, recipe_selection)
     if _generator_pinned(manifest):
         # This is deliberately the first content verification in preflight.
         _verify_generator_pin(manifest.generator, label="preflight")
@@ -2947,6 +2973,8 @@ def prepare_five_sources(
             equivalence_authorization=equivalence_authorization,
             retain_task_local_fatals=retain_task_local_fatals,
             snapshot_root=Path(temporary),
+            difficulty_profile=difficulty_profile,
+            recipe_selection=recipe_selection,
         )
 
 
@@ -2960,6 +2988,8 @@ def _prepare_five_sources_from_snapshots(
     equivalence_authorization: EquivalenceAuthorization | None,
     retain_task_local_fatals: bool,
     snapshot_root: Path,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> tuple[PreparedSource, ...]:
     """Implementation whose adapter-visible inputs live under snapshot_root."""
 
@@ -3029,7 +3059,17 @@ def _prepare_five_sources_from_snapshots(
                 verified=prebuild_wikidbs_inventories,
             )
         try:
-            task = _builder(entry)(entry, path_map, catalog)
+            options = (
+                {"difficulty_profile": difficulty_profile}
+                if difficulty_profile != "standard" and isinstance(entry, (SynSQLIngest, SchemaPileIngest))
+                else {}
+            )
+            task = _builder(entry)(entry, path_map, catalog, **options)
+            from elt_taskgen.generation.difficulty_profiles import apply_generation_profile
+            # Semantic assignment needs the whole candidate roster so a generic
+            # recipe cannot consume the only project with a rare capability.
+            if difficulty_profile != "semantic":
+                task = apply_generation_profile(task, difficulty_profile, recipe_selection=recipe_selection)
         except FiveSourceIngestError:
             raise
         except (OSError, ValueError, KeyError) as exc:
@@ -3044,6 +3084,8 @@ def _prepare_five_sources_from_snapshots(
             entry,
             task,
             adapter_name=adapter_name,
+            difficulty_profile=difficulty_profile,
+            recipe_selection=recipe_selection,
             manifest=manifest,
         )
         built.append(
@@ -3059,6 +3101,30 @@ def _prepare_five_sources_from_snapshots(
                 source_entry_sha256=manifest.source_entry_sha256(entry),
             )
         )
+
+    if difficulty_profile == "semantic":
+        from elt_taskgen.generation.recipe_assignment import assign_recipe_batch
+        try:
+            assigned = assign_recipe_batch((item.task for item in built), recipe_selection)
+        except (ValueError, KeyError) as exc:
+            raise FiveSourceIngestError(f"semantic recipe assignment refused: {exc}") from exc
+        assignment_digest = sha256_hex(canonical_json(sorted((
+            {"task_id": before.task.task_id, "input_hash": before.task.content_hash(),
+             "output_hash": after.content_hash()}
+            for before, after in zip(built, assigned, strict=True)
+        ), key=lambda row: row["task_id"])))
+        enriched = []
+        for entry, item, task in zip(manifest.ordered_entries(), built, assigned, strict=True):
+            _validate_task(entry, task)
+            identity = _identity(entry, task, adapter_name=_verify_adapter_once(entry, prebuild_adapters),
+                difficulty_profile=difficulty_profile, recipe_selection=recipe_selection, manifest=manifest)
+            identity = identity.model_copy(update={"selection_inputs": {
+                **identity.selection_inputs, "recipe_assignment": ProvenanceArtifact(
+                    locator="mart-generation:batch-capability-assignment", digest=assignment_digest,
+                    digest_kind="sha256-canonical-json-v1")}})
+            enriched.append(replace(item, task=task, provenance=IngestProvenance(
+                task_id=task.task_id, task_content_hash=task.content_hash(), source=identity)))
+        built = enriched
 
     prepared = tuple(built)
     observed_origins = tuple(item.origin for item in prepared)
@@ -3273,6 +3339,8 @@ def ingest_five_sources(
     workspace: Path,
     reingest: bool = False,
     dry_run: bool = False,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> FiveSourceIngestResult:
     """Preflight and resumably register a v1 singleton or v2 batch manifest."""
 
@@ -3285,6 +3353,8 @@ def ingest_five_sources(
         workspace=target,
         reingest=reingest,
         dry_run=dry_run,
+        difficulty_profile=difficulty_profile,
+        recipe_selection=recipe_selection,
     )
 
 
@@ -3294,6 +3364,8 @@ def ingest_five_source_batch(
     workspace: Path,
     reingest: bool = False,
     dry_run: bool = False,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> FiveSourceIngestResult:
     """Explicit v2-only wrapper for programmatic and future CLI callers."""
 
@@ -3305,6 +3377,8 @@ def ingest_five_source_batch(
         workspace=Path(workspace).absolute(),
         reingest=reingest,
         dry_run=dry_run,
+        difficulty_profile=difficulty_profile,
+        recipe_selection=recipe_selection,
     )
 
 
@@ -3375,6 +3449,8 @@ def ingest_selected_sources(
     continue_on_candidate_error: bool = False,
     equivalence_authorization: EquivalenceAuthorization | None = None,
     equivalence_authorization_path: Path | None = None,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> tuple[SelectedSourceIngestManifest, FiveSourceIngestResult]:
     """Select and ingest exactly N candidates from a pinned v2 pool.
 
@@ -3383,6 +3459,7 @@ def ingest_selected_sources(
     """
 
     source = Path(pool_manifest_path).absolute()
+    recipe_selection = resolve_recipe_selection(difficulty_profile, recipe_selection)
     pool = load_five_source_batch_manifest(source)
     selected = select_candidate_manifest(
         pool,
@@ -3454,6 +3531,8 @@ def ingest_selected_sources(
             dry_run=dry_run,
             equivalence_authorization=equivalence_authorization,
             equivalence_authorization_path=equivalence_authorization_path,
+            difficulty_profile=difficulty_profile,
+            recipe_selection=recipe_selection,
         )
         if not dry_run:
             persist_selected_manifest(selected, workspace=target)
@@ -3482,6 +3561,8 @@ def ingest_selected_sources(
             dry_run=dry_run,
             equivalence_authorization=equivalence_authorization,
             equivalence_authorization_path=equivalence_authorization_path,
+            difficulty_profile=difficulty_profile,
+            recipe_selection=recipe_selection,
         )
         if not dry_run:
             persist_selected_manifest(selected, workspace=target)
@@ -3539,6 +3620,8 @@ def ingest_selected_sources(
                 dry_run=dry_run,
                 allow_workspace_extras=True,
                 equivalence_authorization=equivalence_authorization,
+                difficulty_profile=difficulty_profile,
+                recipe_selection=recipe_selection,
             )
         except (FiveSourceIngestError, OSError, ValueError) as exc:
             outcomes.append(
@@ -3616,6 +3699,8 @@ def _ingest_loaded_manifest(
     allow_workspace_extras: bool = False,
     equivalence_authorization: EquivalenceAuthorization | None = None,
     equivalence_authorization_path: Path | None = None,
+    difficulty_profile: str = "standard",
+    recipe_selection: RecipeSelection | None = None,
 ) -> FiveSourceIngestResult:
     """Shared execution after one strict manifest parse."""
 
@@ -3641,6 +3726,8 @@ def _ingest_loaded_manifest(
         allow_workspace_extras=allow_workspace_extras,
         equivalence_authorization=equivalence_authorization,
         retain_task_local_fatals=equivalence_authorization is not None,
+        difficulty_profile=difficulty_profile,
+        recipe_selection=recipe_selection,
     )
     if equivalence_authorization is not None:
         observed_ids = tuple(item.task.task_id for item in prepared)

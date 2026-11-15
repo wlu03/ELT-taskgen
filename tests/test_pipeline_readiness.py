@@ -734,6 +734,61 @@ class GenerateReadinessTests(unittest.TestCase):
                 self.assertIn(
                     "elt_taskgen.cli", seal.inputs["module_source_sha256"]
                 )
+                self.assertIn(
+                    "elt_taskgen.pipeline.stages", seal.inputs["module_source_sha256"]
+                )
+
+    def test_extracted_implementations_remain_bound_to_stage_evidence(self) -> None:
+        spec = _spec()
+        owners = {
+            StageName.CONTAMINATION_PRE: "generation",
+            StageName.GENERATE: "generation",
+            StageName.REFERENCE: "generation",
+            StageName.AUTHOR: "review",
+            StageName.REVIEW: "review",
+            StageName.ATTACK: "attacks",
+            StageName.TASK_INTEGRITY: "gates",
+            StageName.GATES_EXTRACT_LOAD: "gates",
+            StageName.GATES_TRANSFORM: "gates",
+            StageName.CALIBRATE: "calibration",
+            StageName.CONTAMINATION_POST: "release",
+            StageName.SELECT: "release",
+            StageName.RELEASE: "release",
+        }
+        original_digest = readiness_mod._module_source_sha256
+        for stage, owner in owners.items():
+            with self.subTest(stage=stage.value):
+                seal = readiness_mod._configured_seal(self.task, stage, spec)
+                with mock.patch.object(
+                    readiness_mod,
+                    "_module_source_sha256",
+                    side_effect=lambda name: (
+                        "d" * 64 if name == f"elt_taskgen.pipeline.{owner}"
+                        else original_digest(name)
+                    ),
+                ):
+                    drifted = readiness_mod._configured_seal(self.task, stage, spec)
+                self.assertNotEqual(seal.inputs_sha256, drifted.inputs_sha256)
+
+    def test_provider_component_drift_invalidates_provider_stage_evidence(self) -> None:
+        spec = _spec()
+        original_digest = readiness_mod._module_source_sha256
+        for stage in readiness_mod._PROVIDER_STAGES:
+            seal = readiness_mod._configured_seal(self.task, stage, spec)
+            for component in (
+                "provider_transport", "provider_types", "provider_accounting", "transcripts"
+            ):
+                with self.subTest(stage=stage.value, component=component):
+                    with mock.patch.object(
+                        readiness_mod,
+                        "_module_source_sha256",
+                        side_effect=lambda name: (
+                            "d" * 64 if name == f"elt_taskgen.review.{component}"
+                            else original_digest(name)
+                        ),
+                    ):
+                        drifted = readiness_mod._configured_seal(self.task, stage, spec)
+                    self.assertNotEqual(seal.inputs_sha256, drifted.inputs_sha256)
 
     def test_mart_plan_seals_include_every_shape_builder_module(self) -> None:
         mart_modules = set(readiness_mod._MART_PLAN_IMPLEMENTATION_MODULES)
@@ -746,7 +801,9 @@ class GenerateReadinessTests(unittest.TestCase):
             for module in mart_modules
             if module.startswith("elt_taskgen.generation.shapes.")
         }
-        self.assertEqual(9, len(shape_modules))
+        self.assertEqual(10, len(shape_modules))
+        self.assertIn("elt_taskgen.generation.shapes.branched_fact_rollup", shape_modules)
+        self.assertIn("elt_taskgen.generation.compositions", mart_modules)
         for stage, modules in readiness_mod._CONFIGURED_STAGE_MODULES.items():
             if "elt_taskgen.generation.mart_plan" not in modules:
                 continue

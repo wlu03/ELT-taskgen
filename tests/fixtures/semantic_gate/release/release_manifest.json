@@ -1,6 +1,6 @@
 {
   "certification_ids": {
-    "gate__five_backend_probe": "certification-766e135f611e32e6"
+    "gate__five_backend_probe": "certification-2f4ef377dab7e39c"
   },
   "certification_matrix": {
     "snowflake": {
@@ -27,7 +27,7 @@
       "source_connector:aws_s3": "4.15.20",
       "source_connector:custom_api": "6.33.4",
       "source_connector:flat_files": "0.6.0",
-      "source_connector:mongodb": "2.0.7",
+      "source_connector:mongodb": "1.5.19",
       "source_connector:postgres": "3.8.5",
       "source_service_image:elt-api": "python:3.11-slim@sha256:d1e9ca7c4e78d1e8ecadb5d44bfc8e956e7a65b659a9950f569f243d72b326d0",
       "source_service_image:elt-files": "python:3.11-slim@sha256:d1e9ca7c4e78d1e8ecadb5d44bfc8e956e7a65b659a9950f569f243d72b326d0",
@@ -72,15 +72,15 @@
     "private/gate__five_backend_probe/answer_key/reference/customer_rollup.sql": "4252dcdfd28f27809f131b28e070aee9dd19738d4b1c76ee59cf9ebd77fd2b95",
     "private/gate__five_backend_probe/answer_key/reference/event_wide.sql": "3069ef7daa04285943848f7f55c26688de1405283874f30715c3e7292c5f42a8",
     "private/gate__five_backend_probe/answer_key/reference/solution.json": "2344d2e39e0cb91146becfed0b7b77dc414c13d4f35890d14a0d11e3f0d6e94e",
-    "private/gate__five_backend_probe/answer_key/runtime/airbyte_connector_contract.json": "cdcbfd83fb283a43664ed8c89cfc7333f2ca0a74159c936bf0d8e3166e0d0cc3",
+    "private/gate__five_backend_probe/answer_key/runtime/airbyte_connector_contract.json": "676eb0d3c202ea7b05a5a341746b9b923ce4c766a696aef2bf236b8aa3925474",
     "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/elt/dbt_project.yml": "db9f74b184c0b66b84c86dbfaaad64c879caf242bacfb7ae2e3129cd552eb188",
     "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/elt/main.tf": "f66e0563bf786188cada194b19d0c0664c3f646f5962e3ebbb97a14cbab460b6",
     "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/elt/models/customer_rollup.sql": "8903abffd68710879da59014708c6187f8e839fadc2bdf94ae73a036aa591623",
     "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/elt/models/event_wide.sql": "8903abffd68710879da59014708c6187f8e839fadc2bdf94ae73a036aa591623",
     "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/elt/models/sources.yml": "16e0d1afd6e96036b776ab20684da35f075c50d6f3c0fd599ddc8218ebbdfb56",
-    "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/reachability.json": "77ff419dd7733499c4080c9c7219d0fa2bbbbd8de0fc0b6c8c6df2cb34c5fa19",
+    "private/gate__five_backend_probe/answer_key/runtime/canonical/snowflake/reachability.json": "65d1cc430073a5963dfbee1fbca2ed065bd038494a25d66eecf93147f0d84d4a",
     "private/gate__five_backend_probe/answer_key/sort_key.json": "46f00e09fc4abb59372513f3c5fe21535acd6c1aa9c2d69fbe5691e28065785f",
-    "private/gate__five_backend_probe/answer_key/sources_serving.json": "1a61ba9049b909a8b1a2b9303a1d9d65c9c45680e2d173476b3400b29f8cc773",
+    "private/gate__five_backend_probe/answer_key/sources_serving.json": "48f55d4e3ad5e7ca3f39249016f5ebe251de38cd9cb604ae8a4514637ec8171b",
     "private/gate__five_backend_probe/answer_key/table.json": "7423c7dd95c13a6ddf00313ae0abf5324614391df9ef8f537f89f720ae417a22",
     "private/gate__five_backend_probe/oracle/counterfactual.duckdb": "01ad0b0cfd517a1b29a5d2726f2a2e61418d074ebb52ab17bb2425150565ad06",
     "private/gate__five_backend_probe/oracle/development.duckdb": "db18ea19b03be4253420ae115efdabc4ffdd184257bedd9bf0e7aca23a21e275",
@@ -128,12 +128,12 @@
     "private/gate__five_backend_probe/populations/stress/rendered/rest/events/page_0003.json": "572597b6956197a487c95633b628dc2d28dd6d57758d125727dbdc64b34c9d29",
     "private/gate__five_backend_probe/populations/stress/rendered/s3/metrics/part-00000.jsonl": "6a58d1a22c5f7f13f1bcd794e4d9cd0fccfe2455aa0d64198208fc6fdf35a89f",
     "private/gate__five_backend_probe/semantic/task_ir.json": "c4edba30bb1f086046e6736542062577602b6ebefa8dfefc975a6225a4e2eca7",
-    "private/gate__five_backend_probe__el/reward.json": "98ca67908dfccc42a58caeb477ebcccb00f6442005284fc288444aeb0fdeacf1",
-    "private/gate__five_backend_probe__t/reward.json": "685cf1c68889aecab70b3ea4f063510fc8e4f249c2fc53eaae6c44a9a0d2bb8d",
+    "private/gate__five_backend_probe__el/reward.json": "ebe93a75f8deba5cd6445da1e60ee9c606e5c4c90025f79c0b6ef869771cf512",
+    "private/gate__five_backend_probe__t/reward.json": "64f68617e13124373c2afdd153acfb4e0982fd150dc9092c45dc6a091d9c03bc",
     "public/gate__five_backend_probe/check_job_status.py": "82678bb8dbc4c1c61683f0ba7690cabe0cda77bfbd99eba9920cbe33722926b9",
     "public/gate__five_backend_probe/config.yaml": "5e8049d9ee804b021cd068d6f9e61e830953cbbc8b5862675df43f8bc6de16eb",
-    "public/gate__five_backend_probe/data_model.yaml": "1da4a695002fa3f96a65989d635bbc20d12a606ddb504cb1ae2c9aad16d78fbf",
-    "public/gate__five_backend_probe/documentation/README.md": "392e819613e615e4fc607d11c1c866ba158f239966dbca6eab48f95694e8686f",
+    "public/gate__five_backend_probe/data_model.yaml": "a78e455e415a4facb5a5aa6487b83275aadf07b5fb18b24eb5a1470c35b8553f",
+    "public/gate__five_backend_probe/documentation/README.md": "9e29393599edf5a9070e2ccf9817acd49f5b63a548127bbc0427db1a6de52b2b",
     "public/gate__five_backend_probe/documentation/airbyte_Provider.md": "056add6ca97603b8f119f4754726a815a672ba33928550e2aad6badec79df9e2",
     "public/gate__five_backend_probe/documentation/connection.md": "be29c8d29847ce3218ec537818bbc9b570e333b4b9bf1914c72db04942cb4b5b",
     "public/gate__five_backend_probe/documentation/databricks_authentication.md": "d440e38d071120b3a4496291f55268b601450c761a75d14f8e4ebd2d517042c9",
@@ -229,17 +229,17 @@
   "population_relations": {},
   "public_layout": "combined",
   "rejected_variants": {},
-  "release_id": "release-363d515e796cb44c",
+  "release_id": "release-fb89351df6396418",
   "release_mode": "development",
   "roster_digest": "27defb98b7223236",
   "runtime_bundle_ids": {
-    "gate__five_backend_probe": "runtime-79a43980c68c71fd"
+    "gate__five_backend_probe": "runtime-64ef398a4c5626fe"
   },
   "sandbox_attestation_digest": "",
   "schema_version": "3.5",
-  "scorer_version": "1.3.0",
-  "semantic_release_id": "semantic-9ae6fe845874b7d7",
-  "semantic_scorer_version": "1.0.0",
+  "scorer_version": "1.4.0",
+  "semantic_release_id": "semantic-e543640dca2bffa1",
+  "semantic_scorer_version": "1.1.0",
   "source_provenance": {},
   "source_provenance_digests": {},
   "splits": {

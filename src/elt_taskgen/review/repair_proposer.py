@@ -677,7 +677,7 @@ def _projected_rows(
 ) -> list[dict]:
     """The POPULATION route's `projections`: every failing gate's sanctioned
     rows, each serialized by the projector (D3, value-aware) and re-checked by
-    the gatekeeper (D1) exactly as `cli._projected_gate_lines` does. A producer
+    the gatekeeper (D1). A producer
     that still carries a count, a path or a value trips here — the row is never
     sent."""
     rows: list[dict] = []
@@ -1977,12 +1977,10 @@ def _is_empirical_calibrate_runner(runner: Any) -> bool:
 
 
 def _structural_calibrate_substitute(runner: Any):
-    """`cli.make_structural_calibrate_runner` over the empirical runner's own
-    roster document. Imported lazily: the CLI wires this module, not the
-    other way round, at import time."""
-    from elt_taskgen import cli as cli_mod
+    """Use structural calibration over the empirical runner's own roster."""
+    from elt_taskgen.pipeline.calibration import make_structural_calibrate_runner
 
-    return cli_mod.make_structural_calibrate_runner(
+    return make_structural_calibrate_runner(
         getattr(runner, "agents_config", None)
     )
 

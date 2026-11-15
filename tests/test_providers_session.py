@@ -55,6 +55,8 @@ from tests.test_providers import (
     openai_text_response,
 )
 
+from elt_taskgen.review import transcripts as _review_transcripts
+
 
 # ---------------------------------------------------------------------------
 # Scripted raw API bodies (the FIFO a FakeTransport pops per turn)
@@ -2650,7 +2652,7 @@ class Phase4SeamTest(_SessionCase):
                 try:
                     with (
                         mock.patch.object(
-                            P,
+                            _review_transcripts,
                             "_publish_raw_output",
                             side_effect=OSError("simulated crash before raw commit"),
                         ),

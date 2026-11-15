@@ -466,6 +466,13 @@ def _op_body(
     op: MartOp, mart_name: str, env: dict[str, str], problems: list[str]
 ) -> str | None:
     """Compile one non-source operation, recording problems on refusal."""
+    if op.kind is MartOpKind.TRANSITIVE_CLOSURE:
+        from elt_taskgen.generation.recursive import closure_sql
+        t = _one_table(op, mart_name, problems)
+        if t is None:
+            return None
+        rel = _resolve(env, t, mart_name, op, problems)
+        return None if rel is None else closure_sql(op, rel)
     if op.kind is MartOpKind.FILTER:
         t = _one_table(op, mart_name, problems)
         if t is None:

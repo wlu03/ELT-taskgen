@@ -759,6 +759,13 @@ def op_problems(op: MartOp, *, loc: str = "op") -> list[str]:
             f"{loc}: details['sql'] (raw SQL) is not a plan construct; express "
             "the op structurally"
         ]
+    if op.kind is MartOpKind.TRANSITIVE_CLOSURE:
+        from elt_taskgen.generation.recursive import closure_keys
+        try:
+            closure_keys(op)
+        except (ValueError, TypeError, KeyError) as exc:
+            return [f"{loc}: {exc}"]
+        return []
     if op.kind in AGGREGATE_FAMILY_KINDS:
         return _aggregate_family_problems(op, loc)
     if op.kind is MartOpKind.EXTREMA:
@@ -842,6 +849,8 @@ def _claimed_columns(op: MartOp) -> dict[str, MartColumnKind]:
 
 def _produced_aliases(op: MartOp) -> set[str]:
     """Output aliases the op's OWN select list introduces (empty if it has none)."""
+    if op.kind in AGGREGATE_FAMILY_KINDS:
+        return {alias for alias, _expression in measure_items(op)}
     projections = _select_projections(op) if op.details.get("select") else None
     return {alias for alias, _ in projections} if projections else set()
 
@@ -986,13 +995,75 @@ def _certifies_aggregate_then_filter(plan: MartPlan) -> bool:
     return False
 
 
+def _certifies_branched_fact_rollup(plan: MartPlan) -> bool:
+    from elt_taskgen.generation.shapes.branched_fact_rollup import certifies_branched_plan
+
+    return certifies_branched_plan(plan)
+
+
+def _certifies_global_baseline(plan: MartPlan) -> bool:
+    from elt_taskgen.generation.compositions import certifies_global_baseline
+    from elt_taskgen.generation.recipe_certification import certifies_entity_baseline
+    return certifies_global_baseline(plan) or certifies_entity_baseline(plan)
+
+
+def _certifies_multiple_extrema(plan: MartPlan) -> bool:
+    from elt_taskgen.generation.compositions import certifies_multiple_extrema
+    return certifies_multiple_extrema(plan)
+
+
+def _certifies_aggregate_extrema(plan: MartPlan) -> bool:
+    from elt_taskgen.generation.recipe_certification import certifies_aggregate_extrema
+    return certifies_aggregate_extrema(plan)
+
+
+def _certifies_calendar_streak(plan: MartPlan) -> bool:
+    from elt_taskgen.generation.recipe_certification import certifies_calendar_streak
+    return certifies_calendar_streak(plan)
+
+
 # Only registered detectors may certify semantic-pattern declarations.  Adding
 # an enum value makes the vocabulary available to plans and coverage policy;
 # adding it here is the separate implementation milestone that makes the claim
 # executable.  This split lets the implementation fail closed while patterns
 # are delivered one vertical slice at a time.
+def _certifies_advanced_recipe(plan: MartPlan, recipe: str) -> bool:
+    from elt_taskgen.generation.advanced_certification import certifies_advanced
+    return certifies_advanced(plan, recipe)
+
+
+def _certifies_scenario_recipe(plan: MartPlan, recipe: str) -> bool:
+    from elt_taskgen.generation.scenario_plan import certifies_scenario
+    return certifies_scenario(plan, recipe)
+
+
+def _certifies_graph_recipe(plan: MartPlan, recipe: str) -> bool:
+    from elt_taskgen.generation.graph_plan import certifies_graph
+    return certifies_graph(plan, recipe)
+
+
 SEMANTIC_PATTERN_CERTIFIERS: dict[SemanticPattern, Callable[[MartPlan], bool]] = {
+    SemanticPattern.ROLE_PLAYING_DIMENSION: lambda p: _certifies_graph_recipe(p, "role_playing_dimension_v1"),
+    SemanticPattern.AMBIGUOUS_PATH: lambda p: _certifies_graph_recipe(p, "ambiguous_path_rollup_v1"),
+    SemanticPattern.MULTI_BRIDGE_DEDUP: lambda p: _certifies_graph_recipe(p, "multi_bridge_dedup_v1"),
+    SemanticPattern.OPTIONAL_CHAIN: lambda p: _certifies_graph_recipe(p, "optional_chain_coverage_v1"),
+    SemanticPattern.HETEROGENEOUS_KEY_JOIN: lambda p: _certifies_graph_recipe(p, "heterogeneous_key_join_v1"),
+    SemanticPattern.COMPOSITE_KEY_BRIDGE: lambda p: _certifies_graph_recipe(p, "composite_key_bridge_v1"),
     SemanticPattern.AGGREGATE_THEN_FILTER: _certifies_aggregate_then_filter,
+    SemanticPattern.BRANCHED_FACT_ROLLUP: _certifies_branched_fact_rollup,
+    SemanticPattern.GROUP_GLOBAL_BASELINE: _certifies_global_baseline,
+    SemanticPattern.MULTIPLE_EXTREMA: _certifies_multiple_extrema,
+    SemanticPattern.AGGREGATE_THEN_EXTREMA: _certifies_aggregate_extrema,
+    SemanticPattern.CONSECUTIVE_STREAK: _certifies_calendar_streak,
+    SemanticPattern.SCD_ASOF: lambda p: _certifies_advanced_recipe(p, "historical_asof_v1"),
+    SemanticPattern.COHORT_RETENTION: lambda p: _certifies_advanced_recipe(p, "cohort_retention_v1"),
+    SemanticPattern.WEIGHTED_ALLOCATION: lambda p: _certifies_advanced_recipe(p, "weighted_allocation_v1"),
+    SemanticPattern.INTERVAL_COVERAGE: lambda p: _certifies_scenario_recipe(p, "interval_coverage_v1"),
+    SemanticPattern.SESSIONIZATION: lambda p: _certifies_scenario_recipe(p, "event_sessionization_v1"),
+    SemanticPattern.ACTIVITY_LIFECYCLE: lambda p: _certifies_scenario_recipe(p, "activity_lifecycle_v1"),
+    SemanticPattern.DOCUMENT_RECONCILIATION: lambda p: _certifies_scenario_recipe(p, "document_reconciliation_v1"),
+    SemanticPattern.LEDGER_RECONCILIATION: lambda p: _certifies_scenario_recipe(p, "ledger_reconciliation_v1"),
+    SemanticPattern.RECURSIVE_HIERARCHY: lambda p: _certifies_scenario_recipe(p, "recursive_hierarchy_v1"),
 }
 
 
@@ -2036,6 +2107,36 @@ class StarShape:
                 if c not in seen:
                     seen.append(c)
         return tuple(seen)
+
+
+@dataclass(frozen=True)
+class FactBranch:
+    """One fact's complete FK binding and optional additive measure."""
+
+    table: str
+    child_columns: tuple[str, ...]
+    parent_columns: tuple[str, ...]
+    measure: str = ""
+    measure_type: ColumnType = ColumnType.INTEGER
+
+
+@dataclass(frozen=True)
+class BranchedFactCandidate:
+    """A proven parent grain with two independently counted fact sources."""
+
+    grain_table: str
+    grain_key: tuple[str, ...]
+    key_types: tuple[ColumnType, ...]
+    branches: tuple[FactBranch, ...]
+    attributes: tuple[tuple[str, ColumnType], ...] = ()
+    extra_sources: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class BranchedFactShape(StarShape):
+    """Small extension for the two-branch builder and its row constructor."""
+
+    branches: tuple[FactBranch, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -4597,6 +4698,7 @@ from elt_taskgen.generation.shapes.aggregate_then_filter import (  # noqa: E402
     aggregate_then_filter,
 )
 from elt_taskgen.generation.shapes.argmax_profile import argmax_profile  # noqa: E402
+from elt_taskgen.generation.shapes.branched_fact_rollup import branched_fact_rollup  # noqa: E402
 from elt_taskgen.generation.shapes.categorical_ladder import (  # noqa: E402
     categorical_ladder,
 )

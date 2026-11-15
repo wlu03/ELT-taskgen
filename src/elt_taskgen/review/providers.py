@@ -9,20 +9,16 @@ from __future__ import annotations
 
 import contextlib
 import contextvars
-import hashlib
 import json
 import math
 import os
 import re
-import signal
 import shutil
-import stat
 import tempfile
 import threading
 import time
 import urllib.error
 import urllib.request
-import uuid
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -68,6 +64,78 @@ from elt_taskgen.review.tools.projection import DIAGNOSTICS_VERSION
 from elt_taskgen.review.repair_proposer import ROUTE_ALLOWLIST, ROUTE_IR_PATHS
 from elt_taskgen.review.tools.registry import ToolRegistry
 from elt_taskgen.verification.attacks import kind_variant_contract
+
+from elt_taskgen.review import provider_accounting as _review_provider_accounting
+from elt_taskgen.review import provider_transport as _review_provider_transport
+from elt_taskgen.review import provider_types as _review_provider_types
+from elt_taskgen.review import transcripts as _review_transcripts
+
+# Compatibility imports; implementations live in their owning modules.
+from elt_taskgen.review.provider_accounting import (
+    ANTHROPIC_PRICING_USD_PER_MTOK,
+    BudgetExceededError,
+    CHARS_PER_TOKEN_ESTIMATE,
+    CostMeter,
+    DEFAULT_BUDGET_PER_TASK_USD,
+    OPENAI_COMPAT_PRICING_HOWTO,
+    RESERVE_OUTPUT_FRACTION,
+    RateCard,
+    RoleCapExceeded,
+    TrajectoryBudget,
+    _explicit_rate,
+    _fresh_role_reading,
+    _openai_compat_rates,
+    _usable_report,
+    estimate_turn_usd,
+    rate_card_for,
+    rates_for,
+)
+from elt_taskgen.review.provider_transport import (
+    Transport,
+    _OneShotWallDeadline,
+    _call_with_wall_deadline,
+    _http_post_json,
+)
+from elt_taskgen.review.provider_types import (
+    AttemptRecord,
+    BackendResult,
+    BackendTurn,
+    ToolResultBlock,
+    Usage,
+    _BACKEND_ATTEMPTS_ATTR,
+    _TRUNCATED_STOP_REASONS,
+    _attach_attempts,
+    _elapsed_ms,
+    _plain_data,
+    _tool_use_blocks,
+    _tool_use_ids,
+    _with_tool_results,
+    backend_attempts,
+    protocol_correction_results,
+)
+from elt_taskgen.review.transcripts import (
+    SESSION_RECORDS_SUBDIR,
+    TOOL_RAW_SUBDIR,
+    TRAJECTORIES_SUBDIR,
+    TranscriptStore,
+    _absolute_lexical,
+    _atomic_replace_bytes,
+    _confirm_raw_output,
+    _directory_chain,
+    _displaced_entry_path,
+    _ensure_private_directory,
+    _entry_path,
+    _fsync_directory,
+    _publish_bytes_once,
+    _publish_raw_output,
+    _read_entry_if_any,
+    _read_regular_bytes,
+    _session_record_path,
+    _staged_bytes,
+    tool_raw_root,
+    trajectories_root,
+    trajectory_record_path,
+)
 
 __all__ = [
     "AnthropicBackend",
@@ -208,35 +276,6 @@ class SessionReplayMismatchError(ToolHarnessFault, TranscriptMissingError):
                 f"replay-only: session replay diverged at {self.tool!r}: {self.detail} "
                 "(a replay is diagnostic only; re-record — fail closed)",
             )
-
-
-class BudgetExceededError(RuntimeError):
-    """Signal a task or total budget breach before or after a live attempt.
-
-    Reserve failures occur before transport; charge failures occur after the paid
-    transcript is recorded. The exception carries only numeric budget metadata and
-    scope.
-    """
-
-    def __init__(self, message: str = "", *, scope: str = "task"):
-        super().__init__(message)
-        self.scope = str(scope)
-
-
-class RoleCapExceeded(BudgetExceededError):
-    """Signal that a trajectory's own USD cap cannot absorb or has been crossed by a turn.
-
-    `scope` is always `role`. The session maps this to a USD limit stop rather than
-    infrastructure failure; reserve failures spend nothing, while charge failures follow
-    a recorded paid attempt.
-    """
-
-    def __init__(self, message: str = "", *, scope: str = "role"):
-        if str(scope) != "role":
-            raise ValueError(
-                f"RoleCapExceeded is the role-scope breach only, got scope {scope!r}"
-            )
-        super().__init__(message, scope="role")
 
 
 class MissingCredentialsError(RuntimeError):
@@ -1142,7 +1181,7 @@ def role_loop_limits(
 
         derived = _author_tools.author_limits(plain).as_manifest()
         for key in ("harness_validators", "max_compile_corrections"):
-            if key in plain and _plain_data(plain[key]) != derived[key]:
+            if key in plain and _review_provider_types._plain_data(plain[key]) != derived[key]:
                 raise ValueError(
                     f"roles.semantic_author.session.{key} = {plain[key]!r} disagrees with "
                     f"the SoT derivation {derived[key]!r}; declare exactly that value or "
@@ -1464,8 +1503,8 @@ def turn_wire_binding(
         return ""
     digest = policy.tools_sha256() if wire_tools_sha256 is None else str(wire_tools_sha256)
     choice = session_tool_choice(policy) if tool_choice is None else tool_choice
-    default_choice = _plain_data(_anthropic_tool_choice(session_tool_choice(policy)))
-    chosen = _plain_data(_anthropic_tool_choice(choice))
+    default_choice = _review_provider_types._plain_data(_anthropic_tool_choice(session_tool_choice(policy)))
+    chosen = _review_provider_types._plain_data(_anthropic_tool_choice(choice))
     if digest == policy.tools_sha256() and chosen == default_choice:
         return ""
     return "wire:" + digest + "\ntool_choice:" + canonical_json(chosen)
@@ -1588,496 +1627,6 @@ def _system_prompt(
     return None
 
 
-# HTTP transport (injectable — tests double THIS, not the provider)
-
-Transport = Callable[[str, Mapping[str, str], dict], dict]
-
-_HTTP_TIMEOUT_SECONDS = 600.0
-
-#: Transient statuses worth retrying: 429, generic 5xx, and Anthropic's 529.
-#: Anything else — 400, 401, 403, 404 — is deterministic, and retrying only
-#: re-bills the same failure.
-_RETRYABLE_HTTP_STATUSES = frozenset({429, 500, 502, 503, 504, 529})
-_HTTP_RETRIES = 4
-_HTTP_BACKOFF_BASE_SECONDS = 2.0
-
-
-class _OneShotWallDeadline(Exception):
-    """Private signal escape; backends attach any completed attempts before
-    re-raising it to the provider boundary."""
-
-
-def _call_with_wall_deadline(
-    call: Callable[[], Any], *, deadline_s: float | None, role_name: str
-) -> Any:
-    """Run one live one-shot model call under its declared wall deadline.
-
-    ``urlopen``'s timeout is an inactivity timeout and can be reset forever by
-    occasional response bytes.  The POSIX worker's main thread therefore uses
-    an interval timer for the end-to-end call.  A threaded caller cannot
-    enforce that safely and is refused before transport.
-    """
-    if deadline_s is None:
-        return call()
-    deadline = float(deadline_s)
-    if deadline <= 0:
-        raise ProviderFault(
-            f"one-shot provider call for role {role_name!r} has no wall time remaining",
-            code="wall_deadline_exceeded",
-        )
-    can_interrupt = (
-        hasattr(signal, "SIGALRM")
-        and hasattr(signal, "setitimer")
-        and threading.current_thread() is threading.main_thread()
-    )
-    if not can_interrupt:
-        raise ProviderFault(
-            "one-shot model transport cannot enforce its wall deadline "
-            "outside the worker process's main thread",
-            code="wall_deadline_unsupported",
-        )
-
-    previous_handler = signal.getsignal(signal.SIGALRM)
-    previous_timer = signal.getitimer(signal.ITIMER_REAL)
-
-    def deadline_handler(_signum, _frame) -> None:
-        raise _OneShotWallDeadline()
-
-    signal.signal(signal.SIGALRM, deadline_handler)
-    try:
-        signal.setitimer(signal.ITIMER_REAL, deadline)
-        try:
-            return call()
-        except _OneShotWallDeadline:
-            raise ProviderFault(
-                f"one-shot provider call for role {role_name!r} exceeded its "
-                f"declared wall deadline of {deadline:g} s",
-                code="wall_deadline_exceeded",
-            ) from None
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0.0)
-        signal.signal(signal.SIGALRM, previous_handler)
-        if previous_timer != (0.0, 0.0):
-            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
-
-
-def _http_post_json(url: str, headers: Mapping[str, str], payload: dict) -> dict:
-    """POST canonical JSON, return the parsed JSON response (stdlib only).
-
-    Transient statuses retry with exponential backoff (honouring Retry-After);
-    the terminal attempt re-raises with the provider's own error detail.
-    Determinism is unaffected — memoization happens above this layer.
-    """
-    body = json.dumps(payload).encode("utf-8")
-    last_error: Exception | None = None
-    for attempt in range(1 + _HTTP_RETRIES):
-        request = urllib.request.Request(
-            url,
-            data=body,
-            headers={"content-type": "application/json", **headers},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(
-                request, timeout=_HTTP_TIMEOUT_SECONDS
-            ) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:  # pragma: no cover - live API only
-            detail = exc.read().decode("utf-8", errors="replace")[:1000]
-            last_error = RuntimeError(
-                f"provider HTTP {exc.code} from {url}: {detail}"
-            )
-            last_error.__cause__ = exc
-            if exc.code not in _RETRYABLE_HTTP_STATUSES or attempt >= _HTTP_RETRIES:
-                raise last_error
-            retry_after = exc.headers.get("retry-after") if exc.headers else None
-            try:
-                delay = float(retry_after) if retry_after else 0.0
-            except ValueError:
-                delay = 0.0
-            delay = max(delay, _HTTP_BACKOFF_BASE_SECONDS * (2**attempt))
-            time.sleep(min(delay, 60.0))
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:  # pragma: no cover
-            # Connection-level transients get the same bounded courtesy; a
-            # repeated failure still raises.
-            last_error = RuntimeError(f"provider transport error from {url}: {exc}")
-            last_error.__cause__ = exc
-            if attempt >= _HTTP_RETRIES:
-                raise last_error
-            time.sleep(_HTTP_BACKOFF_BASE_SECONDS * (2**attempt))
-    raise last_error  # pragma: no cover - loop always returns or raises
-
-
-# Backends
-
-@dataclass(frozen=True)
-class Usage:
-    """Represent token usage for one attempt or an aggregate.
-
-    Track uncached input, cache creation, cache reads, and output separately. Totals are
-    nonnegative and addition preserves each category.
-    """
-
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cache_read_input_tokens: int = 0
-    cache_creation_input_tokens: int = 0
-
-    def __add__(self, other: "Usage") -> "Usage":
-        return Usage(
-            input_tokens=self.input_tokens + other.input_tokens,
-            output_tokens=self.output_tokens + other.output_tokens,
-            cache_read_input_tokens=(
-                self.cache_read_input_tokens + other.cache_read_input_tokens
-            ),
-            cache_creation_input_tokens=(
-                self.cache_creation_input_tokens + other.cache_creation_input_tokens
-            ),
-        )
-
-    def as_dict(self) -> dict[str, int]:
-        """The transcript `usage` block (the four wire-named counters)."""
-        return {
-            "input_tokens": int(self.input_tokens),
-            "output_tokens": int(self.output_tokens),
-            "cache_read_input_tokens": int(self.cache_read_input_tokens),
-            "cache_creation_input_tokens": int(self.cache_creation_input_tokens),
-        }
-
-    @classmethod
-    def from_dict(cls, usage: Mapping[str, Any] | None) -> "Usage":
-        """A transcript `usage` block back into a Usage (legacy entries carry
-        only the two token counters; absent cache counters read as 0)."""
-        usage = usage or {}
-        return cls(
-            input_tokens=int(usage.get("input_tokens") or 0),
-            output_tokens=int(usage.get("output_tokens") or 0),
-            cache_read_input_tokens=int(usage.get("cache_read_input_tokens") or 0),
-            cache_creation_input_tokens=int(
-                usage.get("cache_creation_input_tokens") or 0
-            ),
-        )
-
-    @classmethod
-    def from_anthropic(cls, resp: Mapping[str, Any]) -> "Usage":
-        """Messages API `usage` (cache counters present only when caching)."""
-        return cls.from_dict(resp.get("usage") or {})
-
-    @classmethod
-    def from_chat(cls, resp: Mapping[str, Any]) -> "Usage":
-        """Chat-completions `usage`: `prompt_tokens` INCLUDES the cached part
-        (`prompt_tokens_details.cached_tokens`), which is split out here."""
-        usage = resp.get("usage") or {}
-        if not isinstance(usage, Mapping):
-            usage = {}
-        prompt_tokens = int(usage.get("prompt_tokens") or 0)
-        details = usage.get("prompt_tokens_details")
-        cached = 0
-        if isinstance(details, Mapping):
-            cached = int(details.get("cached_tokens") or 0)
-        cached = max(0, min(cached, prompt_tokens))
-        return cls(
-            input_tokens=prompt_tokens - cached,
-            output_tokens=int(usage.get("completion_tokens") or 0),
-            cache_read_input_tokens=cached,
-            cache_creation_input_tokens=0,
-        )
-
-
-@dataclass(frozen=True)
-class AttemptRecord:
-    """One API attempt as the meter sees it: what it cost, how long it took,
-    what actually served it. Every attempt is paid for, so every attempt is
-    recorded — including the attempts of an exchange that ends in a raise."""
-
-    usage: Usage
-    #: Harness-measured wall of the transport call (request to parsed body),
-    #: on the `DbtCommandEvidence.elapsed_ms` pattern: measured by the caller,
-    #: never taken from the provider.
-    elapsed_ms: int
-    #: The model id the PROVIDER reports in the response body ('' when the
-    #: wire carried none). What was asked for is `BackendResult.model`.
-    served_model: str
-    stop_reason: str | None = None
-    #: The provider's own billed figure for THIS attempt (gateways report
-    #: `usage.cost`), None when the wire carried none.
-    reported_usd: float | None = None
-
-
-#: Attribute under which a raising backend leaves the attempts it already paid
-#: for, so `RoutedProvider` can meter them (see `backend_attempts`).
-_BACKEND_ATTEMPTS_ATTR = "backend_attempts"
-
-
-def _attach_attempts(exc: BaseException, attempts: Sequence[AttemptRecord]) -> None:
-    """Pin the paid-for attempts onto an exception about to propagate."""
-    try:
-        setattr(exc, _BACKEND_ATTEMPTS_ATTR, tuple(attempts))
-    except (AttributeError, TypeError):  # pragma: no cover - exotic exception
-        pass
-
-
-def backend_attempts(exc: BaseException) -> tuple[AttemptRecord, ...]:
-    """The API attempts a raising backend made before it raised (may be empty).
-
-    A backend that exhausts its schema retries, or whose transport fails on
-    the second attempt, has still PAID for the earlier attempts; they reach the
-    meter through this hook rather than being lost with the exception.
-    """
-    found = getattr(exc, _BACKEND_ATTEMPTS_ATTR, ())
-    if isinstance(found, (list, tuple)) and all(
-        isinstance(a, AttemptRecord) for a in found
-    ):
-        return tuple(found)
-    return ()
-
-
-def _elapsed_ms(started: float) -> int:
-    """Whole milliseconds since a `time.monotonic()` mark (never negative)."""
-    return max(0, int(round((time.monotonic() - started) * 1000.0)))
-
-
-@dataclass(frozen=True)
-class BackendResult:
-    """One completed provider exchange (possibly after schema retries)."""
-
-    text: str                      # normalized text served to the council
-    model: str
-    input_tokens: int              # summed across all attempts (all are paid)
-    output_tokens: int
-    raw_attempts: tuple[dict, ...]  # raw API response bodies, in order
-    #: USD the PROVIDER reported for this exchange, or None when the wire
-    #: carried no cost. Gateways price per upstream route, so a reported figure
-    #: beats any local table. See CostMeter.charge.
-    reported_usd: float | None = None
-    #: Per-attempt usage, wall and served model, in order (one per raw
-    #: attempt). The meter charges PER ATTEMPT from this tuple.
-    attempts: tuple[AttemptRecord, ...] = ()
-
-    @property
-    def usage(self) -> Usage:
-        """Four-counter usage summed across every attempt."""
-        total = Usage()
-        for attempt in self.attempts:
-            total = total + attempt.usage
-        if not self.attempts:
-            total = Usage(
-                input_tokens=self.input_tokens, output_tokens=self.output_tokens
-            )
-        return total
-
-    @property
-    def elapsed_ms(self) -> int:
-        """Harness-measured transport wall summed across every attempt."""
-        return sum(a.elapsed_ms for a in self.attempts)
-
-    @property
-    def served_model(self) -> str:
-        """The provider-reported model id of the attempt that produced the
-        served text (the last one); '' when no attempt reported one."""
-        for attempt in reversed(self.attempts):
-            if attempt.served_model:
-                return attempt.served_model
-        return ""
-
-
-#: Wire stop reasons that mean the output was cut off by the token budget:
-#: the Messages API's `max_tokens` and the chat-completions `length`. In a
-#: session the first one is `OUTPUT_TRUNCATED` (SoT T4); the one-shot
-#: `complete()` keeps its three attempts.
-_TRUNCATED_STOP_REASONS: frozenset[str] = frozenset({"max_tokens", "length"})
-
-
-def _plain_data(value: Any) -> Any:
-    """A JSON-plain copy (mappings to dicts, sequences to lists)."""
-    if isinstance(value, Mapping):
-        return {str(k): _plain_data(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_plain_data(v) for v in value]
-    return value
-
-
-def _tool_use_blocks(content: Any) -> list[dict]:
-    """Every `tool_use` block of one assistant content list, in order."""
-    if not isinstance(content, (list, tuple)):
-        return []
-    return [
-        block
-        for block in content
-        if isinstance(block, Mapping) and block.get("type") == "tool_use"
-    ]
-
-
-def _tool_use_ids(content: Any) -> list[str]:
-    return [str(block.get("id")) for block in _tool_use_blocks(content) if block.get("id")]
-
-
-@dataclass(frozen=True)
-class BackendTurn:
-    """Represent one canonical model turn for a bounded session.
-
-    `content` preserves every text and tool-use block in Messages-API form across
-    providers. Multiple tool calls remain present so the runner can reject them. The
-    record also carries stop/truncation state, usage, memo identity, route, replay,
-    pricing, and admission metadata.
-    """
-
-    content: tuple[Mapping[str, Any], ...]
-    stop_reason: str | None
-    model: str
-    raw: Mapping[str, Any] = field(default_factory=dict)
-    attempts: tuple[AttemptRecord, ...] = ()
-    reported_usd: float | None = None
-    key: str = ""
-    turn_index: int = 0
-    replayed: bool = False
-    text: str = ""
-    usd: float = 0.0
-    route: Mapping[str, Any] = field(default_factory=dict)
-    admission: Mapping[str, str] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "content", tuple(_plain_data(b) for b in self.content))
-        object.__setattr__(self, "route", _plain_data(self.route or {}))
-        object.__setattr__(self, "admission", {str(k): str(v) for k, v in dict(self.admission or {}).items()})
-
-    @property
-    def memo_key(self) -> str:
-        """The transcript key this turn is recorded under (`key`)."""
-        return self.key
-
-    @property
-    def usage(self) -> Usage:
-        total = Usage()
-        for attempt in self.attempts:
-            total = total + attempt.usage
-        return total
-
-    @property
-    def elapsed_ms(self) -> int:
-        return sum(a.elapsed_ms for a in self.attempts)
-
-    @property
-    def served_model(self) -> str:
-        for attempt in reversed(self.attempts):
-            if attempt.served_model:
-                return attempt.served_model
-        return ""
-
-    @property
-    def truncated(self) -> bool:
-        """True when the wire cut the output off (`OUTPUT_TRUNCATED` in a
-        session, halting on the first occurrence)."""
-        return self.stop_reason in _TRUNCATED_STOP_REASONS
-
-    @property
-    def tool_uses(self) -> tuple[Mapping[str, Any], ...]:
-        return tuple(_tool_use_blocks(self.content))
-
-    @property
-    def tool_use_ids(self) -> tuple[str, ...]:
-        return tuple(_tool_use_ids(self.content))
-
-    @property
-    def text_content(self) -> str:
-        return "".join(
-            str(block.get("text", ""))
-            for block in self.content
-            if isinstance(block, Mapping) and block.get("type") == "text"
-        )
-
-    def protocol_fault(self) -> ToolProtocolFault | None:
-        """The dispatcher's protocol verdict on this turn: `no_tool_call`
-        (nothing to dispatch), `multiple_tool_use` (parallel calls are refused,
-        never executed), `invalid_arguments` (the input is not an object);
-        None when exactly one well-formed `tool_use` arrived. Unknown names
-        and schema-invalid arguments against a tool's schema are the
-        registry's verdict, not this one."""
-        uses = self.tool_uses
-        if not uses:
-            return ToolProtocolFault("no_tool_call")
-        if len(uses) > 1:
-            return ToolProtocolFault(
-                "multiple_tool_use",
-                tool=str(uses[0].get("name") or ""),
-                detail=f"{len(uses)} tool_use blocks in one turn",
-            )
-        if not isinstance(uses[0].get("input"), Mapping):
-            return ToolProtocolFault("invalid_arguments", tool=str(uses[0].get("name") or ""))
-        return None
-
-    def tool_call(self) -> Mapping[str, Any]:
-        """The ONE `tool_use` block of this turn, or raise the protocol
-        fault (`ToolProtocolFault`) the caller answers with a correction."""
-        fault = self.protocol_fault()
-        if fault is not None:
-            raise fault
-        return self.tool_uses[0]
-
-
-@dataclass(frozen=True)
-class ToolResultBlock:
-    """One answer to one `tool_use` id: the sanitized result bytes
-    (`serialize_for_transport` output, or a `Diagnostic.render()` text) or a
-    correction (`is_error`). `content` is TEXT: the controller sends only
-    what the projection layer already vetted."""
-
-    tool_use_id: str
-    content: str
-    is_error: bool = False
-
-
-def _with_tool_results(
-    messages: Sequence[Mapping[str, Any]],
-    assistant_content: Any,
-    results: Sequence[ToolResultBlock | tuple],
-    *,
-    text: str | None = None,
-) -> list[dict]:
-    """Return a new message list containing an assistant turn and its tool results.
-
-    Every tool-use id receives a leading `tool_result` block. Optional explanatory text
-    follows; input messages are not mutated.
-    """
-    out = [dict(m) for m in messages]
-    if assistant_content:
-        out.append({"role": "assistant", "content": _plain_data(assistant_content)})
-    blocks: list[dict] = []
-    for result in results:
-        if isinstance(result, ToolResultBlock):
-            tool_use_id, content, is_error = result.tool_use_id, result.content, result.is_error
-        else:
-            tool_use_id, content = result[0], result[1]
-            is_error = bool(result[2]) if len(result) > 2 else False
-        block: dict = {"type": "tool_result", "tool_use_id": str(tool_use_id)}
-        if is_error:
-            block["is_error"] = True
-        block["content"] = str(content)
-        blocks.append(block)
-    if blocks:
-        if text is not None:
-            blocks.append({"type": "text", "text": text})
-        out.append({"role": "user", "content": blocks})
-    elif text is not None:
-        out.append({"role": "user", "content": text})
-    return out
-
-
-def protocol_correction_results(
-    turn: BackendTurn, fault: ToolProtocolFault, *, text: str | None = None
-) -> list[ToolResultBlock]:
-    """The `is_error` answers to EVERY `tool_use` id of a turn the dispatcher
-    refused (`ToolProtocolFault`): one fixed code, the same text on each id,
-    nothing executed. Empty for `no_tool_call` (there is no id to answer; the
-    caller sends the text alone). The default text is the policy's refusal
-    text with the fault's code."""
-    if text is None:
-        from elt_taskgen.review.session import REFUSAL_TEXT
-
-        text = REFUSAL_TEXT.format(code=fault.code)
-    return [ToolResultBlock(tool_use_id, text, True) for tool_use_id in turn.tool_use_ids]
-
-
 #: Bounded schema retries: 1 initial attempt + this many retries, then raise.
 SCHEMA_RETRIES = 2
 
@@ -2110,11 +1659,11 @@ def configure_retry_policy(
         raise ValueError("http_timeout_seconds must be finite and in (0, 3600]")
     if not math.isfinite(backoff) or not 0.0 <= backoff <= 60.0:
         raise ValueError("http_backoff_seconds must be finite and in [0, 60]")
-    global _HTTP_RETRIES, SCHEMA_RETRIES, _HTTP_TIMEOUT_SECONDS, _HTTP_BACKOFF_BASE_SECONDS
-    _HTTP_RETRIES = int(http_retries)
+    global SCHEMA_RETRIES
+    _review_provider_transport._HTTP_RETRIES = int(http_retries)
     SCHEMA_RETRIES = int(schema_retries)
-    _HTTP_TIMEOUT_SECONDS = timeout
-    _HTTP_BACKOFF_BASE_SECONDS = backoff
+    _review_provider_transport._HTTP_TIMEOUT_SECONDS = timeout
+    _review_provider_transport._HTTP_BACKOFF_BASE_SECONDS = backoff
     # `schema_retries` is part of every role behavior manifest. A sequential
     # configured run may already have memoized the digest under the previous
     # policy, so mutation of the worker-local policy must invalidate it.
@@ -2129,11 +1678,11 @@ def _with_correction(payload: dict, last_response: dict, problem: str) -> dict:
     """
     assistant = last_response.get("content")
     correction = CORRECTION_TEXT.format(problem=problem)
-    tool_use_ids = _tool_use_ids(assistant) if assistant else []
-    messages = _with_tool_results(
+    tool_use_ids = _review_provider_types._tool_use_ids(assistant) if assistant else []
+    messages = _review_provider_types._with_tool_results(
         list(payload.get("messages") or []),
         assistant if assistant else None,
-        [ToolResultBlock(tool_use_id, correction, True) for tool_use_id in tool_use_ids],
+        [_review_provider_types.ToolResultBlock(tool_use_id, correction, True) for tool_use_id in tool_use_ids],
         text=correction,
     )
     return {**payload, "messages": messages}
@@ -2252,7 +1801,7 @@ def _chat_tools(tools: Sequence[Mapping[str, Any]]) -> list[dict]:
 
 def _arguments_text(value: Any) -> str:
     if isinstance(value, (Mapping, list, tuple)):
-        return canonical_json(_plain_data(value))
+        return canonical_json(_review_provider_types._plain_data(value))
     if value is None:
         return "{}"
     return json.dumps(value)
@@ -2285,7 +1834,7 @@ def _chat_messages(messages: Sequence[Mapping[str, Any]], system: str | None) ->
                         "arguments": _arguments_text(b.get("input")),
                     },
                 }
-                for b in _tool_use_blocks(content)
+                for b in _review_provider_types._tool_use_blocks(content)
             ]
             turn: dict = {"role": "assistant", "content": text}
             if calls:
@@ -2309,7 +1858,7 @@ def _chat_messages(messages: Sequence[Mapping[str, Any]], system: str | None) ->
             if texts:
                 out.append({"role": "user", "content": "\n\n".join(texts)})
         else:
-            out.append({"role": role, "content": content if isinstance(content, str) else _plain_data(content)})
+            out.append({"role": role, "content": content if isinstance(content, str) else _review_provider_types._plain_data(content)})
     return out
 
 
@@ -2388,7 +1937,7 @@ class AnthropicBackend:
         api_key: str,
         *,
         base_url: str = "https://api.anthropic.com",
-        transport: Transport | None = None,
+        transport: _review_provider_transport.Transport | None = None,
         agents_config: Path | str | None = None,
         workspace_id: str = "",
     ):
@@ -2405,7 +1954,7 @@ class AnthropicBackend:
         #: account identifier, not a secret, but it is nobody else's business.
         self._workspace_id = str(workspace_id or "").strip()
         self._url = base_url.rstrip("/") + "/v1/messages"
-        self._transport = transport or _http_post_json
+        self._transport = transport or _review_provider_transport._http_post_json
         #: The agents document the system prompts are derived from (None =
         #: the repository default): what `RoutedProvider` was loaded from.
         self._agents_config = agents_config
@@ -2474,9 +2023,9 @@ class AnthropicBackend:
         return int(usage.get("input_tokens") or 0), int(usage.get("output_tokens") or 0)
 
     @staticmethod
-    def _attempt_record(resp: Mapping[str, Any], elapsed_ms: int) -> AttemptRecord:
-        return AttemptRecord(
-            usage=Usage.from_anthropic(resp),
+    def _attempt_record(resp: Mapping[str, Any], elapsed_ms: int) -> _review_provider_types.AttemptRecord:
+        return _review_provider_types.AttemptRecord(
+            usage=_review_provider_types.Usage.from_anthropic(resp),
             elapsed_ms=int(elapsed_ms),
             served_model=str(resp.get("model") or ""),
             stop_reason=(
@@ -2507,7 +2056,7 @@ class AnthropicBackend:
 
     def complete(self, *, role_name: str, model: str, prompt: str,
                  max_tokens: int, effort: str | None,
-                 prompt_cache: bool = False) -> BackendResult:
+                 prompt_cache: bool = False) -> _review_provider_types.BackendResult:
         schema_mode = uses_findings_schema(role_name)
         payload = self._payload(
             model=model, prompt=prompt, max_tokens=max_tokens,
@@ -2515,7 +2064,7 @@ class AnthropicBackend:
             prompt_cache=prompt_cache, agents_config=self._agents_config,
         )
         attempts: list[dict] = []
-        records: list[AttemptRecord] = []
+        records: list[_review_provider_types.AttemptRecord] = []
         in_tokens = out_tokens = 0
         problem = "no attempt made"
         for attempt_no in range(1 + SCHEMA_RETRIES):
@@ -2534,10 +2083,10 @@ class AnthropicBackend:
             except Exception as exc:
                 # The attempts BEFORE this one were paid for; hand them to the
                 # meter with the failure rather than losing them.
-                _attach_attempts(exc, records)
+                _review_provider_types._attach_attempts(exc, records)
                 raise
             attempts.append(resp)
-            records.append(self._attempt_record(resp, _elapsed_ms(started)))
+            records.append(self._attempt_record(resp, _review_provider_types._elapsed_ms(started)))
             i, o = self._usage(resp)
             in_tokens += i
             out_tokens += o
@@ -2553,7 +2102,7 @@ class AnthropicBackend:
                         "role's max_tokens in config/agents.yaml)"
                     )
                 if problem is None:
-                    return BackendResult(
+                    return _review_provider_types.BackendResult(
                         text=normalized_text_for(role_name, data),
                         model=model,
                         input_tokens=in_tokens,
@@ -2564,7 +2113,7 @@ class AnthropicBackend:
             else:
                 text = self._text(resp)
                 if text.strip():
-                    return BackendResult(
+                    return _review_provider_types.BackendResult(
                         text=text, model=model,
                         input_tokens=in_tokens, output_tokens=out_tokens,
                         raw_attempts=tuple(attempts),
@@ -2609,7 +2158,7 @@ class AnthropicBackend:
             + ")"
         )
         # Every one of those attempts was billed: they reach the meter.
-        _attach_attempts(exhausted, records)
+        _review_provider_types._attach_attempts(exhausted, records)
         raise exhausted
 
     # -- sessions (Phase 1.R): one turn, N tools, no schema retries ----------
@@ -2664,7 +2213,7 @@ class AnthropicBackend:
         """EVERY content block of the reply, verbatim (text, tool_use, and
         anything else the wire carried, so a later turn can echo it)."""
         return [
-            _plain_data(block)
+            _review_provider_types._plain_data(block)
             for block in (resp.get("content") or [])
             if isinstance(block, Mapping)
         ]
@@ -2680,7 +2229,7 @@ class AnthropicBackend:
         tools: Sequence[Mapping[str, Any]] = (),
         tool_choice: Any = None,
         prompt_cache: bool = False,
-    ) -> BackendTurn:
+    ) -> _review_provider_types.BackendTurn:
         """ONE session turn: one HTTP exchange over the message prefix with
         `tools` and `tool_choice`, returned as a `BackendTurn` whatever the
         model did (no tool call, several, a truncation) — the runner, not the
@@ -2706,14 +2255,14 @@ class AnthropicBackend:
                 payload,
             )
         except Exception as exc:
-            _attach_attempts(exc, ())
+            _review_provider_types._attach_attempts(exc, ())
             raise
-        record = self._attempt_record(resp, _elapsed_ms(started))
-        return BackendTurn(
+        record = self._attempt_record(resp, _review_provider_types._elapsed_ms(started))
+        return _review_provider_types.BackendTurn(
             content=tuple(self._content_blocks(resp)),
             stop_reason=record.stop_reason,
             model=model,
-            raw=_plain_data(resp),
+            raw=_review_provider_types._plain_data(resp),
             attempts=(record,),
         )
 
@@ -2729,7 +2278,7 @@ class OpenAICompatBackend:
         base_url: str,
         api_key: str,
         *,
-        transport: Transport | None = None,
+        transport: _review_provider_transport.Transport | None = None,
         agents_config: Path | str | None = None,
     ):
         if not base_url:
@@ -2741,7 +2290,7 @@ class OpenAICompatBackend:
             )
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._api_key = api_key  # optional for self-hosted endpoints
-        self._transport = transport or _http_post_json
+        self._transport = transport or _review_provider_transport._http_post_json
         self._agents_config = agents_config
 
     def _headers(self) -> dict[str, str]:
@@ -2782,7 +2331,7 @@ class OpenAICompatBackend:
 
     def complete(self, *, role_name: str, model: str, prompt: str,
                  max_tokens: int, effort: str | None,
-                 prompt_cache: bool = False) -> BackendResult:
+                 prompt_cache: bool = False) -> _review_provider_types.BackendResult:
         # `prompt_cache` is accepted for signature parity with the Anthropic
         # backend and ignored: chat-completions endpoints cache prompts on
         # their own (no cache_control on this wire); any cached share comes
@@ -2831,7 +2380,7 @@ class OpenAICompatBackend:
             }
 
         attempts: list[dict] = []
-        records: list[AttemptRecord] = []
+        records: list[_review_provider_types.AttemptRecord] = []
         in_tokens = out_tokens = 0
         # None until an attempt reports one; every reporting attempt is added
         # (all attempts are billed, retries included).
@@ -2846,7 +2395,7 @@ class OpenAICompatBackend:
             try:
                 resp = self._transport(self._url, self._headers(), payload)
             except Exception as exc:
-                _attach_attempts(exc, records)
+                _review_provider_types._attach_attempts(exc, records)
                 raise
             attempts.append(resp)
             i, o = self._usage(resp)
@@ -2862,9 +2411,9 @@ class OpenAICompatBackend:
                 if isinstance(first_choice, dict) else None
             )
             records.append(
-                AttemptRecord(
-                    usage=Usage.from_chat(resp),
-                    elapsed_ms=_elapsed_ms(started),
+                _review_provider_types.AttemptRecord(
+                    usage=_review_provider_types.Usage.from_chat(resp),
+                    elapsed_ms=_review_provider_types._elapsed_ms(started),
                     served_model=str(resp.get("model") or ""),
                     stop_reason=str(finish) if finish else None,
                     reported_usd=attempt_usd,
@@ -2884,7 +2433,7 @@ class OpenAICompatBackend:
                         data = arguments
                 problem = validate_payload_for(role_name, data)
                 if problem is None:
-                    return BackendResult(
+                    return _review_provider_types.BackendResult(
                         text=normalized_text_for(role_name, data),
                         model=model,
                         input_tokens=in_tokens,
@@ -2896,7 +2445,7 @@ class OpenAICompatBackend:
             else:
                 text = message.get("content") or ""
                 if isinstance(text, str) and text.strip():
-                    return BackendResult(
+                    return _review_provider_types.BackendResult(
                         text=text, model=model,
                         input_tokens=in_tokens, output_tokens=out_tokens,
                         raw_attempts=tuple(attempts),
@@ -2908,7 +2457,7 @@ class OpenAICompatBackend:
             f"openai_compat backend: role {role_name!r} produced no valid "
             f"response after {1 + SCHEMA_RETRIES} attempts: {problem}"
         )
-        _attach_attempts(exhausted, records)
+        _review_provider_types._attach_attempts(exhausted, records)
         raise exhausted
 
     # -- sessions (Phase 1.R) ---------------------------------------------------
@@ -2924,7 +2473,7 @@ class OpenAICompatBackend:
         tools: Sequence[Mapping[str, Any]] = (),
         tool_choice: Any = None,
         prompt_cache: bool = False,
-    ) -> BackendTurn:
+    ) -> _review_provider_types.BackendTurn:
         """Run one chat-completions session turn and return canonical `BackendTurn`
         content.
 
@@ -2963,25 +2512,25 @@ class OpenAICompatBackend:
         try:
             resp = self._transport(self._url, self._headers(), payload)
         except Exception as exc:
-            _attach_attempts(exc, ())
+            _review_provider_types._attach_attempts(exc, ())
             raise
-        elapsed = _elapsed_ms(started)
+        elapsed = _review_provider_types._elapsed_ms(started)
         message = self._message(resp)
         first_choice = (resp.get("choices") or [{}])[0]
         finish = first_choice.get("finish_reason") if isinstance(first_choice, dict) else None
         attempt_usd = self._reported_usd(resp)
-        record = AttemptRecord(
-            usage=Usage.from_chat(resp),
+        record = _review_provider_types.AttemptRecord(
+            usage=_review_provider_types.Usage.from_chat(resp),
             elapsed_ms=elapsed,
             served_model=str(resp.get("model") or ""),
             stop_reason=str(finish) if finish else None,
             reported_usd=attempt_usd,
         )
-        return BackendTurn(
+        return _review_provider_types.BackendTurn(
             content=tuple(_chat_content_blocks(message)),
             stop_reason=record.stop_reason,
             model=model,
-            raw=_plain_data(resp),
+            raw=_review_provider_types._plain_data(resp),
             attempts=(record,),
             reported_usd=attempt_usd,
         )
@@ -3007,458 +2556,6 @@ PROVIDER_BACKENDS: dict[str, type] = {
     "claude_headless": _HeadlessBackendPlaceholder,
     "codex_headless": _HeadlessBackendPlaceholder,
 }
-
-
-# Transcript store
-
-def _entry_path(root: Path, role_name: str, prompt_sha: str) -> Path:
-    return root / role_name / f"{prompt_sha}.json"
-
-
-def _displaced_entry_path(
-    root: Path, role_name: str, prompt_sha: str, response_sha: str
-) -> Path:
-    """Where an entry displaced by a DIFFERENT response to the same prompt is
-    kept. Named by both digests, so every distinct observation of one prompt
-    survives and any evidence row naming it stays verifiable."""
-    return root / role_name / f"{prompt_sha}.{response_sha[:16]}.json"
-
-
-def _read_entry_if_any(path: Path) -> dict | None:
-    """The recorded entry at `path`, or None when it is absent or unreadable.
-    Never raises: a corrupt neighbour must not stop a live response being
-    recorded (the reader's own `lookup` fails closed on corruption)."""
-    try:
-        loaded = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    return loaded if isinstance(loaded, dict) else None
-
-
-#: The per-role subdirectory of a transcript store holding SESSION RECORDS
-#: (`TranscriptStore.record_session`): one JSON per completed bounded session
-#: under its session key (the turn-0 memo key), beside — never among — the
-#: role's turn entries, so every `<role>/*.json` walker still sees entries only.
-SESSION_RECORDS_SUBDIR = "sessions"
-
-
-def _session_record_path(root: Path, role_name: str, session_key: str) -> Path:
-    return root / role_name / SESSION_RECORDS_SUBDIR / f"{session_key}.json"
-
-
-def _fsync_directory(directory: Path) -> None:
-    """Make a completed publication durable before its caller returns."""
-
-    path = Path(directory)
-    before = path.lstat()
-    if stat.S_ISLNK(before.st_mode) or not stat.S_ISDIR(before.st_mode):
-        raise RuntimeError(f"evidence directory is not a real directory: {path}")
-    descriptor = os.open(
-        path,
-        os.O_RDONLY
-        | getattr(os, "O_CLOEXEC", 0)
-        | getattr(os, "O_NOFOLLOW", 0)
-        | getattr(os, "O_DIRECTORY", 0),
-    )
-    try:
-        opened = os.fstat(descriptor)
-        if (
-            not stat.S_ISDIR(opened.st_mode)
-            or (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino)
-        ):
-            raise RuntimeError(f"evidence directory changed while opening it: {path}")
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def _absolute_lexical(path: Path) -> Path:
-    """Absolute path without resolving (and thereby hiding) symlinks."""
-
-    return Path(os.path.abspath(os.fspath(path)))
-
-
-def _directory_chain(directory: Path, boundary: Path) -> tuple[Path, ...]:
-    """``boundary`` through ``directory``, rejecting lexical escapes."""
-
-    target = _absolute_lexical(Path(directory))
-    root = _absolute_lexical(Path(boundary))
-    try:
-        relative = target.relative_to(root)
-    except ValueError:
-        raise RuntimeError(
-            f"evidence directory {target} escapes its store root {root}"
-        ) from None
-    chain = [root]
-    cursor = root
-    for part in relative.parts:
-        cursor = cursor / part
-        chain.append(cursor)
-    return tuple(chain)
-
-
-def _ensure_private_directory(directory: Path, *, boundary: Path | None = None) -> None:
-    """Create an owner-only evidence directory without following planted symlinks.
-
-    Existing ancestors are not chmodded implicitly, and every existing component must be
-    a real directory.
-    """
-
-    target = _absolute_lexical(Path(directory))
-    root = target if boundary is None else _absolute_lexical(Path(boundary))
-    # A caller may name a fresh workspace/output whose parents do not exist
-    # yet. Find one real existing anchor, but treat ``root`` itself as the
-    # security boundary and validate every component from there downward.
-    missing_parents: list[Path] = []
-    cursor = root.parent
-    while True:
-        try:
-            parent_mode = cursor.lstat().st_mode
-        except FileNotFoundError:
-            missing_parents.append(cursor)
-            parent = cursor.parent
-            if parent == cursor:
-                raise RuntimeError(
-                    f"cannot find an existing parent for evidence store {root}"
-                )
-            cursor = parent
-            continue
-        if stat.S_ISLNK(parent_mode) or not stat.S_ISDIR(parent_mode):
-            raise RuntimeError(
-                f"evidence store parent is not a real directory: {cursor}"
-            )
-        break
-    missing: list[Path] = list(reversed(missing_parents))
-    for cursor in _directory_chain(target, root):
-        try:
-            mode = cursor.lstat().st_mode
-        except FileNotFoundError:
-            missing.append(cursor)
-            continue
-        if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
-            raise RuntimeError(
-                f"evidence directory path is not a real directory: {cursor}"
-            )
-    for created in missing:
-        try:
-            created.mkdir(mode=0o700)
-        except FileExistsError:
-            pass
-        before = created.lstat()
-        if stat.S_ISLNK(before.st_mode) or not stat.S_ISDIR(before.st_mode):
-            raise RuntimeError(
-                f"evidence directory was replaced during creation: {created}"
-            )
-        flags = (
-            os.O_RDONLY
-            | getattr(os, "O_CLOEXEC", 0)
-            | getattr(os, "O_NOFOLLOW", 0)
-            | getattr(os, "O_DIRECTORY", 0)
-        )
-        descriptor = os.open(created, flags)
-        try:
-            opened = os.fstat(descriptor)
-            if (
-                not stat.S_ISDIR(opened.st_mode)
-                or (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino)
-            ):
-                raise RuntimeError(
-                    f"evidence directory changed during creation: {created}"
-                )
-            os.fchmod(descriptor, 0o700)
-        finally:
-            os.close(descriptor)
-
-
-def _staged_bytes(
-    path: Path, payload: bytes, *, boundary: Path | None = None
-) -> Path:
-    """Write and fsync ``payload`` under a private same-directory name."""
-
-    target = Path(path)
-    _ensure_private_directory(target.parent, boundary=boundary or target.parent)
-    descriptor, temporary_name = tempfile.mkstemp(
-        dir=target.parent,
-        prefix=f".{target.name}.stage-",
-    )
-    temporary = Path(temporary_name)
-    try:
-        try:
-            view = memoryview(payload)
-            while view:
-                written = os.write(descriptor, view)
-                if written <= 0:
-                    raise OSError("short transcript-store write")
-                view = view[written:]
-            os.fsync(descriptor)
-        finally:
-            os.close(descriptor)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
-    return temporary
-
-
-def _atomic_replace_bytes(
-    path: Path, payload: bytes, *, boundary: Path | None = None
-) -> None:
-    """Atomically replace a mutable memo/session record with complete bytes."""
-
-    target = Path(path)
-    temporary = _staged_bytes(target, payload, boundary=boundary)
-    try:
-        os.replace(temporary, target)
-        _fsync_directory(target.parent)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
-def _publish_bytes_once(
-    path: Path, payload: bytes, *, boundary: Path | None = None
-) -> bool:
-    """Atomically publish immutable bytes; return False when a winner exists.
-
-    A hard link is the exclusive commit point.  The staged inode is complete
-    and fsynced before the final name can become visible, so a process death can
-    leave an unused staging name but never a truncated final artifact.
-    """
-
-    target = Path(path)
-    temporary = _staged_bytes(target, payload, boundary=boundary)
-    published = False
-    try:
-        try:
-            os.link(temporary, target)
-        except FileExistsError:
-            return False
-        published = True
-        return True
-    finally:
-        try:
-            temporary.unlink(missing_ok=True)
-        finally:
-            if published:
-                _fsync_directory(target.parent)
-
-
-def _read_regular_bytes(path: Path, *, boundary: Path | None = None) -> bytes | None:
-    """Read one stable evidence file without following a symlink.
-
-    ``None`` means absent. Any present non-regular path, replacement race, or
-    in-place change is corrupt evidence and fails closed.
-    """
-
-    target = _absolute_lexical(Path(path))
-    if boundary is not None:
-        for directory in _directory_chain(target.parent, Path(boundary)):
-            try:
-                mode = directory.lstat().st_mode
-            except FileNotFoundError:
-                return None
-            if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
-                raise RuntimeError(
-                    f"evidence directory path is not a real directory: {directory}"
-                )
-    try:
-        before = target.lstat()
-    except FileNotFoundError:
-        return None
-    if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode):
-        raise RuntimeError(f"evidence path is not a regular file: {target}")
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
-    try:
-        descriptor = os.open(target, flags)
-    except OSError as exc:
-        raise RuntimeError(f"cannot safely open evidence file: {target}") from exc
-    chunks: list[bytes] = []
-    try:
-        opened = os.fstat(descriptor)
-        if (
-            not stat.S_ISREG(opened.st_mode)
-            or (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino)
-        ):
-            raise RuntimeError(f"evidence file changed while opening it: {target}")
-        while True:
-            chunk = os.read(descriptor, 1024 * 1024)
-            if not chunk:
-                break
-            chunks.append(chunk)
-        after = os.fstat(descriptor)
-        fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
-        if any(getattr(opened, name) != getattr(after, name) for name in fields):
-            raise RuntimeError(f"evidence file changed while reading it: {target}")
-    finally:
-        os.close(descriptor)
-    return b"".join(chunks)
-
-
-def _publish_raw_output(
-    path: Path,
-    payload: bytes,
-    expected_sha256: str,
-    *,
-    boundary: Path | None = None,
-) -> None:
-    """Publish-or-confirm one immutable raw validator output, fail closed."""
-
-    expected = str(expected_sha256 or "")
-    candidate_digest = hashlib.sha256(payload).hexdigest()
-    published = False
-    if not expected or candidate_digest == expected:
-        published = _publish_bytes_once(path, payload, boundary=boundary)
-    if published:
-        visible = payload
-    else:
-        visible = _read_regular_bytes(Path(path), boundary=boundary)
-        if visible is None:
-            raise RuntimeError(f"immutable raw validator output is unavailable: {path}")
-    visible_digest = hashlib.sha256(visible).hexdigest()
-    if (expected and visible_digest != expected) or (
-        not expected and visible != payload
-    ):
-        raise RuntimeError(
-            f"immutable raw validator output conflicts with its trajectory: {path}"
-        )
-
-
-def _confirm_raw_output(
-    path: Path, expected_sha256: str, *, boundary: Path | None = None
-) -> None:
-    """Require an already-published raw output to reproduce its sealed digest."""
-
-    visible = _read_regular_bytes(Path(path), boundary=boundary)
-    if visible is None:
-        raise RuntimeError(f"immutable raw validator output is unavailable: {path}")
-    if hashlib.sha256(visible).hexdigest() != str(expected_sha256):
-        raise RuntimeError(
-            f"immutable raw validator output conflicts with its trajectory: {path}"
-        )
-
-
-class TranscriptStore:
-    """Recorded (role, prompt_sha256) -> raw response entries.
-
-    Lookup order: the workspace record dir FIRST, then committed fixtures as a
-    fallback seed — what `--record` just paid for must never be shadowed by a
-    same-key fixture. Entries are canonical JSON at `<dir>/<role>/<sha256>.json`;
-    recording always targets `record_dir`.
-    """
-
-    def __init__(self, record_dir: Path | None, *, fixtures_dir: Path | None = None):
-        self.record_dir = record_dir
-        self.fixtures_dir = fixtures_dir
-
-    def _search_dirs(self) -> list[Path]:
-        return [d for d in (self.record_dir, self.fixtures_dir) if d is not None]
-
-    def lookup(self, role_name: str, prompt_sha: str) -> dict | None:
-        for root in self._search_dirs():
-            path = _entry_path(root, role_name, prompt_sha)
-            payload = _read_regular_bytes(path, boundary=root)
-            if payload is not None:
-                entry = json.loads(payload.decode("utf-8"))
-                # The filename IS the key, but the entry must SAY so: an entry
-                # with a missing or different prompt_sha256 is corrupt or
-                # hand-planted, never a replay (fail closed).
-                if entry.get("prompt_sha256") != prompt_sha:
-                    raise RuntimeError(
-                        f"transcript at {path} is bound to prompt "
-                        f"{str(entry.get('prompt_sha256'))[:12]}, expected "
-                        f"{prompt_sha[:12]} (corrupt store — fail closed)"
-                    )
-                return entry
-        return None
-
-    def record(self, role_name: str, prompt_sha: str, entry: dict) -> Path:
-        if self.record_dir is None:
-            raise RuntimeError(
-                "TranscriptStore has no record_dir; cannot record a live "
-                "response (fail closed)"
-            )
-        path = _entry_path(self.record_dir, role_name, prompt_sha)
-        # Preserve a displaced prompt-keyed transcript under its response digest
-        # so old evidence remains verifiable; replay still reads the newest entry.
-        previous = _read_entry_if_any(path)
-        if previous is not None:
-            was = str(previous.get("response_sha256") or "")
-            now = str(entry.get("response_sha256") or "")
-            if was and was != now:
-                kept = _displaced_entry_path(self.record_dir, role_name, prompt_sha, was)
-                if not kept.exists():
-                    _atomic_replace_bytes(
-                        kept,
-                        readable_json(previous).encode("utf-8"),
-                        boundary=self.record_dir,
-                    )
-        _atomic_replace_bytes(
-            path,
-            readable_json(entry).encode("utf-8"),
-            boundary=self.record_dir,
-        )
-        return path
-
-    def lookup_session(self, role_name: str, session_key: str) -> dict | None:
-        """The SESSION RECORD filed under (role, session key) — the digest
-        chain, terminal, turn keys and the full observation digests of one
-        completed bounded session (`RoutedProvider.run_session`) — or None.
-        Same search order as `lookup`; a record whose stated key is not its
-        filename is a corrupt store and raises (fail closed)."""
-        for root in self._search_dirs():
-            path = _session_record_path(root, role_name, session_key)
-            payload = _read_regular_bytes(path, boundary=root)
-            if payload is not None:
-                record = json.loads(payload.decode("utf-8"))
-                if record.get("session_key") != session_key:
-                    raise RuntimeError(
-                        f"session record at {path} is bound to session "
-                        f"{str(record.get('session_key'))[:12]}, expected "
-                        f"{session_key[:12]} (corrupt store — fail closed)"
-                    )
-                return record
-        return None
-
-    def record_session(self, role_name: str, session_key: str, record: dict) -> Path:
-        if self.record_dir is None:
-            raise RuntimeError(
-                "TranscriptStore has no record_dir; cannot record a session "
-                "record (fail closed)"
-            )
-        path = _session_record_path(self.record_dir, role_name, session_key)
-        _atomic_replace_bytes(
-            path,
-            readable_json(record).encode("utf-8"),
-            boundary=self.record_dir,
-        )
-        return path
-
-    def lookup_trajectory(self, role_name: str, trajectory_sha256: str) -> dict | None:
-        """The verified full trajectory named by a session record, or None.
-
-        New bounded-session recordings link their identity-only session record
-        to this content-addressed artifact. Older records omit the link and
-        remain replayable; when a link is present, a missing, misfiled or
-        internally inconsistent trajectory is a corrupt replay store.
-        """
-        digest = str(trajectory_sha256)
-        for root in self._search_dirs():
-            path = trajectory_record_path(root, role_name, digest)
-            payload = _read_regular_bytes(path, boundary=root)
-            if payload is None:
-                continue
-            record = json.loads(payload.decode("utf-8"))
-            try:
-                verified = _trajectory.verify_trajectory_record(record)
-            except (TypeError, ValueError) as exc:
-                raise RuntimeError(
-                    f"trajectory record at {path} does not verify (corrupt store — fail closed)"
-                ) from exc
-            if verified != digest or path.stem != digest:
-                raise RuntimeError(
-                    f"trajectory record at {path} is bound to {verified[:12]}, expected "
-                    f"{digest[:12]} (corrupt store — fail closed)"
-                )
-            return record
-        return None
 
 
 def transcript_route_mismatch(
@@ -3570,686 +2667,6 @@ def default_fixtures_dir() -> Path:
     if override:
         return Path(override).resolve()
     return _repo_root() / "tests" / "fixtures" / "transcripts"
-
-
-# Cost metering + budgets
-
-@dataclass(frozen=True)
-class RateCard:
-    """Store per-million-token rates for input, cache writes, cache reads, and output.
-
-    Rates are converted through `Decimal` and must be finite and nonnegative.
-    """
-
-    input: float
-    cache_write: float
-    cache_read: float
-    output: float
-
-    def __post_init__(self) -> None:
-        """Validate rates required for conservative prospective accounting.
-
-        All rates must be finite and nonnegative, and cache rates may not exceed
-        uncached input unless the configured accounting explicitly supports that
-        ordering.
-        """
-
-        for name in ("input", "cache_write", "cache_read", "output"):
-            raw = getattr(self, name)
-            if isinstance(raw, bool):
-                raise ValueError(
-                    f"rate card {name} must be a finite, non-negative "
-                    "USD-per-million-token amount"
-                )
-            try:
-                value = float(raw)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"rate card {name} must be a finite, non-negative "
-                    "USD-per-million-token amount"
-                ) from exc
-            if not math.isfinite(value) or value < 0.0:
-                raise ValueError(
-                    f"rate card {name} must be a finite, non-negative "
-                    "USD-per-million-token amount"
-                )
-            object.__setattr__(self, name, value)
-
-    @classmethod
-    def uncached(cls, usd_in: float, usd_out: float) -> "RateCard":
-        return cls(
-            input=float(usd_in),
-            cache_write=float(usd_in),
-            cache_read=float(usd_in),
-            output=float(usd_out),
-        )
-
-    @classmethod
-    def coerce(cls, rates: Any) -> "RateCard":
-        """A RateCard from a RateCard, a legacy (input, output) pair or a
-        four-tuple in card order."""
-        if isinstance(rates, RateCard):
-            return rates
-        if isinstance(rates, (tuple, list)):
-            if len(rates) == 2:
-                return cls.uncached(float(rates[0]), float(rates[1]))
-            if len(rates) == 4:
-                return cls(*(float(r) for r in rates))
-        raise TypeError(
-            f"rates must be a RateCard, an (input, output) pair or a "
-            f"four-rate tuple, got {rates!r}"
-        )
-
-    def as_pair(self) -> tuple[float, float]:
-        """The legacy (input, output) view."""
-        return (self.input, self.output)
-
-    def usd_for(self, usage: Usage) -> float:
-        """List-price USD of one usage at these four rates."""
-        return (
-            usage.input_tokens * self.input
-            + usage.cache_creation_input_tokens * self.cache_write
-            + usage.cache_read_input_tokens * self.cache_read
-            + usage.output_tokens * self.output
-        ) / 1_000_000.0
-
-
-#: Anthropic USD per million tokens: input, cache write, cache read, output.
-ANTHROPIC_PRICING_USD_PER_MTOK: dict[str, RateCard] = {
-    "claude-opus-5": RateCard(5.00, 6.25, 0.50, 25.00),
-    "claude-sonnet-5": RateCard(2.00, 2.50, 0.20, 10.00),
-    "claude-haiku-4-5": RateCard(1.00, 1.25, 0.10, 5.00),
-}
-
-#: Default per-task circuit breaker; profiles may set a higher explicit limit.
-DEFAULT_BUDGET_PER_TASK_USD = 5.00
-
-#: Rough tokens-per-character used ONLY for the pre-flight reserve floor.
-CHARS_PER_TOKEN_ESTIMATE = 4.0
-
-#: Share of `max_tokens` a session turn is presumed to spend on output when
-#: the previous turn's output was smaller (the state-machine reserve rule).
-RESERVE_OUTPUT_FRACTION = 0.25
-
-
-#: How to price a NEW openai_compat model. Keep this and the config comment
-#: saying the same thing — it is the operator-facing contract.
-OPENAI_COMPAT_PRICING_HOWTO = (
-    "add it under providers.openai_compat.pricing in config/agents.yaml:\n"
-    "  providers:\n"
-    "    openai_compat:\n"
-    "      pricing:\n"
-    "        '<model-id>':\n"
-    "          usd_per_mtok_input: <in>\n"
-    "          usd_per_mtok_output: <out>\n"
-    "          usd_per_mtok_cache_read: <optional; defaults to <in>>\n"
-    "          usd_per_mtok_cache_write: <optional; defaults to <in>>\n"
-    "Rates are USD per MILLION tokens. For an OpenRouter model, read them "
-    "from https://openrouter.ai/api/v1/models — the `pricing.prompt` / "
-    "`pricing.completion` fields are USD per SINGLE token, so multiply by "
-    "1e6. A genuinely free endpoint (self-hosted vLLM) must still say so "
-    "explicitly with 0.0/0.0: an omitted price is an oversight, an explicit "
-    "zero is a decision."
-)
-
-
-def _explicit_rate(config: Mapping[str, Any], key: str) -> float | None:
-    """A configured rate, or None when the key is absent/blank.
-
-    `float(cfg.get(k) or 0.0)` cannot tell an explicit 0.0 from a missing key —
-    "this endpoint is free" versus "nobody priced it".
-    """
-    if key not in config:
-        return None
-    value = config[key]
-    if value is None or (isinstance(value, str) and not value.strip()):
-        return None
-    if isinstance(value, bool):
-        raise ValueError(
-            f"configured rate {key} must be a finite, non-negative "
-            "USD-per-million-token amount"
-        )
-    return float(value)
-
-
-def _openai_compat_rates(
-    model: str, provider_config: Mapping[str, Any]
-) -> RateCard | None:
-    """Configured rates for one openai_compat model as a RateCard, else None.
-
-    Per-model `pricing:` map first (a gateway serves many models at many
-    prices), then endpoint-wide rates. Both halves (input, output) must be
-    stated: half a price is not a price. The cache rates are optional and
-    default to the input rate (uncached pricing never under-counts).
-    """
-
-    def card(config: Mapping[str, Any]) -> RateCard | None:
-        rate_in = _explicit_rate(config, "usd_per_mtok_input")
-        rate_out = _explicit_rate(config, "usd_per_mtok_output")
-        if rate_in is None or rate_out is None:
-            return None
-        cache_read = _explicit_rate(config, "usd_per_mtok_cache_read")
-        cache_write = _explicit_rate(config, "usd_per_mtok_cache_write")
-        return RateCard(
-            input=rate_in,
-            cache_write=rate_in if cache_write is None else cache_write,
-            cache_read=rate_in if cache_read is None else cache_read,
-            output=rate_out,
-        )
-
-    pricing = provider_config.get("pricing")
-    if isinstance(pricing, Mapping) and model:
-        entry = pricing.get(model)
-        if isinstance(entry, Mapping):
-            found = card(entry)
-            if found is not None:
-                return found
-    return card(provider_config)
-
-
-def rate_card_for(
-    provider: str, model: str, provider_config: Mapping[str, Any]
-) -> RateCard:
-    """The four-rate card for one route.
-
-    FAIL CLOSED ON BOTH PROVIDERS: an unpriced model raises rather than metering
-    $0, which is how a paid route gets reported as free and every budget claim
-    for the run comes out wrong. A provider-reported cost may override these
-    rates later but never excuse not having them.
-    """
-    if provider == "anthropic":
-        rates = ANTHROPIC_PRICING_USD_PER_MTOK.get(model)
-        if rates is None:
-            raise RuntimeError(
-                f"no pricing entry for anthropic model {model!r}; add it to "
-                "ANTHROPIC_PRICING_USD_PER_MTOK (budgets must never "
-                "silently undercount)"
-            )
-        return rates
-    if provider == "openai_compat":
-        rates = _openai_compat_rates(model, provider_config)
-        if rates is None:
-            raise RuntimeError(
-                f"no pricing entry for openai_compat model {model!r} "
-                f"(budgets must never silently undercount) — "
-                f"{OPENAI_COMPAT_PRICING_HOWTO}"
-            )
-        return rates
-    if provider == "claude_headless":
-        # The harness serves Anthropic models: the Anthropic table, unless the
-        # provider block declares its own rates for the model.
-        rates = _openai_compat_rates(model, provider_config)
-        if rates is None:
-            rates = ANTHROPIC_PRICING_USD_PER_MTOK.get(model)
-        if rates is None:
-            raise RuntimeError(
-                f"no pricing entry for claude_headless model {model!r}; add it to "
-                "ANTHROPIC_PRICING_USD_PER_MTOK or declare `pricing:` under the "
-                "claude_headless provider block (budgets must never silently undercount)"
-            )
-        return rates
-    if provider == "codex_headless":
-        rates = _openai_compat_rates(model, provider_config)
-        if rates is None:
-            raise RuntimeError(
-                f"no pricing entry for codex_headless model {model!r} (budgets must "
-                "never silently undercount) — declare `pricing:` under the "
-                "codex_headless provider block, USD per million tokens"
-            )
-        return rates
-    raise RuntimeError(  # unreachable: load_role_routing validates providers
-        f"no pricing rule for provider {provider!r}"
-    )
-
-
-def rates_for(provider: str, model: str, provider_config: Mapping[str, Any]) -> tuple[float, float]:
-    """(usd_per_mtok_input, usd_per_mtok_output) for one route — the legacy
-    two-rate view of `rate_card_for`, same fail-closed rule."""
-    return rate_card_for(provider, model, provider_config).as_pair()
-
-
-def estimate_turn_usd(
-    *,
-    rates: Any,
-    max_tokens: int,
-    prompt: str = "",
-    last_usage: Usage | None = None,
-) -> float:
-    """Estimate the amount reserved before a model call.
-
-    The first turn uses the configured prompt floor. Later turns combine prior input
-    cost with at least one quarter of the maximum output allowance, using uncached input
-    rates for a conservative reservation.
-    """
-    card = RateCard.coerce(rates)
-    if last_usage is not None:
-        input_tokens = (
-            last_usage.input_tokens
-            + last_usage.cache_read_input_tokens
-            + last_usage.cache_creation_input_tokens
-        )
-        output_tokens = max(
-            last_usage.output_tokens,
-            RESERVE_OUTPUT_FRACTION * max(0, int(max_tokens)),
-        )
-        return (input_tokens * card.input + output_tokens * card.output) / 1_000_000.0
-    prompt_tokens = math.ceil(len(prompt) / CHARS_PER_TOKEN_ESTIMATE) if prompt else 0
-    return prompt_tokens * card.input / 1_000_000.0
-
-
-def _usable_report(reported_usd: float | None) -> float | None:
-    """A provider-reported figure worth trusting, else None (a negative or
-    non-finite report is ignored rather than trusted)."""
-    if reported_usd is None:
-        return None
-    try:
-        value = float(reported_usd)
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(value) or value < 0.0:
-        return None
-    return value
-
-
-def _fresh_role_reading() -> dict[str, float]:
-    return {
-        "input_tokens": 0.0,
-        "output_tokens": 0.0,
-        "cache_read_input_tokens": 0.0,
-        "cache_creation_input_tokens": 0.0,
-        "usd": 0.0,
-        "attempts": 0.0,
-        "elapsed_ms": 0.0,
-    }
-
-
-class CostMeter:
-    """Track tokens and USD under task, total, and role caps.
-
-    `reserve` rejects estimated breaches before transport. `charge` records every API
-    attempt after the exchange, including attempts in a backend failure, and may report
-    a post-call breach.
-    """
-
-    def __init__(
-        self,
-        *,
-        budget_per_task_usd: float = DEFAULT_BUDGET_PER_TASK_USD,
-        budget_total_usd: float | None = None,
-        budget_per_role_usd: Mapping[str, float] | None = None,
-        durable_ledger: Any | None = None,
-        durable_reservation_multiplier: float = 1.0,
-    ):
-        # One meter is intentionally shared by all RoutedProviders in a
-        # metrology worker pool. Keep each read/modify/write and each
-        # account-then-enforce decision atomic; an RLock lets
-        # TrajectoryBudget hold the transaction while calling the meter's
-        # internal helpers without introducing a second lock order.
-        self._lock = threading.RLock()
-        self.budget_per_task_usd = budget_per_task_usd
-        self.budget_total_usd = budget_total_usd
-        self.budget_per_role_usd: dict[str, float] = {
-            str(role): float(cap)
-            for role, cap in dict(budget_per_role_usd or {}).items()
-            if cap is not None
-        }
-        self.total_usd = 0.0
-        self.per_task_usd: dict[str, float] = {}
-        #: Per-role readings: the four token counters, usd, attempts and the
-        #: harness-measured transport wall.
-        self.per_role: dict[str, dict[str, float]] = {}
-        self.attempt_count = 0
-        self.durable_ledger = durable_ledger
-        multiplier = float(durable_reservation_multiplier)
-        if not math.isfinite(multiplier) or multiplier < 1.0:
-            raise ValueError("durable_reservation_multiplier must be finite and >= 1")
-        self.durable_reservation_multiplier = multiplier
-
-    # -- caps and headroom ----------------------------------------------------
-
-    def role_cap_usd(self, role_name: str) -> float | None:
-        """The declared per-trajectory cap for a role, None when uncapped."""
-        return self.budget_per_role_usd.get(role_name)
-
-    def headroom_usd(self, task_id: str) -> float | None:
-        """USD still spendable on `task_id` under the task and total budgets
-        (None when both are unlimited)."""
-        with self._lock:
-            limits: list[float] = []
-            if self.budget_per_task_usd is not None:
-                limits.append(
-                    float(self.budget_per_task_usd) - self.per_task_usd.get(task_id, 0.0)
-                )
-            if self.budget_total_usd is not None:
-                limits.append(float(self.budget_total_usd) - self.total_usd)
-            return min(limits) if limits else None
-
-    def trajectory(
-        self,
-        task_id: str,
-        role_name: str,
-        *,
-        max_usd: float | None = None,
-        enforce_role_cap: bool = True,
-    ) -> "TrajectoryBudget":
-        """The per-(task, role, trajectory) budget object; `max_usd` overrides
-        the role's declared cap for this trajectory only. `enforce_role_cap=
-        False` builds the trajectory of a ONE-SHOT exchange for a role whose
-        `session:` block is declared but disabled: the meter's role cap is
-        ignored for it (see TrajectoryBudget)."""
-        return TrajectoryBudget(
-            self,
-            task_id=task_id,
-            role_name=role_name,
-            max_usd=max_usd,
-            enforce_role_cap=enforce_role_cap,
-        )
-
-    def reserve(
-        self,
-        *,
-        task_id: str,
-        role_name: str,
-        est_usd: float,
-        trajectory_spent_usd: float = 0.0,
-        max_usd: float | None = None,
-    ) -> None:
-        """Reject an estimated call that would exceed task, total, or role headroom.
-
-        Run before transport and do not mutate charged totals. Durable-ledger
-        reservation is coordinated atomically when configured.
-        """
-        with self._lock:
-            est = max(0.0, float(est_usd))
-            spent_task = self.per_task_usd.get(task_id, 0.0)
-            if (
-                self.budget_per_task_usd is not None
-                and spent_task + est > float(self.budget_per_task_usd)
-            ):
-                raise BudgetExceededError(
-                    f"per-task budget cannot absorb the next call for task "
-                    f"{task_id!r} ({role_name}): ${spent_task:.4f} spent + "
-                    f"${est:.4f} reserved > ${float(self.budget_per_task_usd):.2f} "
-                    "(--budget-per-task); refused before the call, nothing spent",
-                    scope="task",
-                )
-            if (
-                self.budget_total_usd is not None
-                and self.total_usd + est > float(self.budget_total_usd)
-            ):
-                raise BudgetExceededError(
-                    f"total budget cannot absorb the next call ({role_name}): "
-                    f"${self.total_usd:.4f} spent + ${est:.4f} reserved > "
-                    f"${float(self.budget_total_usd):.2f} (--budget-total); "
-                    "refused before the call, nothing spent",
-                    scope="total",
-                )
-            cap = max_usd if max_usd is not None else self.role_cap_usd(role_name)
-            if cap is not None and float(trajectory_spent_usd) + est > float(cap):
-                raise RoleCapExceeded(
-                    f"role cap cannot absorb the next call for {role_name!r} on "
-                    f"task {task_id!r}: ${float(trajectory_spent_usd):.4f} spent "
-                    f"in this trajectory + ${est:.4f} reserved > ${float(cap):.2f} "
-                    "(max_usd); refused before the call, nothing spent",
-                    scope="role",
-                )
-
-    # -- charging ---------------------------------------------------------------
-
-    @staticmethod
-    def price(
-        *, usage: Usage, rates: Any, provider_reported_usd: float | None = None
-    ) -> float:
-        """USD for one attempt: the provider's reported figure when usable,
-        else list price at the four rates."""
-        reported = _usable_report(provider_reported_usd)
-        if reported is not None:
-            return reported
-        return RateCard.coerce(rates).usd_for(usage)
-
-    def _account(
-        self,
-        *,
-        task_id: str,
-        role_name: str,
-        usd: float,
-        usage: Usage,
-        elapsed_ms: int,
-    ) -> None:
-        with self._lock:
-            self.total_usd += usd
-            self.per_task_usd[task_id] = self.per_task_usd.get(task_id, 0.0) + usd
-            self.attempt_count += 1
-            role = self.per_role.setdefault(role_name, _fresh_role_reading())
-            role["input_tokens"] += usage.input_tokens
-            role["output_tokens"] += usage.output_tokens
-            role["cache_read_input_tokens"] += usage.cache_read_input_tokens
-            role["cache_creation_input_tokens"] += usage.cache_creation_input_tokens
-            role["usd"] += usd
-            role["attempts"] += 1
-            role["elapsed_ms"] += max(0, int(elapsed_ms))
-
-    def _enforce(self, *, task_id: str, role_name: str, model: str) -> None:
-        with self._lock:
-            if (
-                self.budget_per_task_usd is not None
-                and self.per_task_usd[task_id] > self.budget_per_task_usd
-            ):
-                raise BudgetExceededError(
-                    f"per-task budget breached for task {task_id!r}: "
-                    f"${self.per_task_usd[task_id]:.4f} > "
-                    f"${self.budget_per_task_usd:.2f} (--budget-per-task); the "
-                    f"last call ({role_name}/{model}) IS recorded in the "
-                    "transcript store",
-                    scope="task",
-                )
-            if self.budget_total_usd is not None and self.total_usd > self.budget_total_usd:
-                raise BudgetExceededError(
-                    f"total budget breached: ${self.total_usd:.4f} > "
-                    f"${self.budget_total_usd:.2f} (--budget-total)",
-                    scope="total",
-                )
-
-    def charge(
-        self,
-        *,
-        task_id: str,
-        role_name: str,
-        rates: Any,
-        usage: Usage | None = None,
-        provider_reported_usd: float | None = None,
-        elapsed_ms: int = 0,
-        model: str = "",
-        input_tokens: int | None = None,
-        output_tokens: int | None = None,
-        reported_usd: float | None = None,
-    ) -> float:
-        """Charge one API attempt and return its USD cost.
-
-        Provider-reported cost takes precedence over local rates. The attempt is
-        accounted before any budget exception is raised.
-        """
-        if usage is None:
-            usage = Usage(
-                input_tokens=int(input_tokens or 0),
-                output_tokens=int(output_tokens or 0),
-            )
-        if provider_reported_usd is None:
-            provider_reported_usd = reported_usd
-        usd = self.price(
-            usage=usage, rates=rates, provider_reported_usd=provider_reported_usd
-        )
-        with self._lock:
-            self._account(
-                task_id=task_id,
-                role_name=role_name,
-                usd=usd,
-                usage=usage,
-                elapsed_ms=elapsed_ms,
-            )
-            self._enforce(task_id=task_id, role_name=role_name, model=model)
-            return usd
-
-
-class TrajectoryBudget:
-    """Track one trajectory's prospective and actual spend.
-
-    `reserve` rejects a breaching turn before transport; `charge` records each paid
-    attempt. The trajectory cap raises `RoleCapExceeded`, while task and total caps
-    remain on the shared meter. Disabled one-shot roles ignore declared session caps
-    unless an explicit override is supplied.
-    """
-
-    def __init__(
-        self,
-        meter: CostMeter,
-        *,
-        task_id: str,
-        role_name: str,
-        max_usd: float | None = None,
-        enforce_role_cap: bool = True,
-    ):
-        self.meter = meter
-        self.task_id = str(task_id)
-        self.role_name = str(role_name)
-        self.enforce_role_cap = bool(enforce_role_cap)
-        if max_usd is not None:
-            self.max_usd: float | None = float(max_usd)
-        elif self.enforce_role_cap:
-            self.max_usd = meter.role_cap_usd(role_name)
-        else:
-            self.max_usd = None
-        self.spent_usd = 0.0
-        self.usage = Usage()
-        self.attempt_count = 0
-        self.elapsed_ms = 0
-        #: The usage of the LAST charged attempt: the `last_usage` of the
-        #: next turn's `estimate_turn_usd` (the state-machine reserve rule).
-        self.last_usage: Usage | None = None
-        self._durable_reservations: list[str] = []
-
-    @property
-    def remaining_usd(self) -> float | None:
-        """USD left under this trajectory's own cap (None when uncapped)."""
-        if self.max_usd is None:
-            return None
-        return self.max_usd - self.spent_usd
-
-    def would_exceed(self, est_usd: float) -> bool:
-        """True iff `reserve(est_usd)` would refuse (no exception raised)."""
-        try:
-            # A predicate must not create a durable reservation.  The real
-            # call to reserve immediately before transport performs the shared
-            # ledger transaction.
-            self.meter.reserve(
-                task_id=self.task_id,
-                role_name=self.role_name,
-                est_usd=est_usd,
-                trajectory_spent_usd=self.spent_usd,
-                max_usd=self.max_usd,
-            )
-        except BudgetExceededError:
-            return True
-        return False
-
-    def reserve(self, est_usd: float, *, durable: bool = True) -> str | None:
-        """Reserve headroom for the next trajectory turn before transport.
-
-        Check the trajectory cap and shared meter without spending. Raise
-        `RoleCapExceeded` for the trajectory or `BudgetExceededError` for task/total
-        scope.
-        """
-        self.meter.reserve(
-            task_id=self.task_id,
-            role_name=self.role_name,
-            est_usd=est_usd,
-            trajectory_spent_usd=self.spent_usd,
-            max_usd=self.max_usd,
-        )
-        ledger = self.meter.durable_ledger
-        if ledger is not None and durable:
-            call_id = (
-                f"{self.task_id}:{self.role_name}:"
-                f"{uuid.uuid4().hex}"
-            )
-            try:
-                ledger.reserve(
-                    self.task_id,
-                    self.role_name,
-                    max(0.0, float(est_usd))
-                    * self.meter.durable_reservation_multiplier,
-                    call_id,
-                )
-            except Exception as exc:  # noqa: BLE001 - normalize shared ledger refusal
-                from elt_taskgen.review.budget_ledger import BudgetReservationError
-
-                if isinstance(exc, BudgetReservationError):
-                    scope = getattr(exc, "scope", "total")
-                    label = "per-task" if scope == "task" else "total"
-                    raise BudgetExceededError(
-                        f"durable {label} budget cannot absorb the next concurrent "
-                        f"call for task {self.task_id!r} ({self.role_name}): {exc}",
-                        scope=scope,
-                    ) from exc
-                raise
-            self._durable_reservations.append(call_id)
-            return call_id
-        return None
-
-    def _commit_durable_reservation(self, actual_usd: float) -> None:
-        """Reconcile one successful/charged transport reservation."""
-
-        if not self._durable_reservations:
-            return
-        call_id = self._durable_reservations.pop(0)
-        self.meter.durable_ledger.commit(
-            call_id,
-            max(0.0, float(actual_usd)),
-            task_id=self.task_id,
-            role=self.role_name,
-        )
-
-    def charge(
-        self,
-        *,
-        usage: Usage,
-        rates: Any,
-        provider_reported_usd: float | None = None,
-        elapsed_ms: int = 0,
-        model: str = "",
-    ) -> float:
-        """Charge one API attempt to the meter and this trajectory; a breach
-        (task, total, then this trajectory's cap) raises after accounting —
-        BudgetExceededError for the task and total budgets, RoleCapExceeded
-        for this trajectory's own cap."""
-        usd = self.meter.price(
-            usage=usage, rates=rates, provider_reported_usd=provider_reported_usd
-        )
-        with self.meter._lock:
-            self.meter._account(
-                task_id=self.task_id,
-                role_name=self.role_name,
-                usd=usd,
-                usage=usage,
-                elapsed_ms=elapsed_ms,
-            )
-            self.spent_usd += usd
-            self.usage = self.usage + usage
-            self.attempt_count += 1
-            self.elapsed_ms += max(0, int(elapsed_ms))
-            self.last_usage = usage
-            self.meter._enforce(
-                task_id=self.task_id, role_name=self.role_name, model=model
-            )
-            if self.max_usd is not None and self.spent_usd > self.max_usd:
-                raise RoleCapExceeded(
-                    f"role cap breached for {self.role_name!r} on task "
-                    f"{self.task_id!r}: ${self.spent_usd:.4f} > "
-                    f"${self.max_usd:.2f} (max_usd); the last call IS recorded in "
-                    "the transcript store",
-                    scope="role",
-                )
-            return usd
 
 
 # Role routing (config/agents.yaml)
@@ -4554,36 +2971,6 @@ def credential_problems(routing: RoleRouting, role_names: list[str]) -> list[str
     return problems
 
 
-# Routed provider. Trials use isolated executors, and trajectory records live
-# under `transcripts/trajectories/<role>/<digest>.json` away from turn entries.
-TRAJECTORIES_SUBDIR = "trajectories"
-
-#: The raw-validator-output tier, OUTSIDE the transcript store: `<ws>/tool_raw/
-#: <trajectory_sha256>/<turn_index>.bin` (unsanitized output for audit and
-#: sanitizer regression; never in a fixture, never read by a stage, never
-#: served to a model).
-TOOL_RAW_SUBDIR = "tool_raw"
-
-
-def trajectories_root(record_dir: Path) -> Path:
-    """`<record_dir>/trajectories` (the store's record dir is `<ws>/transcripts`)."""
-    return Path(record_dir) / TRAJECTORIES_SUBDIR
-
-
-def trajectory_record_path(record_dir: Path, role_name: str, trajectory_sha256: str) -> Path:
-    return trajectories_root(record_dir) / role_name / f"{trajectory_sha256}.json"
-
-
-def tool_raw_root(record_dir: Path) -> Path:
-    """`<ws>/tool_raw` for a store recording at `<ws>/transcripts`: the tier
-    sits BESIDE the transcript store, never under it, so nothing that walks
-    or ships the store (fixtures, `record-transcripts`, replay) can carry a
-    raw validator output. A record dir not named `transcripts` gets a
-    sibling `tool_raw` all the same."""
-    record_dir = Path(record_dir)
-    return record_dir.parent / TOOL_RAW_SUBDIR
-
-
 class ToolExecutor(Protocol):
     """The per-trial executor of harness validators (roadmap Phase 4 "New
     interfaces"): `execute(role, name, args, ctx)` runs ONE validator against
@@ -4687,7 +3074,7 @@ class TrialToolExecutor:
             raise ForbiddenArgument(tool=name, detail=PRIVATE_PROBE_CODE)
         started = time.monotonic()
         result = self._delegate().run(tool, ctx, dict(args), deadline_s=deadline_s)
-        self._log(ctx, name, args, result, elapsed_ms=_elapsed_ms(started))
+        self._log(ctx, name, args, result, elapsed_ms=_review_provider_types._elapsed_ms(started))
         return result
 
     def current_draft(self, ctx: Any) -> Any:
@@ -4761,7 +3148,7 @@ class TrialToolExecutor:
         payload = str(getattr(result, "payload", "") or "")
         dump = getattr(observation, "model_dump", None)
         if callable(dump):
-            raw = canonical_json(_plain_data(dump(mode="json"))).encode("utf-8")
+            raw = canonical_json(_review_provider_types._plain_data(dump(mode="json"))).encode("utf-8")
         else:
             raw = payload.encode("utf-8")
         reported = str(getattr(result, "raw_output_sha256", "") or "")
@@ -4772,7 +3159,7 @@ class TrialToolExecutor:
             index=len(self.runs),
             role=str(getattr(ctx, "role", "") or ""),
             name=name,
-            args_sha256=sha256_hex(canonical_json(_plain_data(dict(args)))),
+            args_sha256=sha256_hex(canonical_json(_review_provider_types._plain_data(dict(args)))),
             observation=render() if callable(render) else payload,
             observation_sha256=sha256_hex(payload),
             payload=payload,
@@ -4898,13 +3285,13 @@ class RoutedProvider:
     def __init__(
         self,
         routing: RoleRouting,
-        store: TranscriptStore,
-        meter: CostMeter,
+        store: _review_transcripts.TranscriptStore,
+        meter: _review_provider_accounting.CostMeter,
         *,
         replay_only: bool = False,
         refresh: bool = False,
         task_id: str = "",
-        transports: Mapping[str, Transport] | None = None,
+        transports: Mapping[str, _review_provider_transport.Transport] | None = None,
         admission: Mapping[str, str] | None = None,
         source: str = "",
     ):
@@ -4996,7 +3383,7 @@ class RoutedProvider:
             len(raw_attempts) if isinstance(raw_attempts, (list, tuple)) else 0
         )
         finding_count = self._finding_count(role_name, response)
-        usage = Usage.from_dict(
+        usage = _review_provider_types.Usage.from_dict(
             entry.get("usage") if isinstance(entry.get("usage"), Mapping) else None
         )
         route_binding = (
@@ -5211,15 +3598,15 @@ class RoutedProvider:
             raise ValueError(
                 "recorded durable provider exchange has no usage mapping"
             )
-        rates = rate_card_for(
+        rates = _review_provider_accounting.rate_card_for(
             route.provider,
             route.model,
             self.routing.provider_config.get(route.provider) or {},
         )
         actual = self.meter.price(
-            usage=Usage.from_dict(usage_block),
+            usage=_review_provider_types.Usage.from_dict(usage_block),
             rates=rates,
-            provider_reported_usd=_usable_report(
+            provider_reported_usd=_review_provider_accounting._usable_report(
                 usage_block.get("provider_reported_usd")
             ),
         )
@@ -5395,7 +3782,7 @@ class RoutedProvider:
 
         # Price the route BEFORE spending on it: raising after the call would
         # mean money already spent on a route the meter cannot account for.
-        rates = rate_card_for(
+        rates = _review_provider_accounting.rate_card_for(
             route.provider,
             route.model,
             self.routing.provider_config.get(route.provider) or {},
@@ -5417,7 +3804,7 @@ class RoutedProvider:
             enforce_role_cap=not route.cap_declared_but_disabled,
         )
         budget_reservation_id = trajectory.reserve(
-            estimate_turn_usd(
+            _review_provider_accounting.estimate_turn_usd(
                 rates=rates, max_tokens=route.max_tokens, prompt=prompt
             )
         )
@@ -5428,7 +3815,7 @@ class RoutedProvider:
         loop_limits = loop_limits if isinstance(loop_limits, Mapping) else {}
         wall_s = SessionLimits(loop_limits).session_wall_seconds if loop_limits else None
         try:
-            result = _call_with_wall_deadline(
+            result = _review_provider_transport._call_with_wall_deadline(
                 lambda: backend.complete(
                     role_name=role_name,
                     model=route.model,
@@ -5446,7 +3833,7 @@ class RoutedProvider:
             # they reach the meter before the fault propagates. A budget
             # breach found here chains onto the fault it was found under.
             self._charge_attempts(
-                trajectory, rates, backend_attempts(exc), model=route.model
+                trajectory, rates, _review_provider_types.backend_attempts(exc), model=route.model
             )
             raise
 
@@ -5505,14 +3892,14 @@ class RoutedProvider:
         return result.text
 
     @staticmethod
-    def _attempts_of(result: BackendResult) -> tuple[AttemptRecord, ...]:
+    def _attempts_of(result: _review_provider_types.BackendResult) -> tuple[_review_provider_types.AttemptRecord, ...]:
         """The attempts to meter for a completed exchange: the backend's
         per-attempt records, else one record from the summed counters (a
         backend double that states no attempts is still charged once)."""
         if result.attempts:
             return result.attempts
         return (
-            AttemptRecord(
+            _review_provider_types.AttemptRecord(
                 usage=result.usage,
                 elapsed_ms=0,
                 served_model="",
@@ -5520,7 +3907,7 @@ class RoutedProvider:
             ),
         )
 
-    def _priced_usd(self, result: BackendResult, rates: RateCard) -> float:
+    def _priced_usd(self, result: _review_provider_types.BackendResult, rates: _review_provider_accounting.RateCard) -> float:
         """What `charge` will add for this exchange (a pure computation, so it
         can sit in the evidence row before the meter enforces anything)."""
         return sum(
@@ -5533,8 +3920,8 @@ class RoutedProvider:
     @staticmethod
     def _charge_attempts(
         trajectory: "TrajectoryBudget",
-        rates: RateCard,
-        attempts: Sequence[AttemptRecord],
+        rates: _review_provider_accounting.RateCard,
+        attempts: Sequence[_review_provider_types.AttemptRecord],
         *,
         model: str,
     ) -> float:
@@ -5543,7 +3930,7 @@ class RoutedProvider:
         attempt the backend already made has been accounted for."""
         charged = 0.0
         attempted_charge = False
-        first_enforcement_error: BudgetExceededError | None = None
+        first_enforcement_error: _review_provider_accounting.BudgetExceededError | None = None
         try:
             for attempt in attempts:
                 priced = trajectory.meter.price(
@@ -5560,7 +3947,7 @@ class RoutedProvider:
                         elapsed_ms=attempt.elapsed_ms,
                         model=model,
                     )
-                except BudgetExceededError as exc:
+                except _review_provider_accounting.BudgetExceededError as exc:
                     # The backend has already made every attempt in this batch.
                     # CostMeter accounts before enforcing caps, so retain the
                     # first refusal but continue charging the remaining paid
@@ -5788,7 +4175,7 @@ class RoutedProvider:
         for message in reversed(list(messages)):
             if message.get("role") == "assistant":
                 break
-            tail.append(_plain_data(message))
+            tail.append(_review_provider_types._plain_data(message))
         tail.reverse()
         return tail
 
@@ -5808,7 +4195,7 @@ class RoutedProvider:
         return [
             {
                 "role": str(message.get("role") or "user"),
-                "content_sha256": sha256_hex(canonical_json(_plain_data(message.get("content")))),
+                "content_sha256": sha256_hex(canonical_json(_review_provider_types._plain_data(message.get("content")))),
                 "content_omitted": "initial_view",
             }
             for message in tail
@@ -5851,7 +4238,7 @@ class RoutedProvider:
             recorded_content = str(block.get("content_sha256") or "")
             if not recorded_content:
                 problems.append("turn.content_sha256 missing")
-            elif recorded_content != sha256_hex(canonical_json(_plain_data(content))):
+            elif recorded_content != sha256_hex(canonical_json(_review_provider_types._plain_data(content))):
                 problems.append("turn.content_sha256 does not match turn.content")
         if "observations_sha256" in block:
             recorded_obs = [str(d) for d in (block.get("observations_sha256") or [])]
@@ -5880,8 +4267,8 @@ class RoutedProvider:
                 f"this turn sends {now_tools[:12]}"
             )
         if "tool_choice" in block:
-            recorded_choice = _plain_data(block.get("tool_choice"))
-            now_choice = _plain_data(_anthropic_tool_choice(choice))
+            recorded_choice = _review_provider_types._plain_data(block.get("tool_choice"))
+            now_choice = _review_provider_types._plain_data(_anthropic_tool_choice(choice))
             if recorded_choice != now_choice:
                 return (
                     f"recorded under tool_choice {recorded_choice!r}, this turn "
@@ -5890,7 +4277,7 @@ class RoutedProvider:
         return ""
 
     @staticmethod
-    def _turn_text(role_name: str, policy: SessionPolicy, turn: BackendTurn) -> str:
+    def _turn_text(role_name: str, policy: SessionPolicy, turn: _review_provider_types.BackendTurn) -> str:
         """The `response` recorded for a session turn, chosen so a one-shot
         `complete()` on the same key serves the same text: a valid payload on
         the schema role's forced submit tool normalizes exactly as the
@@ -5909,7 +4296,7 @@ class RoutedProvider:
             text = turn.text_content
             if text.strip():
                 return text
-        return canonical_json([_plain_data(b) for b in turn.content])
+        return canonical_json([_review_provider_types._plain_data(b) for b in turn.content])
 
     def _turn_from_entry(
         self,
@@ -5920,7 +4307,7 @@ class RoutedProvider:
         key: str,
         turn_index: int,
         route: RoleRoute,
-    ) -> BackendTurn:
+    ) -> _review_provider_types.BackendTurn:
         """A stored entry served as a turn (zero HTTP, nothing spent): the
         `turn.content` blocks of a schema-3 entry; for a one-shot entry the
         content of its LAST raw attempt (the one `complete()` served); for a
@@ -5962,18 +4349,18 @@ class RoutedProvider:
                 stop_reason = "end_turn"
         usage_block = entry.get("usage") if isinstance(entry.get("usage"), Mapping) else {}
         reported = usage_block.get("provider_reported_usd")
-        record = AttemptRecord(
-            usage=Usage.from_dict(usage_block),
+        record = _review_provider_types.AttemptRecord(
+            usage=_review_provider_types.Usage.from_dict(usage_block),
             elapsed_ms=int(entry.get("elapsed_ms") or 0),
             served_model=str(entry.get("served_model") or ""),
             stop_reason=str(stop_reason) if stop_reason else None,
             reported_usd=float(reported) if isinstance(reported, (int, float)) else None,
         )
-        served = BackendTurn(
+        served = _review_provider_types.BackendTurn(
             content=tuple(content),
             stop_reason=record.stop_reason,
             model=str(entry.get("model") or route.model),
-            raw=_plain_data(raw),
+            raw=_review_provider_types._plain_data(raw),
             attempts=(record,),
             reported_usd=record.reported_usd,
             key=key,
@@ -6005,7 +4392,7 @@ class RoutedProvider:
         tool_choice: Any = None,
         account: "SessionAccount | None" = None,
         observations: Sequence[str] | None = None,
-    ) -> BackendTurn:
+    ) -> _review_provider_types.BackendTurn:
         """Execute one memoized, budgeted, and recorded model turn.
 
         The memo key binds behavior, policy, messages, per-turn wire overrides, and full
@@ -6093,7 +4480,7 @@ class RoutedProvider:
                 "replay is diagnostic only and never invents a turn (fail closed)"
             )
 
-        rates = rate_card_for(
+        rates = _review_provider_accounting.rate_card_for(
             route.provider,
             route.model,
             self.routing.provider_config.get(route.provider) or {},
@@ -6119,7 +4506,7 @@ class RoutedProvider:
         # on a refusal): turn 0 reserves the prompt floor, a later turn the
         # state-machine estimate from the previous turn's usage.
         budget_reservation_id = trajectory.reserve(
-            estimate_turn_usd(
+            _review_provider_accounting.estimate_turn_usd(
                 rates=rates,
                 max_tokens=route.max_tokens,
                 prompt=self._messages_text(prefix),
@@ -6146,11 +4533,11 @@ class RoutedProvider:
         except Exception as exc:
             # A raising backend still PAID for what it attempted: meter it
             # before the fault propagates (a breach found here chains).
-            self._charge_attempts(trajectory, rates, backend_attempts(exc), model=route.model)
+            self._charge_attempts(trajectory, rates, _review_provider_types.backend_attempts(exc), model=route.model)
             if isinstance(
                 exc,
                 (
-                    BudgetExceededError,
+                    _review_provider_accounting.BudgetExceededError,
                     MissingCredentialsError,
                     TranscriptMissingError,
                     ProviderProtocolError,
@@ -6185,7 +4572,7 @@ class RoutedProvider:
             "finding_count": self._finding_count(role_name, text),
             "usage": usage.as_dict(),
             "elapsed_ms": int(turn.elapsed_ms),
-            "raw_attempts": [_plain_data(turn.raw)],
+            "raw_attempts": [_review_provider_types._plain_data(turn.raw)],
             "route": self._route_block(
                 route,
                 agents_config=self.agents_document,
@@ -6198,10 +4585,10 @@ class RoutedProvider:
                 "memo_key": key,
                 "messages_sha256": sha256_hex(canonical_json(prefix)),
                 "user_messages": self._recordable_user_messages(prefix, turn_index),
-                "content": [_plain_data(b) for b in turn.content],
+                "content": [_review_provider_types._plain_data(b) for b in turn.content],
                 # The digest of the SERVED bytes: verified before a memo hit
                 # is served (`_turn_block_integrity_problem`).
-                "content_sha256": sha256_hex(canonical_json([_plain_data(b) for b in turn.content])),
+                "content_sha256": sha256_hex(canonical_json([_review_provider_types._plain_data(b) for b in turn.content])),
                 "tool_use_ids": list(turn.tool_use_ids),
                 "tool_uses": [
                     {"id": str(b.get("id") or ""), "name": str(b.get("name") or "")}
@@ -6230,7 +4617,7 @@ class RoutedProvider:
             self.meter.price(usage=a.usage, rates=rates, provider_reported_usd=a.reported_usd)
             for a in turn.attempts
         )
-        turn = BackendTurn(
+        turn = _review_provider_types.BackendTurn(
             content=turn.content,
             stop_reason=turn.stop_reason,
             model=turn.model,
@@ -6329,7 +4716,7 @@ class RoutedProvider:
             return final
         if final is None:
             return ""
-        return canonical_json(_plain_data(final))
+        return canonical_json(_review_provider_types._plain_data(final))
 
     def _session_record_identity_problem(
         self,
@@ -6397,7 +4784,7 @@ class RoutedProvider:
             "model_call_count",
             "stale_tool_result_count",
         ):
-            if _plain_data(record.get(name)) != _plain_data(expected.get(name)):
+            if _review_provider_types._plain_data(record.get(name)) != _review_provider_types._plain_data(expected.get(name)):
                 return f"{name} does not match the replayed session"
         trajectory_sha = str(record.get("trajectory_sha256") or "")
         if trajectory_sha:
@@ -6507,7 +4894,7 @@ class RoutedProvider:
             SessionFault,
             PolicyFault,
             ProviderProtocolError,
-            BudgetExceededError,
+            _review_provider_accounting.BudgetExceededError,
             TranscriptMissingError,
         ):
             # Already typed by the boundary that raised it: the engine
@@ -6751,8 +5138,8 @@ class RoutedProvider:
             run_offset=run_offset,
         )
         digest = str(record["trajectory_sha256"])
-        path = trajectory_record_path(Path(record_dir), account.role, digest)
-        if _publish_bytes_once(
+        path = _review_transcripts.trajectory_record_path(Path(record_dir), account.role, digest)
+        if _review_transcripts._publish_bytes_once(
             path,
             readable_json(record).encode("utf-8"),
             boundary=Path(record_dir),
@@ -6768,7 +5155,7 @@ class RoutedProvider:
                 raise RuntimeError(
                     f"immutable trajectory disappeared during publication: {path}"
                 )
-        raw_store_root = tool_raw_root(Path(record_dir))
+        raw_store_root = _review_transcripts.tool_raw_root(Path(record_dir))
         raw_root = raw_store_root / digest
         stored_validator_turns = list(stored_record["validator_turns"])
         expected_raw = any(
@@ -6776,7 +5163,7 @@ class RoutedProvider:
             for turn in stored_validator_turns
         )
         if runs or expected_raw:
-            _ensure_private_directory(raw_root, boundary=raw_store_root)
+            _review_transcripts._ensure_private_directory(raw_root, boundary=raw_store_root)
             by_digest: dict[str, list[ValidatorRun]] = {}
             for run in runs:
                 by_digest.setdefault(run.observation_sha256, []).append(run)
@@ -6786,7 +5173,7 @@ class RoutedProvider:
                 if not matched:
                     expected = str(turn.get("raw_output_sha256") or "")
                     if expected:
-                        _confirm_raw_output(
+                        _review_transcripts._confirm_raw_output(
                             raw_root / f"{int(turn['index'])}.bin",
                             expected,
                             boundary=raw_store_root,
@@ -6794,7 +5181,7 @@ class RoutedProvider:
                     continue
                 run = matched.pop(0)
                 target = raw_root / f"{int(turn['index'])}.bin"
-                _publish_raw_output(
+                _review_transcripts._publish_raw_output(
                     target,
                     run.raw_output,
                     str(turn.get("raw_output_sha256") or ""),
@@ -6805,7 +5192,7 @@ class RoutedProvider:
                 if run.index in written:
                     continue
                 target = raw_root / f"unmatched-{run.index}.bin"
-                _publish_raw_output(
+                _review_transcripts._publish_raw_output(
                     target,
                     run.raw_output,
                     run.raw_output_sha256,
@@ -6899,7 +5286,7 @@ class RoutedProvider:
             elif final is None:
                 final_text = ""
             else:
-                final_text = canonical_json(_plain_data(final))
+                final_text = canonical_json(_review_provider_types._plain_data(final))
         if terminal_name is None:
             terminal = getattr(result, "terminal", None)
             terminal_name = str(getattr(terminal, "name", None) or terminal or "SUBMITTED")
@@ -7071,7 +5458,7 @@ class SessionAccount:
 
     role: str
     policy: SessionPolicy
-    trajectory: TrajectoryBudget
+    trajectory: _review_provider_accounting.TrajectoryBudget
     provider: str = ""
     model: str = ""
     #: `transcript_key_v3` of turn 0 (= `transcript_key(role, view)` under the
@@ -7079,10 +5466,10 @@ class SessionAccount:
     prompt_sha256: str = ""
     model_call_count: int = 0
     live_model_call_count: int = 0
-    usage: Usage = field(default_factory=Usage)
+    usage: _review_provider_types.Usage = field(default_factory=_review_provider_types.Usage)
     usd: float = 0.0
     wall_ms: int = 0
-    last_usage: Usage | None = None
+    last_usage: _review_provider_types.Usage | None = None
     turn_keys: list[str] = field(default_factory=list)
     last_text: str = ""
     #: Per model turn, in order: the memo key, the assistant content blocks
@@ -7091,7 +5478,7 @@ class SessionAccount:
     #: served-vs-live flag. Identity and the model's own bytes; never a view.
     turn_records: list[dict] = field(default_factory=list)
 
-    def record_turn(self, turn: BackendTurn, *, usd: float) -> None:
+    def record_turn(self, turn: _review_provider_types.BackendTurn, *, usd: float) -> None:
         self.model_call_count += 1
         if not turn.replayed:
             self.live_model_call_count += 1
@@ -7105,7 +5492,7 @@ class SessionAccount:
             {
                 "key": turn.key,
                 "turn_index": int(turn.turn_index),
-                "content": [_plain_data(b) for b in turn.content],
+                "content": [_review_provider_types._plain_data(b) for b in turn.content],
                 "stop_reason": str(turn.stop_reason or ""),
                 "served_model": str(turn.served_model or ""),
                 "model": str(turn.model or ""),
@@ -7157,7 +5544,7 @@ def batch_transport_default(
         method=method.upper(),
     )
     try:
-        with urllib.request.urlopen(request, timeout=_HTTP_TIMEOUT_SECONDS) as resp:
+        with urllib.request.urlopen(request, timeout=_review_provider_transport._HTTP_TIMEOUT_SECONDS) as resp:
             text = resp.read().decode("utf-8")
     except urllib.error.HTTPError as exc:  # pragma: no cover - live API only
         detail = exc.read().decode("utf-8", errors="replace")[:1000]
@@ -7487,7 +5874,7 @@ class BatchQueue:
         body = self._batch_transport("GET", results_url, headers, None)
         # A batch has no per-exchange wall: every result carries the batch's
         # submit-to-results wall, harness-measured, as its elapsed_ms.
-        batch_elapsed_ms = _elapsed_ms(started)
+        batch_elapsed_ms = _review_provider_types._elapsed_ms(started)
         collected: dict[str, dict] = {}
         for entry in body.get("results") or []:
             if isinstance(entry, dict) and entry.get("custom_id"):
@@ -7521,11 +5908,11 @@ class BatchQueue:
             text = AnthropicBackend._text(message)
             if not text.strip():
                 return None
-        usage = Usage.from_anthropic(message)
+        usage = _review_provider_types.Usage.from_anthropic(message)
         route = self.provider.routing.for_role(role_name)
         model = str(message.get("model") or route.model)
         elapsed_ms = int(entry.get("batch_elapsed_ms") or 0)
-        rates = rate_card_for(
+        rates = _review_provider_accounting.rate_card_for(
             route.provider,
             route.model,
             self.provider.routing.provider_config.get(route.provider) or {},

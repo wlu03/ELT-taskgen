@@ -69,10 +69,13 @@ class SemanticCoveragePolicy:
     minimum_template_tasks: tuple[tuple[str, int], ...] = ()
     minimum_pattern_marts: tuple[tuple[str, int], ...] = ()
     minimum_pattern_tasks: tuple[tuple[str, int], ...] = ()
+    maximum_template_mart_share: float | None = None
 
     def __post_init__(self) -> None:
         if not self.version.strip():
             raise ValueError("semantic coverage policy version must be non-empty")
+        if self.maximum_template_mart_share is not None and not 0 < self.maximum_template_mart_share <= 1:
+            raise ValueError("maximum_template_mart_share must be in (0, 1]")
 
         for field_name in ("known_template_ids", "known_patterns"):
             normalized = _normalize_names(
@@ -119,6 +122,8 @@ class SemanticCoveragePolicy:
 
     def canonical_contract(self) -> dict[str, object]:
         return {
+            **({"maximum_template_mart_share": self.maximum_template_mart_share}
+               if self.maximum_template_mart_share is not None else {}),
             "version": self.version,
             "known_template_ids": list(self.known_template_ids),
             "known_patterns": list(self.known_patterns),
@@ -410,6 +415,11 @@ def measure_semantic_coverage(
         )
     )
     problems.extend(deficit.problem() for deficit in deficits)
+    if policy.maximum_template_mart_share is not None and mart_count:
+        for item in templates:
+            if item.mart_count / mart_count > policy.maximum_template_mart_share:
+                problems.append(f"cohort: template {item.name!r} occupies {item.mart_count}/{mart_count} marts; "
+                                f"maximum share {policy.maximum_template_mart_share}")
 
     return SemanticCoverageReport(
         policy=policy,

@@ -578,17 +578,16 @@ SENSITIVE_INVENTORY: tuple = (
 # Targeted probes pin frozen comparator behavior for sensitive mart cases.
 # Change them only with a reviewed comparator or tolerance update.
 
-#: (label, mart, probe SQL, expected legacy mart verdict on PRIMARY).
+#: (label, mart, probe SQL, expected default mart verdict on PRIMARY).
 MART_PROBES: tuple = (
     # float64 cannot hold 2**53+1; the legacy comparator is numeric and
     # tolerance-based (REL_TOL 1e-2), so the 1-ulp loss is INVISIBLE to it.
-    # Frozen verdict: True.  The strict typed diagnostic (IR-002) is the
-    # instrument that reports the erasure, next to this unchanged reward.
-    ("unsafe integer rounded through DOUBLE is tolerated (legacy contract)",
+    # The typed reward now rejects the lost integer, independently of diagnostics.
+    ("unsafe integer rounded through DOUBLE is rejected",
      WIDE_MART,
      WIDE_SQL.replace("e.big_count AS big_count",
                       "CAST(e.big_count AS DOUBLE) AS big_count"),
-     True),
+     False),
     # Gold froze the literal string 'null' as the EMPTY cell (pandas NA
     # sentinel); a submission emitting the *different* NA token 'None' still
     # matches.  Frozen verdict: True — NA sentinels are interchangeable.
@@ -634,13 +633,13 @@ MART_PROBES: tuple = (
      WIDE_SQL.replace("m.value AS metric_value",
                       "ROUND(m.value, 1) AS metric_value"),
      False),
-    # +1.005x is inside REL_TOL 1e-2: the tolerance is real.  Frozen: True.
-    ("numeric tolerance REL_TOL=1e-2 is the legacy contract",
+    # +1.005x is inside the former REL_TOL 1e-2; the typed reward rejects it.
+    ("numeric drift inside the former 1% tolerance is rejected",
      ROLLUP_MART,
      ROLLUP_SQL.replace("COALESCE(SUM(ot.order_total), 0) AS total_spend",
                         "COALESCE(SUM(ot.order_total), 0) * 1.005 "
                         "AS total_spend"),
-     True),
+     False),
     # +1000 is far outside the tolerance: mismatch.
     ("beyond-tolerance numeric drift is a mismatch",
      ROLLUP_MART,

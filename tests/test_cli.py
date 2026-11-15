@@ -40,6 +40,9 @@ from elt_taskgen.review import council
 from elt_taskgen.review import providers as providers_mod
 from elt_taskgen.review.budget_ledger import DurableBudgetLedger
 
+from elt_taskgen.pipeline import review as _pipeline_review
+from elt_taskgen.pipeline import stages as _pipeline_stages
+
 
 class CannedFindingsProvider:
     """Protocol-valid stub for stage-wiring tests (transport-free): returns a
@@ -379,7 +382,7 @@ class TestReviewStageDiligence(unittest.TestCase):
     def test_review_transcript_manifest_integrity_is_protocol_not_task_quality(self):
         run_review = cli.make_review_runner(CannedFindingsProvider())
         with mock.patch.object(
-            cli,
+            _pipeline_review,
             "_validated_review_manifest",
             return_value=((), ["shortcut_attacker: behavior hash drifted"]),
         ):
@@ -413,7 +416,7 @@ class TestReviewStageDiligence(unittest.TestCase):
         with (
             mock.patch.object(council, "run_council", return_value=[finding]),
             mock.patch.object(
-                cli,
+                _pipeline_review,
                 "_validated_review_manifest",
                 return_value=((), ["feasibility_reviewer: trajectory hash drifted"]),
             ),
@@ -473,7 +476,7 @@ class TestReviewStageDiligence(unittest.TestCase):
         ]
         for label, attacker_row in corrected:
             with self.subTest(label=label), mock.patch.object(
-                cli, "_validated_review_manifest", return_value=((attacker_row,), [])
+                _pipeline_review, "_validated_review_manifest", return_value=((attacker_row,), [])
             ):
                 outcome = cli.make_review_runner(SilentProvider())(None, demo_fixture.demo_task())
             self.assertEqual(outcome.verdict, cli.VERDICT_FAIL, label)
@@ -495,7 +498,7 @@ class TestReviewStageDiligence(unittest.TestCase):
         for label, attacker_row in not_corrected:
             rows = () if attacker_row is None else (attacker_row,)
             with self.subTest(label=label), mock.patch.object(
-                cli, "_validated_review_manifest", return_value=(rows, [])
+                _pipeline_review, "_validated_review_manifest", return_value=(rows, [])
             ):
                 outcome = cli.make_review_runner(SilentProvider())(None, demo_fixture.demo_task())
             self.assertEqual(outcome.verdict, cli.VERDICT_BLOCKED, label)
@@ -1826,7 +1829,7 @@ class TestExitCodes(unittest.TestCase):
             runners[StageName.REVIEW] = review
             return runners
 
-        with mock.patch.object(cli, "build_stage_runners", stub_runners):
+        with mock.patch.object(_pipeline_stages, "build_stage_runners", stub_runners):
             code, printed = self._main(
                 ["review", "--task-id", task.task_id, "--replay-only"]
             )
@@ -1863,7 +1866,7 @@ class TestExitCodes(unittest.TestCase):
             )
             return runners
 
-        with mock.patch.object(cli, "build_stage_runners", stub_runners):
+        with mock.patch.object(_pipeline_stages, "build_stage_runners", stub_runners):
             code, printed = self._main(
                 [
                     "release",
@@ -1905,7 +1908,7 @@ class TestExitCodes(unittest.TestCase):
                 if stage is not StageName.INTAKE
             }
 
-        with mock.patch.object(cli, "build_stage_runners", stub_runners):
+        with mock.patch.object(_pipeline_stages, "build_stage_runners", stub_runners):
             code, printed = self._main(
                 ["generate", "--task-id", task.task_id, "--replay-only"]
             )

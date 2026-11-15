@@ -63,6 +63,8 @@ from elt_taskgen.models import (
 from elt_taskgen.verification import gates as gates_mod
 from elt_taskgen.verification import variant_battery
 
+from elt_taskgen.pipeline import generation as _pipeline_generation
+
 
 def _blocked_row(error: str) -> ReportRow:
     """A blocked SELECT row, as `Engine.blocked_stage` would return one."""
@@ -375,7 +377,7 @@ class PipelineWorkerBoundaryTests(unittest.TestCase):
                         mock.patch.object(gold_mod, "load_gold", return_value=object()),
                         mock.patch.object(eltbench_mod, "emit_variant"),
                         mock.patch.object(
-                            cli_mod, "_population_drift_failure", return_value=None
+                            _pipeline_generation, "_population_drift_failure", return_value=None
                         ),
                         mock.patch.object(el_probes, "record_artifact_census"),
                         mock.patch.object(
@@ -783,7 +785,7 @@ class PipelineCoordinatorPolicyTests(unittest.TestCase):
                     cli_mod, "_pipeline_worker", side_effect=worker
                 ),
                 mock.patch.object(
-                    cli_mod,
+                    _pipeline_generation,
                     "run_contamination_pre",
                     return_value=StageOutcome(
                         VERDICT_PASS, StagePayload(detail="offline preflight pass")

@@ -14,37 +14,15 @@ in `docs/RUNTIME_STATUS.md`.
 
 ## Transformation specification
 
-Build every mart below using the ordered semantic rules. The rules
-define required source inputs, matching behavior, filters, aggregates,
-null handling, and deterministic tie behavior; they do not prescribe
-a particular SQL implementation.
+Build the models described in `data_model.yaml`. Each model description
+defines the records to report, and each column description defines
+the required value. Use the source schemas to determine how to produce
+those outputs.
 
 Create every mart in the same database and schema the raw source
 tables are loaded into: the destination namespace named in
 `config.yaml`. A mart built in any other schema is not found and does
 not count, so do not route marts to a separate schema.
-
-### `customer_rollup`
-
-- Grain: One row per customer, including customers with no orders.
-- Unique key: customer_id
-- Required columns: customer_id, completed_orders, total_spend
-
-```text
-Mart 'customer_rollup' has 1 declared semantic rules:
-1. [source] Bring customers into scope. (public source tables: customers)
-```
-
-### `event_wide`
-
-- Grain: One row per event.
-- Unique key: event_id
-- Required columns: event_id, big_count, label, occurred_at, tz_stamp, metric_value, big_note
-
-```text
-Mart 'event_wide' has 1 declared semantic rules:
-1. [source] Bring events into scope. (public source tables: events)
-```
 
 ## Source tables
 

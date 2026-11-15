@@ -11,6 +11,9 @@ from elt_taskgen.export.eltbench import build_data_model
 from elt_taskgen.review import model_specification as author
 from elt_taskgen.specification import data_model, source_data_model
 
+from elt_taskgen.pipeline import generation as _pipeline_generation
+from elt_taskgen.pipeline import review as _pipeline_review
+
 
 class Provider:
     routing = SimpleNamespace(roles={author.ROLE_NAME: object()})
@@ -118,11 +121,11 @@ class ModelSpecificationAuthorTest(unittest.TestCase):
         task = self.task.model_copy(update={"solver_prompt": "unchanged draft"})
         engine = SimpleNamespace(workspace=None)
         provider = Provider(self.document)
-        with (patch.object(cli, "_structural_failure_detail", return_value=None),
-              patch.object(cli, "_attack_matrix_failure_detail", return_value=None),
-              patch.object(cli, "_admission_gate", return_value=(None, {})),
-              patch.object(cli, "_begin_task_evidence"),
-              patch.object(cli, "_author_prose_for", return_value=(task.solver_prompt, {})),
+        with (patch.object(_pipeline_review, "_structural_failure_detail", return_value=None),
+              patch.object(_pipeline_generation, "_attack_matrix_failure_detail", return_value=None),
+              patch.object(_pipeline_review, "_admission_gate", return_value=(None, {})),
+              patch.object(_pipeline_review, "_begin_task_evidence"),
+              patch.object(_pipeline_review, "_author_prose_for", return_value=(task.solver_prompt, {})),
               patch("elt_taskgen.review.prose_fidelity.check_prose_fidelity", return_value=[])):
             outcome = cli.make_author_runner(provider)(engine, task)
         self.assertEqual(outcome.verdict, "pass")

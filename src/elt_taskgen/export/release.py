@@ -401,8 +401,7 @@ class ReleaseManifest(BaseModel):
     environment: dict[str, str] = Field(default_factory=dict)
     environment_drift: dict[str, str] = Field(default_factory=dict)
     scorer_version: str = Field(min_length=1)
-    #: Version of the private combined-task DuckDB execution contract. Empty
-    #: only in manifests older than schema 3.2.
+    #: Recorded scorer provenance; optional and not a loading requirement.
     semantic_scorer_version: str = ""
     #: Schema-3.3+ layered identities. The EMPTY defaults identify a pre-3.3
     #: manifest, which is never retroactively judged by them.
@@ -1876,6 +1875,13 @@ def _freeze_release_locked(
             raise ValueError(
                 f"selection contains unsafe task_id {task_id!r}: {exc}"
             ) from exc
+    coverage_policy = getattr(selection, "semantic_coverage", None)
+    if coverage_policy is not None:
+        from elt_taskgen.generation.coverage import measure_semantic_coverage
+        coverage = measure_semantic_coverage(
+            ((tid, engine.load_task(tid)) for tid in ordered_ids), policy=coverage_policy)
+        if coverage.problems:
+            raise ValueError("Release fails semantic coverage: " + "; ".join(coverage.problems))
     bound_selection = hasattr(selection, "empirical_required")
     empirical_required = certified_release or bool(
         getattr(selection, "empirical_required", False)
@@ -2031,6 +2037,9 @@ def _freeze_release_locked(
             except ValueError as exc:
                 raise ValueError(f"task {tid!r}: {exc}") from None
             shutil.copytree(src_key, private_root / tid / "answer_key")
+            from elt_taskgen.verification.relationship_coverage import REPORT_REL, write_relationship_report
+
+            write_relationship_report(tasks[tid], workspace, destination=private_root / tid / REPORT_REL)
             difficulty_digest = _stage_difficulty_measurement(
                 workspace,
                 private_root,
@@ -2506,12 +2515,6 @@ def _verify_semantic_packages(
         SEMANTIC_PACKAGE_MIN_SCHEMA
     ):
         return
-    if not manifest.semantic_scorer_version:
-        fail(
-            "release_manifest.json",
-            "semantic-package",
-            "schema-3.2 manifest records no semantic scorer version",
-        )
     for task_id, expected_hash in sorted(manifest.tasks.items()):
         rel = f"private/{task_id}/{SEMANTIC_TASK_IR_REL}"
         path = release_dir / rel

@@ -687,8 +687,6 @@ def _convert(db_dir: Path, schema: WikiSchema) -> _Converted:
             if fk.reference_table_name not in name_map:
                 continue  # dangling reference in schema.json: not a link
             parent = name_map[fk.reference_table_name]
-            if parent == child:
-                continue  # self-reference: no join surface for a two-table mart
             ccol = col_map[table.table_name].get(fk.column_name)
             pcol = col_map[fk.reference_table_name].get(fk.reference_column_name)
             if ccol is None or pcol is None:

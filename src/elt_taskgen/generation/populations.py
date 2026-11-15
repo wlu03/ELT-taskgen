@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP
 from itertools import islice, product
@@ -17,6 +19,7 @@ from elt_taskgen.generation.difficulty_profiles import GenerationDifficultyProfi
 from elt_taskgen.generation.mart_plan import (
     AGGREGATE_FAMILY_KINDS,
     AllNullAggregateWitness,
+    BranchedFactShape,
     FactRoles,
     RoundBeforeSumWitness,
     StarShape,
@@ -409,15 +412,18 @@ _DIFFICULTY_PROFILE_CONDITION_PREFIX = "GENERATION DIFFICULTY PROFILE "
 def apply_data_scale_profile(
     task: TaskIR, profile: GenerationDifficultyProfile
 ) -> TaskIR:
-    """Apply a bounded row-volume target to a synthetic TaskIR.
+    """Apply optional semantic composition, then bounded synthetic row volume.
 
     The operation is deterministic and idempotent.  It is deliberately safe to
     call after effective-lineage pruning: the floor is computed over only the
     source tables the compiled marts actually read.  DEVELOPMENT remains tiny,
-    COUNTERFACTUAL keeps its literal semantic witnesses, and literal PRIMARY
+    COUNTERFACTUAL keeps its witnesses (adding the profile's semantic cases), and literal PRIMARY
     populations (WikiDBs/other real data) are left byte-for-byte unchanged.
     """
 
+    from elt_taskgen.generation.difficulty_profiles import apply_generation_profile
+
+    task = apply_generation_profile(task, profile)
     by_name = {population.name: population for population in task.populations}
     primary = by_name.get(PopulationName.PRIMARY)
     if (
@@ -668,9 +674,10 @@ def _synthetic_required_parent_problems(task: TaskIR) -> list[str]:
     """Reject scaled rows whose required parent pool cannot exist yet.
 
     ``source_data.generate_rows`` builds one table at a time. Optional edges may
-    break a dependency cycle, but a cycle made entirely of required edges has no
-    legal first table: whichever child is generated first sees an empty parent
-    pool. Catch the exact generation-order failure during intake instead of
+    break a dependency cycle, but a cycle between separate tables made entirely
+    of required edges has no legal first table: whichever child is generated
+    first sees an empty parent pool. Self-links resolve after their own keys
+    exist. Catch the exact generation-order failure during intake instead of
     waiting for fixture materialization after provider-backed stages.
     """
 
@@ -690,7 +697,9 @@ def _synthetic_required_parent_problems(task: TaskIR) -> list[str]:
             if child_rows <= 0:
                 continue
 
-            parent_available = position[rel.parent_table] < position[rel.child_table]
+            # Self-links are drawn after this table's own identities exist.
+            parent_available = (rel.parent_table == rel.child_table
+                                or position[rel.parent_table] < position[rel.child_table])
             if rel.parent_table in pop.literal_rows:
                 parent_rows = len(pop.literal_rows[rel.parent_table])
             else:
@@ -880,30 +889,23 @@ def schema_scale_hint(
 
 #: Per-shape minting offset (see `_shape_mint_offset`): shifts every index-driven
 #: literal so two shapes' rows share a table without key collisions. 0 by default.
-_MINT_INDEX_OFFSET = 0
+_MINT_INDEX_OFFSET: ContextVar[int] = ContextVar("witness_mint_offset", default=0)
 
 #: Index stride between shapes — far above any witness build's row count.
 _MINT_OFFSET_STRIDE = 500
 
 
-class _shape_mint_offset:
-    """Deterministic per-shape minting namespace (context manager).
+@contextmanager
+def _shape_mint_offset(offset: int):
+    """Scope deterministic row identities to this thread or async task.
 
-    Module state because `_mint` has dozens of call sites; the offset comes from
-    the shape's POSITION, never a clock or RNG, so determinism is untouched.
+    Tokens restore nested scopes, including when witness construction fails.
     """
-
-    def __init__(self, offset: int) -> None:
-        self._offset = offset
-
-    def __enter__(self) -> None:
-        global _MINT_INDEX_OFFSET
-        self._prior = _MINT_INDEX_OFFSET
-        _MINT_INDEX_OFFSET = self._offset
-
-    def __exit__(self, *exc) -> None:
-        global _MINT_INDEX_OFFSET
-        _MINT_INDEX_OFFSET = self._prior
+    token = _MINT_INDEX_OFFSET.set(offset)
+    try:
+        yield
+    finally:
+        _MINT_INDEX_OFFSET.reset(token)
 
 
 def _mint(col: ColumnSpec, table: str, index: int) -> object:
@@ -911,7 +913,7 @@ def _mint(col: ColumnSpec, table: str, index: int) -> object:
 
     Index-driven, never random: two runs must produce byte-identical rows.
     """
-    index = index + _MINT_INDEX_OFFSET
+    index = index + _MINT_INDEX_OFFSET.get()
     n = COUNTERFACTUAL_ID_BASE + index
     if col.enum_values:
         return col.enum_values[index % len(col.enum_values)]
@@ -1674,6 +1676,10 @@ def counterfactual_literal_rows(
     (dedupe; only when the fact declares no PK). Every other table gets a minted
     row and every FK is closed, so nothing renders empty.
     """
+    if isinstance(shape, BranchedFactShape):
+        from elt_taskgen.generation.witness.branched import branched_literal_rows
+
+        return branched_literal_rows(tables, relationships, shape)
     tables = _narrow_for_minting(tables, relationships)
     if shape.witnesses:
         return witness_literal_rows(tables, relationships, shape)
@@ -1827,6 +1833,8 @@ def counterfactual_literal_rows(
 
 def _shape_core_tables(shape: StarShape) -> frozenset[str]:
     """The tables a shape's witness construction actually populates."""
+    if isinstance(shape, BranchedFactShape):
+        return frozenset((shape.parent, *(branch.table for branch in shape.branches)))
     return frozenset(t for t in (shape.parent, shape.fact, shape.child) if t)
 
 
@@ -1889,6 +1897,11 @@ def counterfactual_rows_for_shapes(
         )
     built = {name: tuple(rows) for name, rows in sorted(merged.items())}
     assert_literal_rows_typed(tables, built)
+    for shape in shapes:
+        if isinstance(shape, BranchedFactShape):
+            from elt_taskgen.generation.witness.branched import verify_branched_witnesses
+
+            verify_branched_witnesses(tables, relationships, shape, built)
     return built
 
 
@@ -2383,6 +2396,18 @@ def witness_literal_rows(
         if label is not None and roles.label and roles.label in {
             c.name for c in bridge.columns
         }:
+            domain = bridge.column(roles.label).enum_values
+            if domain and label not in domain:
+                if roles.label == roles.predicate_column and status is not None and shape.shape_name != "argmax_profile":
+                    # One physical field may serve both roles. Preserve the
+                    # explicitly planted filter arm instead of a display label.
+                    label = status
+                else:
+                    # Preserve the low/high ordering arms using legal values.
+                    # Argmax's separate case/null-order witnesses already pass
+                    # concrete domain members and therefore bypass this mapping.
+                    ordered_labels = sorted(domain)
+                    label = ordered_labels[0] if label == "alpha" else ordered_labels[-1]
             row[roles.label] = label
         if (
             roles.child_key
@@ -4079,8 +4104,9 @@ def derive_attack_cases(
 
     One case per discrimination the counterfactual was constructed to make, plus
     the plan-level degenerates; nothing is declared the plan offers no surface
-    for. `mutation` is empty on purpose — attacks.py compiles it from the case's
-    kind over the task's own reference SQL, so adapters ship no SQL.
+    for. Legacy cases leave `mutation` empty so attacks.py compiles it from the
+    kind; branched cases name the exact mart, branch, and component in a
+    structured directive. Adapters ship no SQL.
     """
     P = PopulationName
     constructed = policy == POLICY_CONSTRUCTED
@@ -4088,6 +4114,12 @@ def derive_attack_cases(
 
     claims: list[str] = []
     for shape in shapes:
+        if isinstance(shape, BranchedFactShape):
+            from elt_taskgen.verification.branched import branched_attack_cases
+
+            if not constructed:
+                raise ValueError("branched witnesses require constructed populations")
+            cases.extend(branched_attack_cases(shape))
         for claim in shape.attack_claims:
             if claim not in claims:
                 claims.append(claim)
@@ -4504,6 +4536,10 @@ def witness_conditions(
     when construction planted it. It is optional for compatibility with
     callers that only render the shape-level witness catalogue.
     """
+    if isinstance(shape, BranchedFactShape):
+        from elt_taskgen.generation.witness.branched import branched_witness_conditions
+
+        return branched_witness_conditions(shape)
     effective_tables = _narrow_for_minting(tables, relationships)
     anchor, _key, bridge, _fk = shape.witness_anchor()
     scope = _witness_scope_prefix(shape)
@@ -4683,7 +4719,7 @@ def derive_populations_and_attacks(
     stress_dup_lines = stress_duplicate_conditions(
         tables,
         deduped_tables={s.fact for s in shapes if s.fact_dedupe and s.fact},
-        read_tables={x for s in shapes for x in (s.parent, s.fact, s.child) if x},
+        read_tables={x for s in shapes for x in _shape_core_tables(s)},
     )
     populations = []
     for spec in default_populations(

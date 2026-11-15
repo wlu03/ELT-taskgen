@@ -53,14 +53,17 @@ from elt_taskgen.generation.challenging_policy import (
 )
 from elt_taskgen.generation.difficulty_profiles import (
     CHALLENGING_DIFFICULTY_PROFILE,
-    DIFFICULTY_PROFILES,
+    DEFAULT_GENERATION_PROFILE,
     GenerationDifficultyProfile,
     STANDARD_DIFFICULTY_PROFILE,
+    apply_generation_profile,
     difficulty_profile as resolve_difficulty_profile,
 )
 from elt_taskgen.generation.lineage import prune_to_effective_lineage
 from elt_taskgen.generation.mart_plan import MIN_MART_COLUMNS
 from elt_taskgen.generation.populations import apply_data_scale_profile
+from elt_taskgen.generation.recipe_registry import RecipeSelection, resolve_recipe_selection
+from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
 from elt_taskgen.models import (
     AcceptanceReport,
     PopulationName,
@@ -145,7 +148,7 @@ def build_specs(
     repo: Path,
     data_root: Path,
     *,
-    difficulty_profile: GenerationDifficultyProfile = CHALLENGING_DIFFICULTY_PROFILE,
+    difficulty_profile: GenerationDifficultyProfile = DEFAULT_GENERATION_PROFILE,
 ) -> tuple[ExampleSpec, ...]:
     """Construct the fixed 5-pool x 3-task cohort."""
     dbt_builds = repo / "runs" / "dbt_elt" / "dbt_builds"
@@ -395,12 +398,13 @@ def _readme(catalog: dict) -> str:
             "approval, Airbyte instance, dbt runner, Snowflake, Databricks, or Redshift",
             "was invoked.",
             "",
-            "## Generation difficulty profile",
+            "## Mart generation",
             "",
-            f"This cohort was generated with the deterministic `{profile}` profile.",
+            "This cohort uses automatic recipe selection." if catalog.get("generation") else
+            f"This internal baseline fixture uses `{profile}` structure and scale.",
             *difficulty_lines,
             "",
-            "The profile describes generated structure and scale, not empirical solver",
+            "These settings describe generated structure and scale, not empirical solver",
             "difficulty. A task is not called hard until a pinned solver campaign measures",
             "it, and it is not runtime-certified until the real Airbyte + warehouse + dbt",
             "path passes separately.",
@@ -453,7 +457,6 @@ def _readme(catalog: dict) -> str:
             "```bash",
             "uv run --frozen python tools/regenerate_example_cohort.py \\",
             f"  --destination {destination} \\",
-            f"  --difficulty-profile {profile} \\",
             "  --workspace /private/tmp/elt-taskgen-test1-workspace \\",
             "  --output ../ELT-taskgen-test_1.new",
             "```",
@@ -802,9 +805,11 @@ def generate(
     output: Path,
     *,
     destination: Destination | str = Destination.SNOWFLAKE,
-    difficulty_profile: GenerationDifficultyProfile = CHALLENGING_DIFFICULTY_PROFILE,
+    difficulty_profile: GenerationDifficultyProfile = DEFAULT_GENERATION_PROFILE,
+    recipe_selection: RecipeSelection | None = None,
 ) -> dict:
     selected = normalize_destination(destination)
+    recipe_selection = resolve_recipe_selection(difficulty_profile.name, recipe_selection)
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"output directory is not empty: {output}")
     if workspace.exists() and any(workspace.iterdir()):
@@ -830,7 +835,8 @@ def generate(
     prepared: list[tuple[ExampleSpec, TaskIR]] = []
     for position, spec in enumerate(specs, 1):
         print(f"[{position:02d}/{EXPECTED_TASKS}] build {spec.alias}: {spec.name}")
-        task = prune_to_effective_lineage(spec.build(), minimum_source_tables=2)
+        task = apply_generation_profile(spec.build(), difficulty_profile, recipe_selection=recipe_selection)
+        task = prune_to_effective_lineage(task, minimum_source_tables=2)
         task = apply_data_scale_profile(task, difficulty_profile)
         prepared.append((spec, task))
 
@@ -937,6 +943,8 @@ def generate(
         "runtime_certified": False,
         "difficulty_profile": difficulty_profile.name,
         "difficulty_profile_contract": profile_contract,
+        **({"generation": {**DEFAULT_GENERATION_CONFIG.canonical_contract(recipe_selection.seed),
+                            "recipe_ids": list(recipe_selection.enabled_recipes)}} if recipe_selection is not None else {}),
         "challenge_summary": {
             "primary_rows_total": sum(primary_rows),
             "primary_rows_median": median(primary_rows),
@@ -1222,20 +1230,10 @@ def main() -> int:
     parser.add_argument(
         "--bench-root", type=Path, default=repo.parent / "ELT-Bench"
     )
-    parser.add_argument(
-        "--difficulty-profile",
-        choices=tuple(sorted(DIFFICULTY_PROFILES)),
-        help=(
-            "reference generation profile (default: challenging); standard "
-            "preserves the historical mart and synthetic-scale budgets"
-        ),
-    )
     args = parser.parse_args()
     if args.mode == "release":
         if args.catalog is None:
             parser.error("--catalog is required in release mode")
-        if args.difficulty_profile is not None:
-            parser.error("--difficulty-profile is only valid in reference mode")
         validation = freeze_certified_cohort(
             args.workspace.resolve(),
             args.catalog.resolve(),
@@ -1255,9 +1253,6 @@ def main() -> int:
             args.workspace.resolve(),
             args.output.resolve(),
             destination=args.destination,
-            difficulty_profile=resolve_difficulty_profile(
-                args.difficulty_profile or CHALLENGING_DIFFICULTY_PROFILE.name
-            ),
         )
     print(json.dumps(validation, indent=2, sort_keys=True))
     return 0

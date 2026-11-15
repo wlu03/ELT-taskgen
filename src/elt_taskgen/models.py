@@ -151,6 +151,7 @@ class MartOpKind(str, Enum):
     #: Guarded division: CAST to double, NULLIF denominator, pinned rounding/units.
     RATIO = "ratio"
     UNION = "union"
+    TRANSITIVE_CLOSURE = "transitive_closure"  # distinct reachable key pairs; cycle-safe
     TIE_BREAK = "tie_break"  # explicit deterministic ordering/tie resolution
 
 
@@ -158,13 +159,17 @@ class SemanticPattern(str, Enum):
     """Closed vocabulary for declared compositions of mart operations."""
 
     AGGREGATE_THEN_FILTER = "aggregate_then_filter"
+    BRANCHED_FACT_ROLLUP = "branched_fact_rollup"
     NESTED_AGGREGATE = "nested_aggregate"
     GROUP_GLOBAL_BASELINE = "group_global_baseline"
     AGGREGATE_THEN_EXTREMA = "aggregate_then_extrema"
+    MULTIPLE_EXTREMA = "multiple_extrema"
     WEIGHTED_AVERAGE = "weighted_average"
     FIXED_PERIOD_COMPARISON = "fixed_period_comparison"
     MULTI_GRAIN_TIME = "multi_grain_time"
     CONSECUTIVE_STREAK = "consecutive_streak"
+    COHORT_RETENTION = "cohort_retention"
+    WEIGHTED_ALLOCATION = "weighted_allocation"
     SCD_ASOF = "scd_asof"
     MULTI_DIMENSION_LATEST = "multi_dimension_latest"
     ORDERED_COLLECTION = "ordered_collection"
@@ -174,6 +179,17 @@ class SemanticPattern(str, Enum):
     NORMALIZATION = "normalization"
     SESSIONIZATION = "sessionization"
     TEMPORAL_CORRECTION = "temporal_correction"
+    INTERVAL_COVERAGE = "interval_coverage"
+    ACTIVITY_LIFECYCLE = "activity_lifecycle"
+    DOCUMENT_RECONCILIATION = "document_reconciliation"
+    LEDGER_RECONCILIATION = "ledger_reconciliation"
+    RECURSIVE_HIERARCHY = "recursive_hierarchy"
+    ROLE_PLAYING_DIMENSION = "role_playing_dimension"
+    AMBIGUOUS_PATH = "ambiguous_path"
+    MULTI_BRIDGE_DEDUP = "multi_bridge_dedup"
+    OPTIONAL_CHAIN = "optional_chain"
+    HETEROGENEOUS_KEY_JOIN = "heterogeneous_key_join"
+    COMPOSITE_KEY_BRIDGE = "composite_key_bridge"
 
 
 class PopulationName(str, Enum):

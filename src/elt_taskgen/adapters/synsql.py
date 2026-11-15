@@ -16,6 +16,7 @@ from sqlglot import exp
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from elt_taskgen.adapters.evidence import (
+    build_branched_marts,
     build_marts,
     chain_candidates,
     declared_key_parents,
@@ -464,9 +465,13 @@ def _build_marts(
     difficulty_profile: GenerationDifficultyProfile = STANDARD_DIFFICULTY_PROFILE,
 ) -> tuple[tuple[MartSpec, ...], tuple[StarShape, ...], tuple[str, ...]]:
     """Build marts from schema-derived FK evidence through the shape library."""
-    # Only declared single-column keys may anchor grains or hop-2 joins.
+    branched_marts, branched_shapes = (
+        build_branched_marts(tables, rels)
+        if difficulty_profile.branched_fact_rollups else ((), ())
+    )
+    # Legacy chain selection retains its single-column grain contract.
     candidates = chain_candidates(tables, rels, key_parents=declared_key_parents(tables))
-    if not candidates:
+    if not candidates and not branched_marts:
         raise ValueError(
             f"db {db_id!r}: no usable parent<-bridge chain in the declared FK "
             "graph (fail closed: the shapes are not invented)"
@@ -477,7 +482,7 @@ def _build_marts(
     marts, shapes_out, names = build_marts(
         candidates,
         prefix=lambda e, suffix: _slug(f"{e.parent}_{e.bridge}_{suffix}"),
-        max_marts=max_marts,
+        max_marts=max_marts - len(branched_marts),
         spread_grains=spread_grains,
         max_per_shape=max_per_shape,
         description=lambda suffix, e: _MART_PROSE[suffix].format(
@@ -488,6 +493,9 @@ def _build_marts(
             "tables.json only; no SynSQL answer material was consulted."
         ),
     )
+    marts = branched_marts + marts
+    shapes_out = branched_shapes + shapes_out
+    names = (("branched_fact_rollup",) if branched_marts else ()) + names
     if not marts:
         raise ValueError(
             f"db {db_id!r}: no declared chain funds any library shape — rejected "
@@ -522,7 +530,17 @@ def to_task_ir_with_schema_atoms(
         tables, rels, db_id, difficulty_profile=difficulty_profile
     )
     family_id = f"{pool}__{_slug(db_id)}"
-    task_id = f"{family_id}__{marts[0].name}"
+    identity_mart = marts[0].name
+    if difficulty_profile.branched_fact_rollups:
+        # Pinned intake rosters identify the schema by its historical first
+        # mart. Changing selection must not rename an existing candidate.
+        try:
+            standard_marts, _, _ = _build_marts(tables, rels, db_id)
+        except ValueError:
+            pass  # a newly supported, branch-only schema has no legacy id
+        else:
+            identity_mart = standard_marts[0].name
+    task_id = f"{family_id}__{identity_mart}"
     title = db_id.replace("_", " ").replace("-", " ").strip().title()
 
     backends = tuple(

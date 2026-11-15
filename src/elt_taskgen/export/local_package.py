@@ -423,6 +423,9 @@ def freeze_local_package(
         _copy_regular_tree(tdir / "task", public_root / task.task_id)
         _copy_regular_tree(tdir / "answer_key", private_parent / "answer_key")
         _copy_regular_tree(tdir / "populations", private_parent / "populations")
+        from elt_taskgen.verification.relationship_coverage import REPORT_REL, write_relationship_report
+
+        write_relationship_report(task, engine.workspace, destination=private_parent / REPORT_REL)
         (private_parent / "task_ir.json").write_text(
             canonical_json(task.model_dump(mode="json")) + "\n", encoding="utf-8"
         )

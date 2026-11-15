@@ -471,7 +471,7 @@ def _critic_attack_handoff_analyzer(
 ) -> dict[str, str]:
     """Recognize only the two saved handoff paths the fixed protocol closes."""
 
-    from elt_taskgen import cli
+    from elt_taskgen.pipeline import handoff
     from elt_taskgen.models import AttackKind
     from elt_taskgen.verification import attacks
 
@@ -554,13 +554,13 @@ def _critic_attack_handoff_analyzer(
         raise ValueError("cause is not a recognized historical critic handoff failure")
 
     if (
-        cli.CRITIC_PROTOCOL_FAILURE_CODE != "critic_attack_handoff_invalid"
-        or cli.CRITIC_PROTOCOL_RECOVERY != "correct_or_replace_critic_handoff"
+        handoff.CRITIC_PROTOCOL_FAILURE_CODE != "critic_attack_handoff_invalid"
+        or handoff.CRITIC_PROTOCOL_RECOVERY != "correct_or_replace_critic_handoff"
     ):
         raise ValueError("current critic protocol disposition identity differs")
     return {
         "current_disposition": "protocol_block_before_attack_execution",
-        "failure_code": cli.CRITIC_PROTOCOL_FAILURE_CODE,
+        "failure_code": handoff.CRITIC_PROTOCOL_FAILURE_CODE,
         "historical_signature": signature,
         "subject_sha256": hashlib.sha256(subject.encode("utf-8")).hexdigest(),
     }
@@ -706,6 +706,10 @@ RECOVERY_KINDS: dict[str, RecoveryKind] = {
         fixed_modules=(
             "elt_taskgen.cli",
             "elt_taskgen.engine",
+            "elt_taskgen.pipeline.gates",
+            "elt_taskgen.pipeline.generation",
+            "elt_taskgen.pipeline.payloads",
+            "elt_taskgen.pipeline.support",
             "elt_taskgen.reference.adjudication",
             "elt_taskgen.reference.independent",
             "elt_taskgen.verification.gates",
@@ -727,6 +731,10 @@ RECOVERY_KINDS: dict[str, RecoveryKind] = {
         ),
         fixed_modules=(
             "elt_taskgen.cli",
+            "elt_taskgen.pipeline.attacks",
+            "elt_taskgen.pipeline.handoff",
+            "elt_taskgen.pipeline.payloads",
+            "elt_taskgen.pipeline.support",
             "elt_taskgen.review.tools.critic_validators",
             "elt_taskgen.verification.attacks",
         ),

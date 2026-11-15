@@ -35,6 +35,7 @@ from elt_taskgen.models import (
     canonical_json,
     validate_task_id_segment,
 )
+from elt_taskgen.generation.config import GenerationConfig
 
 
 READINESS_SCHEMA_VERSION = "pipeline-readiness-v1"
@@ -88,10 +89,47 @@ _CONFIGURED_STAGE_ROLES: dict[StageName, tuple[str, ...]] = {
 _COMMON_PROVIDER_IMPLEMENTATION_MODULES = (
     "elt_taskgen.review.prompts",
     "elt_taskgen.review.providers",
+    "elt_taskgen.review.provider_accounting",
+    "elt_taskgen.review.provider_transport",
+    "elt_taskgen.review.provider_types",
+    "elt_taskgen.review.transcripts",
     "elt_taskgen.review.session",
 )
 _MART_PLAN_IMPLEMENTATION_MODULES = (
     "elt_taskgen.generation.mart_plan",
+    "elt_taskgen.generation.semantic_difficulty",
+    "elt_taskgen.generation.compositions",
+    "elt_taskgen.generation.dependent_compositions",
+    "elt_taskgen.generation.recipe_evidence",
+    "elt_taskgen.generation.recipe_plan",
+    "elt_taskgen.generation.recipe_witness",
+    "elt_taskgen.generation.recipe_certification",
+    "elt_taskgen.generation.recipe_registry",
+    "elt_taskgen.generation.recipe_assignment",
+    "elt_taskgen.generation.recipe_admission",
+    "elt_taskgen.generation.advanced_evidence",
+    "elt_taskgen.generation.advanced_plan",
+    "elt_taskgen.generation.advanced_witness",
+    "elt_taskgen.generation.advanced_certification",
+    "elt_taskgen.generation.advanced_recipes",
+    "elt_taskgen.generation.scenario_evidence",
+    "elt_taskgen.generation.scenario_plan",
+    "elt_taskgen.generation.scenario_temporal",
+    "elt_taskgen.generation.scenario_financial",
+    "elt_taskgen.generation.scenario_graph",
+    "elt_taskgen.generation.scenario_witness",
+    "elt_taskgen.generation.scenario_recipes",
+    "elt_taskgen.generation.relationship_graph",
+    "elt_taskgen.generation.graph_evidence",
+    "elt_taskgen.generation.graph_plan",
+    "elt_taskgen.generation.graph_witness",
+    "elt_taskgen.generation.graph_recipes",
+    "elt_taskgen.verification.relationship_coverage",
+    "elt_taskgen.generation.recursive",
+    "elt_taskgen.generation.self_links",
+    "elt_taskgen.generation.config",
+    "elt_taskgen.generation.shapes.branched_fact_rollup",
+    "elt_taskgen.generation.witness.branched",
     "elt_taskgen.generation.witness.constants",
     "elt_taskgen.generation.shapes.aggregate_then_filter",
     "elt_taskgen.generation.shapes.argmax_profile",
@@ -102,6 +140,8 @@ _MART_PLAN_IMPLEMENTATION_MODULES = (
     "elt_taskgen.generation.shapes.orphan_coverage",
     "elt_taskgen.generation.shapes.status_cohort_union",
     "elt_taskgen.generation.shapes.temporal_grid",
+    "elt_taskgen.verification.upstream_eval",
+    "elt_taskgen.verification.typed_comparison",
 )
 _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
     StageName.INTAKE: (
@@ -112,9 +152,12 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.adapters.synsql",
         "elt_taskgen.adapters.wikidbs",
         "elt_taskgen.ingest_manifest",
+        "elt_taskgen.generation.difficulty_profiles",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.provenance",
     ),
     StageName.GENERATE: (
+        "elt_taskgen.pipeline.generation",
         "elt_taskgen.generation.challenging_policy",
         "elt_taskgen.generation.lineage",
         *_MART_PLAN_IMPLEMENTATION_MODULES,
@@ -123,6 +166,7 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.sql_identifiers",
     ),
     StageName.REFERENCE: (
+        "elt_taskgen.pipeline.generation",
         *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.duckdb_sandbox",
         "elt_taskgen.reference.gold",
@@ -131,6 +175,10 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.sql_identifiers",
     ),
     StageName.AUTHOR: (
+        "elt_taskgen.pipeline.review",
+        "elt_taskgen.pipeline.attacks",
+        "elt_taskgen.pipeline.handoff",
+        "elt_taskgen.pipeline.generation",
         *_COMMON_PROVIDER_IMPLEMENTATION_MODULES,
         "elt_taskgen.review.council",
         "elt_taskgen.review.declarative_prose",
@@ -139,6 +187,10 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.review.tools.validators",
     ),
     StageName.REVIEW: (
+        "elt_taskgen.pipeline.review",
+        "elt_taskgen.pipeline.attacks",
+        "elt_taskgen.pipeline.handoff",
+        "elt_taskgen.pipeline.generation",
         *_COMMON_PROVIDER_IMPLEMENTATION_MODULES,
         "elt_taskgen.review.council",
         "elt_taskgen.review.tools.critic_validators",
@@ -147,6 +199,8 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.verification.attacks",
     ),
     StageName.ATTACK: (
+        "elt_taskgen.pipeline.attacks",
+        "elt_taskgen.pipeline.handoff",
         *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.generation.source_data",
         "elt_taskgen.reference.runner",
@@ -156,6 +210,8 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.sql_identifiers",
     ),
     StageName.TASK_INTEGRITY: (
+        "elt_taskgen.pipeline.gates",
+        "elt_taskgen.pipeline.generation",
         *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.adjudication",
         "elt_taskgen.reference.gold",
@@ -169,9 +225,12 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.verification.reference_readiness",
         "elt_taskgen.verification.structural_completeness",
         "elt_taskgen.verification.upstream_eval",
+        "elt_taskgen.verification.typed_comparison",
         "elt_taskgen.verification.variant_battery",
     ),
     StageName.GATES_EXTRACT_LOAD: (
+        "elt_taskgen.pipeline.gates",
+        "elt_taskgen.pipeline.generation",
         *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.reference.adjudication",
         "elt_taskgen.reference.gold",
@@ -185,9 +244,12 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.verification.reference_readiness",
         "elt_taskgen.verification.structural_completeness",
         "elt_taskgen.verification.upstream_eval",
+        "elt_taskgen.verification.typed_comparison",
         "elt_taskgen.verification.variant_battery",
     ),
     StageName.GATES_TRANSFORM: (
+        "elt_taskgen.pipeline.gates",
+        "elt_taskgen.pipeline.generation",
         "elt_taskgen.airbyte_connector_config",
         "elt_taskgen.destinations",
         *_MART_PLAN_IMPLEMENTATION_MODULES,
@@ -220,10 +282,12 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.verification.reference_readiness",
         "elt_taskgen.verification.structural_completeness",
         "elt_taskgen.verification.upstream_eval",
+        "elt_taskgen.verification.typed_comparison",
         "elt_taskgen.verification.variant_battery",
         "elt_taskgen.workspace",
     ),
     StageName.CALIBRATE: (
+        "elt_taskgen.pipeline.calibration",
         "elt_taskgen.corpus.calibration",
         "elt_taskgen.corpus.certified_difficulty",
         "elt_taskgen.corpus.difficulty",
@@ -231,18 +295,31 @@ _CONFIGURED_STAGE_MODULES: dict[StageName, tuple[str, ...]] = {
         "elt_taskgen.runtime.evaluation",
     ),
     StageName.CONTAMINATION_PRE: (
+        "elt_taskgen.pipeline.generation",
         "elt_taskgen.verification.contamination",
         "elt_taskgen.verification.filters",
     ),
     StageName.CONTAMINATION_POST: (
+        "elt_taskgen.pipeline.release",
+        "elt_taskgen.pipeline.generation",
         "elt_taskgen.corpus.selection",
+        "elt_taskgen.generation.coverage",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.verification.contamination",
         "elt_taskgen.verification.filters",
     ),
     StageName.SELECT: (
+        "elt_taskgen.pipeline.release",
+        "elt_taskgen.pipeline.generation",
         "elt_taskgen.corpus.selection",
+        "elt_taskgen.generation.coverage",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
     ),
     StageName.RELEASE: (
+        "elt_taskgen.pipeline.release",
+        "elt_taskgen.pipeline.generation",
+        "elt_taskgen.generation.coverage",
+        *_MART_PLAN_IMPLEMENTATION_MODULES,
         "elt_taskgen.airbyte_connector_config",
         "elt_taskgen.destinations",
         "elt_taskgen.export.certification",
@@ -440,6 +517,8 @@ class GenerationRunSpec(BaseModel):
     source_allocation: dict[str, int] | None = None
     seed: int = 0
     profile: ReadinessProfile = ReadinessProfile.PACKAGED
+    # Automatically recorded for reproducibility; normal run configs omit it.
+    generation: GenerationConfig = Field(default_factory=GenerationConfig)
     resume: bool = True
     workers: int = Field(default=4, ge=1)
     max_repair_rounds: int = Field(default=3, ge=0)
@@ -658,8 +737,10 @@ class GenerationRunSpec(BaseModel):
         return self
 
     def fingerprint(self) -> str:
+        payload = self.model_dump(mode="json")
+        payload["generation"] = self.generation.canonical_contract(self.seed)
         return hashlib.sha256(
-            canonical_json(self.model_dump(mode="json")).encode("utf-8")
+            canonical_json(payload).encode("utf-8")
         ).hexdigest()
 
 
@@ -1137,8 +1218,16 @@ def _configured_stage_implementation_identity(
         )
         roles = tuple(sorted(tier.role_name for tier in roster))
     modules = set(_CONFIGURED_STAGE_MODULES.get(stage, ()))
-    # The CLI digest covers stage runners still defined in that module.
-    modules.add("elt_taskgen.cli")
+    # Bind extracted runners and their shared contracts as well as command
+    # orchestration. Moving code must not leave reusable evidence unsealed.
+    modules.update((
+        "elt_taskgen.cli",
+        "elt_taskgen.pipeline.stages",
+        "elt_taskgen.pipeline.payloads",
+        "elt_taskgen.pipeline.support",
+    ))
+    if roles:
+        modules.update(_COMMON_PROVIDER_IMPLEMENTATION_MODULES)
     modules = tuple(sorted(modules))
     contract = {
         "version": CONFIGURED_STAGE_CONTRACT_VERSION,
@@ -1179,6 +1268,8 @@ def _configured_inputs(
     """Only inputs capable of changing a stage's substantive evidence."""
 
     inputs: dict[str, Any] = {"contract_version": CONFIGURED_STAGE_SEAL_VERSION}
+    if stage is StageName.INTAKE or stage in _SELECTION_STAGES:
+        inputs["generation"] = spec.generation.canonical_contract(spec.seed)
     if stage in _PROVIDER_STAGES:
         from elt_taskgen.review import providers as providers_mod
 
@@ -2645,6 +2736,7 @@ def render_run_report_markdown(report: PipelineReadinessReport) -> str:
         "",
         f"- State: `{report.state}`",
         f"- Profile: `{report.profile.value}`",
+        f"- Mart generation: automatic (`{report.config.generation.version}`)",
         f"- Generated: `{report.generated_at}`",
         f"- Configuration SHA-256: `{report.config_sha256}`",
         f"- Source manifest SHA-256: `{report.source_manifest_sha256 or 'not recorded'}`",

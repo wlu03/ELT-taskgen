@@ -43,6 +43,8 @@ from elt_taskgen.pipeline_readiness import (
     write_run_report,
 )
 
+from elt_taskgen.pipeline import generation as _pipeline_generation
+
 
 class _SelectedRoster:
     def __init__(self, task_ids: tuple[str, ...]) -> None:
@@ -703,7 +705,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
                 "elt_taskgen.reference.independent._refuse_same_family"
             ),
             mock.patch(
-                "elt_taskgen.review.providers.rate_card_for",
+                'elt_taskgen.review.provider_accounting.rate_card_for',
                 return_value=mock.sentinel.rate,
             ),
             mock.patch(
@@ -996,7 +998,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
 
         with (
             mock.patch.object(
-                cli_mod,
+                _pipeline_generation,
                 "_pipeline_batch_intake_preflight",
                 return_value=(set(), []),
             ),
@@ -1066,7 +1068,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
 
         with (
             mock.patch.object(
-                cli_mod,
+                _pipeline_generation,
                 "_pipeline_batch_intake_preflight",
                 return_value=(set(), []),
             ),
@@ -1127,7 +1129,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
 
         with (
             mock.patch.object(
-                cli_mod,
+                _pipeline_generation,
                 "_pipeline_batch_intake_preflight",
                 return_value=(set(), []),
             ),
@@ -1180,7 +1182,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
 
         with (
             mock.patch.object(
-                cli_mod,
+                _pipeline_generation,
                 "_pipeline_batch_intake_preflight",
                 return_value=(set(), []),
             ),
@@ -1233,7 +1235,7 @@ class ConfiguredPipelineCliTests(unittest.TestCase):
 
         with (
             mock.patch.object(
-                cli_mod,
+                _pipeline_generation,
                 "_pipeline_batch_intake_preflight",
                 return_value=(set(), []),
             ),

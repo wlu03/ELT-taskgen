@@ -7,10 +7,12 @@ scores."""
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from elt_taskgen.corpus.difficulty import structural_difficulty
+from elt_taskgen.generation.coverage import SemanticCoveragePolicy, measure_semantic_coverage
 from elt_taskgen.models import (
     Backend,
     DifficultyMeasurement,
@@ -68,6 +70,7 @@ class Quotas(BaseModel):
     backend_mix: dict[Backend, float] = Field(default_factory=dict)
     origin_mix: dict[Origin, float] = Field(default_factory=dict)
     val_fraction: float = Field(ge=0.0, le=1.0, default=0.1)
+    semantic_coverage: SemanticCoveragePolicy | None = None
 
 
 class SelectionResult(BaseModel):
@@ -86,6 +89,7 @@ class SelectionResult(BaseModel):
     task_content_hashes: dict[str, str] = Field(default_factory=dict)
     #: Canonical difficulty measurement digest by task.
     difficulty_measurements: dict[str, str] = Field(default_factory=dict)
+    semantic_coverage: SemanticCoveragePolicy | None = None
 
     @model_validator(mode="after")
     def _exact_two_units(self) -> "SelectionResult":
@@ -412,7 +416,15 @@ def select(
         seen_clusters.add(task.cluster_id)
         independent.append(task)
 
+    if quotas.semantic_coverage is None:
+        from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
+        quotas = quotas.model_copy(update={"semantic_coverage":
+            DEFAULT_GENERATION_CONFIG.coverage_policy(independent, quotas.size)})
     chosen = _quota_pick(independent, measurements, quotas, rejected)
+    if quotas.semantic_coverage is not None:
+        report = measure_semantic_coverage(((t.task_id, t) for t in chosen), policy=quotas.semantic_coverage)
+        if report.problems:
+            raise ValueError("Selected cohort fails semantic coverage: " + "; ".join(report.problems))
 
     train: list[str] = []
     val: list[str] = []
@@ -432,6 +444,7 @@ def select(
         variants=variants,
         rejected_variants=rejected_variants,
         empirical_required=require_empirical,
+        semantic_coverage=quotas.semantic_coverage,
         task_content_hashes={
             task.task_id: task.content_hash()
             for task in sorted(chosen, key=lambda candidate: candidate.task_id)
@@ -527,15 +540,36 @@ def _quota_pick(
         b: f * quotas.size for b, f in sorted(quotas.backend_mix.items())
     }
 
-    def deficit_gain(task: TaskIR) -> float:
+    semantic_need = {}
+    if quotas.semantic_coverage is not None:
+        for subject in ("template", "pattern"):
+            for owner in ("marts", "tasks"):
+                for name, minimum in getattr(quotas.semantic_coverage, f"minimum_{subject}_{owner}"):
+                    semantic_need[(subject, owner, name)] = minimum
+
+    def semantic_counts(task: TaskIR) -> dict:
+        templates = Counter(m.plan.template_id or "<missing>" for m in task.marts)
+        patterns = Counter(p.value for m in task.marts for p in set(m.plan.semantic_patterns))
+        return {(subject, owner, name): count if owner == "marts" else 1
+                for subject, counts in (("template", templates), ("pattern", patterns))
+                for name, count in counts.items() for owner in ("marts", "tasks")}
+
+    counts_by_id = {task.task_id: semantic_counts(task) for task in pool} if semantic_need else {}
+
+    def deficit_gain(task: TaskIR) -> tuple[float, float]:
         gain = 0.0
         gain += max(origin_need.get(task.origin, 0.0), 0.0)
         backends = {b.backend for b in task.backends}
         for b in backends:
             gain += max(backend_need.get(b, 0.0), 0.0) / len(backends)
-        return gain
+        semantic_gain = sum(min(max(need, 0), counts_by_id.get(task.task_id, {}).get(key, 0))
+                            for key, need in semantic_need.items())
+        return semantic_gain, gain
 
     def commit(task: TaskIR) -> None:
+        for key, count in counts_by_id.get(task.task_id, {}).items():
+            if key in semantic_need:
+                semantic_need[key] -= count
         if task.origin in origin_need:
             origin_need[task.origin] -= 1.0
         backends = {b.backend for b in task.backends}

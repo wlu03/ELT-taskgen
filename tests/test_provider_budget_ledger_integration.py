@@ -29,6 +29,8 @@ from tests.test_providers import (
     anthropic_bad_tool_response,
 )
 
+from elt_taskgen.review import provider_transport as _review_provider_transport
+
 
 def _process_reserve(
     workspace: str,
@@ -484,12 +486,40 @@ class ProviderDurableBudgetIntegrationTest(unittest.TestCase):
         self.assertEqual(shared.snapshot().committed_usd, 0.4)
         self.assertEqual(shared.snapshot().reserved_usd, 1.0)
 
+    def test_partial_retry_override_resets_unspecified_values_and_preserves_zero(self) -> None:
+        original = {
+            "http_retries": _review_provider_transport._HTTP_RETRIES,
+            "schema_retries": P.SCHEMA_RETRIES,
+            "http_timeout_seconds": _review_provider_transport._HTTP_TIMEOUT_SECONDS,
+            "http_backoff_seconds": _review_provider_transport._HTTP_BACKOFF_BASE_SECONDS,
+        }
+        self.addCleanup(lambda: P.configure_retry_policy(**original))
+        P.configure_retry_policy(
+            http_retries=6, schema_retries=4,
+            http_timeout_seconds=19.0, http_backoff_seconds=0.5,
+        )
+        args = argparse.Namespace(
+            http_retries=0, schema_retries=None,
+            http_timeout_seconds=None, http_backoff_seconds=None,
+            replay_only=True, record=False,
+        )
+        cli._resolve_provider(args, self.root / "partial-retry")
+        self.assertEqual(_review_provider_transport._HTTP_RETRIES, 0)
+        self.assertEqual(P.SCHEMA_RETRIES, 2)
+        self.assertEqual(_review_provider_transport._HTTP_TIMEOUT_SECONDS, 600.0)
+        self.assertEqual(_review_provider_transport._HTTP_BACKOFF_BASE_SECONDS, 2.0)
+
+        # No explicit override leaves an existing worker policy untouched.
+        args.http_retries = None
+        cli._resolve_provider(args, self.root / "inherited-retry")
+        self.assertEqual(_review_provider_transport._HTTP_RETRIES, 0)
+
     def test_retry_reconfiguration_invalidates_behavior_digest_cache(self) -> None:
         original = (
-            P._HTTP_RETRIES,
+            _review_provider_transport._HTTP_RETRIES,
             P.SCHEMA_RETRIES,
-            P._HTTP_TIMEOUT_SECONDS,
-            P._HTTP_BACKOFF_BASE_SECONDS,
+            _review_provider_transport._HTTP_TIMEOUT_SECONDS,
+            _review_provider_transport._HTTP_BACKOFF_BASE_SECONDS,
         )
         self.addCleanup(
             lambda: P.configure_retry_policy(

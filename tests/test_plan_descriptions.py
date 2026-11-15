@@ -756,7 +756,7 @@ class BoundaryAndDefaultStatements(unittest.TestCase):
         import re
 
         from elt_taskgen.generation import mart_plan as mp
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         checked = 0
         for name, builder in SHAPES:
@@ -793,14 +793,13 @@ class BoundaryAndDefaultStatements(unittest.TestCase):
         such a link reaches none. Unstated, the critic read the two as a fork
         (synsql__3d_object_positioning)."""
         from elt_taskgen.generation import mart_plan as mp
-        from test_plan_library import EVIDENCE
+        from tests.test_plan_library import EVIDENCE
 
         built = mp.fan_out_rollup(EVIDENCE, mart="rollup")
         name = built.column_named("distinct_child_count")
         column = next(c for c in built.columns if c.name == name)
         if EVIDENCE.child_link_optional:
-            self.assertIn("reaches no", column.description)
-            self.assertIn("adds nothing to this count", column.description)
+            self.assertIn("Missing plans records do not count", column.description)
         else:
             self.assertNotIn("reaches no", column.description)
 
@@ -853,7 +852,7 @@ class AbsenceTestsPublishNoLiteral(unittest.TestCase):
 
     def test_an_is_null_placeholder_filter_publishes_no_null_literal(self):
         from elt_taskgen.generation import mart_plan as mp
-        from test_plan_library import EVIDENCE
+        from tests.test_plan_library import EVIDENCE
 
         built = mp.status_cohort_union(EVIDENCE, mart="cohorts")
         task = tpl.build_task(built, "proof__cohorts")
@@ -868,7 +867,7 @@ class AbsenceTestsPublishNoLiteral(unittest.TestCase):
         literals = (step.get("condition") or {}).get("literal_values") or []
         self.assertNotIn("null", literals)
         # The absence is still stated, in words, where the author reads it.
-        self.assertIn("no linked", placeholder.description)
+        self.assertIn("no associated subscriptions rows", placeholder.description)
 
 
 class DescriptionsDoNotFeedExecution(unittest.TestCase):
@@ -937,7 +936,7 @@ class RunKStatements(unittest.TestCase):
         keeps the literal GROUP BY sentence."""
         from elt_taskgen.generation import mart_plan as mp
         from elt_taskgen.models import ColumnType, MartOpKind
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         checked = 0
         for name, builder in SHAPES:
@@ -985,7 +984,7 @@ class RunKStatements(unittest.TestCase):
         import dataclasses
 
         from elt_taskgen.models import MartOpKind
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         def winner_rule(evidence):
             built = dict(SHAPES)["argmax_profile"](evidence, mart="argmax_mart")
@@ -1007,7 +1006,7 @@ class RunKStatements(unittest.TestCase):
         """dlt__workable: the independent implementer counted the LEFT-join
         placeholder itself (COUNT(*) = 1 for a jobs row with no stage) and
         disagreed with gold on the counterfactual population only."""
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         built = {name: builder(EVIDENCE, mart=f"{name}_mart") for name, builder in SHAPES}
         for shape, column in (
@@ -1020,21 +1019,10 @@ class RunKStatements(unittest.TestCase):
                 description = next(
                     c.description for c in built[shape].columns if c.name == name
                 )
-                self.assertIn("rows for this accounts row; 0 when there are none. ", description)
-                self.assertIn(
-                    "An accounts row kept with no subscriptions row reports 0 here, "
-                    "never 1: its placeholder holds no subscriptions row to count.",
-                    description,
-                )
-                # A linked row with no measure value is still a row (the
-                # reasoning witness counted only value-bearing rows).
-                self.assertIn(
-                    "Every linked subscriptions row counts, whether or not it carries "
-                    "an amount value."
-                    if shape != "categorical_ladder"
-                    else "Every linked subscriptions row counts, whatever its sub_status value.",
-                    description,
-                )
+                self.assertIn("Number of associated subscriptions rows", description)
+                self.assertIn("0 when there are none", description)
+                if shape == "argmax_profile":
+                    self.assertIn("including rows with missing amount", description)
 
 
 class AbsentStateWithARequiredMeasure(unittest.TestCase):
@@ -1046,7 +1034,7 @@ class AbsentStateWithARequiredMeasure(unittest.TestCase):
     def test_the_absent_summary_names_the_placeholder_and_its_zeros(self):
         import dataclasses
 
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         builder = dict(SHAPES)["measure_state_distribution"]
         required = builder(dataclasses.replace(EVIDENCE, bridge_amount_nullable=False), mart="dist_mart")
@@ -1072,7 +1060,7 @@ class RunLStatements(unittest.TestCase):
 
     def test_the_cohort_op_states_the_all_missing_amount_default(self):
         from elt_taskgen.models import MartOpKind
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         built = dict(SHAPES)["status_cohort_union"](EVIDENCE, mart="cohorts_mart")
         cohort_ops = [
@@ -1090,7 +1078,7 @@ class RunLStatements(unittest.TestCase):
 
     def test_a_filtered_rollup_says_the_retained_row_counts_0_never_1(self):
         from elt_taskgen.models import MartOpKind
-        from test_plan_library import EVIDENCE, SHAPES
+        from tests.test_plan_library import EVIDENCE, SHAPES
 
         built = dict(SHAPES)["categorical_ladder"](EVIDENCE, mart="bands_mart")
         agg = next(

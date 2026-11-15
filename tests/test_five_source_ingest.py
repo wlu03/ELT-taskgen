@@ -203,7 +203,7 @@ class FiveSourceManifestTests(unittest.TestCase):
         }
 
     @staticmethod
-    def _task(entry, _paths, _catalog):
+    def _task(entry, _paths, _catalog, **_options):
         origin = Origin(entry.pool)
         return demo_task().model_copy(
             update={
@@ -231,7 +231,7 @@ class FiveSourceManifestTests(unittest.TestCase):
             }
         )
 
-    def _builders(self):
+    def _builders(self, *, task_builder=None):
         stack = contextlib.ExitStack()
         for name in (
             "_build_dbt_task",
@@ -240,7 +240,7 @@ class FiveSourceManifestTests(unittest.TestCase):
             "_build_schemapile_task",
             "_build_wikidbs_task",
         ):
-            stack.enter_context(mock.patch.object(ingest_mod, name, side_effect=self._task))
+            stack.enter_context(mock.patch.object(ingest_mod, name, side_effect=task_builder or self._task))
         return stack
 
     def _batch_builders(self):
@@ -2170,6 +2170,16 @@ class FiveSourceManifestTests(unittest.TestCase):
         self.assertFalse(self.workspace.exists())
 
     def test_pipeline_ingest_happens_before_roster_and_provider_work(self) -> None:
+        from elt_taskgen.generation.mart_plan import fan_out_rollup
+        from tests.test_dataset_column_names import EVIDENCE, build_task
+
+        source = build_task(fan_out_rollup(EVIDENCE, mart="studio_activity"), "proof__ingest_ordering")
+
+        def build(entry, paths, catalog, **options):
+            identity = self._task(entry, paths, catalog)
+            return source.model_copy(update={key: getattr(identity, key) for key in
+                ("task_id", "family_id", "cluster_id", "origin", "license")})
+
         invalid_args = cli_mod.build_parser().parse_args(
             [
                 "pipeline",
@@ -2220,7 +2230,7 @@ class FiveSourceManifestTests(unittest.TestCase):
             ]
         )
         with (
-            self._builders(),
+            self._builders(task_builder=build),
             mock.patch.object(cli_mod, "_active_campaign_fingerprint", return_value="f" * 64),
             mock.patch.object(
                 cli_mod,

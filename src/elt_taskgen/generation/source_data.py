@@ -672,7 +672,8 @@ def _generate_table(
 ) -> list[Row]:
     task_id = task.task_id
     population = pop.name
-    rels = [r for r in task.relationships if r.child_table == tspec.name]
+    rels = [r for r in task.relationships if r.child_table == tspec.name and r.parent_table != tspec.name]
+    self_rels = [r for r in task.relationships if r.child_table == r.parent_table == tspec.name]
 
     # column -> (relationship index, position in the key tuple)
     fk_cols: dict[str, tuple[int, int]] = {}
@@ -870,6 +871,10 @@ def _generate_table(
                 for c in tcols:
                     if row[c] is not None:
                         row[c] = next(it)
+
+    if self_rels:
+        from elt_taskgen.generation.self_links import assign_self_links
+        assign_self_links(task, population, policy, tspec, rows, self_rels)
 
     # ---- exact-duplicate injection (stress): PK-less tables only, and copies are
     # verbatim, so business-key uniqueness among DISTINCT rows survives ----

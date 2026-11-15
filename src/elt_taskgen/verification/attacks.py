@@ -760,6 +760,13 @@ def _materialize_structured_mutation(
 ) -> dict[str, str]:
     """Materialize the exact operation encoded by a proposal directive."""
     operation = str(payload["operation"])
+    from elt_taskgen.generation.recipe_registry import RECIPE_REGISTRY
+    if operation in RECIPE_REGISTRY:
+        return RECIPE_REGISTRY[operation].materialize_mutation(task, payload)
+    if operation == "branched_fact_rollup":
+        from elt_taskgen.verification.branched import materialize_branched_mutation
+
+        return materialize_branched_mutation(task, payload)
     reference = _reference_sql(task)
 
     if operation in {"skip_backend", "skip_tables"}:
@@ -1319,7 +1326,22 @@ def _validate_realized_fidelity(
     )
     operation = str(requested["operation"])
     realized: dict[str, object] = {"operation": operation}
-    if operation == "skip_backend":
+    from elt_taskgen.generation.recipe_registry import RECIPE_REGISTRY
+    if operation in RECIPE_REGISTRY:
+        expected = RECIPE_REGISTRY[operation].materialize_mutation(task, requested)
+        if sql_by_mart != expected:
+            raise MutationFidelityError("recipe mutation did not realize the requested plan change")
+        realized.update(requested)
+        checks.append("only the named mart realizes the requested semantic recipe mutation")
+    elif operation == "branched_fact_rollup":
+        from elt_taskgen.verification.branched import materialize_branched_mutation
+
+        expected = materialize_branched_mutation(task, requested)
+        if sql_by_mart != expected:
+            raise MutationFidelityError("branched mutation did not realize the exact requested plan change")
+        realized.update(requested)
+        checks.append("only the named mart realizes the requested branch/component mutation")
+    elif operation == "skip_backend":
         if load_plan is None:
             raise MutationFidelityError("skip_backend realized no load plan")
         backend = Backend(str(requested["backend"]))
@@ -2268,6 +2290,10 @@ def _record_attack(
                 )
             }
     (attack_dir / "rewards.json").write_text(canonical_json(record), encoding="utf-8")
+    if case.mutation.startswith(STRUCTURED_DIRECTIVE_PREFIX):
+        from elt_taskgen.verification.relationship_coverage import write_relationship_report
+
+        write_relationship_report(task, workspace)
 
 
 def _record_inapplicable_attack(

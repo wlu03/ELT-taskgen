@@ -26,7 +26,7 @@ So the shared definition is `reference/solution.py::plan_compilation_problems`,
 a dry run of the compiler over the same code path (`_compile_plan`), which
 `validate_plan` consumes. This file is the proof, and it is deliberately
 adversarial: it asserts the IF-AND-ONLY-IF over every real plan in the repo,
-over all fourteen `MartOpKind` members, AND over a systematic mutation sweep
+over every `MartOpKind` member, AND over a systematic mutation sweep
 that blanks one field of one op at a time — the shape of plan an LLM proposer
 actually emits when it gets a detail key wrong.
 """
@@ -144,6 +144,12 @@ def corpus() -> list[tuple[str, TaskIR, MartSpec]]:
     """(label, task, mart) for every plan this contract is proven over."""
     cases = _on_disk_cases() + [("demo_task()", demo_task())] + _library_cases()
     cases.append(_distinct_and_union_case())
+    from tests.scenario_fixtures import scenario_source
+    from elt_taskgen.generation.scenario_evidence import HIERARCHY, scenario_candidates
+    from elt_taskgen.generation.scenario_plan import scenario_plan
+    task = scenario_source(composite=True)
+    mart = scenario_plan(task, scenario_candidates(task, HIERARCHY)[0], "hierarchy", HIERARCHY)
+    cases.append(("synthetic::recursive_hierarchy", task.model_copy(update={"marts": (mart,)})))
     return [(f"{label}::{m.name}", task, m) for label, task in cases for m in task.marts]
 
 
@@ -184,9 +190,9 @@ class PlanCorpus(unittest.TestCase):
             "on-disk task_ir.json plans went missing from the corpus",
         )
 
-    def test_every_one_of_the_fourteen_op_kinds_is_covered(self) -> None:
-        """All fourteen — no kind gets to sit outside the contract unmeasured."""
-        self.assertEqual(len(list(MartOpKind)), 14)
+    def test_every_op_kind_is_covered(self) -> None:
+        """No kind gets to sit outside the compiler contract unmeasured."""
+        self.assertEqual(len(list(MartOpKind)), 15)
         seen = {
             op.kind
             for _, _, mart in self.cases

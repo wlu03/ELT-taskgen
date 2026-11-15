@@ -303,19 +303,19 @@ def model_stages_deferred(
 
 def provider_free_stage_runners(*, attack_enabled: bool = False) -> dict[str, Callable[..., Any]]:
     """`{generate: run_generate, reference: _with_execution_effect_filter(
-    run_reference_stage)}` — built from the CLI's stage functions with no
+    run_reference_stage)}` — built from the pipeline's stage functions with no
     provider argument anywhere, exactly as `build_stage_runners` wires those
     two "before any provider call"; plus `attack: run_attack_stage` (wired
     the same way, no provider) under `attack_enabled`. Checked by
     `assert_no_provider_handle`."""
-    from elt_taskgen import cli as cli_mod  # lazy: the CLI wires this package, not the reverse
+    from elt_taskgen.pipeline import attacks, generation
 
     runners: dict[str, Callable[..., Any]] = {
-        "generate": cli_mod.run_generate,
-        "reference": cli_mod._with_execution_effect_filter(cli_mod.run_reference_stage),
+        "generate": generation.run_generate,
+        "reference": generation._with_execution_effect_filter(generation.run_reference_stage),
     }
     if attack_enabled:
-        runners[CERTIFY_ATTACK_STAGE] = cli_mod.run_attack_stage
+        runners[CERTIFY_ATTACK_STAGE] = attacks.run_attack_stage
     assert_no_provider_handle(runners)
     return runners
 
@@ -442,7 +442,7 @@ def _record_memo_served_review(engine: Any, task: Any, payload: Mapping[str, Any
     """The memo-served `review` PASS row on the COPY's ledger at the copy's
     hash (F1: the row the real `attack` runner reads), carrying the live
     findings byte for byte."""
-    from elt_taskgen.cli import ReviewPayload  # lazy: the CLI wires this package, not the reverse
+    from elt_taskgen.pipeline.payloads import ReviewPayload
     from elt_taskgen.engine import VERDICT_PASS
 
     engine.record_report(

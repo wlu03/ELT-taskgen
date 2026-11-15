@@ -1215,10 +1215,28 @@ def _model_specs(
             f"data-model/sort-key mart mismatch: missing={missing}, unexpected={unexpected}"
         )
 
+    # Public models describe behavior; the sealed TaskIR owns types and grain.
+    # Older standalone evaluator bundles may carry those fields in YAML, but
+    # a present private contract must never be bypassed or guessed from prose.
+    trusted_models: dict[str, MartSpec] = {}
+    task_path = answer_key_dir.parent / "semantic" / "task_ir.json"
+    if task_path.exists():
+        try:
+            trusted_task = task_from_json(task_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise EvaluationError(f"invalid private TaskIR at {task_path}") from exc
+        if trusted_task.task_id != answer_key_dir.parent.name:
+            raise EvaluationError("private TaskIR task id does not match answer key")
+        trusted_models = {m.name.casefold(): m for m in trusted_task.marts}
+        if len(trusted_models) != len(trusted_task.marts) or set(trusted_models) != set(models_by_name):
+            raise EvaluationError("public/private TaskIR mart sets disagree")
+
     marts: list[MartSpec] = []
     for folded, raw_model in models_by_name.items():
         name = display_names[folded]
-        grain = raw_model.get("grain")
+        trusted = trusted_models.get(folded)
+        trusted_columns = {c.name.casefold(): c for c in trusted.columns} if trusted else {}
+        grain = raw_model.get("grain", trusted.grain if trusted else None)
         if not isinstance(grain, str) or not grain.strip():
             raise EvaluationError(f"mart {name!r} has no declared grain")
         raw_columns = raw_model.get("columns")
@@ -1242,13 +1260,16 @@ def _model_specs(
                 raise EvaluationError(
                     f"mart {name!r} column {column_name!r} has no description"
                 )
+            trusted_column = trusted_columns.get(column_folded)
             try:
-                column_type = ColumnType(raw_column.get("type"))
+                column_type = ColumnType(raw_column.get("type", trusted_column.type if trusted_column else None))
             except (TypeError, ValueError) as exc:
                 raise EvaluationError(
                     f"mart {name!r} column {column_name!r} has unsupported type "
                     f"{raw_column.get('type')!r}"
                 ) from exc
+            if trusted_column and column_type is not trusted_column.type:
+                raise EvaluationError(f"mart {name!r} column {column_name!r} public/private types disagree")
             columns_by_name[column_folded] = column_name
             columns.append(
                 MartColumn(
@@ -1257,6 +1278,9 @@ def _model_specs(
                     description=description,
                 )
             )
+
+        if trusted and set(columns_by_name) != set(trusted_columns):
+            raise EvaluationError(f"mart {name!r} public/private columns disagree")
 
         private_keys: list[str] = []
         for raw_key in sort_by_name[folded][1]:
@@ -1271,7 +1295,9 @@ def _model_specs(
                 raise EvaluationError(f"mart {name!r} repeats sort key {raw_key!r}")
             private_keys.append(actual_key)
 
-        public_raw_keys = raw_model.get("key_columns")
+        if trusted and [k.casefold() for k in trusted.key_columns] != [k.casefold() for k in private_keys]:
+            raise EvaluationError(f"mart {name!r} TaskIR keys disagree with private sort_key.json")
+        public_raw_keys = raw_model.get("key_columns", trusted.key_columns if trusted else None)
         if (
             not isinstance(public_raw_keys, Sequence)
             or isinstance(public_raw_keys, (str, bytes, bytearray))

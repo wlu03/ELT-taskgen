@@ -116,7 +116,8 @@ class ExampleCohortToolTests(unittest.TestCase):
 
         self.assertEqual(row["difficulty_profile"], "challenging")
         self.assertGreaterEqual(row["primary_rows"], 32_768)
-        self.assertIn("deterministic `challenging` profile", readme)
+        self.assertIn("internal baseline fixture uses `challenging`", readme)
+        self.assertNotIn("--difficulty-profile", readme)
         self.assertIn("32,768 declared PRIMARY rows", readme)
         self.assertIn("never padded with synthetic data", readme)
 

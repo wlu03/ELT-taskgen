@@ -9,8 +9,10 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 
 from elt_taskgen.generation.mart_plan import (
+    BranchedFactCandidate,
     BuiltPlan,
     ChainEvidence,
+    FactBranch,
     registered_shape_builders,
 )
 from elt_taskgen.models import (
@@ -91,11 +93,121 @@ def declared_key_parents(
     return frozenset(out)
 
 
+def branched_fact_candidates(
+    tables: Sequence[TableSpec], rels: Sequence[Relationship]
+) -> tuple[BranchedFactCandidate, ...]:
+    """Find two distinct many-side facts sharing a complete declared key.
+
+    This synthetic-row selector preserves tuple mappings, including reordered
+    FK declarations. One branch must carry a non-key numeric measure. Unique
+    child FKs cannot supply the cross-product witness and are excluded.
+    """
+    from collections import defaultdict
+
+    by_name = {table.name: table for table in tables}
+    groups: dict[tuple[str, tuple[str, ...]], list[FactBranch]] = defaultdict(list)
+    for rel in sorted(rels, key=lambda r: (
+        r.parent_table, r.parent_columns, r.child_table, r.child_columns
+    )):
+        parent, child = by_name.get(rel.parent_table), by_name.get(rel.child_table)
+        if parent is None or child is None or parent.name == child.name:
+            continue
+        keys = [key for key in (parent.primary_key, parent.business_key) if key]
+        grain = next((key for key in keys if set(key) == set(rel.parent_columns)), None)
+        if grain is None or len(set(rel.child_columns)) != len(grain):
+            continue
+        # A smaller declared key makes one of the advertised components redundant.
+        if any(set(key) < set(grain) for key in keys):
+            continue
+        if any(parent.column(c).nullable for c in grain):
+            continue
+        child_keys = [key for key in (child.primary_key, child.business_key) if key]
+        if any(set(key) <= set(rel.child_columns) for key in child_keys):
+            continue
+        mapping = dict(zip(rel.parent_columns, rel.child_columns, strict=True))
+        child_columns = tuple(mapping[c] for c in grain)
+        if any(
+            child.column(c).type != parent.column(p).type
+            for c, p in zip(child_columns, grain, strict=True)
+        ):
+            continue
+        # Finite key domains can make the required collision/empty rows illegal.
+        if any(parent.column(c).enum_values or parent.column(c).type in (
+            ColumnType.BOOLEAN, ColumnType.JSON,
+        ) for c in grain):
+            continue
+        excluded = _fk_columns(child.name, rels) | set(child.primary_key) | set(child.business_key)
+        measure = next((c for c in child.columns if (
+            c.name not in excluded and c.type in NUMERIC_TYPES and not c.enum_values
+        )), None)
+        groups[(parent.name, grain)].append(FactBranch(
+            table=child.name,
+            child_columns=child_columns,
+            parent_columns=grain,
+            measure=measure.name if measure else "",
+            measure_type=measure.type if measure else ColumnType.INTEGER,
+        ))
+    candidates = []
+    for (parent, grain), branches in sorted(groups.items()):
+        # Keep the MVP bounded: one deterministic pair per parent/key.
+        measured = next((branch for branch in branches if branch.measure), None)
+        other = next((branch for branch in branches if measured and branch.table != measured.table), None)
+        if measured is None or other is None:
+            continue
+        attributes = ()
+        if len(grain) == 1:
+            ordinary = [c for c in _ordinary(by_name[parent], rels) if c.name not in grain]
+            ordinary.sort(key=lambda c: c.type is not ColumnType.TEXT)
+            if not ordinary:
+                continue  # the existing mart contract needs two passthroughs
+            attributes = ((ordinary[0].name, ordinary[0].type),)
+        pair = tuple(sorted((measured, other), key=lambda b: (b.table, b.child_columns)))
+        candidates.append(BranchedFactCandidate(
+            grain_table=parent,
+            grain_key=grain,
+            key_types=tuple(by_name[parent].column(c).type for c in grain),
+            branches=pair,
+            attributes=attributes,
+            extra_sources=tuple(sorted(set(by_name) - {parent, *(b.table for b in pair)})),
+        ))
+    return tuple(sorted(candidates, key=lambda c: (
+        -len(c.grain_key), c.grain_table, c.grain_key,
+        tuple((b.table, b.child_columns) for b in c.branches),
+    )))
+
+
 def _first(cols: Sequence[ColumnSpec], pred: Callable[[ColumnSpec], bool]) -> str:
     for c in cols:
         if pred(c):
             return c.name
     return ""
+
+
+def build_branched_marts(
+    tables: Sequence[TableSpec], rels: Sequence[Relationship],
+) -> tuple[tuple[MartSpec, ...], tuple]:
+    """Reserve one opt-in mart, admitting only a constructible witness pair."""
+    from elt_taskgen.generation.mart_plan import MartBudgetError, ShapeNotSelectable, _slug
+    from elt_taskgen.generation.shapes.branched_fact_rollup import branched_fact_rollup
+    from elt_taskgen.generation.witness.branched import branched_literal_rows
+
+    for candidate in branched_fact_candidates(tables, rels):
+        name = _slug(candidate.grain_table)[:40] + "_branched_rollup"
+        if name[0].isdigit():
+            name = "mart_" + name
+        try:
+            built = branched_fact_rollup(candidate, mart=name)
+            branched_literal_rows(tuple(tables), tuple(rels), built.shape)
+        except (ShapeNotSelectable, MartBudgetError):
+            continue
+        mart = MartSpec(
+            name=name,
+            description=f"Activity from {candidate.branches[0].table} and {candidate.branches[1].table} for each {candidate.grain_table} row.",
+            grain=f"One row per {candidate.grain_table} ({', '.join(candidate.grain_key)}), including rows with no activity in either fact table.",
+            key_columns=built.shape.key_columns, columns=built.columns, plan=built.plan,
+        )
+        return (mart,), (built.shape,)
+    return (), ()
 
 
 #: An OBSERVED domain counts only if the column is genuinely categorical (a few

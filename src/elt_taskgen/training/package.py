@@ -335,7 +335,7 @@ def load_workspace_package(
     destination: Destination | str | None = None,
     verify: bool = True,
 ) -> WorkspacePackage:
-    """Load a verified schema-3 task for independently versioned workspace replay.
+    """Load a verified combined task for workspace replay.
 
     ``destination`` selects which of the task's shipped destinations to load.
     The default is the bundle root, the one the public ``config.yaml`` names.

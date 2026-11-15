@@ -40,6 +40,10 @@ from unittest import mock
 
 import yaml
 
+from elt_taskgen.pipeline import calibration as _pipeline_calibration
+from elt_taskgen.pipeline import review as _pipeline_review
+from elt_taskgen.pipeline import stages as _pipeline_stages
+
 try:  # `python -m unittest tests.test_repair_proposer_agentic` from the repo root
     from tests import test_providers as provider_fixture
     from tests import test_repair_discrimination as discrimination_fixture
@@ -800,7 +804,7 @@ class TrialPhaseSplitTest(_CertifierFixture):
             run.agents_config = agents_config
             return run
 
-        with mock.patch.object(cli, "make_structural_calibrate_runner", spy_make), \
+        with mock.patch.object(_pipeline_calibration, "make_structural_calibrate_runner", spy_make), \
                 mock.patch.object(
                     calibration_mod, "calibrate_task",
                     side_effect=AssertionError("the empirical campaign ran on the trial"),
@@ -824,7 +828,7 @@ class TrialPhaseSplitTest(_CertifierFixture):
         )
         tagged = cli.make_calibrate_runner(NoSolver(), empirical=True, agents_config=custom)
         self.assertEqual(tagged.agents_config, custom)
-        with mock.patch.object(cli, "make_structural_calibrate_runner", spy_make):
+        with mock.patch.object(_pipeline_calibration, "make_structural_calibrate_runner", spy_make):
             self.assertEqual(rp._structural_calibrate_substitute(tagged).agents_config, custom)
 
 
@@ -1329,7 +1333,7 @@ class TrialLedgerCurrencyTest(unittest.TestCase):
         self.addCleanup(engine.close)
         engine.register(self.task)
         critics = {r.value for r in CouncilRole if r is not CouncilRole.SEMANTIC_AUTHOR}
-        with mock.patch.object(cli, "_admission_gate", return_value=(None, {})):
+        with mock.patch.object(_pipeline_review, "_admission_gate", return_value=(None, {})):
             task = engine.run(self.task_id, until="attack")
             self.assertIs(task.status, TaskStatus.ATTACKED)
             self.assertEqual(len(transport.calls), 4)
@@ -1429,7 +1433,7 @@ class TrialLedgerCurrencyTest(unittest.TestCase):
         engine.register(self.task)
         adversary = CouncilRole.POPULATION_ADVERSARY.value
         critics = {r.value for r in CouncilRole if r is not CouncilRole.SEMANTIC_AUTHOR}
-        with mock.patch.object(cli, "_admission_gate", return_value=(None, {})):
+        with mock.patch.object(_pipeline_review, "_admission_gate", return_value=(None, {})):
             task = engine.run(self.task_id, until="attack")
             self.assertIs(task.status, TaskStatus.ATTACKED)
             self.assertEqual(len(transport.calls), 4)
@@ -2973,7 +2977,7 @@ class OneShotCertifierLedgerTest(_CertifierFixture):
 
             return run
 
-        with mock.patch.object(cli, "make_structural_calibrate_runner", spy_make):
+        with mock.patch.object(_pipeline_calibration, "make_structural_calibrate_runner", spy_make):
             engine.run(self.task_id, until="calibrate")
         task = engine.load_task(self.task_id)
         self.assertIn(SENTINEL, task.solver_prompt)
@@ -3022,7 +3026,7 @@ class OneShotCertifierLedgerTest(_CertifierFixture):
             return proposers[-1]
 
         out, err = io.StringIO(), io.StringIO()
-        with mock.patch.object(cli, "build_stage_runners", stub_runners), \
+        with mock.patch.object(_pipeline_stages, "build_stage_runners", stub_runners), \
                 mock.patch.object(cli, "_make_repair_proposer", stub_proposer), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = cli.main([

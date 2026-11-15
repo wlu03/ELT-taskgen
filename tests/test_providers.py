@@ -37,6 +37,9 @@ from elt_taskgen.review import providers as P
 from elt_taskgen.review import session as S
 from elt_taskgen.review.council import ProviderProtocolError
 
+from elt_taskgen.pipeline import review as _pipeline_review
+from elt_taskgen.review import provider_transport as _review_provider_transport
+
 
 # ---------------------------------------------------------------------------
 # Canned wire-shape responses (what the real APIs return over HTTP)
@@ -156,10 +159,11 @@ class HttpTransportRetryTest(unittest.TestCase):
 
         self.assertEqual(result, {"ok": True})
         self.assertEqual(opened.call_count, 2)
-        sleep.assert_called_once_with(P._HTTP_BACKOFF_BASE_SECONDS)
+        sleep.assert_called_once_with(_review_provider_transport._HTTP_BACKOFF_BASE_SECONDS)
 
     @unittest.skipUnless(
-        hasattr(P.signal, "SIGALRM") and hasattr(P.signal, "setitimer"),
+        hasattr(_review_provider_transport.signal, "SIGALRM")
+        and hasattr(_review_provider_transport.signal, "setitimer"),
         "requires a POSIX interval timer",
     )
     def test_one_shot_wall_interrupts_a_blocking_transport(self):
@@ -3630,7 +3634,7 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 with self._patched(json.loads(json.dumps(P._agents_doc()))), mock.patch.object(
                     P, "credential_problems", lambda routing, roles: []
                 ), mock.patch.object(P, "RoutedProvider", factory), mock.patch.object(
-                    cli, "_admission_gate", lambda provider, workspace: (None, {})
+                    _pipeline_review, "_admission_gate", lambda provider, workspace: (None, {})
                 ), mock.patch.object(
                     council,
                     "author_prose",
@@ -3937,7 +3941,7 @@ class WitnessSessionRolesTest(unittest.TestCase):
                 with self._patched(doc), mock.patch.object(
                     P, "credential_problems", lambda routing, roles: []
                 ), mock.patch.object(P, "RoutedProvider", factory), mock.patch.object(
-                    cli, "_admission_gate", lambda provider, workspace: (None, {})
+                    _pipeline_review, "_admission_gate", lambda provider, workspace: (None, {})
                 ), mock.patch.object(
                     council,
                     "author_prose",

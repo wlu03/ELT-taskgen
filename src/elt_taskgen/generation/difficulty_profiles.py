@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from math import ceil
 from typing import Mapping
 
@@ -24,6 +24,8 @@ class GenerationDifficultyProfile:
     max_scale_multiplier: int = 1
     max_primary_rows_per_table: int | None = None
     max_primary_rows_per_task: int | None = None
+    branched_fact_rollups: bool = False
+    semantic_marts: bool = False
 
     def __post_init__(self) -> None:
         if not self.name:
@@ -118,7 +120,12 @@ class GenerationDifficultyProfile:
     def catalog_contract(self) -> dict[str, object]:
         """Stable JSON-ready description recorded beside generated examples."""
 
-        return asdict(self)
+        contract = asdict(self)
+        if not self.branched_fact_rollups:
+            contract.pop("branched_fact_rollups")
+        if not self.semantic_marts:
+            contract.pop("semantic_marts")
+        return contract
 
 
 STANDARD_DIFFICULTY_PROFILE = GenerationDifficultyProfile(name="standard")
@@ -142,17 +149,38 @@ CHALLENGING_DIFFICULTY_PROFILE = GenerationDifficultyProfile(
     max_primary_rows_per_task=100_000,
 )
 
+RELATIONSHIP_DIFFICULTY_PROFILE = GenerationDifficultyProfile(
+    name="relationship", branched_fact_rollups=True,
+)
+
+SEMANTIC_DIFFICULTY_PROFILE = replace(
+    CHALLENGING_DIFFICULTY_PROFILE,
+    name="semantic", branched_fact_rollups=True, semantic_marts=True,
+)
+DEFAULT_GENERATION_PROFILE = SEMANTIC_DIFFICULTY_PROFILE
+
+
 DIFFICULTY_PROFILES: dict[str, GenerationDifficultyProfile] = {
     profile.name: profile
-    for profile in (STANDARD_DIFFICULTY_PROFILE, CHALLENGING_DIFFICULTY_PROFILE)
+    for profile in (STANDARD_DIFFICULTY_PROFILE, CHALLENGING_DIFFICULTY_PROFILE, SEMANTIC_DIFFICULTY_PROFILE)
 }
 
 
 def difficulty_profile(name: str) -> GenerationDifficultyProfile:
-    """Resolve a public profile name, failing with the supported choices."""
+    """Resolve an internal generation/fixture preset, rejecting unknown names."""
 
     try:
         return DIFFICULTY_PROFILES[name]
     except KeyError as exc:
         choices = ", ".join(sorted(DIFFICULTY_PROFILES))
         raise ValueError(f"unknown difficulty profile {name!r}; choose {choices}") from exc
+
+
+def apply_generation_profile(task, profile: str | GenerationDifficultyProfile = DEFAULT_GENERATION_PROFILE, *, recipe_selection=None):
+    """One semantic policy shared by all five adapters and generation entry points."""
+    resolved = difficulty_profile(profile) if isinstance(profile, str) else profile
+    from elt_taskgen.generation.recipe_registry import apply_semantic_recipes, resolve_recipe_selection
+    selection = resolve_recipe_selection(resolved.name, recipe_selection)
+    if resolved.semantic_marts:
+        return apply_semantic_recipes(task, selection)
+    return task
