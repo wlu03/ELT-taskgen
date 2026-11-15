@@ -34,6 +34,7 @@ from elt_taskgen.runtime.attestation import (
     verify_sandbox_attestation,
 )
 from elt_taskgen.verification import upstream_eval
+from elt_taskgen.verification import typed_comparison
 
 
 # Versioned parity schema, pins, and thresholds.
@@ -42,7 +43,7 @@ from elt_taskgen.verification import upstream_eval
 PARITY_REPORT_SCHEMA_VERSION = "1.0"
 
 #: The battery's own recipe version: bumping it invalidates old comparisons.
-PARITY_BATTERY_VERSION = "1"
+PARITY_BATTERY_VERSION = "2"
 
 #: One-sided confidence levels the report always carries.
 DEFAULT_CONFIDENCE = 0.85
@@ -1016,8 +1017,8 @@ class ComparatorRules:
     total_order_sort: bool = True
     #: a null on one side only is a mismatch
     null_asymmetry: bool = True
-    numeric_rel_tol: float = upstream_eval.REL_TOL
-    numeric_abs_tol: float = upstream_eval.ABS_TOL
+    numeric_rel_tol: float = float(typed_comparison.FLOAT_REL_TOL)
+    numeric_abs_tol: float = float(typed_comparison.NUMERIC_ABS_TOL)
 
 
 REFERENCE_RULES = ComparatorRules()
@@ -1049,9 +1050,16 @@ def reference_comparator(case: ComparatorCase) -> bool:
 
 
 def _vectors_match(
-    gold: list[Any], actual: list[Any], rules: ComparatorRules
+    gold: list[Any], actual: list[Any], rules: ComparatorRules, *, column_type=None, exact=False
 ) -> bool:
     """``upstream_eval._vectors_match`` with the null and tolerance rules opened."""
+    if column_type is not None:
+        return typed_comparison.vectors_match(
+            gold, actual, column_type, exact=exact,
+            rel_tol=rules.numeric_rel_tol, abs_tol=rules.numeric_abs_tol,
+            null_asymmetry=rules.null_asymmetry,
+            decimal_rel_tol=(0 if rules.numeric_rel_tol == REFERENCE_RULES.numeric_rel_tol else rules.numeric_rel_tol),
+        )
     if len(gold) != len(actual):
         return False
     numeric = upstream_eval._column_is_numeric(
@@ -1121,11 +1129,11 @@ def compare_mart_with_rules(case: ComparatorCase, rules: ComparatorRules) -> boo
         actual_txt = []
 
     if rules.total_order_sort:
-        gold_sorted = upstream_eval.sort_rows(
-            gold_rows, case.mart.key_columns, gold_cols
+        gold_sorted = typed_comparison.sort_rows(
+            gold_rows, case.mart, gold_cols
         )
-        actual_sorted = upstream_eval.sort_rows(
-            actual_txt, case.mart.key_columns, actual_cols
+        actual_sorted = typed_comparison.sort_rows(
+            actual_txt, case.mart, actual_cols
         )
     else:
         gold_sorted = list(gold_rows)
@@ -1146,7 +1154,8 @@ def compare_mart_with_rules(case: ComparatorCase, rules: ComparatorRules) -> boo
             continue
         left = [row.get(gold_col) for row in gold_sorted]
         right = [row.get(actual_col) for row in actual_sorted]
-        if not _vectors_match(left, right, rules):
+        kind, exact = typed_comparison.column_contract(case.mart, gold_col)
+        if not _vectors_match(left, right, rules, column_type=kind, exact=exact):
             return False
     return True
 
@@ -1313,7 +1322,7 @@ def default_comparator_cases(
             "drift_within_tolerance",
             mart,
             gold_csv,
-            tuple(edit(0, **{numeric_column: repr(base * 1.0005)})),
+            tuple(edit(0, **{numeric_column: repr(base + float(typed_comparison.NUMERIC_ABS_TOL)/2)})),
             columns,
         ),
         ComparatorCase(

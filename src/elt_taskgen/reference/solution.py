@@ -769,7 +769,12 @@ def attach_reference(task: TaskIR) -> TaskIR:
 def to_scalar(value: Any) -> Scalar:
     """Coerce a DuckDB result cell to the IR Scalar domain, deterministically."""
     if isinstance(value, decimal.Decimal):
-        return float(value)
+        # Keep the usual scalar representation only when its serialized digits
+        # round-trip. Otherwise Scalar's string arm preserves exact gold values.
+        number = float(value)
+        if math.isfinite(number) and decimal.Decimal(str(number)) == value:
+            return number
+        return format(value, 'f')
     if isinstance(value, (datetime.datetime, datetime.date, datetime.time)):
         # str(), not isoformat(): a submission's cell reaches the comparator as
         # str(value), which separates a timestamp's date and time with a space.

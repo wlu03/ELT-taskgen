@@ -2040,11 +2040,13 @@ def reward_manifest(
     """
     variant = TaskVariant(variant)
     populations = sorted(_normalize_pops(gold.stage1))
+    from elt_taskgen.verification.typed_comparison import COMPARISON_VERSION
     base: dict[str, Any] = {
         "variant": variant.value,
         "task_id": variant_task_id(task.task_id, variant),
         "parent_task_id": task.task_id,
         "family_id": task.family_id,
+        "mart_comparison_version": COMPARISON_VERSION,
         "path_base": (
             "parent task directory: answer_key/ and populations/ resolve under "
             "tasks/<parent_task_id>/ in a workspace and under "

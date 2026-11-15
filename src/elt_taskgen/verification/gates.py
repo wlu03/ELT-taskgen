@@ -45,7 +45,7 @@ if TYPE_CHECKING:  # GoldBundle is owned by reference/gold.py (see INTERFACES.md
 
 #: SEMANTIC scorer version — bump whenever a gate's logic or the roster
 #: changes; a battery recorded under another version is STALE, never accepted.
-SCORER_VERSION: str = "1.3.0"
+SCORER_VERSION: str = "1.4.0"
 
 #: Exact gate names, in battery order (INTERFACES.md).
 GATE_NAMES: tuple[str, ...] = (
@@ -1172,7 +1172,7 @@ def _perturbation_probe_problems(
 #: Wording of the reward-equivalence failure, deliberately free of
 #: "licens"/"contamination"/"plagiar", which repair routing reads as FATAL.
 _REWARD_EQUIVALENT_NOTE = (
-    "byte-different but REWARD-EQUIVALENT under compare_mart (rtol 1e-2 / "
+    "byte-different but REWARD-EQUIVALENT under compare_mart (typed numeric tolerance / "
     "case / whitespace / NA-token)"
 )
 

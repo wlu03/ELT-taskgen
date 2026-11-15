@@ -389,7 +389,7 @@ _READ_CAST_TYPES: Mapping[ColumnType, str] = {
     ColumnType.INTEGER: "INTEGER",
     ColumnType.BIGINT: "BIGINT",
     ColumnType.FLOAT: "DOUBLE",
-    ColumnType.DECIMAL: "DOUBLE",
+    ColumnType.DECIMAL: "DECIMAL(38,9)",
     ColumnType.TEXT: "VARCHAR",
     ColumnType.BOOLEAN: "BOOLEAN",
     ColumnType.DATE: "DATE",

@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict
 from elt_taskgen.export import release as release_mod
 from elt_taskgen.models import PopulationName, TaskIR, task_from_json
 from elt_taskgen.reference.gold import GoldBundle, load_gold
-from elt_taskgen.semantic_contract import SEMANTIC_SCORER_VERSION
 from elt_taskgen.verification.gates import GRADED_POPULATIONS
 
 
@@ -36,13 +35,6 @@ class SemanticPackage(BaseModel):
             raise SemanticPackageError(
                 f"semantic package has no source root for population {name!r}"
             ) from exc
-
-
-def _schema_tuple(version: str) -> tuple[int, ...]:
-    try:
-        return tuple(int(part) for part in str(version).split("."))
-    except ValueError:
-        return (-1,)
 
 
 def _confined_directory(release_dir: Path, task_id: str, rel: str) -> Path:
@@ -84,9 +76,10 @@ def load_semantic_package(
     *,
     verify: bool = True,
 ) -> SemanticPackage:
-    """Load a schema-3.2 task after verifying private replay inputs.
+    """Load a task after verifying its actual private replay inputs.
 
     Do not reconstruct TaskIR, gold, or sources from public descriptions.
+    Recorded release/scorer versions do not determine whether a task can load.
     """
     release_dir = Path(release_dir).resolve()
     manifest_path = release_dir / "release_manifest.json"
@@ -104,17 +97,6 @@ def load_semantic_package(
     ):
         raise SemanticPackageError(
             "semantic scoring requires a combined ELT-Bench release"
-        )
-    if _schema_tuple(manifest.schema_version) < _schema_tuple(
-        release_mod.SEMANTIC_PACKAGE_MIN_SCHEMA
-    ):
-        raise SemanticPackageError(
-            "semantic scoring requires release schema "
-            f"{release_mod.SEMANTIC_PACKAGE_MIN_SCHEMA} or newer"
-        )
-    if manifest.semantic_scorer_version != SEMANTIC_SCORER_VERSION:
-        raise SemanticPackageError(
-            "release semantic scorer version is not supported by this build"
         )
     if task_id not in manifest.tasks:
         raise SemanticPackageError(

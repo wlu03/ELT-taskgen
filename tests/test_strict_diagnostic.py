@@ -197,7 +197,7 @@ class StrictMartDiagnosticTests(unittest.TestCase):
             ("id", "val"),
         )
         actual = solution.execute_mart(self.con, self.mart, submission_sql)
-        return upstream_eval.compare_mart(gold_csv, actual, self.mart)
+        return upstream_eval.compare_mart_upstream(gold_csv, actual, self.mart)
 
     def test_tolerance_abuse_passes_legacy_but_fails_strict(self):
         submission = 'SELECT id, val * 1.005 AS val FROM "m" ORDER BY id'

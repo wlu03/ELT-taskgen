@@ -1,7 +1,9 @@
 """Provide the shared reward comparator for acceptance, calibration, RLVR, and evaluation.
 
 Stage one requires exact per-table row counts. Stage two sorts deterministically and
-returns the fraction of marts matching under the pinned tolerant comparator.
+returns the fraction of marts matching the declared types and precise keys.
+The original ELT-Bench comparator is available explicitly for compatibility
+measurements; reward, admission and evaluation use ``compare_mart``.
 """
 
 from __future__ import annotations
@@ -274,6 +276,22 @@ def compare_mart(
     *,
     actual_columns: Sequence[str] | None = None,
 ) -> bool:
+    """Default reward: exact identities/counts and tightly bounded measures."""
+    return _compare_mart(gold_csv, actual_rows, mart, actual_columns=actual_columns, typed=True)
+
+
+def compare_mart_upstream(
+    gold_csv: str,
+    actual_rows: list[Row],
+    mart: MartSpec,
+    *,
+    actual_columns: Sequence[str] | None = None,
+) -> bool:
+    """Pinned ELT-Bench compatibility measurement; not the pipeline reward."""
+    return _compare_mart(gold_csv, actual_rows, mart, actual_columns=actual_columns, typed=False)
+
+
+def _compare_mart(gold_csv, actual_rows, mart, *, actual_columns, typed):
     """One mart matched iff: row counts equal, every gold column present in the
     actual output (case-insensitive), and every gold column's vector matches
     after both sides are sorted into the mart's total order."""
@@ -307,8 +325,13 @@ def compare_mart(
         actual_cols = tuple(actual_columns) if actual_columns is not None else gold_cols
         actual_txt = []
 
-    gold_sorted = sort_rows(gold_rows, mart.key_columns, gold_cols)
-    actual_sorted = sort_rows(actual_txt, mart.key_columns, actual_cols)
+    if typed:
+        from elt_taskgen.verification import typed_comparison
+        gold_sorted = typed_comparison.sort_rows(gold_rows, mart, gold_cols)
+        actual_sorted = typed_comparison.sort_rows(actual_txt, mart, actual_cols)
+    else:
+        gold_sorted = sort_rows(gold_rows, mart.key_columns, gold_cols)
+        actual_sorted = sort_rows(actual_txt, mart.key_columns, actual_cols)
 
     lower = {c.lower(): c for c in actual_cols}
     for gold_col in gold_cols:
@@ -317,7 +340,12 @@ def compare_mart(
             return False  # missed column
         gv = [r.get(gold_col) for r in gold_sorted]
         av = [r.get(actual_col) for r in actual_sorted]
-        if not _vectors_match(gv, av):
+        if typed:
+            kind, exact = typed_comparison.column_contract(mart, gold_col)
+            matched = typed_comparison.vectors_match(gv, av, kind, exact=exact)
+        else:
+            matched = _vectors_match(gv, av)
+        if not matched:
             return False
     return True
 

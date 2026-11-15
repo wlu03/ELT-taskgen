@@ -1,4 +1,4 @@
-"""Report strict typed diagnostics beside the unchanged reward comparator.
+"""Report exact driver-type diagnostics beside the shared reward comparator.
 
 Diagnostics use exact types and values without tolerance, case folding, NA handling, or
 cross-type coercion. Results use a closed mismatch-code vocabulary and do not change
@@ -39,8 +39,7 @@ STRICT_DIAGNOSTIC_VERSION = "1.0"
 #: Values outside it fail the shadow load with a stable diagnostic code.
 STRICT_DECIMAL_TYPE = "DECIMAL(38,9)"
 
-#: Identical to the legacy loader map EXCEPT the two deliberate widenings the
-#: reward comparator depends on: DECIMAL keeps its digits, JSON keeps its type.
+#: Keep decimal digits and JSON types in gold and strict source projections.
 _STRICT_DUCKDB_TYPES: dict[ColumnType, str] = {
     **solution_mod._DUCKDB_TYPES,
     ColumnType.DECIMAL: STRICT_DECIMAL_TYPE,

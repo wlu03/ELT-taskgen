@@ -934,7 +934,7 @@ class MutationBatteryTests(_FixtureMixin, unittest.TestCase):
             ("100.0", "-inf", False),
             ("inf", "-inf", False),
             ("inf", "100.0", False),
-            ("inf", "inf", True),
+            ("inf", "inf", False),
             ("100.0", "100.0", True),
         ):
             base = {name: "1" for name in other}

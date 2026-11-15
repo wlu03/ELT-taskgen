@@ -60,6 +60,7 @@ from elt_taskgen.verification.upstream_eval import (
     _numeric_value,
     _vectors_match,
     compare_mart,
+    compare_mart_upstream,
     compare_stage1,
     evaluate,
     parse_canonical_csv,
@@ -510,7 +511,8 @@ class TestUpstreamEvalComparator(unittest.TestCase):
         # compared as TEXT and mismatches. Measured False upstream.
         self.assertFalse(compare_mart(gold, unicode_rows, mart))
         ascii_rows = [{"id": 1, "amount": "123.5"}, {"id": 2, "amount": "456"}]
-        self.assertTrue(compare_mart(gold, ascii_rows, mart))  # tolerance path
+        self.assertFalse(compare_mart(gold, ascii_rows, mart))
+        self.assertTrue(compare_mart_upstream(gold, ascii_rows, mart))
 
     def test_sort_rows_unicode_digit_column_sorts_as_text(self) -> None:
         rows: list[Row] = [{"k": "\u0661\u0660"}, {"k": "\u0669"}]
@@ -634,12 +636,13 @@ class TestUpstreamEvalComparator(unittest.TestCase):
         shuffled = [dict(gold_rows[1]), dict(gold_rows[0])]
         self.assertTrue(compare_mart(self._gold_csv(gold_rows), shuffled, self.mart))
 
-    def test_compare_mart_numeric_tolerance_matches_upstream(self) -> None:
+    def test_compare_mart_rejects_errors_within_upstream_tolerance(self) -> None:
         gold = self._gold_csv(
             [{"customer_id": 1, "completed_order_count": 1, "total_spend": 45.0}]
         )
         within = [{"customer_id": 1, "completed_order_count": 1, "total_spend": 45.4}]
-        self.assertTrue(compare_mart(gold, within, self.mart))  # rtol=1e-2 accepts
+        self.assertFalse(compare_mart(gold, within, self.mart))
+        self.assertTrue(compare_mart_upstream(gold, within, self.mart))
         beyond = [{"customer_id": 1, "completed_order_count": 1, "total_spend": 46.0}]
         self.assertFalse(compare_mart(gold, beyond, self.mart))
 
@@ -1228,8 +1231,8 @@ class TestDemoEndToEnd(unittest.TestCase):
 
     @staticmethod
     def _within_tolerance_copy(csv_text: str) -> str:
-        """Byte-different, reward-equivalent: floats * 1.005 (inside rtol
-        1e-2), strings upper-cased with a trailing space (compare_mart trims
+        """Byte-different, reward-equivalent: numeric noise of 5e-10,
+        strings upper-cased with a trailing space (compare_mart trims
         and lower-cases)."""
         cols, rows = parse_canonical_csv(csv_text)
         out: list[Row] = []
@@ -1245,7 +1248,7 @@ class TestDemoEndToEnd(unittest.TestCase):
                 except ValueError:
                     new_row[c] = str(v).upper() + " "
                     continue
-                new_row[c] = repr(f * 1.005) if "." in str(v) else v
+                new_row[c] = repr(f + 5e-10) if "." in str(v) else v
             out.append(new_row)
         return rows_to_canonical_csv(out, cols)
 
@@ -1530,7 +1533,7 @@ class TestDemoEndToEnd(unittest.TestCase):
             "(tests/test_gates_eval.py PINNED_ROSTER_DIGEST) in the same change",
         )
         self.assertEqual(gates.roster_digest(), gates.ROSTER_DIGEST)
-        self.assertEqual(gates.SCORER_VERSION, "1.3.0")
+        self.assertEqual(gates.SCORER_VERSION, "1.4.0")
         report = self._run()
         self.assertEqual(report.roster_digest, gates.ROSTER_DIGEST)
         self.assertEqual(report.roster, gates.GATE_NAMES)
