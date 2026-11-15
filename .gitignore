@@ -7,6 +7,9 @@ __pycache__/
 build/
 dist/
 runs/
+# Local mart-comparison analysis scripts and generated inventory/visualization.
+/analysis/mart-comparison-20261029/
+/testing/
 /docs/
 /council/tool_raw/
 /council/transcripts/
@@ -15,6 +18,3 @@ constraints.txt
 *_credential.json
 .env
 .env.*
-
-# Metered prompt-test runs stay local.
-/testing/
