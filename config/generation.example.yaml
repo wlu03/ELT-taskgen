@@ -1,0 +1,6 @@
+# Mart recipes and corpus coverage are automatic for every normal run.
+# Draft prepares candidates without running model evaluation or creating a release.
+candidate_count: 6
+profile: draft
+# Coverage is checked at selection/release, not at the draft intake stage.
+# Later readiness profiles also require their usual export/evaluation settings.
