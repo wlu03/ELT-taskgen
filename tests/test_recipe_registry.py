@@ -26,6 +26,7 @@ from tests.test_dataset_column_names import EVIDENCE, build_task
 from tests.test_corpus import accepted, measure
 from tests.advanced_fixtures import advanced_source
 from elt_taskgen.generation.advanced_evidence import ADVANCED_RECIPES
+from elt_taskgen.generation.composite_evidence import DOCUMENT_BALANCE
 from elt_taskgen.generation.scenario_evidence import SCENARIO_RECIPES
 from tests.scenario_fixtures import scenario_source
 
@@ -39,7 +40,7 @@ def recipe_source(recipe):
     from tests.graph_fixtures import graph_source
     if recipe in GRAPH_RECIPES:
         return graph_source(recipe)
-    if recipe in SCENARIO_RECIPES:
+    if recipe in SCENARIO_RECIPES or recipe == DOCUMENT_BALANCE:
         return scenario_source()
     return advanced_source() if recipe in ADVANCED_RECIPES else source_task()
 
@@ -113,6 +114,7 @@ class RecipeRegistryTests(unittest.TestCase):
 
     def test_default_config_pins_all_recipes_and_reuses_run_seed(self):
         default = GenerationRunSpec(candidate_count=3, profile="draft")
+        self.assertEqual(default.generation.version, "automatic-marts-v4")
         self.assertEqual(set(default.generation.recipe_ids), set(RECIPE_REGISTRY))
         self.assertEqual(default.generation, DEFAULT_GENERATION_CONFIG)
         self.assertEqual(GenerationRunSpec.model_validate_json(default.model_dump_json()), default)
@@ -130,6 +132,26 @@ class RecipeRegistryTests(unittest.TestCase):
                              ("semantic_coverage", {"require_certified_patterns": True})):
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Extra inputs"):
                 GenerationRunSpec(candidate_count=3, profile="draft", **{field: value})
+
+    def test_v3_snapshot_preserves_run_identity_and_seeded_output(self):
+        old = GenerationConfig(version="automatic-marts-v3")
+        spec = GenerationRunSpec.model_validate_json(json.dumps({
+            "candidate_count": 3, "profile": "draft", "seed": 9,
+            "generation": old.model_dump(mode="json"),
+        }))
+        self.assertEqual(len(old.recipe_ids), 21)
+        self.assertEqual(spec.generation, old)
+        # Captured from the 21-recipe generator before the v4 roster was added.
+        self.assertEqual(spec.fingerprint(), "16ee60260eaea754fb12b324f8bf2c2a3d15e092e1797114354d2d6c5f0aa753")
+        self.assertEqual(old.digest(9), "c21ec9e07b33c803e6617fa01b7490811c2ba72c6d833b532af39f16a38669cc")
+        for stage in (StageName.INTAKE, StageName.SELECT, StageName.RELEASE):
+            self.assertEqual(_configured_inputs(spec, stage)["generation"], old.canonical_contract(9))
+        self.assertEqual(old.apply(source_task(), seed=9).content_hash(),
+                         "c993b0835abdcaf8b4d66539b95d0ac1bacfb0ea4604842be9e841a15eb1388e")
+        with self.assertRaisesRegex(ValueError, "all registered recipes"):
+            GenerationConfig(version="automatic-marts-v3", recipe_ids=DEFAULT_GENERATION_CONFIG.recipe_ids)
+        with self.assertRaisesRegex(ValueError, "all registered recipes"):
+            GenerationConfig(version="automatic-marts-v4", recipe_ids=old.recipe_ids)
 
     def test_cli_needs_no_generation_settings_and_rejects_removed_knobs(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -174,6 +196,14 @@ class RecipeRegistryTests(unittest.TestCase):
                 assignments.add(pins["recipe_assignment"].digest)
                 self.assertEqual(item.provenance.task_content_hash, item.task.content_hash())
             self.assertEqual(len(assignments), 1)
+            legacy = GenerationConfig(version="automatic-marts-v3")
+            entry = manifest.ordered_entries()[0]
+            pin = ingest_manifest._identity(
+                entry, prepared[0].task, adapter_name=prepared[0].provenance.source.adapter_name,
+                difficulty_profile="semantic", recipe_selection=legacy.recipe_selection(9),
+                manifest=manifest,
+            ).selection_inputs["generation_config"]
+            self.assertEqual(pin.digest, legacy.digest(9))
             self.assertFalse(fixture.workspace.exists())
         finally:
             fixture.doCleanups()
@@ -195,6 +225,11 @@ class RecipeRegistryTests(unittest.TestCase):
                 self.assertEqual(len(selected), size)
                 self.assertFalse(measure_semantic_coverage(selected.items(), policy=policy).problems)
                 self.assertEqual(SelectionResult.model_validate_json(selection.model_dump_json()), selection)
+        legacy = GenerationConfig(version="automatic-marts-v3")
+        selection = select(tasks, measure(tasks), [], Quotas(size=len(tasks)),
+                           accepted_variants=accepted(tasks), generation_config=legacy)
+        self.assertEqual({recipe for recipe, _ in selection.semantic_coverage.minimum_template_tasks},
+                         set(legacy.recipe_ids))
 
     def test_automatic_coverage_ignores_ineligible_and_duplicate_family_recipes(self):
         recipes = ("entity_total_baseline_v1", "calendar_streak_v1", "aggregate_filter_rank_v1", "global_baseline_v1")

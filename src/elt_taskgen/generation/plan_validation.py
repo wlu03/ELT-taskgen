@@ -985,7 +985,15 @@ def _certifies_graph_recipe(plan: MartPlan, recipe: str) -> bool:
     from elt_taskgen.generation.graph_plan import certifies_graph
     return certifies_graph(plan, recipe)
 
+
+def _certifies_composite_recipe(plan: MartPlan, recipe: str) -> bool:
+    from elt_taskgen.generation.composite_plan import certifies_composite
+    return certifies_composite(plan, recipe)
+
+
 SEMANTIC_PATTERN_CERTIFIERS: dict[SemanticPattern, Callable[[MartPlan], bool]] = {
+    SemanticPattern.ELIGIBLE_GROUP_REPORT: lambda p: _certifies_composite_recipe(p, "composite_eligible_group_report_v1"),
+    SemanticPattern.DOCUMENT_BALANCE: lambda p: _certifies_composite_recipe(p, "composite_document_balance_v1"),
     SemanticPattern.ROLE_PLAYING_DIMENSION: lambda p: _certifies_graph_recipe(p, "role_playing_dimension_v1"),
     SemanticPattern.AMBIGUOUS_PATH: lambda p: _certifies_graph_recipe(p, "ambiguous_path_rollup_v1"),
     SemanticPattern.MULTI_BRIDGE_DEDUP: lambda p: _certifies_graph_recipe(p, "multi_bridge_dedup_v1"),

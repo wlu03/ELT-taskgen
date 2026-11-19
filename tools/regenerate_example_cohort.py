@@ -63,7 +63,7 @@ from elt_taskgen.generation.lineage import prune_to_effective_lineage
 from elt_taskgen.generation.mart_plan import MIN_MART_COLUMNS
 from elt_taskgen.generation.populations import apply_data_scale_profile
 from elt_taskgen.generation.recipe_registry import RecipeSelection, resolve_recipe_selection
-from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
+from elt_taskgen.generation.config import contract_for_recipe_selection
 from elt_taskgen.models import (
     AcceptanceReport,
     PopulationName,
@@ -943,8 +943,7 @@ def generate(
         "runtime_certified": False,
         "difficulty_profile": difficulty_profile.name,
         "difficulty_profile_contract": profile_contract,
-        **({"generation": {**DEFAULT_GENERATION_CONFIG.canonical_contract(recipe_selection.seed),
-                            "recipe_ids": list(recipe_selection.enabled_recipes)}} if recipe_selection is not None else {}),
+        **({"generation": contract_for_recipe_selection(recipe_selection)} if recipe_selection is not None else {}),
         "challenge_summary": {
             "primary_rows_total": sum(primary_rows),
             "primary_rows_median": median(primary_rows),

@@ -29,6 +29,18 @@
     "sql": "2144f0bbb07b0c90df93d77ae43b780c8151f358ac31a007498249fbbdcbe05e",
     "task": "d981b88f47b3bd6df6512c7feffbf1d835f164e42979499f8c065b470a048e48"
   },
+  "composite_document_balance_v1": {
+    "data_model": "17f96dc6e9c4ce30e7bb1f7acccff8a7dd4418ff224d7395f07103eed9fc18e3",
+    "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",
+    "sql": "32f49e885531447ee3132b4ff225e1e8ad2797fc1cc9ad6de38780ebe8c739ef",
+    "task": "78b972648dece9b9475a5676ec74dcb29350df94e2a93951c4fa14694f6da274"
+  },
+  "composite_eligible_group_report_v1": {
+    "data_model": "dc77705b9e6c2e19909031873d7262726006934e020558a308e3462a84c48a21",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "457b22e7da933dd79ea62a818e004b27cd252ac02e47884f9c5fa402c9220efd",
+    "task": "5ed816c4156b703ad2e4f83f569897f90aab13354f7f98da819fa2fae01e0c62"
+  },
   "composite_key_bridge_v1": {
     "data_model": "81209499bdf1bf45f2bd3c6b202577411a66ff2d12bb5d9822e4d86a5999b883",
     "documentation": "7ecf3f8391d924375c39501a204c34ef5eb00ced0b0086ca6c3a18156d73a151",

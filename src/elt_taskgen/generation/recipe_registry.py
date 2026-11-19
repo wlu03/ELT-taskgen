@@ -36,6 +36,11 @@ RECIPE_REGISTRY = {
             ("heterogeneous_key_join_v1", "Safely normalize represented keys and distinguish invalid, absent, and unmatched links."),
             ("composite_key_bridge_v1", "Count memberships and duplicates using complete composite keys."),
           )),
+        *(SemanticRecipe(name, description, _PREFIX + "composite_recipes", "apply_composite_difficulty", "materialize_composite_mutation", "recipe")
+          for name, description in (
+            ("composite_eligible_group_report_v1", "Select a winning eligible group and compare its total with eligible peers."),
+            ("composite_document_balance_v1", "Reconcile independent line and payment totals and compare document balances."),
+          )),
         SemanticRecipe("semantic_rollup_v1", "Parent thresholds, grouped totals, and a selected record.",
                        _PREFIX + "semantic_difficulty", "apply_semantic_difficulty", "materialize_semantic_mutation"),
         SemanticRecipe("global_baseline_v1", "Compare activity with the mean of all fact measures.",

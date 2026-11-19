@@ -12,6 +12,7 @@ from elt_taskgen.models import canonical_json, sha256_hex
 
 
 def capabilities(task, selection):
+    from elt_taskgen.generation.composite_evidence import COMPOSITE_RECIPES, composite_candidates
     from elt_taskgen.generation.graph_evidence import GRAPH_RECIPES, graph_candidates
     from elt_taskgen.generation.advanced_evidence import ADVANCED_RECIPES, advanced_candidates
     from elt_taskgen.generation.recipe_evidence import DEPENDENT_RECIPES, recipe_candidates
@@ -22,7 +23,9 @@ def capabilities(task, selection):
     basic = None
     result = set()
     for recipe in selection.enabled_recipes:
-        if recipe in GRAPH_RECIPES:
+        if recipe in COMPOSITE_RECIPES:
+            supported = bool(composite_candidates(task, recipe))
+        elif recipe in GRAPH_RECIPES:
             supported = bool(graph_candidates(task, recipe))
         elif recipe in SCENARIO_RECIPES:
             supported = bool(scenario_candidates(task, recipe))
@@ -41,7 +44,8 @@ def capabilities(task, selection):
 
 def specificity(recipe):
     # A semantic priority, not a claim of measured solver difficulty.
-    if recipe in {"semantic_rollup_v1", "global_baseline_v1", "independent_winners_v1", "entity_total_baseline_v1", "aggregate_filter_rank_v1"}:
+    if recipe in {"semantic_rollup_v1", "global_baseline_v1", "independent_winners_v1", "entity_total_baseline_v1", "aggregate_filter_rank_v1",
+                  "composite_eligible_group_report_v1"}:
         return 1
     return 0
 

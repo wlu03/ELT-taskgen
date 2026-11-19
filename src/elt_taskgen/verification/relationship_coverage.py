@@ -72,6 +72,8 @@ def relationship_coverage(task: TaskIR, workspace: Path) -> dict | None:
     from elt_taskgen.generation.shapes.branched_fact_rollup import branched_fact_rollup
     from elt_taskgen.verification.attacks import STRUCTURED_DIRECTIVE_PREFIX
     from elt_taskgen.verification.branched import bound_branched_candidate, branched_attack_cases
+    from elt_taskgen.generation.composite_evidence import COMPOSITE_RECIPES
+    from elt_taskgen.generation.composite_recipes import bound_composite, composite_cases
     from elt_taskgen.generation.graph_evidence import GRAPH_RECIPES
     from elt_taskgen.generation.graph_recipes import bound_graph, graph_cases
     from elt_taskgen.generation.advanced_evidence import ADVANCED_RECIPES
@@ -83,7 +85,8 @@ def relationship_coverage(task: TaskIR, workspace: Path) -> dict | None:
     marts = []
     for mart in task.marts:
         recipe = mart.plan.template_id
-        handler = ((bound_graph,graph_cases) if recipe in GRAPH_RECIPES else
+        handler = ((bound_composite,composite_cases) if recipe in COMPOSITE_RECIPES else
+                   (bound_graph,graph_cases) if recipe in GRAPH_RECIPES else
                    (bound_advanced,advanced_cases) if recipe in ADVANCED_RECIPES else
                    (bound_scenario,scenario_cases) if recipe in SCENARIO_RECIPES else None)
         if handler:

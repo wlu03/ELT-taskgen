@@ -4927,6 +4927,64 @@ def cmd_score(args) -> int:
     return 0
 
 
+def _compose_source(args) -> TaskIR:
+    if args.task_ir:
+        if args.workspace or args.manifest:
+            raise CliUsageError("--workspace and --manifest apply only with --task-id")
+        return task_from_json(args.task_ir.read_text(encoding="utf-8"))
+
+    workspace = (args.workspace or DEFAULT_WORKSPACE).resolve()
+    if args.manifest:
+        from elt_taskgen.ingest_manifest import load_five_source_manifest, prepare_five_sources
+
+        sources = prepare_five_sources(
+            load_five_source_manifest(args.manifest),
+            manifest_path=args.manifest,
+            workspace=workspace,
+            difficulty_profile="standard",
+        )
+        for source in sources:
+            if source.task.task_id == args.task_id:
+                return source.task
+        raise CliUsageError(f"Task {args.task_id!r} is missing from the source manifest")
+
+    engine = _open_engine(workspace)
+    try:
+        return engine.load_task(args.task_id)
+    finally:
+        engine.close()
+
+
+def cmd_compose(args) -> int:
+    from elt_taskgen.generation.composite_proposals import (
+        CompositeProposal, apply_composite_proposal, list_composite_proposals,
+    )
+    from elt_taskgen.generation.recipe_admission import SemanticDifficultyError
+    from elt_taskgen.models import task_to_json
+
+    try:
+        source = _compose_source(args)
+        if args.compose_command == "list":
+            choices = list_composite_proposals(source)
+            print(readable_json([p.model_dump(mode="json") for p in choices]))
+            return 0
+        proposal = CompositeProposal.model_validate_json(args.proposal.read_text(encoding="utf-8"))
+        task = apply_composite_proposal(source, proposal)
+        # Publish only a fully written private draft. Never replace a previous
+        # result (or the input TaskIR when the same path is given accidentally).
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=args.output.parent) as staged:
+            staged.write(task_to_json(task))
+            staged.flush()
+            os.link(staged.name, args.output)
+    except SemanticDifficultyError as exc:
+        print(f"Composite proposal rejected: {exc}", file=sys.stderr)
+        return 1
+    except (OSError, ValueError) as exc:
+        raise CliUsageError(str(exc)) from exc
+    print(f"Wrote {task.task_id} at {task.content_hash()} to {args.output}")
+    return 0
+
+
 def _training_package(args):
     from elt_taskgen.training import load_workspace_package
 
@@ -7013,6 +7071,23 @@ def build_parser() -> argparse.ArgumentParser:
         description="Offline factory: candidate data project -> verified RLVR ELT task.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+
+    compose = sub.add_parser("compose", help="propose a composite report on a source task")
+    compose_sub = compose.add_subparsers(dest="compose_command", required=True)
+    for name, help_text in (
+        ("list", "print JSON choices supported by the source schema"),
+        ("apply", "compile one JSON choice and run its counterfactual witnesses"),
+    ):
+        command = compose_sub.add_parser(name, help=help_text)
+        source = command.add_mutually_exclusive_group(required=True)
+        source.add_argument("--task-ir", type=Path, help="private adapter TaskIR before semantic assignment")
+        source.add_argument("--task-id", help="task in the source manifest or registered workspace")
+        command.add_argument("--manifest", type=Path, help="reconstruct the adapter task from pinned sources")
+        command.add_argument("--workspace", type=Path, help="workspace for source lookup or manifest preflight")
+        if name == "apply":
+            command.add_argument("--proposal", type=Path, required=True, help="one JSON choice from compose list")
+            command.add_argument("--output", type=Path, required=True, help="new file for the private draft TaskIR")
+        command.set_defaults(func=cmd_compose)
 
     training = sub.add_parser(
         "training",
