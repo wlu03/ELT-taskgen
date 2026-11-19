@@ -1,6 +1,7 @@
 """A proposal must identify the exact source, graph and binding it will compile."""
 
 import contextlib
+import copy
 from dataclasses import asdict
 import io
 import json
@@ -17,7 +18,7 @@ from elt_taskgen.generation.composite_proposals import (
 )
 from elt_taskgen.generation.composite_recipes import bound_composite
 from elt_taskgen.models import (
-    Origin, PublicSpecification, TaskStatus, task_from_json, task_to_json,
+    Origin, PublicSpecification, TaskStatus, canonical_json, sha256_hex, task_from_json, task_to_json,
 )
 from elt_taskgen.specification import source_fingerprint
 from tests.test_recipe_registry import source_task
@@ -41,7 +42,7 @@ class CompositeProposalTests(unittest.TestCase):
             "status": TaskStatus.REVIEWED, "public_specification": authored, "solver_prompt": "old draft",
         }).with_revision(route=None, reason="old task")
         choices = list_composite_proposals(source)
-        choice = choices[-1]
+        choice = [p for p in choices if p.schema_version == "composite-proposal-v1"][-1]
         self.assertNotEqual(choice.binding, choices[0].binding)
         result = apply_composite_proposal(source, choice)
         mart = result.marts[-1]
@@ -100,7 +101,8 @@ class CompositeProposalTests(unittest.TestCase):
                 engine.close()
             code, listed, err = run_cli("compose", "list", "--workspace", workspace, "--task-id", source.task_id)
             self.assertEqual(code, 0, err)
-            choice = json.loads(listed)[-1]
+            choice = [p for p in json.loads(listed) if p["schema_version"] == "composite-proposal-v1"][-1]
+            self.assertEqual(set(choice), {"schema_version", "task_id", "source_sha256", "recipe", "binding"})
             proposal.write_text(json.dumps(choice), encoding="utf-8")
             args = ("compose", "apply", "--task-ir", source_path, "--proposal", proposal, "--output", output_path)
             code, _, err = run_cli(*args)
@@ -121,6 +123,63 @@ class CompositeProposalTests(unittest.TestCase):
             code, _, err = run_cli("compose", "list", "--task-ir", source_path, "--manifest", "unused")
             self.assertEqual(code, 2)
             self.assertIn("--task-id", err)
+
+    def test_discovered_proposal_rejects_tampering_even_with_a_recomputed_id(self):
+        source = source_task()
+        choices = [p for p in list_composite_proposals(source) if p.schema_version == "composite-proposal-v2"]
+        self.assertGreater(len({canonical_json(p.graph) for p in choices}), 1)
+        self.assertEqual(len({p.proposal_id for p in choices}), len(choices))
+        fields = choices[0].model_dump(mode="json")
+        for changes in (
+            {"proposal_id": "f" * 64},
+            {"source_sha256": "a" * 64},
+            {"graph": {"nodes": [{"op": "sql", "inputs": []}]}},
+            {"recipe": "freeform"},
+            {"schema_version": "composite-proposal-v1"},
+        ):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                CompositeProposal.model_validate({**fields, **changes})
+        changed = CompositeProposal.model_validate(fields)
+        changed.graph["nodes"][1]["inputs"][0] = False
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            apply_composite_proposal(source, changed)
+        forged = copy.deepcopy(fields)
+        del forged["proposal_id"]
+        forged["binding"]["measure"] = "unavailable_measure"
+        forged["proposal_id"] = sha256_hex(canonical_json(forged))
+        with self.assertRaisesRegex(ValueError, "does not support"):
+            apply_composite_proposal(source, CompositeProposal.model_validate(forged))
+
+    def test_auto_output_replays_via_a_listed_graph_and_saved_proposal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = source_task()
+            root = Path(tmp)
+            path = root / "source.json"
+            path.write_text(task_to_json(source), encoding="utf-8")
+            src = ("--task-ir", path)
+            code, listed, err = run_cli("compose", "list", *src)
+            self.assertEqual(code, 0, err)
+            auto = root / "auto.json"
+            args = ("compose", "auto", *src, "--output", auto, "--seed")
+            code, _, err = run_cli(*args, "-1")
+            self.assertEqual(code, 2)
+            self.assertFalse(auto.exists())
+            code, _, err = run_cli(*args, "11")
+            self.assertEqual(code, 0, err)
+            result = task_from_json(auto.read_text(encoding="utf-8"))
+            reason = result.revisions[-1].reason
+            self.assertIn("seed 11", reason)
+            matching = [
+                p for p in json.loads(listed)
+                if p["schema_version"] == "composite-proposal-v2" and p["proposal_id"] in reason
+            ]
+            self.assertEqual(len(matching), 1)
+            proposal = root / "exact.json"
+            proposal.write_text(json.dumps(matching[0]), encoding="utf-8")
+            replay = root / "replay.json"
+            code, _, err = run_cli("compose", "apply", *src, "--output", replay, "--proposal", proposal)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(task_from_json(replay.read_text(encoding="utf-8")).content_hash(), result.content_hash())
 
     def test_manifest_preflight_errors_propagate_without_writing_a_task(self):
         with tempfile.TemporaryDirectory() as temporary:

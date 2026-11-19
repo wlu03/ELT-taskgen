@@ -16,7 +16,8 @@ def main():
         subprocess.run([sys.executable, "-m", f"tests.proofs.{module}"], cwd=repo, check=True)
     print("\nSTEP 7: Check composite source proposals and final mart results", flush=True)
     subprocess.run(
-        [sys.executable, "-m", "unittest", "tests.test_composite_proposals", "tests.test_composite_recipes"],
+        [sys.executable, "-m", "unittest", "tests.test_composite_proposals", "tests.test_composite_recipes",
+         "tests.test_composition_search"],
         cwd=repo, check=True,
     )
     print("\nPASS: all relationship proofs completed without provider calls.")

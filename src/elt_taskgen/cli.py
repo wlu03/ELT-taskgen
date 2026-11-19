@@ -4957,7 +4957,7 @@ def _compose_source(args) -> TaskIR:
 
 def cmd_compose(args) -> int:
     from elt_taskgen.generation.composite_proposals import (
-        CompositeProposal, apply_composite_proposal, list_composite_proposals,
+        CompositeProposal, apply_composite_proposal, auto_compose, list_composite_proposals,
     )
     from elt_taskgen.generation.recipe_admission import SemanticDifficultyError
     from elt_taskgen.models import task_to_json
@@ -4968,8 +4968,11 @@ def cmd_compose(args) -> int:
             choices = list_composite_proposals(source)
             print(readable_json([p.model_dump(mode="json") for p in choices]))
             return 0
-        proposal = CompositeProposal.model_validate_json(args.proposal.read_text(encoding="utf-8"))
-        task = apply_composite_proposal(source, proposal)
+        if args.compose_command == "auto":
+            task = auto_compose(source, seed=args.seed)
+        else:
+            proposal = CompositeProposal.model_validate_json(args.proposal.read_text(encoding="utf-8"))
+            task = apply_composite_proposal(source, proposal)
         # Publish only a fully written private draft. Never replace a previous
         # result (or the input TaskIR when the same path is given accidentally).
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=args.output.parent) as staged:
@@ -7077,6 +7080,7 @@ def build_parser() -> argparse.ArgumentParser:
     for name, help_text in (
         ("list", "print JSON choices supported by the source schema"),
         ("apply", "compile one JSON choice and run its counterfactual witnesses"),
+        ("auto", "search for and compile a witnessed graph from the source"),
     ):
         command = compose_sub.add_parser(name, help=help_text)
         source = command.add_mutually_exclusive_group(required=True)
@@ -7086,6 +7090,9 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--workspace", type=Path, help="workspace for source lookup or manifest preflight")
         if name == "apply":
             command.add_argument("--proposal", type=Path, required=True, help="one JSON choice from compose list")
+        if name == "auto":
+            command.add_argument("--seed", type=int, default=0, help="order search candidates reproducibly")
+        if name in ("apply", "auto"):
             command.add_argument("--output", type=Path, required=True, help="new file for the private draft TaskIR")
         command.set_defaults(func=cmd_compose)
 

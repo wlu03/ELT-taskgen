@@ -3,13 +3,14 @@ from elt_taskgen.generation.recipe_evidence import AGGREGATE_RANK, CALENDAR_STRE
 from elt_taskgen.models import ColumnType
 
 
-def recipe_witness_rows(task, e, recipe):
+def recipe_witness_rows(task, e, recipe, *, extra_group_cases=()):
     from elt_taskgen.generation import populations as p
     tables = p._narrow_for_minting(task.tables, task.relationships)
     by_name = {t.name: t for t in tables}
     parent, fact = by_name[e.parent], by_name[e.fact]
     with p._shape_mint_offset(700_000):
-        parents = [p._mint_row(parent, i) for i in range(6 + (len(e.keys) if len(e.keys) > 1 else 0))]
+        base_count = 6 + (len(e.keys) if len(e.keys) > 1 else 0)
+        parents = [p._mint_row(parent, i) for i in range(base_count + len(extra_group_cases))]
         for i in range(len(e.keys) if len(e.keys) > 1 else 0):
             distinct = parents[6 + i][e.keys[i]]
             parents[6 + i].update({k: parents[0][k] for k in e.keys})
@@ -51,10 +52,14 @@ def recipe_witness_rows(task, e, recipe):
             for _ in range(3):
                 add(3, null_value)
             add(4, -10)
-        for i in range(6, len(parents)):
+        for i in range(6, base_count):
             for year in (2015, 2016, 2017):
                 for _ in range(3):
                     add(i, 21 + i, year=year)
+        for index, case in enumerate(extra_group_cases, start=base_count):
+            for group, values in enumerate(case):
+                for value in values:
+                    add(index, value, group)
         for table in tables:
             rows.setdefault(table.name, [p._mint_row(table, 0)])
         owned = (e.fact, e.links, e.parent, e.keys)

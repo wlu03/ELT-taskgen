@@ -47,6 +47,12 @@
     "sql": "3efe29e68efdfcbfba70ef4d46b221d0bb17e12ad747820456afba3e26f3c77a",
     "task": "413039300ca1d2a610e94a58db25aa1afcef5d2554ed1baf77489e46b7b095d7"
   },
+  "discovered_group_report_v1": {
+    "data_model": "a1943736f8ac6a4eac975f543678a0bd097c9cbd8004624f7cf74141b5db9691",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "41cad79d40144923b88965869c0b282e1be1f716f63f889373c76a5927062bca",
+    "task": "e603a74623407574666c53d7b492f6294ae57b04ad42ef06f0115c48c30d59d2"
+  },
   "document_reconciliation_v1": {
     "data_model": "26cba9e19083069a5e65f9a0a746b231756b35e5b645043bb21bd9f7343defd4",
     "documentation": "0f7a0e399787c7d89d4009f9e9b993ed54288186f2606c83ce53b52eb6cfdcd9",

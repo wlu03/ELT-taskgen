@@ -991,7 +991,15 @@ def _certifies_composite_recipe(plan: MartPlan, recipe: str) -> bool:
     return certifies_composite(plan, recipe)
 
 
+def _certifies_discovered_group_report(plan: MartPlan) -> bool:
+    if plan.template_id != "discovered_group_report_v1":
+        return False
+    from elt_taskgen.generation.discovered_recipes import certifies_discovered
+    return certifies_discovered(plan, plan.template_id)
+
+
 SEMANTIC_PATTERN_CERTIFIERS: dict[SemanticPattern, Callable[[MartPlan], bool]] = {
+    SemanticPattern.DISCOVERED_GROUP_REPORT: _certifies_discovered_group_report,
     SemanticPattern.ELIGIBLE_GROUP_REPORT: lambda p: _certifies_composite_recipe(p, "composite_eligible_group_report_v1"),
     SemanticPattern.DOCUMENT_BALANCE: lambda p: _certifies_composite_recipe(p, "composite_document_balance_v1"),
     SemanticPattern.ROLE_PLAYING_DIMENSION: lambda p: _certifies_graph_recipe(p, "role_playing_dimension_v1"),

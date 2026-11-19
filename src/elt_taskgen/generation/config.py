@@ -26,27 +26,35 @@ _V3_RECIPES = (
     "role_playing_dimension_v1", "semantic_rollup_v1", "weighted_allocation_v1",
 )
 _V4_RECIPES = tuple(sorted((*_V3_RECIPES, "composite_document_balance_v1", "composite_eligible_group_report_v1")))
+_V5_RECIPES = tuple(sorted((*_V4_RECIPES, "discovered_group_report_v1")))
+_VERSIONED_RECIPES = {
+    "automatic-marts-v3": _V3_RECIPES,
+    "automatic-marts-v4": _V4_RECIPES,
+    "automatic-marts-v5": _V5_RECIPES,
+}
 
 
 class GenerationConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    version: Literal["automatic-marts-v3", "automatic-marts-v4"] = "automatic-marts-v4"
-    recipe_ids: tuple[str, ...] = _V4_RECIPES
+    version: Literal["automatic-marts-v3", "automatic-marts-v4", "automatic-marts-v5"] = "automatic-marts-v5"
+    recipe_ids: tuple[str, ...] = _V5_RECIPES
     selection: Literal["capability-matching-then-family-hash"] = "capability-matching-then-family-hash"
     coverage: Literal["available-recipes-and-certified-patterns"] = "available-recipes-and-certified-patterns"
 
     @model_validator(mode="before")
     @classmethod
     def _version_defaults(cls, value):
-        if isinstance(value, dict) and value.get("version") == "automatic-marts-v3" and "recipe_ids" not in value:
-            return {**value, "recipe_ids": _V3_RECIPES}
+        if isinstance(value, dict) and "recipe_ids" not in value:
+            version = value.get("version")
+            if isinstance(version, str) and version in _VERSIONED_RECIPES:
+                return {**value, "recipe_ids": _VERSIONED_RECIPES[version]}
         return value
 
     @field_validator("recipe_ids")
     @classmethod
     def _all_recipes(cls, value: tuple[str, ...], info: ValidationInfo) -> tuple[str, ...]:
-        expected = _V3_RECIPES if info.data.get("version") == "automatic-marts-v3" else _V4_RECIPES
+        expected = _VERSIONED_RECIPES.get(info.data.get("version"))
         if tuple(sorted(value)) != expected:
             raise ValueError("Automatic generation enables all registered recipes for the recorded version")
         return expected
@@ -90,6 +98,7 @@ DEFAULT_GENERATION_CONFIG = GenerationConfig()
 
 def contract_for_recipe_selection(selection: RecipeSelection) -> dict:
     """Bind ingest provenance to the selected roster, including one-recipe proof runs."""
-    config = (GenerationConfig(version="automatic-marts-v3")
-              if selection.enabled_recipes == _V3_RECIPES else DEFAULT_GENERATION_CONFIG)
-    return {**config.canonical_contract(selection.seed), "recipe_ids": list(selection.enabled_recipes)}
+    for version, roster in _VERSIONED_RECIPES.items():
+        if selection.enabled_recipes == roster:
+            return GenerationConfig(version=version).canonical_contract(selection.seed)
+    return {**DEFAULT_GENERATION_CONFIG.canonical_contract(selection.seed), "recipe_ids": list(selection.enabled_recipes)}

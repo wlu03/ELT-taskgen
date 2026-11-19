@@ -23,7 +23,11 @@ def capabilities(task, selection):
     basic = None
     result = set()
     for recipe in selection.enabled_recipes:
-        if recipe in COMPOSITE_RECIPES:
+        if recipe == "discovered_group_report_v1":
+            # Every admitted graph starts at the same typed group source. The
+            # actual graph search and execution happen only when the family is selected.
+            supported = bool(recipe_candidates(task, "aggregate_filter_rank_v1"))
+        elif recipe in COMPOSITE_RECIPES:
             supported = bool(composite_candidates(task, recipe))
         elif recipe in GRAPH_RECIPES:
             supported = bool(graph_candidates(task, recipe))
@@ -45,7 +49,7 @@ def capabilities(task, selection):
 def specificity(recipe):
     # A semantic priority, not a claim of measured solver difficulty.
     if recipe in {"semantic_rollup_v1", "global_baseline_v1", "independent_winners_v1", "entity_total_baseline_v1", "aggregate_filter_rank_v1",
-                  "composite_eligible_group_report_v1"}:
+                  "composite_eligible_group_report_v1", "discovered_group_report_v1"}:
         return 1
     return 0
 

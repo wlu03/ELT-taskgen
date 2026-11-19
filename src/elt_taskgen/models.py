@@ -181,6 +181,7 @@ class SemanticPattern(str, Enum):
     TEMPORAL_CORRECTION = "temporal_correction"
     INTERVAL_COVERAGE = "interval_coverage"
     ACTIVITY_LIFECYCLE = "activity_lifecycle"
+    DISCOVERED_GROUP_REPORT = "discovered_group_report"
     ELIGIBLE_GROUP_REPORT = "eligible_group_report"
     DOCUMENT_BALANCE = "document_balance"
     DOCUMENT_RECONCILIATION = "document_reconciliation"
