@@ -1113,6 +1113,7 @@ def stage2_preflight(
     dbt: tuple[str, ...] = ("dbt",),
     target: str | None = None,
     env: Mapping[str, str] | None = None,
+    snowflake_keypair_credentials: Mapping[str, str] | None = None,
 ) -> Stage2Preflight:
     """Validate the dbt runtime before executing models.
 
@@ -1263,18 +1264,39 @@ def stage2_preflight(
         )
 
     if destination is Destination.SNOWFLAKE:
-        invalid_connection_fields = sorted(
-            field
-            for field, env_name in _SNOWFLAKE_ENV_PROFILE_FIELDS.items()
-            if not _fixed_env_reference(output.get(field), env_name)
-        )
-        if invalid_connection_fields:
-            raise Stage2PreflightError(
-                "profile",
-                "Snowflake profile connection fields must use the fixed "
-                "ELT_TASKGEN_SNOWFLAKE_* environment bindings; invalid fields: "
-                f"{invalid_connection_fields}",
+        if snowflake_keypair_credentials is not None:
+            bound_fields = ("account", "user", "role", "warehouse")
+            matches_identity = all(
+                isinstance(snowflake_keypair_credentials.get(field), str)
+                and bool(snowflake_keypair_credentials[field])
+                and _namespace_match(output.get(field), snowflake_keypair_credentials[field])
+                for field in bound_fields
             )
+            allowed = {
+                *bound_fields, "database", "schema", "type", "threads",
+                "private_key_path", "authenticator",
+            }
+            if (
+                not matches_identity
+                or not set(output) <= allowed
+                or output.get("private_key_path") != "/workspace/snowflake_key.p8"
+                or output.get("authenticator", "SNOWFLAKE_JWT") != "SNOWFLAKE_JWT"
+            ):
+                raise Stage2PreflightError(
+                    "profile", "Snowflake profile must use the provisioned attempt identity and key file"
+                )
+        else:
+            invalid_connection_fields = sorted(
+                field for field, env_name in _SNOWFLAKE_ENV_PROFILE_FIELDS.items()
+                if not _fixed_env_reference(output.get(field), env_name)
+            )
+            if invalid_connection_fields:
+                raise Stage2PreflightError(
+                    "profile",
+                    "Snowflake profile connection fields must use the fixed "
+                    "ELT_TASKGEN_SNOWFLAKE_* environment bindings; invalid fields: "
+                    f"{invalid_connection_fields}",
+                )
 
     def require_namespace(field: str, expected: str) -> None:
         found = output.get(field)
@@ -1480,6 +1502,7 @@ def run_stage2_submission(
     target: str | None = None,
     env: Mapping[str, str] | None = None,
     capture_provenance: bool = False,
+    snowflake_keypair_credentials: Mapping[str, str] | None = None,
 ) -> Stage2Execution:
     """Run an already-authored dbt project for the Transform phase."""
     work_dir = Path(work_dir).resolve(strict=True)
@@ -1528,6 +1551,7 @@ def run_stage2_submission(
         dbt=dbt,
         target=target,
         env=env,
+        snowflake_keypair_credentials=snowflake_keypair_credentials,
     )
     # The Docker runner mounts ``work_dir`` at /workspace. Host-absolute paths
     # are meaningless inside that container, while paths relative to ``cwd``
