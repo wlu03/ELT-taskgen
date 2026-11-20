@@ -10,6 +10,7 @@ import datetime
 import decimal
 import json
 import math
+from graphlib import CycleError, TopologicalSorter
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from elt_taskgen.generation.mart_plan import (
     op_problems,
     quote,
 )
+from elt_taskgen.generation.plan_validation import mart_inputs
 from elt_taskgen.models import (
     Backend,
     ColumnSpec,
@@ -618,8 +620,22 @@ def _op_body(
     return None
 
 
+def upstream_ctes(tree: exp.Query, names: tuple[str, ...]) -> dict[str, exp.CTE]:
+    with_clause = tree.args.get("with_")
+    ctes = {cte.alias_or_name: cte for cte in with_clause.expressions} if with_clause else {}
+    missing = [name for name in names if name not in ctes]
+    if missing:
+        raise PlanCompilationError(f"Reference SQL is missing upstream model CTEs: {missing}")
+    return {name: ctes[name] for name in names}
+
+
 def _compile_plan(
-    task: TaskIR, mart: MartSpec, plan: MartPlan
+    task: TaskIR,
+    mart: MartSpec,
+    plan: MartPlan,
+    *,
+    upstream_sql: dict[str, str] | None = None,
+    ancestors: tuple[str, ...] = (),
 ) -> tuple[str | None, list[str]]:
     """Compile in one pass, returning SQL only when no problems were recorded."""
     problems: list[str] = []
@@ -627,10 +643,31 @@ def _compile_plan(
         t.name: quote_sql_identifier(t.name, force=True) for t in task.tables
     }
     ctes: list[tuple[str, str]] = []
+    if mart.name in ancestors:
+        return None, ["Cyclic mart dependency: " + " -> ".join((*ancestors, mart.name))]
+    inputs = mart_inputs(task, plan)
+    for name in inputs:
+        sql = (upstream_sql or {}).get(name)
+        if sql is None:
+            upstream = task.mart(name)
+            sql, dependency_problems = _compile_plan(
+                task, upstream, upstream.plan, ancestors=(*ancestors, mart.name)
+            )
+            if dependency_problems:
+                return None, dependency_problems
+        else:
+            _query(sql)
+        assert sql is not None
+        relation = quote(name)
+        ctes.append((relation, sql.rstrip().removesuffix(";")))
+        env[name] = relation
     order_by: list[str] = []
     current: str | None = None
+    occupied = {name.casefold() for name in inputs}
     for i, op in enumerate(plan.ops):
         step = f"step_{i}"
+        while step in occupied:
+            step += "_"
         if op.kind is MartOpKind.TIE_BREAK:
             if not op.columns:
                 problems.append(
@@ -725,13 +762,31 @@ def plan_compilation_problems(
     return _compile_plan(task, mart, plan if plan is not None else mart.plan)[1]
 
 
-def compile_plan_sql(task: TaskIR, mart: MartSpec) -> str:
-    """Compile a plan to totally ordered SQL or raise ``PlanCompilationError``."""
-    sql, problems = _compile_plan(task, mart, mart.plan)
+def compile_plan_sql(task: TaskIR, mart: MartSpec, *, upstream_sql: dict[str, str] | None = None) -> str:
+    """Compile a plan to totally ordered SQL, including its upstream model queries."""
+    sql, problems = _compile_plan(task, mart, mart.plan, upstream_sql=upstream_sql)
     if problems:
         raise PlanCompilationError("; ".join(problems))
     assert sql is not None  # _compile_plan returns SQL exactly when it is clean
     return sql
+
+
+def _query(sql: str) -> exp.Query:
+    statements = parse(sql, read="duckdb")
+    if len(statements) != 1 or not isinstance(statements[0], exp.Query):
+        raise PlanCompilationError("A mart dependency must be a single query")
+    return statements[0]
+
+
+def _refresh_upstream_ctes(sql: str, names: tuple[str, ...], queries: dict[str, str]) -> str:
+    tree = _query(sql)
+    changed = False
+    for model, cte in upstream_ctes(tree, names).items():
+        query = _query(queries[model])
+        if cte.this != query:
+            cte.set("this", query)
+            changed = True
+    return tree.sql(dialect="duckdb") if changed else sql
 
 
 def build_reference(task: TaskIR) -> ReferenceSolution:
@@ -739,18 +794,29 @@ def build_reference(task: TaskIR) -> ReferenceSolution:
     existing = task.reference
     sql_by_mart: dict[str, str] = dict(existing.sql_by_mart) if existing else {}
     missing = [m for m in task.marts if m.name not in sql_by_mart]
-    for mart in missing:
-        sql_by_mart[mart.name] = compile_plan_sql(task, mart)
-    if existing is not None and not missing:
-        return existing
+    dependencies = {m.name: mart_inputs(task, m.plan) for m in task.marts}
+    try:
+        order = tuple(TopologicalSorter(dependencies).static_order())
+    except CycleError as exc:
+        raise PlanCompilationError("Cyclic mart dependency: " + " -> ".join(exc.args[1])) from exc
+    for name in order:
+        if name not in sql_by_mart:
+            sql_by_mart[name] = compile_plan_sql(task, task.mart(name), upstream_sql=sql_by_mart)
+        elif dependencies[name]:
+            sql_by_mart[name] = _refresh_upstream_ctes(sql_by_mart[name], dependencies[name], sql_by_mart)
     if existing is not None:
+        if existing.sql_by_mart == sql_by_mart:
+            return existing
+        provenance = existing.provenance
+        if missing:
+            provenance += (
+                " + marts " + ", ".join(m.name for m in missing)
+                + " compiled from MartPlan by reference/solution.py"
+            )
         return existing.model_copy(
             update={
                 "sql_by_mart": sql_by_mart,
-                "provenance": existing.provenance
-                + " + marts "
-                + ", ".join(m.name for m in missing)
-                + " compiled from MartPlan by reference/solution.py",
+                "provenance": provenance,
             }
         )
     return ReferenceSolution(

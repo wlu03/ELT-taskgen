@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import re
 import secrets
@@ -250,12 +252,15 @@ def provision_attempt(
     *,
     account: str,
     password: str | None = None,
+    public_key: str | None = None,
 ) -> dict[str, str]:
     """Create a task-scoped Snowflake principal and objects.
 
-    Return only scoped solver credentials. Existing names may be replaced only
-    when their ownership marker matches the attempt. Other collisions fail
-    before mutation, and partial failures remove objects created by this call.
+    A DER public key creates a SERVICE user. Its private key stays with the
+    caller. Password-based callers receive the scoped password as before.
+    Existing names may be replaced only when their ownership marker matches
+    the attempt. Other collisions fail before mutation, and partial failures
+    remove objects created by this call.
     """
 
     if not isinstance(account, str) or not account.strip():
@@ -265,8 +270,21 @@ def provision_attempt(
     role = quote_identifier(role_name)
     user = quote_identifier(user_name)
     warehouse = quote_identifier(warehouse_name)
-    generated_password = password or ("Aa1!" + secrets.token_urlsafe(24))
-    password_sql = _quote_literal(generated_password)
+    if public_key is not None:
+        if password is not None:
+            raise ValueError("Supply either a password or a public key for the attempt")
+        try:
+            key_bytes = base64.b64decode(public_key, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError("Snowflake public key must be base64-encoded DER") from None
+        if not key_bytes:
+            raise ValueError("Snowflake public key must not be empty")
+        generated_password = None
+        user_auth = f"TYPE = SERVICE RSA_PUBLIC_KEY = {_quote_literal(public_key)}"
+    else:
+        generated_password = password or ("Aa1!" + secrets.token_urlsafe(24))
+        user_auth = f"PASSWORD = {_quote_literal(generated_password)}"
+    password_policy = "MUST_CHANGE_PASSWORD = FALSE " if generated_password is not None else ""
     role_default = _quote_literal(role_name)
     warehouse_default = _quote_literal(warehouse_name)
     marker_sql = _quote_literal(attempt_marker(database))
@@ -291,10 +309,10 @@ def provision_attempt(
                 (f"GRANT ROLE {role} TO ROLE SYSADMIN", None),
                 (
                     (
-                        f"CREATE USER {user} PASSWORD = {password_sql} "
+                        f"CREATE USER {user} {user_auth} "
                         f"DEFAULT_ROLE = {role_default} "
                         f"DEFAULT_WAREHOUSE = {warehouse_default} "
-                        f"MUST_CHANGE_PASSWORD = FALSE COMMENT = {marker_sql}"
+                        f"{password_policy}COMMENT = {marker_sql}"
                     ),
                     ("user", "SECURITYADMIN", f"DROP USER IF EXISTS {user}"),
                 ),
@@ -346,10 +364,12 @@ def provision_attempt(
         raise SnowflakeRuntimeError(message) from None
     finally:
         cursor.close()
-    return {
+    details = {
         "account": account,
         "user": user_name,
-        "password": generated_password,
         "role": role_name,
         "warehouse": warehouse_name,
     }
+    if generated_password is not None:
+        details["password"] = generated_password
+    return details

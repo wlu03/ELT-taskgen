@@ -191,6 +191,12 @@
     "sql": "09ee6cece8d081fc31e5e99ab0926fc2bf4daaf2b7c499dd827f43e746de0655",
     "task": "ac936fb9a841c8602e87aa3cdd8dd0c86555f3ca555253a47f069584d21cc818"
   },
+  "upstream_model_baseline_v1": {
+    "data_model": "f44df3fa06eef33396fb752f1ed67e0a23a8f8eb586da9490f4909204900286d",
+    "documentation": "f4fd4fc9bd75bc00097c01c59be16de88aea14f817aa8f58e554eea497790311",
+    "sql": "2680962bfd3f54bfa6127bf3e743e80e913c5e6649300e237dc940e651bcd9eb",
+    "task": "96c0420cf96a9f0ba02a9f371affa565635fae0fd87ccee6cc1ac0eecef1bad0"
+  },
   "weighted_allocation_v1": {
     "data_model": "28dd756038c8a8232819f4adddf89131ad20be6f2565ee001f40f4f3bc4684b8",
     "documentation": "32ce8a0bb5d9843d26d35bff9a61a372c51ff805fb5d63c1d802a3eae3b74492",

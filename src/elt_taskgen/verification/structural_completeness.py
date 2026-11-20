@@ -45,12 +45,16 @@ def _binding(op) -> str:
 
 def _check_plan(task: TaskIR, mart: MartSpec) -> list[str]:
     """Checks A, B, C and G for one mart's plan."""
+    from elt_taskgen.generation.plan_validation import mart_inputs
+
     problems: list[str] = []
     plan = mart.plan
     where = f"mart {mart.name!r} plan"
 
     table_names = {t.name for t in task.tables}
-    all_task_cols = {c.name for t in task.tables for c in t.columns}
+    inputs = {table.name: table.columns for table in task.tables}
+    inputs.update({name: task.mart(name).columns for name in mart_inputs(task, plan)})
+    all_task_cols = {column.name for columns in inputs.values() for column in columns}
     mart_cols = {c.name for c in mart.columns}
     produced: set[str] = set()
     bound: set[str] = set()
@@ -59,9 +63,7 @@ def _check_plan(task: TaskIR, mart: MartSpec) -> list[str]:
         loc = f"{where} op[{idx}] ({op.kind.value})"
 
         # --- A. every referenced table exists (published, or bound upstream) --
-        missing_tables = [
-            t for t in op.tables if t not in table_names and t not in bound
-        ]
+        missing_tables = [t for t in op.tables if t not in inputs and t not in bound]
         if missing_tables:
             problems.append(
                 f"{loc}: names source table(s) {missing_tables} that the "
@@ -75,11 +77,12 @@ def _check_plan(task: TaskIR, mart: MartSpec) -> list[str]:
         )
 
         # --- B. every referenced column resolves ------------------------------
-        if known_op_tables and not touches_intermediate:
+        known_inputs = [t for t in op.tables if t in inputs]
+        if known_inputs and not touches_intermediate:
             valid_cols: set[str] = set()
-            for name in known_op_tables:
-                valid_cols |= {c.name for c in task.table(name).columns}
-            scope = f"the columns of {known_op_tables}"
+            for name in known_inputs:
+                valid_cols |= {column.name for column in inputs[name]}
+            scope = f"the columns of {known_inputs}"
         else:
             # An intermediate relation is opaque, so resolution falls back to
             # the task-wide set — the same concession `validate_plan` makes.

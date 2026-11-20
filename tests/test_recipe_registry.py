@@ -16,7 +16,7 @@ from elt_taskgen.generation.difficulty_profiles import (
     DEFAULT_GENERATION_PROFILE, DIFFICULTY_PROFILES, apply_generation_profile, difficulty_profile,
 )
 from elt_taskgen.generation.mart_plan import fan_out_rollup
-from elt_taskgen.generation.recipe_registry import RecipeSelection, RECIPE_REGISTRY
+from elt_taskgen.generation.recipe_registry import RECIPE_REGISTRY, UPSTREAM_BASELINE, RecipeSelection
 from elt_taskgen.generation.semantic_difficulty import SemanticDifficultyError
 from elt_taskgen.models import ColumnType, TaskStatus
 from elt_taskgen.pipeline_readiness import GenerationRunSpec, _configured_inputs
@@ -114,10 +114,13 @@ class RecipeRegistryTests(unittest.TestCase):
 
     def test_default_config_pins_all_recipes_and_reuses_run_seed(self):
         default = GenerationRunSpec(candidate_count=3, profile="draft")
-        self.assertEqual(default.generation.version, "automatic-marts-v5")
+        self.assertEqual(default.generation.version, "automatic-marts-v6")
         self.assertEqual(set(default.generation.recipe_ids), set(RECIPE_REGISTRY))
         self.assertEqual(default.generation, DEFAULT_GENERATION_CONFIG)
         self.assertEqual(GenerationRunSpec.model_validate_json(default.model_dump_json()), default)
+        legacy = tuple(r for r in default.generation.recipe_ids if r != UPSTREAM_BASELINE)
+        legacy_config = GenerationConfig(version="automatic-marts-v5", recipe_ids=legacy)
+        self.assertEqual(legacy_config.recipe_selection().enabled_recipes, legacy)
         changed = GenerationRunSpec(candidate_count=3, profile="draft", seed=5)
         self.assertNotEqual(default.fingerprint(), changed.fingerprint())
         self.assertEqual(changed.generation.recipe_selection(changed.seed).seed, 5)
@@ -208,7 +211,7 @@ class RecipeRegistryTests(unittest.TestCase):
                 self.assertEqual(item.provenance.task_content_hash, item.task.content_hash())
             self.assertEqual(len(assignments), 1)
             entry = manifest.ordered_entries()[0]
-            for version in ("automatic-marts-v3", "automatic-marts-v4"):
+            for version in ("automatic-marts-v3", "automatic-marts-v4", "automatic-marts-v5"):
                 legacy = GenerationConfig(version=version)
                 pin = ingest_manifest._identity(
                     entry, prepared[0].task, adapter_name=prepared[0].provenance.source.adapter_name,
@@ -237,7 +240,7 @@ class RecipeRegistryTests(unittest.TestCase):
                 self.assertEqual(len(selected), size)
                 self.assertFalse(measure_semantic_coverage(selected.items(), policy=policy).problems)
                 self.assertEqual(SelectionResult.model_validate_json(selection.model_dump_json()), selection)
-        for version in ("automatic-marts-v3", "automatic-marts-v4"):
+        for version in ("automatic-marts-v3", "automatic-marts-v4", "automatic-marts-v5"):
             legacy = GenerationConfig(version=version)
             selection = select(tasks, measure(tasks), [], Quotas(size=len(tasks)),
                                accepted_variants=accepted(tasks), generation_config=legacy)

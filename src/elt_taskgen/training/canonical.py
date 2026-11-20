@@ -25,7 +25,9 @@ from elt_taskgen.destinations import Destination
 from elt_taskgen.models import ColumnType
 from elt_taskgen.export import eltbench
 from elt_taskgen.export.eltbench import PRIVATE_AIRBYTE_CONNECTOR_CONTRACT
+from elt_taskgen.generation.plan_validation import mart_inputs
 from elt_taskgen.models import PopulationName, TaskIR, canonical_json, readable_json
+from elt_taskgen.reference.solution import upstream_ctes
 from elt_taskgen.training.contract import WORKSPACE_SCORER_VERSION
 from elt_taskgen.training.dbt_runner import (
     DBT_COMPATIBILITY_SUBSET_VERSION,
@@ -500,14 +502,25 @@ def render_canonical_model(
     table_names: frozenset[str] | set[str],
     destination: Destination,
     column_types: Mapping[str, Mapping[str, ColumnType]] | None = None,
+    *,
+    upstream_names: tuple[str, ...] = (),
 ) -> str:
     """Render a destination-dialect dbt model from trusted reference SQL.
 
-    Physical tables become raw sources. Remove an unneeded top-level order and
-    reject references outside the task.
+    Physical tables become raw sources and upstream marts become dbt refs.
+    Remove an unneeded top-level order and reject references outside the task.
     """
 
     tree = sqlglot.parse_one(reference_sql, read="duckdb")
+    refs: dict[str, str] = {}
+    if upstream_names:
+        occupied = reference_sql.casefold()
+        for index, (model, cte) in enumerate(upstream_ctes(tree, upstream_names).items()):
+            placeholder = f"eltref_{index}"
+            while placeholder in occupied:
+                placeholder += "_"
+            cte.set("this", exp.select("*").from_(placeholder))
+            refs[placeholder] = model
     if (
         tree.args.get("order") is not None
         and tree.args.get("limit") is None
@@ -518,7 +531,7 @@ def render_canonical_model(
     # resolves a column's table by the name the reference SQL still uses.
     _cast_physical_reads(tree, table_names, column_types or {}, destination)
     for table in list(tree.find_all(exp.Table)):
-        if _is_cte_reference(table):
+        if table.name in refs or _is_cte_reference(table):
             continue
         if table.name not in table_names:
             raise CanonicalArtifactError(
@@ -578,6 +591,8 @@ def render_canonical_model(
         )
     if _SOURCE_PLACEHOLDER_PREFIX in rendered:
         raise CanonicalArtifactError("a source placeholder survived substitution")
+    for placeholder, model in refs.items():
+        rendered = re.sub(r'\b' + placeholder + r'\b', lambda _: "{{ ref(%r) }}" % model, rendered)
     return "{{ config(materialized='table') }}\n" + rendered + "\n"
 
 
@@ -652,7 +667,8 @@ def render_canonical_project(package: WorkspacePackage) -> dict[str, str]:
         if not sql:
             raise CanonicalArtifactError(f"mart {mart.name!r} has no reference SQL")
         files[f"models/{mart.name}.sql"] = render_canonical_model(
-            sql, table_names, package.destination, column_types=column_types
+            sql, table_names, package.destination, column_types=column_types,
+            upstream_names=mart_inputs(task, mart.plan),
         )
     return files
 

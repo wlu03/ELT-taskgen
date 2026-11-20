@@ -24,6 +24,16 @@ class AirbyteError(RuntimeError):
     """The Airbyte control plane could not satisfy a runtime operation."""
 
 
+class AirbyteSyncFailure(AirbyteError):
+    """An identified Airbyte job finished without syncing successfully."""
+
+    def __init__(self, connection_id: str, job_id: int, status: str) -> None:
+        super().__init__(f"Airbyte sync failed: {connection_id}={status}")
+        self.connection_id = connection_id
+        self.job_id = job_id
+        self.status = status
+
+
 @dataclass(frozen=True)
 class AirbyteSyncReceipt:
     """Exact jobs followed for one ordered set of connection syncs.
@@ -456,9 +466,7 @@ class AirbyteClient:
                 status = self.job_status(job_id)
                 statuses[connection_id] = status
                 if status in terminal_failures:
-                    raise AirbyteError(
-                        f"Airbyte sync failed: {connection_id}={status}"
-                    )
+                    raise AirbyteSyncFailure(connection_id, job_id, status)
                 if status == "succeeded":
                     break
                 if monotonic() >= deadline:

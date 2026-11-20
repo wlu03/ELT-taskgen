@@ -113,6 +113,7 @@ _MART_PLAN_IMPLEMENTATION_MODULES = (
     "elt_taskgen.generation.composite_evidence",
     "elt_taskgen.generation.composite_plan",
     "elt_taskgen.generation.composite_recipes",
+    "elt_taskgen.generation.upstream_baseline",
     "elt_taskgen.generation.recipe_evidence",
     "elt_taskgen.generation.recipe_plan",
     "elt_taskgen.generation.recipe_witness",

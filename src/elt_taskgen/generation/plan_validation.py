@@ -1078,6 +1078,22 @@ def semantic_pattern_problems(plan: MartPlan) -> list[str]:
     return problems
 
 
+def mart_inputs(task: TaskIR, plan: MartPlan) -> tuple[str, ...]:
+    names = {mart.name for mart in task.marts}
+    inputs: dict[str, None] = {}
+    bound: set[str] = set()
+    for op in plan.ops:
+        if op.kind is MartOpKind.TIE_BREAK:
+            continue
+        for name in op.tables:
+            if name in names and name not in bound:
+                inputs[name] = None
+        if op.kind is not MartOpKind.SOURCE:
+            binding = op.details.get("name") or (op.tables[0] if op.tables else "")
+            bound.add(binding)
+    return tuple(inputs)
+
+
 def validate_plan(task: TaskIR, plan: MartPlan) -> list[str]:
     """Return problem strings; empty list = the plan is coherent with the task.
 
@@ -1093,8 +1109,10 @@ def validate_plan(task: TaskIR, plan: MartPlan) -> list[str]:
         return [f"plan targets mart {plan.mart!r}, which is not a mart of task {task.task_id!r}"]
 
     table_names = {t.name for t in task.tables}
+    inputs = {table.name: table.columns for table in task.tables}
+    inputs.update({name: task.mart(name).columns for name in mart_inputs(task, plan)})
     mart_cols = {c.name for c in mart.columns}
-    all_task_cols = {c.name for t in task.tables for c in t.columns}
+    all_task_cols = {column.name for columns in inputs.values() for column in columns}
     produced: set[str] = set()
     #: Intermediate relations bound by earlier ops — the same namespace
     #: compile_plan_sql builds (details['name'], else the op's single table).
@@ -1104,18 +1122,17 @@ def validate_plan(task: TaskIR, plan: MartPlan) -> list[str]:
         loc = f"op[{idx}] ({op.kind.value})"
         problems.extend(op_problems(op, loc=loc))
 
-        unknown_tables = [
-            t for t in op.tables if t not in table_names and t not in bound
-        ]
+        unknown_tables = [t for t in op.tables if t not in inputs and t not in bound]
         if unknown_tables:
             problems.append(f"{loc}: unknown tables {unknown_tables}")
         known_op_tables = [t for t in op.tables if t in table_names]
         touches_intermediate = any(t in bound and t not in table_names for t in op.tables)
 
-        if known_op_tables and not touches_intermediate:
+        known_inputs = [t for t in op.tables if t in inputs]
+        if known_inputs and not touches_intermediate:
             valid_cols: set[str] = set()
-            for t in known_op_tables:
-                valid_cols |= {c.name for c in task.table(t).columns}
+            for name in known_inputs:
+                valid_cols |= {column.name for column in inputs[name]}
         else:
             # An intermediate relation is opaque here, so column resolution
             # falls back to the permissive task-wide set.
