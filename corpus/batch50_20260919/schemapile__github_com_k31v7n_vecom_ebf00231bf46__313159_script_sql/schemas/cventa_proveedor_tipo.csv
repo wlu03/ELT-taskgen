@@ -1,3 +1,0 @@
-column_name,column_description
-nombre,Column nombre of table cventa.proveedor_tipo. may be NULL.
-proveedor_tipo,Column proveedor_tipo of table cventa.proveedor_tipo.

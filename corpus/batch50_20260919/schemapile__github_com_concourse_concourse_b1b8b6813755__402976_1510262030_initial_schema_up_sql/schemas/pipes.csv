@@ -1,4 +1,0 @@
-column_name,column_description
-id,Column id of table pipes.
-team_id,Column team_id of table pipes.
-url,Column url of table pipes. may be NULL.

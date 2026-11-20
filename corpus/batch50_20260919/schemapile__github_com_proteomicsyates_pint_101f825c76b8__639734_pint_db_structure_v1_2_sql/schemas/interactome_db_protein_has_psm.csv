@@ -1,3 +1,0 @@
-column_name,column_description
-psm_id,Column PSM_id of table interactome_db.Protein_has_PSM.
-protein_id,Column Protein_id of table interactome_db.Protein_has_PSM.

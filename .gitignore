@@ -7,6 +7,7 @@ __pycache__/
 build/
 dist/
 runs/
+/corpus/batch50_20260919/
 # Local mart-comparison analysis scripts and generated inventory/visualization.
 /analysis/mart-comparison-20261029/
 /testing/

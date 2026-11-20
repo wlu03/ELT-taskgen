@@ -1,3 +1,0 @@
-column_name,column_description
-avatarpictureid,Column avatarPictureID of table Celebrity. may be NULL.
-celebrityid,Column celebrityID of table Celebrity.

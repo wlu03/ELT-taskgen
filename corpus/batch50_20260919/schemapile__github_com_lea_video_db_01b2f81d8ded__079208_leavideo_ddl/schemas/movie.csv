@@ -1,3 +1,0 @@
-column_name,column_description
-imdbid,Column imdbID of table Movie.
-videoid,Column videoID of table Movie. may be NULL.

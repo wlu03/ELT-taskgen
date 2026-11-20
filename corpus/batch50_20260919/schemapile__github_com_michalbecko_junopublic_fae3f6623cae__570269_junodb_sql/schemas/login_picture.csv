@@ -1,3 +1,0 @@
-column_name,column_description
-id,Column id of table login_picture.
-multimedia_id,Column multimedia_id of table login_picture. may be NULL.

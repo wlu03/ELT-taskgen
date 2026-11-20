@@ -1,3 +1,0 @@
-column_name,column_description
-id,Column id of table jasper_template_parameter_options.
-options,Column options of table jasper_template_parameter_options. may be NULL.

@@ -1,3 +1,0 @@
-column_name,column_description
-permission_id,Column permission_id of table user_role_permissions.
-role_id,Column role_id of table user_role_permissions.

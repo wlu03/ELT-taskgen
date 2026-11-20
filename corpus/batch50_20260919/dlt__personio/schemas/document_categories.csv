@@ -1,3 +1,0 @@
-column_name,column_description
-id,primary key of dlt resource 'document_categories' (synthesized from the dlt manifest (no observed schema)).
-payload,raw endpoint record body (synthesized schema). may be NULL.

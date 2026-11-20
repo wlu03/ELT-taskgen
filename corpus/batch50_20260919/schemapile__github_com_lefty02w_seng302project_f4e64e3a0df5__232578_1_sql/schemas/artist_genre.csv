@@ -1,3 +1,0 @@
-column_name,column_description
-artist_id,Column artist_id of table artist_genre.
-genre_id,Column genre_id of table artist_genre.

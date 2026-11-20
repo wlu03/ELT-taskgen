@@ -1,3 +1,0 @@
-column_name,column_description
-event_id,Column event_id of table event_type.
-type_id,Column type_id of table event_type.
