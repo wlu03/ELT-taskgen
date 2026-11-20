@@ -6,7 +6,7 @@ already assigned recipe to another project to avoid wasting a rare capability.
 """
 from collections import defaultdict
 
-from elt_taskgen.generation.recipe_registry import RECIPE_REGISTRY, RecipeSelection
+from elt_taskgen.generation.recipe_registry import RECIPE_REGISTRY, UPSTREAM_BASELINE, RecipeSelection
 from elt_taskgen.generation.semantic_difficulty import SemanticDifficultyError, semantic_candidates
 from elt_taskgen.models import canonical_json, sha256_hex
 
@@ -17,6 +17,7 @@ def capabilities(task, selection):
     from elt_taskgen.generation.advanced_evidence import ADVANCED_RECIPES, advanced_candidates
     from elt_taskgen.generation.recipe_evidence import DEPENDENT_RECIPES, recipe_candidates
     from elt_taskgen.generation.scenario_evidence import SCENARIO_RECIPES, scenario_candidates
+    from elt_taskgen.generation.upstream_baseline import candidates as upstream_candidates
     existing = {m.plan.template_id for m in task.marts if m.plan.template_id in RECIPE_REGISTRY}
     if existing:
         return existing & set(selection.enabled_recipes)
@@ -37,6 +38,8 @@ def capabilities(task, selection):
             supported = bool(advanced_candidates(task, recipe))
         elif recipe in DEPENDENT_RECIPES:
             supported = bool(recipe_candidates(task, recipe))
+        elif recipe == UPSTREAM_BASELINE:
+            supported = bool(upstream_candidates(task, recipe))
         else:
             if basic is None:
                 basic = bool(semantic_candidates(task))
@@ -49,7 +52,7 @@ def capabilities(task, selection):
 def specificity(recipe):
     # A semantic priority, not a claim of measured solver difficulty.
     if recipe in {"semantic_rollup_v1", "global_baseline_v1", "independent_winners_v1", "entity_total_baseline_v1", "aggregate_filter_rank_v1",
-                  "composite_eligible_group_report_v1", "discovered_group_report_v1"}:
+                  "composite_eligible_group_report_v1", "discovered_group_report_v1", UPSTREAM_BASELINE}:
         return 1
     return 0
 

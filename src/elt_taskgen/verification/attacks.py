@@ -199,12 +199,15 @@ def compile_attacks(task: TaskIR, findings: list[Finding]) -> tuple[AttackCase, 
 # Materialization: AttackCase -> mutated SQL per mart
 
 def _reference_sql(task: TaskIR) -> dict[str, str]:
+    from elt_taskgen.reference.solution import build_reference
+
     if task.reference is None:
         raise ValueError(f"task {task.task_id}: no reference solution to mutate")
     missing = [m.name for m in task.marts if m.name not in task.reference.sql_by_mart]
     if missing:
         raise ValueError(f"task {task.task_id}: reference SQL missing for marts {missing}")
-    return {m.name: task.reference.sql_by_mart[m.name] for m in task.marts}
+    current = build_reference(task).sql_by_mart
+    return {mart.name: current[mart.name] for mart in task.marts}
 
 
 def _gold_stage2_csv(gold: object, population_value: str, mart: str) -> str:

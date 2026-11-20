@@ -58,7 +58,7 @@ class RecipeFamily(Generic[Evidence]):
             raise SemanticDifficultyError(f"Unknown {self.name} mutation")
         result = dict(build_reference(task).sql_by_mart)
         mutant = self.plan(task, evidence, mart.name, mart.plan.template_id, payload["variant"])
-        result[mart.name] = compile_plan_sql(task, mutant)
+        result[mart.name] = compile_plan_sql(task, mutant, upstream_sql=result)
         return result
 
     def certify(self, task: TaskIR, mart: MartSpec, evidence: Evidence, rows: WitnessRows) -> tuple[str, ...]:

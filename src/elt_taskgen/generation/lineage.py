@@ -20,7 +20,7 @@ from elt_taskgen.models import (
     TaskIR,
     canonical_json,
 )
-from elt_taskgen.reference.solution import compile_plan_sql
+from elt_taskgen.reference.solution import build_reference, compile_plan_sql
 
 
 class EffectiveLineageError(ValueError):
@@ -45,12 +45,10 @@ def effective_lineage(task: TaskIR) -> EffectiveLineage:
     declared = {table.name for table in task.tables}
     by_mart: dict[str, tuple[str, ...]] = {}
     used: set[str] = set()
-    reference_sql = task.reference.sql_by_mart if task.reference is not None else {}
+    reference_sql = build_reference(task).sql_by_mart
 
     for mart in task.marts:
-        sql = reference_sql.get(mart.name)
-        if not sql:
-            sql = compile_plan_sql(task, mart)
+        sql = reference_sql[mart.name] or compile_plan_sql(task, mart)
         try:
             tree = parse_one(sql, read="duckdb")
         except (ParseError, ValueError) as exc:
@@ -265,13 +263,14 @@ def prune_to_effective_lineage(
         return task
 
     marts = []
+    available = used | {mart.name for mart in task.marts}
     for mart in task.marts:
         ops = []
         for op in mart.plan.ops:
             if op.kind is not MartOpKind.SOURCE:
                 ops.append(op)
                 continue
-            kept = tuple(table for table in op.tables if table in used)
+            kept = tuple(table for table in op.tables if table in available)
             if not kept:
                 continue
             if kept == op.tables:

@@ -28,6 +28,7 @@ class SemanticRecipe:
 
 
 _PREFIX = "elt_taskgen.generation."
+UPSTREAM_BASELINE = "upstream_model_baseline_v1"
 RECIPE_REGISTRY = {
     recipe.recipe_id: recipe for recipe in (
         *(SemanticRecipe(name, description, _PREFIX + "graph_recipes", "apply_graph_difficulty", "materialize_graph_mutation", "recipe")
@@ -57,6 +58,8 @@ RECIPE_REGISTRY = {
                        _PREFIX + "dependent_compositions", "apply_dependent_difficulty", "materialize_recipe_mutation", "recipe"),
         SemanticRecipe("entity_total_baseline_v1", "Compare entity totals with a population mean including inactive entities.",
                        _PREFIX + "dependent_compositions", "apply_dependent_difficulty", "materialize_recipe_mutation", "recipe"),
+        SemanticRecipe(UPSTREAM_BASELINE, "Compare an upstream model's measure with its population mean.",
+                       _PREFIX + "upstream_baseline", "apply_upstream_baseline", "materialize_mutation"),
         SemanticRecipe("calendar_streak_v1", "Count consecutive qualifying calendar-year runs.",
                        _PREFIX + "dependent_compositions", "apply_dependent_difficulty", "materialize_recipe_mutation", "recipe"),
         SemanticRecipe("historical_asof_v1", "Align each event with the history version effective at its timestamp.",

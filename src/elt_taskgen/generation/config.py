@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator, mod
 
 from elt_taskgen.generation.coverage import SemanticCoveragePolicy
 from elt_taskgen.generation.difficulty_profiles import DEFAULT_GENERATION_PROFILE
-from elt_taskgen.generation.recipe_registry import RecipeSelection
+from elt_taskgen.generation.recipe_registry import UPSTREAM_BASELINE, RecipeSelection
 from elt_taskgen.models import TaskIR, canonical_json, sha256_hex
 
 
@@ -27,18 +27,22 @@ _V3_RECIPES = (
 )
 _V4_RECIPES = tuple(sorted((*_V3_RECIPES, "composite_document_balance_v1", "composite_eligible_group_report_v1")))
 _V5_RECIPES = tuple(sorted((*_V4_RECIPES, "discovered_group_report_v1")))
+_V6_RECIPES = tuple(sorted((*_V5_RECIPES, UPSTREAM_BASELINE)))
 _VERSIONED_RECIPES = {
     "automatic-marts-v3": _V3_RECIPES,
     "automatic-marts-v4": _V4_RECIPES,
     "automatic-marts-v5": _V5_RECIPES,
+    "automatic-marts-v6": _V6_RECIPES,
 }
 
 
 class GenerationConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    version: Literal["automatic-marts-v3", "automatic-marts-v4", "automatic-marts-v5"] = "automatic-marts-v5"
-    recipe_ids: tuple[str, ...] = _V5_RECIPES
+    version: Literal[
+        "automatic-marts-v3", "automatic-marts-v4", "automatic-marts-v5", "automatic-marts-v6"
+    ] = "automatic-marts-v6"
+    recipe_ids: tuple[str, ...] = _V6_RECIPES
     selection: Literal["capability-matching-then-family-hash"] = "capability-matching-then-family-hash"
     coverage: Literal["available-recipes-and-certified-patterns"] = "available-recipes-and-certified-patterns"
 
