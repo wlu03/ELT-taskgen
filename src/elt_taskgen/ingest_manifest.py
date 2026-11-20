@@ -2379,11 +2379,8 @@ def _identity(
     }
     selection = resolve_recipe_selection(difficulty_profile, recipe_selection)
     if selection is not None:
-        from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
-        contract = DEFAULT_GENERATION_CONFIG.canonical_contract(selection.seed)
-        # Local proof scripts may constrain an individual recipe; bind the
-        # actual selection too. Normal ingestion always uses the full registry.
-        contract["recipe_ids"] = list(selection.enabled_recipes)
+        from elt_taskgen.generation.config import contract_for_recipe_selection
+        contract = contract_for_recipe_selection(selection)
         selection_inputs["generation_config"] = ProvenanceArtifact(
             locator="mart-generation:automatic",
             digest=sha256_hex(canonical_json(contract)),

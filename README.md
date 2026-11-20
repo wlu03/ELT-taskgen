@@ -83,3 +83,61 @@ Find the output under `$TASKGEN_WORKSPACE/tasks/<task_id>/`:
 
 These steps produce local task definitions and source data. The public
 `config.yaml` and `data_model.yaml` are produced during the later task export.
+
+## Generate a composite task
+
+The semantic profile can discover a report by connecting transformations that
+accept each other's outputs. It can also select a fixed report. Each report
+compiles into one mart.
+
+| Report | Required source evidence | Dependencies in the final answer |
+| --- | --- | --- |
+| Discovered group report | An entity, a related fact table, a numeric measure, and a text group label | Search over group totals, eligibility, means, above/below-mean filters, and choices such as ranking or counting. The selected graph determines the task and expected output. |
+| Eligible group report | An entity, a related fact table, a numeric measure, and a text group label | Sum the measure per entity and group. Keep groups with at least three measured records. Use those same groups to select the winner and compute the mean. Report the winner's margin over that mean for every entity. |
+| Document balance | An invoice or order with independent line and payment tables joined by the complete document key, and an amount on each child | Sum each child table per document before joining. Subtract payments from lines and compare each gap with the mean gap across all documents, including empty ones. |
+
+To run discovery locally, start with the checked-in Pipedrive adapter manifest. Its flow group and measure are curated fields in the offline
+schema. From the repository root, use an empty working directory for the output:
+
+```bash
+work=$(mktemp -d)
+.venv/bin/python - "$work/source.json" <<'PY'
+from pathlib import Path
+import sys
+
+from elt_taskgen.adapters import dlt
+
+connector = dlt.load_connector(Path("config/dlt_connectors/pipedrive.yaml"))
+task = dlt.to_task_ir(connector)
+Path(sys.argv[1]).write_text(task.model_dump_json())
+PY
+
+.venv/bin/elt-taskgen compose auto --task-ir "$work/source.json" \
+  --seed 0 --output "$work/automatic.json"
+```
+
+Discovery starts with fields and keys supplied by the adapter. For example,
+group totals have one row per deal and activity kind, while a per-deal mean
+has one row per deal. A comparison can attach that mean to each group from
+the same deal. A downstream operation can then count the groups above the
+mean or select one of them. Changing the seed can select another graph.
+Repeating a run with the same source, generator version, and seed reproduces
+the selection. On this pinned Pipedrive example, seed 3 counts all eligible
+activity groups. Seed 15 counts only the groups whose totals exceed the
+deal's mean eligible-group total.
+
+To inspect the choices or replay a particular one:
+
+```bash
+.venv/bin/elt-taskgen compose list --task-ir "$work/source.json" > "$work/choices.json"
+jq -e 'map(select(.schema_version == "composite-proposal-v2"))[0]' "$work/choices.json" > "$work/choice.json"
+.venv/bin/elt-taskgen compose apply --task-ir "$work/source.json" \
+  --proposal "$work/choice.json" --output "$work/composed.json"
+```
+
+A person or agent can pick any listed binding. Listing checks the source schema.
+Applying the choice builds the reference result and runs the required wrong
+queries on shared counterfactual data in DuckDB. Admission requires each wrong
+query to change the final graded result. The output is a private task definition
+with witnesses and reference SQL. The ordinary pipeline makes its own automatic
+selection and uses the same admission checks.

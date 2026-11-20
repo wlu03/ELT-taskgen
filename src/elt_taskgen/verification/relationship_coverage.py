@@ -72,6 +72,9 @@ def relationship_coverage(task: TaskIR, workspace: Path) -> dict | None:
     from elt_taskgen.generation.shapes.branched_fact_rollup import branched_fact_rollup
     from elt_taskgen.verification.attacks import STRUCTURED_DIRECTIVE_PREFIX
     from elt_taskgen.verification.branched import bound_branched_candidate, branched_attack_cases
+    from elt_taskgen.generation.composite_evidence import COMPOSITE_RECIPES
+    from elt_taskgen.generation.composite_recipes import bound_composite, composite_cases
+    from elt_taskgen.generation.discovered_recipes import bound_discovered, discovered_cases
     from elt_taskgen.generation.graph_evidence import GRAPH_RECIPES
     from elt_taskgen.generation.graph_recipes import bound_graph, graph_cases
     from elt_taskgen.generation.advanced_evidence import ADVANCED_RECIPES
@@ -83,7 +86,9 @@ def relationship_coverage(task: TaskIR, workspace: Path) -> dict | None:
     marts = []
     for mart in task.marts:
         recipe = mart.plan.template_id
-        handler = ((bound_graph,graph_cases) if recipe in GRAPH_RECIPES else
+        handler = ((bound_discovered,discovered_cases) if recipe == "discovered_group_report_v1" else
+                   (bound_composite,composite_cases) if recipe in COMPOSITE_RECIPES else
+                   (bound_graph,graph_cases) if recipe in GRAPH_RECIPES else
                    (bound_advanced,advanced_cases) if recipe in ADVANCED_RECIPES else
                    (bound_scenario,scenario_cases) if recipe in SCENARIO_RECIPES else None)
         if handler:
@@ -99,6 +104,8 @@ def relationship_coverage(task: TaskIR, workspace: Path) -> dict | None:
             grain_table = e.grain_table if recipe in GRAPH_RECIPES else e.fact if recipe == "historical_asof_v1" else e.parent
             marts.append({"mart":mart.name,"recipe":recipe,"grain_table":grain_table,
                 "grain_key":list(mart.key_columns),"composite_key_arity":len(mart.key_columns),"mutants":cases,
+                **({"composition": {"graph_id": e.graph.graph_id, **e.graph.as_dict()}}
+                   if recipe == "discovered_group_report_v1" else {}),
                 "graph":asdict(relationship_graph(task,grain_table=grain_table,
                     rows=task.population(PopulationName.COUNTERFACTUAL).literal_rows,population="counterfactual"))})
             continue

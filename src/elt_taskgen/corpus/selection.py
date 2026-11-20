@@ -12,6 +12,7 @@ from collections import Counter
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from elt_taskgen.corpus.difficulty import structural_difficulty
+from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG, GenerationConfig
 from elt_taskgen.generation.coverage import SemanticCoveragePolicy, measure_semantic_coverage
 from elt_taskgen.models import (
     Backend,
@@ -366,6 +367,7 @@ def select(
     *,
     require_empirical: bool = False,
     expected_campaign_fingerprint: str | None = None,
+    generation_config: GenerationConfig = DEFAULT_GENERATION_CONFIG,
 ) -> SelectionResult:
     """Select quotas deterministically while preserving family independence.
 
@@ -417,9 +419,8 @@ def select(
         independent.append(task)
 
     if quotas.semantic_coverage is None:
-        from elt_taskgen.generation.config import DEFAULT_GENERATION_CONFIG
         quotas = quotas.model_copy(update={"semantic_coverage":
-            DEFAULT_GENERATION_CONFIG.coverage_policy(independent, quotas.size)})
+            generation_config.coverage_policy(independent, quotas.size)})
     chosen = _quota_pick(independent, measurements, quotas, rejected)
     if quotas.semantic_coverage is not None:
         report = measure_semantic_coverage(((t.task_id, t) for t in chosen), policy=quotas.semantic_coverage)

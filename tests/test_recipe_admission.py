@@ -71,6 +71,21 @@ class RecipeAdmissionTests(unittest.TestCase):
             trial.apply(source, (recipe,))
         self.assertEqual(witness.call_count, 32)
 
+    def test_required_binding_is_selected_before_applying_the_retry_budget(self):
+        family, source, recipe, _, expected, evidence = self.examples[0]
+        other = replace(evidence, parent="other_parent")
+        witness = Mock(wraps=family.witness_rows)
+        trial = replace(family, candidates=lambda *_: (other,) * 32 + (evidence,), witness_rows=witness)
+        self.assertEqual(trial.apply(source, (recipe,), required_evidence=evidence), expected)
+        witness.assert_called_once_with(source, evidence, recipe)
+
+    def test_required_binding_must_match_existing_mart(self):
+        family, _, recipe, _, existing, evidence = self.examples[0]
+        other = replace(evidence, parent="other_parent")
+        with self.assertRaisesRegex(SemanticDifficultyError, "different source binding"):
+            family.apply(existing, (recipe,), required_evidence=other)
+        self.assertIs(family.apply(existing, (recipe,), required_evidence=evidence), existing)
+
     def test_reusing_a_task_does_not_retry_corrupt_evidence(self):
         for family, _, recipe, _, existing, _ in self.examples:
             with self.subTest(family=family.name):

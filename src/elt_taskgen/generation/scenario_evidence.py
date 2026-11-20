@@ -57,7 +57,7 @@ def _edge(task, edge):
     return p, f, key, links
 
 
-def scenario_candidates(task, recipe):
+def scenario_candidates(task, recipe, *, require_document_total=True):
     if recipe not in SCENARIO_RECIPES:
         raise ValueError(recipe)
     found = []
@@ -97,8 +97,10 @@ def scenario_candidates(task, recipe):
         elif recipe == DOCUMENT and _words(p.name) & {"invoice", "invoices", "order", "orders"}:
             if not _words(f.name) & {"line", "lines", "item", "items"}:
                 continue
-            amounts = [c.name for c in p.columns if c.name in ("amount_total", "total_amount")
-                       and c.type in NUMERIC and not c.enum_values]
+            amounts = ([
+                c.name for c in p.columns if c.name in ("amount_total", "total_amount")
+                and c.type in NUMERIC and not c.enum_values
+            ] if require_document_total else [""])
             line_amounts = [c.name for c in f.columns if c.name in ("price_subtotal", "line_total", "amount")
                             and c.type in NUMERIC and not c.enum_values]
             for _, (p2, f2, keys2, links2) in edges:

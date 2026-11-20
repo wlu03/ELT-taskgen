@@ -85,7 +85,9 @@ class RecipeFamily(Generic[Evidence]):
                     raise SemanticDifficultyError(f"No executable witness for {variant}")
         return variants
 
-    def apply(self, task: TaskIR, recipes: tuple[str, ...]) -> TaskIR:
+    def apply(
+        self, task: TaskIR, recipes: tuple[str, ...], *, required_evidence: Evidence | None = None,
+    ) -> TaskIR:
         """Admit the first witnessed candidate in the caller's stable order.
 
         Reuse requires revalidating binding, mandatory mutations, and witnesses.
@@ -106,6 +108,8 @@ class RecipeFamily(Generic[Evidence]):
                 if mart.plan.template_id not in recipes:
                     raise SemanticDifficultyError(f"Task already contains a different {self.name} recipe")
                 evidence = self.bind(task, mart)
+                if required_evidence is not None and evidence != required_evidence:
+                    raise SemanticDifficultyError(f"Existing {self.name} recipe has a different source binding")
                 if any(c not in task.attack_cases for c in self.cases(evidence, mart.name, mart.plan.template_id)):
                     raise SemanticDifficultyError(f"{self.name.capitalize()} recipe is missing mandatory mutations")
                 self.certify(task, mart, evidence, task.population(PopulationName.COUNTERFACTUAL).literal_rows)
@@ -114,6 +118,8 @@ class RecipeFamily(Generic[Evidence]):
         refusals = []
         for recipe in recipes:
             candidates = self.candidates(task, recipe)
+            if required_evidence is not None:
+                candidates = tuple(candidate for candidate in candidates if candidate == required_evidence)
             if not candidates:
                 refusals.append(f"{recipe}: no typed schema evidence")
             for evidence in candidates[:32]:

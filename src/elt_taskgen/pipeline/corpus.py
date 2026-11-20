@@ -55,12 +55,16 @@ def run_corpus(
         getattr(args, "allow_partial_candidates", False)
     )
     configured_readiness_spec = None
+    generation_config = DEFAULT_GENERATION_CONFIG
+    recipe_seed = getattr(args, "selection_seed", None) or 0
     if getattr(args, "configured_run_spec", None) is not None:
         from elt_taskgen.pipeline_readiness import GenerationRunSpec
 
         configured_readiness_spec = GenerationRunSpec.model_validate(
             args.configured_run_spec
         )
+        generation_config = configured_readiness_spec.generation
+        recipe_seed = configured_readiness_spec.seed
     if args.release_dir is None:
         release_only_flags = []
         if args.sandbox_attestation is not None:
@@ -161,7 +165,7 @@ def run_corpus(
                 workspace=workspace,
                 reingest=ingest_reingest,
                 difficulty_profile=DEFAULT_GENERATION_PROFILE.name,
-                recipe_selection=DEFAULT_GENERATION_CONFIG.recipe_selection(getattr(args, "selection_seed", None) or 0),
+                recipe_selection=generation_config.recipe_selection(recipe_seed),
             )
         except (FiveSourceIngestError, OSError, ValueError) as exc:
             raise _pipeline_support.CliUsageError(
@@ -369,6 +373,7 @@ def run_corpus(
                 accepted_variants=accepted_variants,
                 require_empirical=not bool(args.allow_structural_difficulty),
                 expected_campaign_fingerprint=expected_campaign_fingerprint,
+                generation_config=generation_config,
             )
             if rejected_workers:
                 rejected = dict(current_selection.rejected)

@@ -82,8 +82,9 @@ def scenario_witness_rows(task, e, recipe):
                 record(i,{e.debit:number(fact,e.debit,25),e.credit:number(fact,e.credit,3)})
         elif recipe == DOCUMENT:
             payments=by_name[e.other]
-            for row in parents:
-                set_values(row,{e.amount:number(parent,e.amount,100)})
+            if e.amount:
+                for row in parents:
+                    set_values(row,{e.amount:number(parent,e.amount,100)})
             for index, values in ((0,(50,50)),(1,(80,)),(4,(100,))):
                 for value in values:
                     record(index,{e.debit:number(fact,e.debit,value)})
