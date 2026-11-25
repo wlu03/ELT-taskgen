@@ -14,7 +14,7 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import threading
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -88,10 +88,16 @@ class GatewayBridge(AirbyteGateway):
         self.reads=reads
         self.owned={name:set() for name in ("sources","destinations","connections","jobs")}
         self.source_definitions={}
+        self.destination_configs={}
         self.job_connections = {}
         self.lock=threading.Lock()
         self.requests={}
         self.submission_rejections={}
+
+    @staticmethod
+    def _manual_schedule(body):
+        schedule = body.get("schedule")
+        return schedule is None or schedule == {"scheduleType": "manual"}
 
     def _source_config_allowed(self, value, field=""):
         if isinstance(value, dict):
@@ -126,15 +132,17 @@ class GatewayBridge(AirbyteGateway):
     def _allowed(self, method, parts, query, body):
         first,*remaining=parts
         if first=="workspaces":
-            return method=="GET" and remaining and remaining[0]==self.workspace and (
+            return method=="GET" and not query and remaining and remaining[0]==self.workspace and (
                 len(remaining)==1 or len(remaining)==3 and remaining[1]=="definitions" and remaining[2] in {"sources","destinations"})
         if first=="streams":
-            return method=="GET" and not remaining and query.get("sourceId",[None])[0] in self.owned["sources"]
+            source = query.get("sourceId", [])
+            return (method=="GET" and not remaining and set(query)=={"sourceId"}
+                    and len(source)==1 and source[0] in self.owned["sources"])
         if first not in self.owned:
             return False
         objects=self.owned[first]
         if remaining:
-            if len(remaining)!=1 or remaining[0] not in objects:
+            if query or len(remaining)!=1 or remaining[0] not in objects:
                 return False
             if method=="GET":
                 return True
@@ -143,19 +151,19 @@ class GatewayBridge(AirbyteGateway):
             if first=="connections" and method=="PATCH":
                 configurable={"name","namespaceDefinition","namespaceFormat","prefix","schedule",
                               "status","configurations","nonBreakingSchemaUpdatesBehavior","dataResidency"}
-                return set(body)<=configurable
+                return set(body)<=configurable and self._manual_schedule(body)
             return False
         if method=="GET":
             if first == "jobs":
                 return self._job_list_allowed(query)
-            return first in {"sources","destinations","connections"} and (
-                query.get("workspaceIds")==[self.workspace] or query.get("workspaceId")==[self.workspace])
-        if method!="POST":
+            return first in {"sources","destinations","connections"} and self._workspace_list_allowed(query)
+        if method!="POST" or query:
             return False
         if first=="jobs":
             return body.get("connectionId") in self.owned["connections"] and body.get("jobType")=="sync"
         if first=="connections":
-            return body.get("sourceId") in self.owned["sources"] and body.get("destinationId") in self.owned["destinations"]
+            return (body.get("sourceId") in self.owned["sources"]
+                    and body.get("destinationId") in self.owned["destinations"] and self._manual_schedule(body))
         if body.get("workspaceId")!=self.workspace or body.get("definitionId") not in self.definitions[first]:
             return False
         cfg=body.get("configuration") or {}
@@ -163,6 +171,14 @@ class GatewayBridge(AirbyteGateway):
             return (cfg.get("host")==self.sfhost and str(cfg.get("database","")).casefold()==self.sfdb
                     and not cfg.get("jdbc_url_params"))
         return self._source_configuration_valid(cfg)
+
+    def _workspace_list_allowed(self, query):
+        scope = {"workspaceId", "workspaceIds"} & query.keys()
+        return (len(scope) == 1 and not set(query) - (scope | {"limit", "offset"})
+                and all(len(values) == 1 for values in query.values())
+                and query[next(iter(scope))] == [self.workspace]
+                and re.fullmatch(r"[1-9][0-9]{0,5}", query.get("limit", ["100"])[0]) is not None
+                and re.fullmatch(r"0|[1-9][0-9]{0,5}", query.get("offset", ["0"])[0]) is not None)
 
     def _job_list_allowed(self, query):
         if not set(query) <= {"connectionId", "limit", "orderBy", "jobType"}:
@@ -212,8 +228,8 @@ class GatewayBridge(AirbyteGateway):
         parts=location.path.removeprefix(PREFIX).strip("/").split("/")
         if any(not re.fullmatch(r"[A-Za-z0-9_-]+",p) for p in parts):
             return denied()
-        query=parse_qs(location.query)
         try:
+            query=parse_qs(location.query, keep_blank_values=True, max_num_fields=12)
             data=json.loads(body) if body else {}
         except ValueError:
             return denied()
@@ -236,6 +252,10 @@ class GatewayBridge(AirbyteGateway):
                 result = ForwardResult(502, "Bad Gateway", (("Content-Type", "application/json"),),
                                        b'{"message":"Airbyte returned invalid job data"}')
         else:
+            if method == "GET" and len(parts) == 1 and parts[0] in {"sources", "destinations", "connections"}:
+                scoped_query = {"workspaceIds": self.workspace}
+                scoped_query.update({key: query[key][0] for key in ("limit", "offset") if key in query})
+                path = location.path + "?" + urlencode(scoped_query)
             result=self._send(method,path,outbound,body,None)
         with self.lock:
             audit_key=f"{method} {parts[0]} {result.status}"
@@ -252,11 +272,38 @@ class GatewayBridge(AirbyteGateway):
                         self.owned[first].add(str(obj))
                         if first == "sources":
                             self.source_definitions[str(obj)] = data["definitionId"]
+                        if first == "destinations":
+                            self.destination_configs[str(obj)] = data["configuration"]
                         if first == "jobs":
                             self.job_connections[str(obj)] = data["connectionId"]
             except (ValueError,AttributeError):
                 pass
         return result
+
+
+def start_desktop_relay(name, agent, gateway_port, sf_host, runenv):
+    from desktop_relay import CONTROL_PORT
+    script = Path(__file__).with_name("desktop_relay.py")
+    subprocess.run([
+        "docker", "run", "--rm", "--detach", "--pull=never", "--name", name,
+        "--network", "bridge", "--publish", f"127.0.0.1::{CONTROL_PORT}",
+        "--user", f"{os.getuid()}:{os.getgid()}", "--cap-drop=ALL", "--read-only",
+        "--security-opt=no-new-privileges", "--pids-limit=96", "--memory=128m",
+        "--mount", f"type=bind,src={script},dst=/relay.py,readonly",
+        "--entrypoint", "python", runenv["ELT_EVAL_SWE_IMAGE"],
+        "/relay.py", agent, str(gateway_port), sf_host,
+    ], check=True, capture_output=True, timeout=30)
+    address = subprocess.check_output(["docker", "port", name, f"{CONTROL_PORT}/tcp"],
+                                      text=True, timeout=20).strip()
+    match = re.fullmatch(r"127\.0\.0\.1:(\d+)", address)
+    if not match:
+        raise RuntimeError("Docker Desktop did not bind SWE-ReX control to loopback")
+    return int(match[1])
+
+
+def connect_egress(container, network):
+    subprocess.run(["docker", "network", "connect", "--alias", "elt-egress", network, container],
+                   check=True, capture_output=True, timeout=30)
 
 
 def write_state(out, state, **extra):

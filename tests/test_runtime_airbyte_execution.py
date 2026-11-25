@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
+from urllib.error import HTTPError
 
 import yaml
 
@@ -16,7 +17,7 @@ from elt_taskgen.destinations import (
     DBT_CORE_VERSION,
     Destination,
 )
-from elt_taskgen.runtime.airbyte import AirbyteClient, AirbyteError
+from elt_taskgen.runtime.airbyte import AirbyteClient, AirbyteError, AirbyteSyncConflict
 from elt_taskgen.runtime import execution as execution_mod
 from elt_taskgen.runtime.execution import (
     ExecutionError,
@@ -310,6 +311,7 @@ class RuntimeAirbyteExecutionTests(unittest.TestCase):
                 ],
                 ("GET", "jobs/10"): [
                     {"status": "running"},
+                    {"status": "incomplete"},
                     {"status": "succeeded"},
                 ],
                 ("GET", "jobs/20"): [
@@ -318,7 +320,7 @@ class RuntimeAirbyteExecutionTests(unittest.TestCase):
                 ],
             }
         )
-        ticks = iter((0.0, 0.0, 1.0, 1.0))
+        ticks = iter((0.0, 0.0, 1.0, 1.0, 2.0))
         result = client.trigger_and_wait_receipt(
             ("c1", "c2"),
             poll_interval=0,
@@ -329,11 +331,12 @@ class RuntimeAirbyteExecutionTests(unittest.TestCase):
         self.assertEqual(result.statuses, {"c1": "succeeded", "c2": "succeeded"})
         self.assertEqual(result.job_ids, {"c1": 10, "c2": 20})
         get_paths = [path for method, path, _ in client.calls if method == "GET"]
-        self.assertEqual(get_paths, ["jobs/10", "jobs/10", "jobs/20", "jobs/20"])
+        self.assertEqual(get_paths, ["jobs/10", "jobs/10", "jobs/10", "jobs/20", "jobs/20"])
         self.assertEqual(
             [(method, path) for method, path, _ in client.calls],
             [
                 ("POST", "jobs"),
+                ("GET", "jobs/10"),
                 ("GET", "jobs/10"),
                 ("GET", "jobs/10"),
                 ("POST", "jobs"),
@@ -341,6 +344,15 @@ class RuntimeAirbyteExecutionTests(unittest.TestCase):
                 ("GET", "jobs/20"),
             ],
         )
+
+    def test_trigger_reports_conflict_only_for_http_409(self) -> None:
+        for code, expected in ((409, AirbyteSyncConflict), (422, AirbyteError)):
+            with self.subTest(code=code), HTTPError("http://airbyte/jobs", code, "", {}, None) as error:
+                opener = mock.Mock(side_effect=error)
+                client = AirbyteClient("http://airbyte", bearer_token="test", opener=opener)
+                with self.assertRaises(expected) as raised:
+                    client.trigger_sync("c1")
+                self.assertIs(type(raised.exception), expected)
 
     def test_trigger_wait_refuses_missing_job_id(self) -> None:
         client = ScriptedAirbyte({("POST", "jobs"): {"status": "running"}})

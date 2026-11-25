@@ -24,6 +24,10 @@ class AirbyteError(RuntimeError):
     """The Airbyte control plane could not satisfy a runtime operation."""
 
 
+class AirbyteSyncConflict(AirbyteError):
+    """Airbyte rejected a sync trigger with a conflict."""
+
+
 class AirbyteSyncFailure(AirbyteError):
     """An identified Airbyte job finished without syncing successfully."""
 
@@ -47,6 +51,7 @@ class AirbyteSyncReceipt:
     statuses: dict[str, str]
 
 
+AIRBYTE_TERMINAL_JOB_STATUSES = frozenset({"succeeded", "failed", "cancelled", "canceled"})
 _WORKSPACE_ID = re.compile(r"^[0-9a-fA-F-]{36}$")
 
 
@@ -346,11 +351,17 @@ class AirbyteClient:
         )
 
     def trigger_sync(self, connection_id: str) -> Any:
-        return self.request(
-            "POST",
-            "jobs",
-            {"jobType": "sync", "connectionId": str(connection_id)},
-        )
+        try:
+            return self.request(
+                "POST",
+                "jobs",
+                {"jobType": "sync", "connectionId": str(connection_id)},
+            )
+        except AirbyteError as error:
+            cause = error.__cause__
+            if isinstance(cause, urllib.error.HTTPError) and cause.code == 409:
+                raise AirbyteSyncConflict(str(error)) from error
+            raise
 
     def job_status(self, job_id: int) -> str:
         payload = self.request("GET", f"jobs/{int(job_id)}")
@@ -419,7 +430,6 @@ class AirbyteClient:
         statuses: dict[str, str] = {}
         job_ids: dict[str, int] = {}
         deadline = monotonic() + float(timeout)
-        terminal_failures = {"failed", "cancelled", "canceled", "incomplete"}
         for connection_id in ids:
             result = self.trigger_sync(connection_id)
             candidates = [result]
@@ -465,10 +475,10 @@ class AirbyteClient:
             while True:
                 status = self.job_status(job_id)
                 statuses[connection_id] = status
-                if status in terminal_failures:
-                    raise AirbyteSyncFailure(connection_id, job_id, status)
                 if status == "succeeded":
                     break
+                if status in AIRBYTE_TERMINAL_JOB_STATUSES:
+                    raise AirbyteSyncFailure(connection_id, job_id, status)
                 if monotonic() >= deadline:
                     pending = ids[ids.index(connection_id) :]
                     raise AirbyteError(
