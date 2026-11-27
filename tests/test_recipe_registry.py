@@ -16,11 +16,12 @@ from elt_taskgen.generation.difficulty_profiles import (
     DEFAULT_GENERATION_PROFILE, DIFFICULTY_PROFILES, apply_generation_profile, difficulty_profile,
 )
 from elt_taskgen.generation.mart_plan import fan_out_rollup
+from elt_taskgen.generation.recipe_assignment import assign_recipe_batch
 from elt_taskgen.generation.recipe_registry import RECIPE_REGISTRY, UPSTREAM_BASELINE, RecipeSelection
 from elt_taskgen.generation.semantic_difficulty import SemanticDifficultyError
 from elt_taskgen.models import ColumnType, TaskStatus
 from elt_taskgen.pipeline_readiness import GenerationRunSpec, _configured_inputs
-from elt_taskgen.reference.solution import compile_plan_sql
+from elt_taskgen.reference.solution import PlanCompilationError, compile_plan_sql
 from elt_taskgen.verification.attacks import materialize_mutation, _validate_realized_fidelity
 from tests.test_dataset_column_names import EVIDENCE, build_task
 from tests.test_corpus import accepted, measure
@@ -46,6 +47,28 @@ def recipe_source(recipe):
 
 
 class RecipeRegistryTests(unittest.TestCase):
+    def test_batch_assignment_isolates_a_malformed_base_mart(self):
+        valid = source_task()
+        mart = valid.marts[0]
+        first, *remaining = mart.plan.ops
+        bad_source = first.model_copy(update={"tables": ("absent_source",)})
+        bad_plan = mart.plan.model_copy(update={"ops": (bad_source, *remaining)})
+        invalid = valid.model_copy(update={
+            "task_id": "proof__invalid",
+            "family_id": "proof__invalid",
+            "marts": (mart.model_copy(update={"plan": bad_plan}),),
+        })
+        recipe = "aggregate_filter_rank_v1"
+        selection = RecipeSelection(enabled_recipes=(recipe,))
+        failures = {}
+        admitted = assign_recipe_batch((invalid, valid), selection, failures=failures)
+        self.assertEqual([(task.task_id, task.marts[-1].plan.template_id) for task in admitted],
+                         [(valid.task_id, recipe)])
+        self.assertEqual(set(failures), {invalid.task_id})
+        self.assertIn("absent_source", failures[invalid.task_id])
+        with self.assertRaisesRegex(PlanCompilationError, "absent_source"):
+            assign_recipe_batch((invalid, valid), selection)
+
     def test_one_semantic_profile_and_removed_names_are_rejected(self):
         self.assertEqual(DEFAULT_GENERATION_PROFILE.name, "semantic")
         self.assertEqual({n for n in DIFFICULTY_PROFILES if n.startswith("semantic")}, {"semantic"})

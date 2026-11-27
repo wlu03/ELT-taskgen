@@ -17,6 +17,9 @@ from elt_taskgen import provenance as provenance_mod
 from elt_taskgen.adapters import schemapile as schemapile_adapter
 from elt_taskgen.demo_fixture import demo_task
 from elt_taskgen.engine import Engine
+from elt_taskgen.generation import recipe_assignment
+from elt_taskgen.generation.mart_plan import fan_out_rollup
+from elt_taskgen.generation.recipe_registry import RecipeSelection
 from elt_taskgen.models import (
     Origin,
     PopulationName,
@@ -31,6 +34,7 @@ from elt_taskgen.provenance import (
     sha256_file,
     sha256_tree,
 )
+from tests.test_dataset_column_names import EVIDENCE, build_task
 
 
 class FiveSourceManifestTests(unittest.TestCase):
@@ -944,6 +948,176 @@ class FiveSourceManifestTests(unittest.TestCase):
             by_receipt_id[advanced_id].task_content_hash,
             intake_hashes[advanced_id],
         )
+
+    def _semantic_dbt_pool(self, count):
+        counts = {origin: 1 for origin in ingest_mod.FIVE_ORIGINS}
+        counts[Origin.DBT] = count
+        self._write_manifest(self._batch_manifest_doc(counts))
+
+    def _semantic_dbt_source(self, entry, paths, catalog):
+        identity = self._batch_task(entry, paths, catalog)
+        source = build_task(fan_out_rollup(EVIDENCE, mart="studio_activity"), "proof__source")
+        return source.model_copy(update={
+            key: getattr(identity, key)
+            for key in ("task_id", "family_id", "cluster_id", "origin", "license")
+        })
+
+    def _selected_semantic_dbt(self, count, builder, *, dry_run=False, seed=4):
+        recipes = ("aggregate_filter_rank_v1", "semantic_rollup_v1")
+        with mock.patch.object(ingest_mod, "_build_dbt_task", side_effect=builder):
+            return ingest_mod.ingest_selected_sources(
+                self.manifest,
+                workspace=self.workspace,
+                candidate_count=count,
+                source_families=("dbt",),
+                continue_on_candidate_error=True,
+                dry_run=dry_run,
+                difficulty_profile="semantic",
+                recipe_selection=RecipeSelection(enabled_recipes=recipes, seed=seed),
+            )
+
+    def test_selected_semantic_ingest_assigns_across_surviving_candidates(self) -> None:
+        self._semantic_dbt_pool(4)
+        adapter_failure = "dbt__batch_01"
+        unsupported = "dbt__batch_02"
+
+        def partial_source(entry, paths, catalog):
+            if entry.expected_task_id == adapter_failure:
+                raise ingest_mod.FiveSourceIngestError("unreadable source")
+            if entry.expected_task_id == unsupported:
+                return self._batch_task(entry, paths, catalog)  # No enabled recipe fits.
+            # Both survivors support both recipes. Isolated assignment gives
+            # them the same recipe; batch assignment can cover both.
+            return self._semantic_dbt_source(entry, paths, catalog)
+
+        _, preview = self._selected_semantic_dbt(4, partial_source, dry_run=True)
+        self.assertFalse(self.workspace.exists())
+        selected, result = self._selected_semantic_dbt(4, partial_source)
+        self.assertEqual(
+            [task.content_hash() for task in preview.tasks],
+            [task.content_hash() for task in result.tasks],
+        )
+
+        self.assertEqual(
+            [outcome.task_id for outcome in result.candidate_outcomes],
+            [entry.expected_task_id for entry in selected.ordered_entries()],
+        )
+        failed = {outcome.task_id: outcome.detail for outcome in result.candidate_outcomes
+                  if outcome.state == "failed"}
+        self.assertEqual(set(failed), {adapter_failure, unsupported})
+        self.assertIn("unreadable source", failed[adapter_failure])
+        self.assertIsNone(result.receipt)
+        self.assertEqual([task.task_id for task in result.tasks], ["dbt__batch_00", "dbt__batch_03"])
+        self.assertEqual({task.marts[-1].plan.template_id for task in result.tasks},
+                         {"aggregate_filter_rank_v1", "semantic_rollup_v1"})
+        assignments = {
+            load_current(self.workspace / "tasks" / task.task_id, task=task, required=True)
+            .source.selection_inputs["recipe_assignment"].digest
+            for task in result.tasks
+        }
+        self.assertEqual(len(assignments), 1)
+
+        # A recovered source expands the batch without changing an intake
+        # hash already used as the root of a valid sibling's revision chain.
+        _, recovered = self._selected_semantic_dbt(4, self._semantic_dbt_source)
+        states = {outcome.task_id: outcome.state for outcome in recovered.candidate_outcomes}
+        self.assertEqual(states, {
+            "dbt__batch_00": "resumed", adapter_failure: "created",
+            unsupported: "created", "dbt__batch_03": "resumed",
+        })
+        self.assertIsNotNone(recovered.receipt)
+        self.assertTrue(recovered.receipt.is_file())
+        recovered_hashes = {task.task_id: task.content_hash() for task in recovered.tasks}
+        for task in result.tasks:
+            self.assertEqual(recovered_hashes[task.task_id], task.content_hash())
+
+    def test_selected_semantic_dry_run_rechecks_inputs_after_matching(self) -> None:
+        self._semantic_dbt_pool(1)
+        assign = recipe_assignment.assign_recipe_batch
+
+        def change_input_after_matching(*args, **kwargs):
+            assigned = assign(*args, **kwargs)
+            self.dbt_manifest.write_text('{"changed": true}', encoding="utf-8")
+            return assigned
+
+        with mock.patch.object(recipe_assignment, "assign_recipe_batch",
+                               side_effect=change_input_after_matching):
+            _, result = self._selected_semantic_dbt(1, self._semantic_dbt_source, dry_run=True)
+        self.assertEqual(result.tasks, ())
+        outcome, = result.candidate_outcomes
+        self.assertEqual((outcome.task_id, outcome.state), ("dbt__batch_00", "failed"))
+        self.assertIn("digest mismatch", outcome.detail)
+        self.assertFalse(self.workspace.exists())
+
+    def test_selected_semantic_ingest_recovers_registration_before_provenance(self) -> None:
+        self._semantic_dbt_pool(4)
+        first_id = "dbt__batch_00"
+
+        def two_sources(entry, paths, catalog):
+            if entry.expected_task_id in {"dbt__batch_01", "dbt__batch_02"}:
+                raise ingest_mod.FiveSourceIngestError("temporarily unavailable")
+            return self._semantic_dbt_source(entry, paths, catalog)
+
+        # With this seed an unconstrained assignment over all four would change
+        # the first task's recipe compared with one over the two available now.
+        with mock.patch.object(ingest_mod, "publish_or_confirm", side_effect=RuntimeError("crash")), \
+             self.assertRaisesRegex(RuntimeError, "crash"):
+            self._selected_semantic_dbt(4, two_sources, seed=0)
+        task_dir = self.workspace / "tasks" / first_id
+        engine = Engine(self.workspace)
+        try:
+            original = engine.load_task(first_id)
+        finally:
+            engine.close()
+        self.assertIsNone(load_current(task_dir, task=original, required=False))
+
+        _, recovered = self._selected_semantic_dbt(4, self._semantic_dbt_source, seed=0)
+        states = {outcome.task_id: outcome.state for outcome in recovered.candidate_outcomes}
+        self.assertEqual(states, {first_id: "resumed", "dbt__batch_01": "created",
+                                  "dbt__batch_02": "created", "dbt__batch_03": "created"})
+        self.assertIsNotNone(recovered.receipt)
+        self.assertTrue(recovered.receipt.is_file())
+        provenance = load_current(task_dir, task=original, required=True)
+        self.assertEqual(provenance.task_content_hash, original.content_hash())
+        self.assertIn("recipe_assignment", provenance.source.selection_inputs)
+
+    def test_selected_semantic_ingest_restores_claimed_record_when_cohort_changes(self) -> None:
+        self._semantic_dbt_pool(4)
+        first_id = "dbt__batch_00"
+        store = self.workspace / "tasks" / first_id / provenance_mod.INGEST_PROVENANCE_DIRNAME
+        intended = {}
+        publish = provenance_mod._publish_immutable_file
+
+        def one_source(entry, paths, catalog):
+            if entry.expected_task_id != first_id:
+                raise ingest_mod.FiveSourceIngestError("temporarily unavailable")
+            return self._semantic_dbt_source(entry, paths, catalog)
+
+        def crash_on_record(directory, destination, payload, *, conflict):
+            if directory == store and destination.suffix == ".json":
+                intended[destination] = payload
+                raise RuntimeError("crash before provenance record")
+            return publish(directory, destination, payload, conflict=conflict)
+
+        with (
+            mock.patch.object(provenance_mod, "_publish_immutable_file", side_effect=crash_on_record),
+            self.assertRaisesRegex(RuntimeError, "crash before provenance record"),
+        ):
+            self._selected_semantic_dbt(4, one_source, seed=0)
+        record_path, = intended
+        claim, = store.glob("*.claim")
+        claim_bytes = claim.read_bytes()
+        self.assertFalse(record_path.exists())
+
+        _, result = self._selected_semantic_dbt(4, self._semantic_dbt_source, seed=0)
+        self.assertEqual([outcome.state for outcome in result.candidate_outcomes],
+                         ["resumed", "created", "created", "created"])
+        self.assertEqual(claim.read_bytes(), claim_bytes)
+        self.assertEqual(record_path.read_bytes(), intended[record_path])
+        self.assertIsNotNone(result.receipt)
+        receipt = ingest_mod.SelectedSourceIngestReceipt.model_validate_json(result.receipt.read_bytes())
+        self.assertEqual([entry.task_id for entry in receipt.tasks],
+                         [task.task_id for task in result.tasks])
 
     def test_v2_requires_strict_generator_and_dlt_contracts(self) -> None:
         invalid_docs: list[tuple[str, dict, str]] = []

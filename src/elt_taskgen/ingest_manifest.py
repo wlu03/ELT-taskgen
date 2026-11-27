@@ -2934,6 +2934,14 @@ def _publish_receipt(workspace: Path, receipt: IngestReceipt) -> Path:
     return destination
 
 
+def _ingest_recipe_selection(
+    difficulty_profile: str, selection: RecipeSelection | None,
+) -> RecipeSelection | None:
+    if difficulty_profile not in ("standard", "semantic"):
+        raise FiveSourceIngestError(f"unsupported pipeline difficulty profile {difficulty_profile!r}")
+    return resolve_recipe_selection(difficulty_profile, selection)
+
+
 def prepare_five_sources(
     manifest: FiveSourceManifest,
     *,
@@ -2950,46 +2958,36 @@ def prepare_five_sources(
 
     manifest_path = Path(manifest_path).absolute()
     workspace = Path(workspace).absolute()
-    if difficulty_profile not in ("standard", "semantic"):
-        raise FiveSourceIngestError(f"unsupported pipeline difficulty profile {difficulty_profile!r}")
-    recipe_selection = resolve_recipe_selection(difficulty_profile, recipe_selection)
+    recipe_selection = _ingest_recipe_selection(difficulty_profile, recipe_selection)
     if _generator_pinned(manifest):
         # This is deliberately the first content verification in preflight.
         _verify_generator_pin(manifest.generator, label="preflight")
     _assert_safe_workspace_shell(workspace)
-    # Keep snapshots outside the workspace until all preflight checks finish.
-    with tempfile.TemporaryDirectory(
-        prefix="elt-taskgen-ingest-inputs-"
-    ) as temporary:
-        return _prepare_five_sources_from_snapshots(
-            manifest,
-            manifest_path=manifest_path,
-            workspace=workspace,
-            reingest=reingest,
-            allow_workspace_extras=allow_workspace_extras,
-            equivalence_authorization=equivalence_authorization,
-            retain_task_local_fatals=retain_task_local_fatals,
-            snapshot_root=Path(temporary),
-            difficulty_profile=difficulty_profile,
-            recipe_selection=recipe_selection,
+    prepared = _build_source_drafts(manifest, manifest_path, difficulty_profile, recipe_selection)
+    if recipe_selection is not None:
+        prepared = _assign_prepared_recipes(manifest, prepared, recipe_selection)
+    return _check_prepared_sources(
+        manifest, prepared, manifest_path=manifest_path, workspace=workspace, reingest=reingest,
+        allow_workspace_extras=allow_workspace_extras,
+        equivalence_authorization=equivalence_authorization,
+        retain_task_local_fatals=retain_task_local_fatals,
+    )
+
+
+def _build_source_drafts(
+    manifest: FiveSourceManifest, manifest_path: Path, difficulty_profile: str,
+    recipe_selection: RecipeSelection | None,
+) -> tuple[PreparedSource, ...]:
+    with tempfile.TemporaryDirectory(prefix="elt-taskgen-ingest-inputs-") as temporary:
+        return _build_drafts_from_snapshots(
+            manifest, manifest_path, Path(temporary), difficulty_profile, recipe_selection
         )
 
 
-def _prepare_five_sources_from_snapshots(
-    manifest: FiveSourceManifest,
-    *,
-    manifest_path: Path,
-    workspace: Path,
-    reingest: bool,
-    allow_workspace_extras: bool,
-    equivalence_authorization: EquivalenceAuthorization | None,
-    retain_task_local_fatals: bool,
-    snapshot_root: Path,
-    difficulty_profile: str = "standard",
-    recipe_selection: RecipeSelection | None = None,
+def _build_drafts_from_snapshots(
+    manifest: FiveSourceManifest, manifest_path: Path, snapshot_root: Path,
+    difficulty_profile: str, recipe_selection: RecipeSelection | None,
 ) -> tuple[PreparedSource, ...]:
-    """Implementation whose adapter-visible inputs live under snapshot_root."""
-
     catalog_path = _resolve_path(
         manifest.catalog.path,
         manifest_path=manifest_path,
@@ -3099,30 +3097,6 @@ def _prepare_five_sources_from_snapshots(
             )
         )
 
-    if difficulty_profile == "semantic":
-        from elt_taskgen.generation.recipe_assignment import assign_recipe_batch
-        try:
-            assigned = assign_recipe_batch((item.task for item in built), recipe_selection)
-        except (ValueError, KeyError) as exc:
-            raise FiveSourceIngestError(f"semantic recipe assignment refused: {exc}") from exc
-        assignment_digest = sha256_hex(canonical_json(sorted((
-            {"task_id": before.task.task_id, "input_hash": before.task.content_hash(),
-             "output_hash": after.content_hash()}
-            for before, after in zip(built, assigned, strict=True)
-        ), key=lambda row: row["task_id"])))
-        enriched = []
-        for entry, item, task in zip(manifest.ordered_entries(), built, assigned, strict=True):
-            _validate_task(entry, task)
-            identity = _identity(entry, task, adapter_name=_verify_adapter_once(entry, prebuild_adapters),
-                difficulty_profile=difficulty_profile, recipe_selection=recipe_selection, manifest=manifest)
-            identity = identity.model_copy(update={"selection_inputs": {
-                **identity.selection_inputs, "recipe_assignment": ProvenanceArtifact(
-                    locator="mart-generation:batch-capability-assignment", digest=assignment_digest,
-                    digest_kind="sha256-canonical-json-v1")}})
-            enriched.append(replace(item, task=task, provenance=IngestProvenance(
-                task_id=task.task_id, task_content_hash=task.content_hash(), source=identity)))
-        built = enriched
-
     prepared = tuple(built)
     observed_origins = tuple(item.origin for item in prepared)
     if isinstance(manifest, FiveSourceIngestManifest):
@@ -3145,35 +3119,137 @@ def _prepare_five_sources_from_snapshots(
     if _generator_pinned(manifest):
         _assert_unique_independence_units(prepared)
 
-    # Re-read all inputs after adapters run to detect source mutation before writes.
-    postbuild_artifacts: dict[Path, ArtifactPin] = {}
-    postbuild_adapters: dict[str, tuple[str, str, str]] = {}
-    postbuild_wikidbs_inventories: dict[Path, str] = {}
-    _verify_artifact_once(
-        catalog_path,
-        manifest.catalog,
-        label="source catalog (post-build)",
-        verified=postbuild_artifacts,
-    )
-    for entry, item in zip(manifest.ordered_entries(), prepared, strict=True):
-        _verify_adapter_once(entry, postbuild_adapters)
-        path_map = {role: path for role, path, _artifact in item.artifacts}
-        for role, path, artifact in item.artifacts:
-            _verify_artifact_once(
-                path,
-                artifact,
-                label=f"{item.origin.value}.{role} (post-build)",
-                verified=postbuild_artifacts,
-            )
-        if isinstance(entry, WikiDBsIngest):
-            row = _catalog_row(catalog, entry)
-            _verify_wikidbs_inventory(
-                entry,
-                database=path_map["database"],
-                root=row.root_path(),
-                verified=postbuild_wikidbs_inventories,
-            )
+    return prepared
 
+
+@dataclass(frozen=True)
+class _StoredAssignment:
+    task: TaskIR
+    # A crash may have registered the task before its provenance was published.
+    provenance: IngestProvenance | None
+
+
+def _assign_prepared_recipes(
+    manifest: FiveSourceManifest, drafts: tuple[PreparedSource, ...],
+    selection: RecipeSelection, *, failures: dict[str, str] | None = None,
+    resumed: dict[str, _StoredAssignment] | None = None,
+) -> tuple[PreparedSource, ...]:
+    from elt_taskgen.generation.recipe_assignment import assign_recipe_batch
+
+    resumed = resumed or {}
+    by_id = {item.task.task_id: item for item in drafts}
+    admission_failures = {} if failures is not None else None
+    try:
+        assigned = assign_recipe_batch((item.task for item in drafts), selection, failures=admission_failures)
+        # An interrupted write with the same source roster must reproduce the
+        # original matching, including decisions for as-yet-unregistered tasks.
+        # Constrain the new matching only if changed source availability would
+        # otherwise replace an established intake.
+        selected_hashes = {task.task_id: task.content_hash() for task in assigned} if resumed else {}
+        if any(selected_hashes.get(task_id) != item.task.content_hash()
+               for task_id, item in resumed.items()):
+            candidates = (resumed.get(task_id, item).task for task_id, item in by_id.items())
+            if admission_failures is not None:
+                admission_failures.clear()
+            assigned = assign_recipe_batch(candidates, selection, failures=admission_failures)
+    except (ValueError, KeyError) as exc:
+        raise FiveSourceIngestError(f"semantic recipe assignment refused: {exc}") from exc
+    if failures is not None:
+        failures.update(admission_failures)
+    entries = {entry.expected_task_id: entry for entry in manifest.ordered_entries()}
+    validated = []
+    for task in assigned:
+        try:
+            _validate_task(entries[task.task_id], task)
+        except (ValueError, KeyError) as exc:
+            if failures is None:
+                raise
+            failures[task.task_id] = f"semantic task validation refused: {exc}"
+        else:
+            validated.append(task)
+    assignment = [
+        {
+            "task_id": task.task_id,
+            "input_hash": by_id[task.task_id].task.content_hash(),
+            "output_hash": task.content_hash(),
+        }
+        for task in sorted(validated, key=lambda task: task.task_id)
+    ]
+    assignment_digest = sha256_hex(canonical_json(assignment))
+    proof = ProvenanceArtifact(
+        locator="mart-generation:batch-capability-assignment", digest=assignment_digest,
+        digest_kind="sha256-canonical-json-v1",
+    )
+    enriched = []
+    for task in validated:
+        item = by_id[task.task_id]
+        stored = resumed.get(task.task_id)
+        if stored is not None and stored.provenance is not None:
+            provenance = stored.provenance
+        else:
+            source = item.provenance.source
+            inputs = {**source.selection_inputs, "recipe_assignment": proof}
+            provenance = IngestProvenance(
+                task_id=task.task_id, task_content_hash=task.content_hash(),
+                source=source.model_copy(update={"selection_inputs": inputs}),
+            )
+        enriched.append(replace(item, task=task, provenance=provenance))
+    return tuple(enriched)
+
+
+def _reproduce_stored_assignment(
+    workspace: Path, draft: PreparedSource, stored: TaskIR, selection: RecipeSelection,
+) -> _StoredAssignment | None:
+    """Recognize an immutable earlier decision only by reproducing its intake root."""
+    from elt_taskgen.generation.recipe_registry import apply_semantic_recipes
+
+    task_dir = workspace / "tasks" / stored.task_id
+    root_hash = lineage_root_hash(stored)
+    try:
+        previous = load_for_lineage(
+            task_dir, task_id=stored.task_id,
+            lineage_hash=root_hash, required=False,
+        )
+    except ValueError:
+        from elt_taskgen.provenance import load_pending_semantic_provenance
+
+        # An interrupted immutable claim may already bind the exact cohort proof.
+        # Verify its pending payload before reusing the original provenance.
+        previous = load_pending_semantic_provenance(
+            task_dir, task_id=stored.task_id, lineage_hash=root_hash,
+        )
+    if previous is not None:
+        base_inputs = dict(previous.source.selection_inputs)
+        if base_inputs.pop("recipe_assignment", None) is None:
+            return None
+        if previous.source.model_copy(update={"selection_inputs": base_inputs}) != draft.provenance.source:
+            return None
+
+    # Later revisions may edit or remove the original mart; use their recipe
+    # name only to order attempts, and verify the entire reconstructed task.
+    hinted = [
+        mart.plan.template_id for mart in stored.marts
+        if mart.plan.template_id in selection.enabled_recipes
+    ]
+    for recipe in dict.fromkeys((*hinted, *selection.ordered_for(stored.family_id))):
+        try:
+            frozen = apply_semantic_recipes(
+                draft.task, RecipeSelection(enabled_recipes=(recipe,), seed=selection.seed)
+            )
+        except (ValueError, KeyError):
+            continue
+        if frozen.content_hash() == root_hash:
+            return _StoredAssignment(frozen, previous)
+    return None
+
+
+def _check_prepared_sources(
+    manifest: FiveSourceManifest, prepared: tuple[PreparedSource, ...], *, manifest_path: Path,
+    workspace: Path, reingest: bool, allow_workspace_extras: bool,
+    equivalence_authorization: EquivalenceAuthorization | None = None,
+    retain_task_local_fatals: bool = False,
+) -> tuple[PreparedSource, ...]:
+    _recheck_source_inputs(manifest, manifest_path, prepared, phase="post-build")
     prepared = _scan_preflight(
         workspace,
         prepared,
@@ -3265,7 +3341,13 @@ def _recheck_live_inputs(
         # The caller holds the coordinator lock; refuse code/lock drift before
         # checking or publishing any task in the roster.
         _verify_generator_pin(manifest.generator, label="live")
+    _recheck_source_inputs(manifest, manifest_path, prepared, phase="live")
 
+
+def _recheck_source_inputs(
+    manifest: FiveSourceManifest, manifest_path: Path, prepared: tuple[PreparedSource, ...],
+    *, phase: str,
+) -> None:
     catalog_path = _resolve_path(
         manifest.catalog.path,
         manifest_path=manifest_path,
@@ -3278,7 +3360,7 @@ def _recheck_live_inputs(
     _verify_artifact_once(
         catalog_path,
         manifest.catalog,
-        label="source catalog (live)",
+        label=f"source catalog ({phase})",
         verified=live_artifacts,
     )
     try:
@@ -3310,7 +3392,7 @@ def _recheck_live_inputs(
             _verify_artifact_once(
                 path,
                 pin,
-                label=f"{entry.pool}.{role} (live)",
+                label=f"{entry.pool}.{role} ({phase})",
                 verified=live_artifacts,
             )
             path_map[role] = path
@@ -3326,7 +3408,7 @@ def _recheck_live_inputs(
     _verify_artifact(
         catalog_path,
         manifest.catalog,
-        label="source catalog (live post-check)",
+        label=f"source catalog ({phase} post-check)",
     )
 
 
@@ -3456,7 +3538,7 @@ def ingest_selected_sources(
     """
 
     source = Path(pool_manifest_path).absolute()
-    recipe_selection = resolve_recipe_selection(difficulty_profile, recipe_selection)
+    recipe_selection = _ingest_recipe_selection(difficulty_profile, recipe_selection)
     pool = load_five_source_batch_manifest(source)
     selected = select_candidate_manifest(
         pool,
@@ -3580,45 +3662,67 @@ def ingest_selected_sources(
         expected_pool=None,
     )
     _verify_artifact(catalog_path, selected.catalog, label="source catalog")
+    entries = selected.ordered_entries()
+    manifests: dict[str, SelectedSourceIngestManifest] = {}
+    drafts: list[PreparedSource] = []
+    failures: dict[str, str] = {}
+    resumed: dict[str, _StoredAssignment] = {}
+    stored = _stored_tasks(target) if recipe_selection is not None else {}
+    for entry in entries:
+        origin = _origin_for_entry(entry)
+        sources = SelectedSourceEntries(**{
+            family.value: ((entry,) if family is origin else ()) for family in FIVE_ORIGINS
+        })
+        singleton = SelectedSourceIngestManifest(
+            expected_task_count=1, parent_manifest_sha256=selected.parent_manifest_sha256,
+            selection_seed=selected.selection_seed, generator=selected.generator,
+            catalog=selected.catalog, sources=sources,
+            source_allocation={family: int(family is origin) for family in FIVE_ORIGINS},
+        )
+        manifests[entry.expected_task_id] = singleton
+        try:
+            (draft,) = _build_source_drafts(singleton, source, difficulty_profile, recipe_selection)
+            if recipe_selection is not None and draft.task.task_id in stored:
+                previous = _reproduce_stored_assignment(
+                    target, draft, stored[draft.task.task_id], recipe_selection
+                )
+                if previous is not None:
+                    resumed[draft.task.task_id] = previous
+            drafts.append(draft)
+        except (OSError, ValueError) as exc:
+            failures[entry.expected_task_id] = f"{type(exc).__name__}: {exc}"
+
+    prepared = tuple(drafts)
+    if recipe_selection is not None:
+        prepared = _assign_prepared_recipes(
+            selected, prepared, recipe_selection, failures=failures, resumed=resumed
+        )
+    prepared_by_id = {item.task.task_id: item for item in prepared}
+    # Shared pin drift remains a run-level failure even when individual adapters fail.
+    _verify_generator_pin(selected.generator, label="configured ingest")
+    _verify_artifact(catalog_path, selected.catalog, label="source catalog")
+
     created: list[TaskIR] = []
     outcomes: list[CandidateIngestOutcome] = []
-    for entry in selected.ordered_entries():
+    for entry in entries:
         origin = _origin_for_entry(entry)
-        source_lists = {
-            candidate_origin: ((entry,) if candidate_origin is origin else ())
-            for candidate_origin in FIVE_ORIGINS
-        }
-        singleton = SelectedSourceIngestManifest(
-            expected_task_count=1,
-            parent_manifest_sha256=selected.parent_manifest_sha256,
-            selection_seed=selected.selection_seed,
-            source_allocation={
-                candidate_origin: int(candidate_origin is origin)
-                for candidate_origin in FIVE_ORIGINS
-            },
-            generator=selected.generator,
-            catalog=selected.catalog,
-            sources=SelectedSourceEntries(
-                dbt=source_lists[Origin.DBT],
-                dlt=source_lists[Origin.DLT],
-                synsql=source_lists[Origin.SYNSQL],
-                schemapile=source_lists[Origin.SCHEMAPILE],
-                wikidbs=source_lists[Origin.WIKIDBS],
-            ),
-        )
+        singleton = manifests[entry.expected_task_id]
+        if entry.expected_task_id in failures:
+            outcomes.append(CandidateIngestOutcome(
+                origin=origin, task_id=entry.expected_task_id, state="failed",
+                detail=failures[entry.expected_task_id],
+            ))
+            continue
         task_path = target / "tasks" / entry.expected_task_id / "task_ir.json"
         existed = task_path.is_file()
         try:
-            one = _ingest_loaded_manifest(
-                singleton,
-                manifest_path=source,
-                workspace=target,
-                reingest=reingest,
-                dry_run=dry_run,
-                allow_workspace_extras=True,
-                equivalence_authorization=equivalence_authorization,
-                difficulty_profile=difficulty_profile,
-                recipe_selection=recipe_selection,
+            checked = _check_prepared_sources(
+                singleton, (prepared_by_id[entry.expected_task_id],), manifest_path=source,
+                workspace=target, reingest=reingest, allow_workspace_extras=True,
+            )
+            one = _register_prepared_sources(
+                singleton, checked, source=source, target=target, reingest=reingest,
+                dry_run=dry_run, allow_workspace_extras=True,
             )
         except (FiveSourceIngestError, OSError, ValueError) as exc:
             outcomes.append(
@@ -3788,6 +3892,17 @@ def _ingest_loaded_manifest(
                 raise FiveSourceIngestError(
                     f"{protocol} binding changed for {item.task.task_id!r}"
                 )
+    return _register_prepared_sources(
+        manifest, prepared, source=source, target=target, reingest=reingest, dry_run=dry_run,
+        allow_workspace_extras=allow_workspace_extras, equivalence_authorization=equivalence_authorization,
+    )
+
+
+def _register_prepared_sources(
+    manifest: FiveSourceManifest, prepared: tuple[PreparedSource, ...], *, source: Path,
+    target: Path, reingest: bool, dry_run: bool, allow_workspace_extras: bool,
+    equivalence_authorization: EquivalenceAuthorization | None = None,
+) -> FiveSourceIngestResult:
     receipt = _receipt(manifest, prepared)
     if dry_run:
         return FiveSourceIngestResult(

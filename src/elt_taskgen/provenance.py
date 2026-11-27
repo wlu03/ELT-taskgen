@@ -742,10 +742,19 @@ def publish_or_confirm(task_dir: Path, provenance: IngestProvenance) -> Path:
         f"{provenance.task_content_hash}.{evidence_digest}.json"
     )
 
+    claim = (evidence_digest + "\n").encode("ascii")
+    if "recipe_assignment" in provenance.source.selection_inputs:
+        # A recovered sibling can change the batch assignment digest. Preserve
+        # the bytes actually claimed so this task can finish its original write.
+        # An existing digest-only claim must retain its historical encoding.
+        if not claim_destination.exists() or _read_regular_bytes(
+            claim_destination, label="ingest provenance claim"
+        ) != claim:
+            claim += payload
     _publish_immutable_file(
         store,
         claim_destination,
-        (evidence_digest + "\n").encode("ascii"),
+        claim,
         conflict=(
             "lineage already has different ingest provenance bytes: "
             f"{provenance.task_content_hash[:12]}"
@@ -919,6 +928,28 @@ def _publish_immutable_file(
         temporary.unlink(missing_ok=True)
 
 
+def _read_claim(
+    path: Path, task_id: str, lineage_hash: str
+) -> tuple[str, IngestProvenance | None]:
+    raw = _read_regular_bytes(path, label="ingest provenance claim")
+    header, separator, body = raw.partition(b"\n")
+    if not separator or not re.fullmatch(rb"[0-9a-f]{64}", header):
+        raise ValueError(f"invalid ingest provenance claim bytes: {path.name}")
+    digest = header.decode("ascii")
+    if not body:
+        return digest, None
+    record = IngestProvenance.model_validate_json(body)
+    if (
+        body != record.deterministic_bytes()
+        or record.evidence_digest() != digest
+        or record.task_content_hash != lineage_hash
+        or record.task_id != task_id
+        or "recipe_assignment" not in record.source.selection_inputs
+    ):
+        raise ValueError(f"invalid semantic ingest provenance claim: {path.name}")
+    return digest, record
+
+
 def _load_store_records(
     task_dir: Path,
     *,
@@ -968,19 +999,8 @@ def _load_store_records(
         ) or stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
             raise ValueError(f"invalid entry in provenance store: {path}")
         if claim_match is not None:
-            try:
-                raw_claim = _read_regular_bytes(path, label="ingest provenance claim")
-                claim_digest = raw_claim.decode("ascii").removesuffix("\n")
-            except (OSError, UnicodeError) as exc:
-                raise ValueError(f"invalid ingest provenance claim {path.name}: {exc}") from exc
-            if (
-                raw_claim != (claim_digest + "\n").encode("ascii")
-                or _SHA256_RE.fullmatch(claim_digest) is None
-            ):
-                raise ValueError(
-                    f"invalid ingest provenance claim bytes: {path.name}"
-                )
-            claims[claim_match.group(1)] = claim_digest
+            lineage_hash = claim_match.group(1)
+            claims[lineage_hash], _ = _read_claim(path, safe_task_id, lineage_hash)
             continue
         if equivalence_match is not None:
             try:
@@ -1225,6 +1245,37 @@ def load_for_lineage(
         lineage_hash=lineage_hash,
         required=required,
     )
+
+
+def load_pending_semantic_provenance(
+    task_dir: Path, *, task_id: str, lineage_hash: str
+) -> IngestProvenance | None:
+    """Read a semantic writer's exact intent even if its record link was interrupted.
+
+    Ordinary provenance readers still require both links. Legacy digest-only
+    claims can only be completed by an independently reproduced matching record.
+    """
+    task_id = validate_task_id_segment(task_id)
+    if not _SHA256_RE.fullmatch(lineage_hash):
+        raise ValueError("lineage_hash must be a lowercase SHA-256 digest")
+    root = Path(task_dir)
+    try:
+        claim_path = _store_dir(root, create=False) / f"{lineage_hash}.claim"
+        claim_path.lstat()
+    except FileNotFoundError:
+        return None
+    digest, intent = _read_claim(claim_path, task_id, lineage_hash)
+    # Check all competing history. Re-reading the claim here also binds the
+    # first read to the expected digest if another process finishes the write.
+    published = load_for_lineage(
+        root, task_id=task_id, lineage_hash=lineage_hash, required=False,
+        recoverable_evidence_digest=digest,
+    )
+    if intent is not None:
+        validate_task_binding(_load_task(root), intent)
+        if published is not None and published != intent:
+            raise ValueError("semantic claim differs from published ingest provenance")
+    return intent
 
 
 def load_current(

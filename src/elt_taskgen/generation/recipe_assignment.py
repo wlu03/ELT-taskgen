@@ -63,21 +63,31 @@ def supported_order(task, selection):
     return tuple(sorted((r for r in original if r in supported), key=specificity))
 
 
-def assign_recipe_batch(tasks, selection=None):
+def assign_recipe_batch(tasks, selection=None, *, failures: dict[str, str] | None = None):
     """Return tasks in input order, with one recipe per task and maximal feasible
-    distinct-recipe matching across source families. No model calls or writes.
+    distinct-recipe matching across source families. When supplied, failures
+    records inadmissible tasks by id and the return contains only admitted tasks.
     """
     from elt_taskgen.generation.recipe_registry import apply_semantic_recipes
     selection = RecipeSelection.model_validate(selection) if selection is not None else RecipeSelection()
     tasks = tuple(tasks)
     owners = defaultdict(list)
-    caps = [capabilities(t, selection) for t in tasks]
-    for i, recipes in enumerate(caps):
+    caps = []
+    for i, task in enumerate(tasks):
+        try:
+            recipes = capabilities(task, selection)
+        except (ValueError, KeyError) as exc:
+            if failures is None:
+                raise
+            failures[task.task_id] = f"semantic capability check refused: {exc}"
+            recipes = set()
+        caps.append(recipes)
         for recipe in recipes:
             owners[recipe].append(i)
     rank = lambda value: sha256_hex(canonical_json([selection.seed, value]))
     recipes = sorted(owners, key=lambda r: (len({tasks[i].family_id for i in owners[r]}), specificity(r), rank(r)))
     assigned, admitted = {}, {}
+    refusals = defaultdict(list)
 
     def build(i, recipe):
         key = (i, recipe)
@@ -85,8 +95,14 @@ def assign_recipe_batch(tasks, selection=None):
             try:
                 # Apply through the registry to preserve idempotency and the
                 # exactly-one-managed-recipe rule even for pre-enriched inputs.
-                admitted[key] = apply_semantic_recipes(tasks[i], RecipeSelection(enabled_recipes=(recipe,), seed=selection.seed))
-            except SemanticDifficultyError:
+                result = apply_semantic_recipes(tasks[i], RecipeSelection(enabled_recipes=(recipe,), seed=selection.seed))
+                if result.task_id != tasks[i].task_id:
+                    raise ValueError(f"{recipe} changed task identity {tasks[i].task_id} to {result.task_id}")
+                admitted[key] = result
+            except (ValueError, KeyError) as exc:
+                if failures is None and not isinstance(exc, SemanticDifficultyError):
+                    raise
+                refusals[i].append(f"{recipe}: {exc}")
                 admitted[key] = None
         return admitted[key]
 
@@ -106,5 +122,22 @@ def assign_recipe_batch(tasks, selection=None):
     for recipe in recipes:
         match(recipe, set())
     chosen = {i: recipe for i, recipe in assigned.values()}
-    return tuple(build(i, chosen[i]) if i in chosen else apply_semantic_recipes(task, selection)
-                 for i, task in enumerate(tasks))
+    results = []
+    for i, task in enumerate(tasks):
+        if i in chosen:
+            results.append(build(i, chosen[i]))
+        elif failures is None:
+            results.append(apply_semantic_recipes(task, selection))
+        elif task.task_id not in failures:
+            # Unmatched families may still use any admissible recipe. Reuse
+            # the checked bindings so a broken one cannot mask a valid sibling.
+            order = (r for r in selection.ordered_for(task.family_id) if r in caps[i])
+            for recipe in sorted(order, key=specificity):
+                result = build(i, recipe)
+                if result is not None:
+                    results.append(result)
+                    break
+            else:
+                reason = " | ".join(refusals[i]) or "no source-supported capabilities"
+                failures[task.task_id] = f"semantic recipe assignment refused: {reason}"
+    return tuple(results)
